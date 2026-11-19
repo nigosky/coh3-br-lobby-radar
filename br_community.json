@@ -365,12 +365,12 @@
     "1057166": {
       "alias": "Calas Typhon",
       "br_source": "open_data_matches",
-      "last_match_date": 1794870538,
-      "last_seen_online_ts": 0,
+      "last_match_date": 1795115328,
+      "last_seen_online_ts": 1795115500,
       "max_elo": 1000,
       "profile_id": 1057166,
       "steam_id": "76561198051562811",
-      "total_matches": 343
+      "total_matches": 344
     },
     "1057422": {
       "alias": "Area",
@@ -586,12 +586,12 @@
     "1092009": {
       "alias": "Cabal4LXK",
       "br_source": "open_data_lb",
-      "last_match_date": 1795113469,
+      "last_match_date": 1795115502,
       "last_seen_online_ts": 1795114000,
       "max_elo": 1000,
       "profile_id": 1092009,
       "steam_id": "76561199544333080",
-      "total_matches": 260
+      "total_matches": 261
     },
     "1092177": {
       "alias": "bodykiller01",
@@ -1193,7 +1193,7 @@
     "1178218": {
       "alias": "joauleonardo",
       "br_source": "open_data_lb",
-      "last_match_date": 1795042388,
+      "last_match_date": 1795115520,
       "last_seen_online_ts": 1795114600,
       "max_elo": 1739,
       "profile_id": 1178218,
@@ -1916,7 +1916,7 @@
       "alias": "XarupS™",
       "br_source": "open_data_matches",
       "last_match_date": 1795061449,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795115500,
       "max_elo": 1000,
       "profile_id": 1253894,
       "steam_id": "76561197984053679",
@@ -2118,7 +2118,7 @@
       "alias": "Dr Christian Troy",
       "br_source": "open_data_matches",
       "last_match_date": 1794871710,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795115500,
       "max_elo": 1000,
       "profile_id": 1282829,
       "steam_id": "76561198174921845",
@@ -2440,7 +2440,7 @@
       "alias": "B.R.",
       "br_source": "open_data_matches",
       "last_match_date": 1794522625,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795115500,
       "max_elo": 1085,
       "profile_id": 1305193,
       "steam_id": "76561198379634006",
@@ -2871,7 +2871,7 @@
       "alias": "guilhermecardenuto7",
       "br_source": "open_data_matches",
       "last_match_date": 1794839088,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795115500,
       "max_elo": 1054,
       "profile_id": 1370049,
       "steam_id": "76561199667769508",
@@ -5013,7 +5013,7 @@
       "alias": "o peida leite",
       "br_source": "open_data_matches",
       "last_match_date": 1794776993,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795115500,
       "max_elo": 1069,
       "profile_id": 1463105,
       "steam_id": "76561198137120595",
@@ -6013,7 +6013,8 @@
       "alias": "Haamiah",
       "br_source": "open_data_matches",
       "last_match_date": 1794874075,
-      "last_seen_online_ts": 0,
+      "last_seen_ingame_ts": 1795115500,
+      "last_seen_online_ts": 1795115500,
       "max_elo": 1000,
       "profile_id": 14944,
       "steam_id": "76561198334983101",
@@ -6924,13 +6925,13 @@
     "309253": {
       "alias": "[OMJ] Odinpower",
       "br_source": "open_data_lb",
-      "last_match_date": 1795114252,
+      "last_match_date": 1795115318,
       "last_seen_ingame_ts": 1795111093,
       "last_seen_online_ts": 1795113701,
       "max_elo": 1110,
       "profile_id": 309253,
       "steam_id": "76561197990094756",
-      "total_matches": 178
+      "total_matches": 179
     },
     "314198": {
       "alias": "VvBH - 2OLD2PLAY",
@@ -9082,7 +9083,7 @@
       "alias": "Ziuder",
       "br_source": "open_data_matches",
       "last_match_date": 1794792047,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795115500,
       "max_elo": 1009,
       "profile_id": 844292,
       "steam_id": "76561198981084810",
@@ -9473,7 +9474,7 @@
       "alias": "GHOST",
       "br_source": "open_data_matches",
       "last_match_date": 1794959728,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795115500,
       "max_elo": 1000,
       "profile_id": 901899,
       "steam_id": "76561198112478468",
@@ -9532,12 +9533,12 @@
     "907800": {
       "alias": "Jail Bolsonaro 22",
       "br_source": "open_data_matches",
-      "last_match_date": 1795106940,
+      "last_match_date": 1795115510,
       "last_seen_online_ts": 0,
       "max_elo": 1062,
       "profile_id": 907800,
       "steam_id": "76561199065598388",
-      "total_matches": 2521
+      "total_matches": 2522
     },
     "908059": {
       "alias": "fernandoqc",
@@ -9863,12 +9864,12 @@
     "952167": {
       "alias": "≫Tiagu",
       "br_source": "open_data_lb",
-      "last_match_date": 1795114252,
+      "last_match_date": 1795115318,
       "last_seen_online_ts": 0,
       "max_elo": 1020,
       "profile_id": 952167,
       "steam_id": "76561198091193918",
-      "total_matches": 876
+      "total_matches": 877
     },
     "952169": {
       "alias": "Brazilian deltarune enjoyer",
