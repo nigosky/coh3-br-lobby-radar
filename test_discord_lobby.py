@@ -757,6 +757,149 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertIn("🎮 [**OutroJogosOcultos** ↗]", oth_desc)
             self.assertIn("*(via Relic há 18m)*", oth_desc)
 
+    def test_known_ingame_visible_prevents_false_positive_when_only_playtime_is_hidden(self) -> None:
+        """
+        Reproduz o caso Lupus Alba: perfil com `Detalhes dos jogos = Público` mas `Manter tempo de jogo privado = Ativo`.
+        Quando o jogador sai do CoH3, `<hoursPlayed2Wk>` fica 0.0 / vazio — como `<inGameInfo>` já foi observado antes,
+        o sistema NÃO deve mantê-lo em `in_coh3` por 35 min após fechar o jogo (nem marcá-lo como `public_games_hidden`).
+        """
+        now1 = 1_800_000_000
+        now2 = now1 + 1200  # 20 min depois
+        lupus_sid = "76561198140782132"
+        gaules_sid = "76561198264285149"
+
+        class _TwoPhasePresenceClient:
+            def __init__(self) -> None:
+                self.lupus_in_coh3 = True
+
+            def fetch_batch_presence(
+                self,
+                steam_ids: list[str],
+                max_workers: int = 6,
+                pace_delay_sec: float = 0.0,
+                stop_on_rate_limit: bool = False,
+            ) -> dict[str, dict[str, Any]]:
+                _ = (max_workers, pace_delay_sec, stop_on_rate_limit)
+                out: dict[str, dict[str, Any]] = {}
+                for sid in steam_ids:
+                    if sid == lupus_sid:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "privacy_state": "public",
+                            "visibility_state": "3",
+                            "has_public_game_details": self.lupus_in_coh3,
+                            "has_coh3_in_recent_games": False,
+                            "most_played_count": 0,
+                            "online_state": "in-game" if self.lupus_in_coh3 else "online",
+                            "is_in_coh3": self.lupus_in_coh3,
+                            "is_online_steam": True,
+                            "is_away": False,
+                            "other_game": "",
+                            "avatar_url": "",
+                        }
+                    elif sid == gaules_sid:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "privacy_state": "public",
+                            "visibility_state": "3",
+                            "has_public_game_details": False,
+                            "has_coh3_in_recent_games": False,
+                            "most_played_count": 0,
+                            "online_state": "online",
+                            "is_in_coh3": False,
+                            "is_online_steam": True,
+                            "is_away": False,
+                            "other_game": "",
+                            "avatar_url": "",
+                        }
+                    else:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "privacy_state": "public",
+                            "visibility_state": "3",
+                            "has_public_game_details": True,
+                            "has_coh3_in_recent_games": True,
+                            "most_played_count": 1,
+                            "online_state": "offline",
+                            "is_in_coh3": False,
+                            "is_online_steam": False,
+                            "is_away": False,
+                            "other_game": "",
+                            "avatar_url": "",
+                        }
+                return out
+
+        class _TwoPhaseRelicClient:
+            def fetch_latest_matches_and_br_participants(
+                self,
+                profile_ids: list[int],
+                max_workers: int = 6,
+            ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+                _ = (profile_ids, max_workers)
+                return (
+                    {
+                        1226910: {"profile_id": 1226910, "match_id": 1, "completion_time": now1, "mode": "2v2"},
+                        1022333: {"profile_id": 1022333, "match_id": 2, "completion_time": now1, "mode": "4v4"},
+                    },
+                    {},
+                    {},
+                )
+
+            def fetch_peak_elo_by_profile_ids(self, profile_ids: list[int]) -> dict[int, int]:
+                return {pid: 1400 for pid in profile_ids}
+
+            def discover_br_players_from_open_data(self, now_ts: int | None = None) -> dict[int, dict[str, Any]]:
+                _ = now_ts
+                return {}
+
+            def fetch_profile_stats_batch(
+                self,
+                profile_ids: list[int],
+                pace_delay_sec: float = 0.22,
+            ) -> dict[int, dict[str, Any]]:
+                _ = (profile_ids, pace_delay_sec)
+                return {}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            comm_path = Path(tmp) / "br_community.json"
+            pres_client = _TwoPhasePresenceClient()
+            relic_client = _TwoPhaseRelicClient()
+
+            # Ciclo 1: Lupus Alba está no CoH3 via XML (<inGameInfo>) -> sistema aprende `steam_ingame_visible_ts`
+            s1 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=_FakeDiscordClient(),
+                presence_client=pres_client,  # type: ignore[arg-type]
+                relic_client=relic_client,  # type: ignore[arg-type]
+                now_ts=now1,
+            )
+            self.assertEqual(s1["in_coh3"], 2)
+            saved1 = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved1["steam_ingame_visible_ts"][lupus_sid], now1)
+            self.assertNotIn(gaules_sid, saved1["steam_ingame_visible_ts"])
+
+            # Ciclo 2 (20 min depois): Lupus Alba fechou o CoH3 (XML `online`, playtime oculto), gaules segue jogando
+            pres_client.lupus_in_coh3 = False
+            s2 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=_FakeDiscordClient(),
+                presence_client=pres_client,  # type: ignore[arg-type]
+                relic_client=relic_client,  # type: ignore[arg-type]
+                now_ts=now2,
+            )
+            # Apenas gaules permanece em in_coh3; Lupus Alba volta corretamente para online_steam!
+            self.assertEqual(s2["in_coh3"], 1)
+            self.assertEqual(s2["online_steam"], 1)
+            saved2 = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved2["veteranos_steam_privacy"]["1226910"], "public")
+            self.assertEqual(saved2["veteranos_steam_privacy"]["1022333"], "public_games_hidden")
+
 
 if __name__ == "__main__":
     unittest.main()

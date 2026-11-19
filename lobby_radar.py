@@ -72,6 +72,8 @@ MAX_OTHER_BR_ACTIVE_PER_CYCLE = 220
 OTHER_BR_ROTATION_SLICE = 40
 MAX_OTHER_BR_RELIC_INVISIBLE_CHECK = 200
 RECENT_RELIC_WINDOW_MINUTES = 35
+STEAM_INGAME_VISIBLE_TTL_SEC = 14 * 86400
+STEAM_INGAME_VISIBLE_REFRESH_SEC = 6 * 3600
 
 
 def load_state(state_path: Path = DEFAULT_STATE_PATH) -> dict[str, Any]:
@@ -195,6 +197,7 @@ def _build_veteranos_privacy_diagnostics(
     vet_latest_matches: dict[int, dict[str, Any]],
     *,
     now: int,
+    known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
 ) -> dict[str, str]:
     """
     Classifica a visibilidade Steam de cada conta dos Veteranos (`public`, `private`, `friendsonly`,
@@ -224,7 +227,11 @@ def _build_veteranos_privacy_diagnostics(
             last_m = vet_latest_matches.get(pid) or {}
             last_ct = int(last_m.get("completion_time", 0) or 0)
             played_last_14d = last_ct > 0 and (now - last_ct) <= two_weeks_sec
-            if steam_presence_hides_coh3_game(pres) and played_last_14d and (not pres.get("is_in_coh3")):
+            if (
+                steam_presence_hides_coh3_game(pres, known_ingame_visible_sids=known_ingame_visible_sids)
+                and played_last_14d
+                and (not pres.get("is_in_coh3"))
+            ):
                 diag[str(pid)] = "public_games_hidden"
             else:
                 diag[str(pid)] = "public"
@@ -524,12 +531,37 @@ def run_lobby_radar_sync(
 
     vet_elo_by_pid = {int(k): int(v) for k, v in elo_cache_raw.items() if str(k).isdigit()}
 
+    # Registra contas que já exibiram `<inGameInfo>` (CoH3 ou outro jogo) nos últimos 14 dias:
+    # diferencia perfis que apenas ocultam horas jogadas (<hoursPlayed2Wk>) mas mostram o jogo atual!
+    ingame_vis_raw = state.get("steam_ingame_visible_ts")
+    ingame_vis: dict[str, int] = {
+        str(sid): int(ts)
+        for sid, ts in (ingame_vis_raw.items() if isinstance(ingame_vis_raw, dict) else [])
+        if STEAM_ID64_VALID_RE.fullmatch(str(sid))
+        and int(ts or 0) > 0
+        and (now - int(ts or 0)) <= STEAM_INGAME_VISIBLE_TTL_SEC
+    }
+    ingame_vis_changed = isinstance(ingame_vis_raw, dict) and len(ingame_vis) != len(ingame_vis_raw)
+    for sid, pres in vet_presence_map.items():
+        if not isinstance(pres, dict):
+            continue
+        if (pres.get("is_in_coh3") or str(pres.get("other_game") or "").strip()) and STEAM_ID64_VALID_RE.fullmatch(sid):
+            prev_ts = int(ingame_vis.get(sid, 0) or 0)
+            if (now - prev_ts) >= STEAM_INGAME_VISIBLE_REFRESH_SEC:
+                ingame_vis[sid] = now
+                ingame_vis_changed = True
+    if ingame_vis_changed:
+        state["steam_ingame_visible_ts"] = ingame_vis
+        state_dirty = True
+    vet_known_ingame_sids: set[str] = set(ingame_vis.keys())
+
     # Diagnóstico leve de privacidade Steam dos Veteranos (identifica perfis privados/amigos/jogos ocultos)
     vet_privacy_diag = _build_veteranos_privacy_diagnostics(
         vet_roster,
         vet_presence_map,
         vet_latest_matches,
         now=now,
+        known_ingame_visible_sids=vet_known_ingame_sids,
     )
     if vet_privacy_diag and vet_privacy_diag != state.get("veteranos_steam_privacy"):
         state["veteranos_steam_privacy"] = vet_privacy_diag
@@ -665,7 +697,8 @@ def run_lobby_radar_sync(
             stop_on_rate_limit=True,
         )
 
-    # Atualiza last_seen_online_ts (com throttle de 30 min para evitar ruído desnecessário no git)
+    # Atualiza last_seen_online_ts (30 min) e last_seen_ingame_ts (6h) para evitar ruído no git
+    other_known_ingame_sids: set[str] = set()
     for row in selected_others:
         sid = str(row.get("steam_id") or "")
         pres = other_presence_map.get(sid)
@@ -674,6 +707,19 @@ def run_lobby_radar_sync(
             if (now - prev_seen) >= 1800:
                 row["last_seen_online_ts"] = now
                 community_dirty = True
+        if pres and (pres.get("is_in_coh3") or str(pres.get("other_game") or "").strip()):
+            prev_ig = int(row.get("last_seen_ingame_ts", 0) or 0)
+            if (now - prev_ig) >= STEAM_INGAME_VISIBLE_REFRESH_SEC:
+                row["last_seen_ingame_ts"] = now
+                community_dirty = True
+            if sid:
+                other_known_ingame_sids.add(sid)
+        else:
+            prev_ig = int(row.get("last_seen_ingame_ts", 0) or 0)
+            if sid and prev_ig > 0 and (now - prev_ig) <= STEAM_INGAME_VISIBLE_TTL_SEC:
+                other_known_ingame_sids.add(sid)
+
+    known_ingame_visible_sids: set[str] = vet_known_ingame_sids | other_known_ingame_sids
 
     # Detecção via Relic `getPersonalStat` em lote para "Outros Brasileiros":
     # 1) Prioridade máxima: contas ONLINE livres na Steam com detalhes de jogos ocultos (para promover a `in_coh3`!).
@@ -697,7 +743,10 @@ def run_lobby_radar_sync(
         if pres.get("is_online_steam"):
             if pres.get("other_game") or pres.get("is_away"):
                 continue
-            if steam_presence_hides_coh3_game(pres) or str(pres.get("online_state") or "").lower() == "in-game":
+            if (
+                steam_presence_hides_coh3_game(pres, known_ingame_visible_sids=known_ingame_visible_sids)
+                or str(pres.get("online_state") or "").lower() == "in-game"
+            ):
                 online_hidden_candidates.append(rpid)
             else:
                 online_public_candidates.append(rpid)
@@ -762,6 +811,7 @@ def run_lobby_radar_sync(
         other_elo_by_pid=other_elo_by_pid,
         other_br_total_catalog=len(community_players),
         other_br_active_days=OTHER_BR_ACTIVE_COH3_DAYS,
+        known_ingame_visible_sids=known_ingame_visible_sids,
     )
     vet_bucket = snapshot["veteranos"]
     oth_bucket = snapshot["outros_brasileiros"]
