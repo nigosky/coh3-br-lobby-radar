@@ -494,7 +494,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(saved["veteranos_steam_privacy"]["79327"], "public")
 
             comm = json.loads(comm_path.read_text(encoding="utf-8"))
-            self.assertEqual(comm.get("schema_version"), 2)
+            self.assertEqual(comm.get("schema_version"), 3)
             self.assertNotIn("79327", comm["players"])
             self.assertNotIn("900004", comm["players"])
             self.assertNotIn("900099", comm["players"])

@@ -1,0 +1,105 @@
+name: CoH3 Brasil — Varredura Profunda Multi-Fonte (BR)
+
+on:
+  schedule:
+    # Diariamente as 07:30 UTC (04:30 BRT), logo apos o COH3 Stats publicar leaderboards (04:00 UTC) e matches (06:00 UTC)
+    - cron: "30 7 * * *"
+  workflow_dispatch:
+    inputs:
+      match_days:
+        description: "Dias de dumps Open Data Matches (1 a 30)"
+        required: false
+        default: "14"
+        type: string
+      max_steam_verify:
+        description: "Maximo de candidatos SA/squad verificados no XML Steam (0 a 800)"
+        required: false
+        default: "450"
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: coh3-br-deep-discovery
+  cancel-in-progress: false
+
+jobs:
+  deep-br-discovery:
+    if: github.repository == 'nigosky/coh3-br-lobby-radar' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout seguro (SHA imutavel)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validar suite de precisao e seguranca (anti-falso-positivo / anti-XXE)
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s . -p "test_*.py"
+
+      - name: Executar varredura profunda (COH3 Stats Open Data + Relic SA + Steam)
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+          INPUT_MATCH_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.match_days || '14' }}
+          INPUT_MAX_STEAM_VERIFY: ${{ github.event_name == 'workflow_dispatch' && inputs.max_steam_verify || '450' }}
+        run: |
+          set -euo pipefail
+
+          # Validacao numerica estrita contra injecao
+          MATCH_DAYS=14
+          if [[ "${INPUT_MATCH_DAYS:-}" =~ ^[0-9]+$ ]] && [ "${INPUT_MATCH_DAYS}" -ge 1 ] && [ "${INPUT_MATCH_DAYS}" -le 30 ]; then
+            MATCH_DAYS="${INPUT_MATCH_DAYS}"
+          fi
+
+          MAX_STEAM_VERIFY=450
+          if [[ "${INPUT_MAX_STEAM_VERIFY:-}" =~ ^[0-9]+$ ]] && [ "${INPUT_MAX_STEAM_VERIFY}" -ge 0 ] && [ "${INPUT_MAX_STEAM_VERIFY}" -le 800 ]; then
+            MAX_STEAM_VERIFY="${INPUT_MAX_STEAM_VERIFY}"
+          fi
+
+          python3 discover_br_community.py \
+            --match-days "${MATCH_DAYS}" \
+            --max-steam-verify "${MAX_STEAM_VERIFY}"
+
+      - name: Auditoria anti-vazamento e persistencia de br_community.json
+        run: |
+          set -euo pipefail
+
+          # Bloqueia qualquer URL de Webhook em arquivos rastreados antes de commit/push
+          if grep -RInEi "(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+" state.json br_community.json *.py 2>/dev/null; then
+            echo "::error::Bloqueio de seguranca acionado: padrao de URL de Webhook detectado em arquivo rastreado!"
+            exit 1
+          fi
+
+          if [ ! -f "br_community.json" ]; then
+            echo "br_community.json nao encontrado; encerrando."
+            exit 0
+          fi
+
+          git add -- br_community.json
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteracao em br_community.json nesta varredura profunda."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(br-discovery): convergir catalogo profundo de brasileiros ativos [skip ci]"
+
+          for attempt in 1 2 3 4; do
+            git pull --rebase -X theirs origin main || {
+              git rebase --abort 2>/dev/null || true
+            }
+            if git push origin "HEAD:main"; then
+              echo "Catalogo profundo br_community.json publicado com sucesso em main."
+              break
+            fi
+            sleep 3
+          done

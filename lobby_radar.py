@@ -43,6 +43,7 @@ from steam_presence import (
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
     SteamPresenceClient,
+    _merge_discovered_br_player,
     build_lobby_radar_snapshot,
     classify_other_br_prominence,
     compute_lobby_state_digest,
@@ -63,7 +64,7 @@ ELO_CACHE_TTL_SEC = 6 * 3600
 # 4m30s garante que o ciclo de 5 min (300s) nunca pule a atualização por 1-2s de jitter do relógio
 PANEL_HEARTBEAT_REFRESH_SEC = 270
 PANEL_LAYOUT_VERSION = 5
-COMMUNITY_SCHEMA_VERSION = 2
+COMMUNITY_SCHEMA_VERSION = 3
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
 OTHER_BR_ACTIVE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400  # 30 dias (1 mês)
@@ -268,8 +269,11 @@ def _merge_player_into_community(
     if min_last_match_date > 0 and effective_lmd < min_last_match_date:
         return False
 
+    br_source = strip_unsafe_chars(entry.get("br_source") or "")[:32]
+    last_seen_ig = max(0, int(entry.get("last_seen_ingame_ts", 0) or 0))
+
     if prev is None:
-        players_dict[key] = {
+        rec: dict[str, Any] = {
             "profile_id": pid,
             "steam_id": sid,
             "alias": alias,
@@ -278,6 +282,11 @@ def _merge_player_into_community(
             "total_matches": total_matches,
             "last_seen_online_ts": max(0, int(entry.get("last_seen_online_ts", 0) or 0)),
         }
+        if br_source:
+            rec["br_source"] = br_source
+        if last_seen_ig > 0:
+            rec["last_seen_ingame_ts"] = last_seen_ig
+        players_dict[key] = rec
         return True
 
     changed = False
@@ -300,6 +309,13 @@ def _merge_player_into_community(
             changed = True
     elif total_matches > prev_matches:
         prev["total_matches"] = total_matches
+        changed = True
+    prev_src = str(prev.get("br_source") or "").strip()
+    if br_source and (not prev_src or prev_src == "existing_cache"):
+        prev["br_source"] = br_source
+        changed = True
+    if last_seen_ig > int(prev.get("last_seen_ingame_ts", 0) or 0):
+        prev["last_seen_ingame_ts"] = last_seen_ig
         changed = True
     return changed
 
@@ -665,26 +681,31 @@ def run_lobby_radar_sync(
         or (community_schema_ver < COMMUNITY_SCHEMA_VERSION)
         or ((now - community_updated_at) >= COMMUNITY_DISCOVERY_TTL_SEC)
     )
-    if need_discovery and hasattr(r_client, "discover_br_players_from_open_data"):
+    if need_discovery and (
+        hasattr(r_client, "discover_br_players_from_open_data")
+        or hasattr(r_client, "discover_br_players_from_relic_sa")
+    ):
         discovered: dict[int, dict[str, Any]] = {}
         source_lbl = ""
-        try:
-            discovered = r_client.discover_br_players_from_open_data(now_ts=now)
-            if discovered:
-                source_lbl = "open_data"
-        except Exception as exc:
-            logger.warning("Falha na descoberta COH3 Stats Open Data: %s", redact_secrets(exc))
+        if hasattr(r_client, "discover_br_players_from_open_data"):
+            try:
+                od_discovered = r_client.discover_br_players_from_open_data(now_ts=now)
+                for item in (od_discovered or {}).values():
+                    _merge_discovered_br_player(discovered, accumulate_matches=False, **item)
+                if od_discovered:
+                    source_lbl = "open_data"
+            except Exception as exc:
+                logger.warning("Falha na descoberta COH3 Stats Open Data: %s", redact_secrets(exc))
 
-        if len(discovered) < 30 and hasattr(r_client, "discover_br_players_from_relic_sa"):
+        if hasattr(r_client, "discover_br_players_from_relic_sa"):
             try:
                 sa_discovered = r_client.discover_br_players_from_relic_sa(max_pages_per_board=4)
-                for pid, item in sa_discovered.items():
-                    if pid not in discovered:
-                        discovered[pid] = item
+                for item in (sa_discovered or {}).values():
+                    _merge_discovered_br_player(discovered, accumulate_matches=False, **item)
                 if sa_discovered:
                     source_lbl = f"{source_lbl}+relic_sa" if source_lbl else "relic_sa"
             except Exception as exc:
-                logger.warning("Falha no fallback Relic SA: %s", redact_secrets(exc))
+                logger.warning("Falha na descoberta Relic SA: %s", redact_secrets(exc))
 
         if discovered:
             for item in discovered.values():
@@ -694,7 +715,7 @@ def run_lobby_radar_sync(
                     vet_pids=vet_pids_set,
                     vet_sids=vet_sids_set,
                     min_last_match_date=active_coh3_cutoff,
-                    replace_matches=True,
+                    replace_matches=False,
                 ):
                     community_dirty = True
             community_cache["schema_version"] = COMMUNITY_SCHEMA_VERSION
