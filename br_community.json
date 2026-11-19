@@ -30,7 +30,7 @@
     "1020192": {
       "alias": "j0r3L",
       "last_match_date": 1794532429,
-      "last_seen_online_ts": 1795109048,
+      "last_seen_online_ts": 1795111992,
       "max_elo": 1000,
       "profile_id": 1020192,
       "steam_id": "76561198974641753",
@@ -246,12 +246,12 @@
     },
     "1092009": {
       "alias": "Cabal4LXK",
-      "last_match_date": 1795086902,
-      "last_seen_online_ts": 1795110052,
+      "last_match_date": 1795111824,
+      "last_seen_online_ts": 1795111992,
       "max_elo": 1000,
       "profile_id": 1092009,
       "steam_id": "76561199544333080",
-      "total_matches": 258
+      "total_matches": 259
     },
     "1095143": {
       "alias": "Sniper-777",
@@ -757,7 +757,7 @@
     "1242273": {
       "alias": "LeoCoSi",
       "last_match_date": 1795058657,
-      "last_seen_online_ts": 1795110052,
+      "last_seen_online_ts": 1795111992,
       "max_elo": 1000,
       "profile_id": 1242273,
       "steam_id": "76561198798609076",
@@ -856,6 +856,7 @@
     "1257730": {
       "alias": "Ennkas",
       "last_match_date": 1794257021,
+      "last_seen_ingame_ts": 1795111992,
       "last_seen_online_ts": 1795110681,
       "max_elo": 1000,
       "profile_id": 1257730,
@@ -1129,7 +1130,8 @@
     "1306623": {
       "alias": "Flash.Point -Mariatti- Panda",
       "last_match_date": 1795044425,
-      "last_seen_online_ts": 1795109048,
+      "last_seen_ingame_ts": 1795111992,
+      "last_seen_online_ts": 1795111992,
       "max_elo": 880,
       "profile_id": 1306623,
       "steam_id": "76561198009899628",
@@ -1290,12 +1292,12 @@
     },
     "1369003": {
       "alias": "KyronCrane",
-      "last_match_date": 1795109882,
+      "last_match_date": 1795111907,
       "last_seen_online_ts": 0,
       "max_elo": 1150,
       "profile_id": 1369003,
       "steam_id": "76561198155713664",
-      "total_matches": 1463
+      "total_matches": 1464
     },
     "1369418": {
       "alias": "xandaoro",
@@ -1336,7 +1338,8 @@
     "137848": {
       "alias": "Elvenking",
       "last_match_date": 1795036123,
-      "last_seen_online_ts": 1795109048,
+      "last_seen_ingame_ts": 1795111992,
+      "last_seen_online_ts": 1795111992,
       "max_elo": 876,
       "profile_id": 137848,
       "steam_id": "76561198083666457",
@@ -2266,7 +2269,8 @@
     "413433": {
       "alias": "Horkar",
       "last_match_date": 1795033129,
-      "last_seen_online_ts": 1795109048,
+      "last_seen_ingame_ts": 1795111992,
+      "last_seen_online_ts": 1795111992,
       "max_elo": 856,
       "profile_id": 413433,
       "steam_id": "76561198041801545",
@@ -2843,7 +2847,7 @@
     "739986": {
       "alias": "Rudel",
       "last_match_date": 1795057666,
-      "last_seen_online_ts": 1795110052,
+      "last_seen_online_ts": 1795111992,
       "max_elo": 1232,
       "profile_id": 739986,
       "steam_id": "76561197991945409",
@@ -3274,12 +3278,12 @@
     },
     "8764": {
       "alias": "Maverick",
-      "last_match_date": 1794927819,
-      "last_seen_online_ts": 1795109048,
-      "max_elo": 990,
+      "last_match_date": 1795103000,
+      "last_seen_online_ts": 1795111992,
+      "max_elo": 1134,
       "profile_id": 8764,
       "steam_id": "76561198155662761",
-      "total_matches": 39
+      "total_matches": 321
     },
     "890394": {
       "alias": "TheKat",
@@ -3517,12 +3521,12 @@
     },
     "952169": {
       "alias": "Brazilian deltarune enjoyer",
-      "last_match_date": 1795093926,
+      "last_match_date": 1795111842,
       "last_seen_online_ts": 1795110681,
       "max_elo": 1123,
       "profile_id": 952169,
       "steam_id": "76561199150201581",
-      "total_matches": 1065
+      "total_matches": 1066
     },
     "956645": {
       "alias": "Magraiver",
