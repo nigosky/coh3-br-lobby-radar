@@ -461,7 +461,7 @@ def build_lobby_radar_links_payload(
         free_cap=16,
         busy_cap=8,
         recent_cap=8,
-        low_cap=8,
+        low_cap=14,
     )
 
     vet_color = (
