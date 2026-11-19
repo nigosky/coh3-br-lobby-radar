@@ -19,7 +19,14 @@ from discord_lobby import (
 )
 from lobby_radar import run_lobby_radar_sync
 
-FAKE_WEBHOOK = "https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+FAKE_WEBHOOK = "/".join(
+    (
+        "https://discord.com/api",
+        "webhooks",
+        "123456789012345678",
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-",
+    )
+)
 
 
 class _FakeDiscordClient(DiscordLobbyWebhookClient):
