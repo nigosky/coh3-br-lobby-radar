@@ -1,0 +1,22 @@
+{
+  "active_alerts": [
+    {
+      "message_id": "1572795831617327227",
+      "sent_at": 1795054147
+    }
+  ],
+  "elo_cache": {},
+  "elo_cache_ts": 0,
+  "last_alert_coh3_pids": [
+    6557,
+    32922,
+    79327,
+    337051,
+    1226910
+  ],
+  "last_alert_ts": 1795054138,
+  "last_digest": "([(6557, False), (79327, False), (32922, False), (337051, False), (1226910, False)], [(900358, '', False), (1088455, '', False), (19747, '', False), (1022333, '', False), (648514, '', False), (735940, '', False), (5768, '', False), (13450, '', False)], [])",
+  "last_steam_fast_sig": "",
+  "last_sync_ts": 1795054138,
+  "panel_message_id": "1572795829776023593"
+}
