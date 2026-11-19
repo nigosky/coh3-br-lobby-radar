@@ -99,7 +99,7 @@
     "1042204": {
       "alias": "Saker",
       "last_match_date": 1794873341,
-      "last_seen_online_ts": 1795103941,
+      "last_seen_online_ts": 1795106952,
       "max_elo": 806,
       "profile_id": 1042204,
       "steam_id": "76561198252921023"
@@ -459,7 +459,7 @@
     "1180172": {
       "alias": "Micaelzudo",
       "last_match_date": 1794849561,
-      "last_seen_online_ts": 1795103941,
+      "last_seen_online_ts": 1795106952,
       "max_elo": 851,
       "profile_id": 1180172,
       "steam_id": "76561198430566960"
@@ -484,7 +484,7 @@
       "alias": "Gueribos",
       "last_match_date": 1794779318,
       "last_seen_online_ts": 0,
-      "max_elo": 701,
+      "max_elo": 911,
       "profile_id": 1186789,
       "steam_id": "76561199125461647"
     },
@@ -819,7 +819,7 @@
     "128231": {
       "alias": "E5p4rTaN0",
       "last_match_date": 1794773010,
-      "last_seen_online_ts": 1795104241,
+      "last_seen_online_ts": 1795106952,
       "max_elo": 951,
       "profile_id": 128231,
       "steam_id": "76561198022850599"
@@ -899,7 +899,7 @@
     "1290028": {
       "alias": "Sonneiko",
       "last_match_date": 1794783686,
-      "last_seen_online_ts": 1795103941,
+      "last_seen_online_ts": 1795106952,
       "max_elo": 1027,
       "profile_id": 1290028,
       "steam_id": "76561198051541320"
@@ -923,7 +923,7 @@
     "1297284": {
       "alias": "NSG_S2",
       "last_match_date": 1794790208,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795106952,
       "max_elo": 998,
       "profile_id": 1297284,
       "steam_id": "76561199749514265"
@@ -964,7 +964,7 @@
       "alias": "Eddieeeeeeeeee",
       "last_match_date": 1794777957,
       "last_seen_online_ts": 0,
-      "max_elo": 772,
+      "max_elo": 958,
       "profile_id": 1302538,
       "steam_id": "76561198039171470"
     },
@@ -1323,7 +1323,7 @@
     "1438656": {
       "alias": "guridocafe",
       "last_match_date": 1795061438,
-      "last_seen_online_ts": 1795105141,
+      "last_seen_online_ts": 1795106952,
       "max_elo": 1000,
       "profile_id": 1438656,
       "steam_id": "76561198870731987"
@@ -1571,7 +1571,7 @@
     "209811": {
       "alias": "Suby",
       "last_match_date": 1795048239,
-      "last_seen_online_ts": 1795105141,
+      "last_seen_online_ts": 1795106952,
       "max_elo": 1127,
       "profile_id": 209811,
       "steam_id": "76561198007078149"
@@ -2052,7 +2052,7 @@
       "alias": "Cafefonseca",
       "last_match_date": 1794778242,
       "last_seen_online_ts": 0,
-      "max_elo": 772,
+      "max_elo": 1056,
       "profile_id": 443756,
       "steam_id": "76561199077194399"
     },
@@ -2500,7 +2500,7 @@
       "alias": "FelPz1",
       "last_match_date": 1794788204,
       "last_seen_online_ts": 0,
-      "max_elo": 666,
+      "max_elo": 976,
       "profile_id": 739759,
       "steam_id": "76561198145550782"
     },
@@ -2586,9 +2586,9 @@
     },
     "761551": {
       "alias": "Django_livre",
-      "last_match_date": 1794786578,
+      "last_match_date": 1794852983,
       "last_seen_online_ts": 0,
-      "max_elo": 854,
+      "max_elo": 983,
       "profile_id": 761551,
       "steam_id": "76561197996803760"
     },
@@ -2732,7 +2732,7 @@
       "alias": "TheShadow318",
       "last_match_date": 1794788262,
       "last_seen_online_ts": 0,
-      "max_elo": 733,
+      "max_elo": 1000,
       "profile_id": 815314,
       "steam_id": "76561198866747591"
     },
@@ -2812,7 +2812,7 @@
       "alias": "Lone Ranger",
       "last_match_date": 1794786102,
       "last_seen_online_ts": 0,
-      "max_elo": 1145,
+      "max_elo": 1173,
       "profile_id": 84328,
       "steam_id": "76561198074595261"
     },
@@ -3003,7 +3003,7 @@
     "925764": {
       "alias": "charles_BRA",
       "last_match_date": 1794974528,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795106952,
       "max_elo": 1007,
       "profile_id": 925764,
       "steam_id": "76561198086888156"
@@ -3043,7 +3043,7 @@
     "942083": {
       "alias": "MAVERICK",
       "last_match_date": 1794866862,
-      "last_seen_online_ts": 1795103941,
+      "last_seen_online_ts": 1795106952,
       "max_elo": 443,
       "profile_id": 942083,
       "steam_id": "76561197990382740"
