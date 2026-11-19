@@ -64,6 +64,13 @@ jobs:
             sudo apt-get install -y --no-install-recommends "${NEED_PKGS[@]}"
           fi
 
+      - name: Validar suite de precisao e seguranca (anti-falso-positivo / anti-XXE)
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s . -p "test_*.py"
+
       - name: Sincronizar Radar a cada 5 min (sessao de 12 ciclos = 60 min)
         env:
           PYTHONDONTWRITEBYTECODE: "1"
