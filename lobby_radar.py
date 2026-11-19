@@ -8,7 +8,7 @@ Opera 100% autônomo (repositório próprio, estado JSON leve, zero chave da Ste
 2. Consulta presença pública XML da Steam das 33 contas monitoradas (~1,3s em paralelo).
 3. Se a presença mudou (ou se passaram >= 15 min para renovar o carimbo de horário):
    - Consulta na Relic API a última partida concluída e o pico de ELO (cacheado por 6h em `state.json`).
-   - Atualiza o Painel Vivo Fixo no Discord via `PATCH` in-place (ou `POST` na 1ª vez).
+   - Gera nova imagem PNG do card, publica uma nova mensagem no Discord (`POST`) e apaga o card anterior (`DELETE`).
 4. Envia aviso curto com auto-limpeza quando `>= 2` veteranos estão com o CoH3 aberto (cooldown de 60 min).
 """
 
@@ -238,7 +238,8 @@ def run_lobby_radar_sync(
     )
 
     if should_patch_panel:
-        new_panel_id = discord.upsert_lobby_radar_message(snapshot, existing_message_id=panel_id)
+        prev_panel_id = panel_id
+        new_panel_id = discord.upsert_lobby_radar_message(snapshot, existing_message_id=prev_panel_id)
         if new_panel_id:
             panel_id = new_panel_id
             state["panel_message_id"] = new_panel_id
@@ -248,8 +249,9 @@ def run_lobby_radar_sync(
             state_dirty = True
             summary["panel_updated"] = True
             logger.info(
-                "[RADAR LOBBY] Painel Vivo Fixo atualizado (ID %s | No CoH3: %d | Online Steam: %d | Recentes Relic: %d).",
+                "[RADAR LOBBY] Novo card publicado (ID %s, anterior removido: %s | No CoH3: %d | Online Steam: %d | Recentes Relic: %d).",
                 new_panel_id,
+                prev_panel_id or "nenhum",
                 summary["in_coh3"],
                 summary["online_steam"],
                 summary["recent_relic"],
