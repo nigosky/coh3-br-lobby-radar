@@ -76,7 +76,7 @@
       "alias": "Abnadiel",
       "last_match_date": 1792945546,
       "last_seen_online_ts": 1795105141,
-      "max_elo": 865,
+      "max_elo": 1000,
       "profile_id": 1031213,
       "steam_id": "76561199028055547"
     },
@@ -643,7 +643,7 @@
     "1231212": {
       "alias": "NOGG",
       "last_match_date": 1795033755,
-      "last_seen_online_ts": 1795104841,
+      "last_seen_online_ts": 1795106652,
       "max_elo": 1075,
       "profile_id": 1231212,
       "steam_id": "76561199554817843"
@@ -1307,7 +1307,7 @@
     "1429760": {
       "alias": "marcellusx11",
       "last_match_date": 1794875249,
-      "last_seen_online_ts": 1795103941,
+      "last_seen_online_ts": 1795106652,
       "max_elo": 1103,
       "profile_id": 1429760,
       "steam_id": "76561199187357743"
@@ -1835,7 +1835,7 @@
     "3414": {
       "alias": "[SE:VH] Queiroz",
       "last_match_date": 1794896149,
-      "last_seen_online_ts": 1795103941,
+      "last_seen_online_ts": 1795106652,
       "max_elo": 985,
       "profile_id": 3414,
       "steam_id": "76561198111168811"
@@ -3115,7 +3115,7 @@
     "952169": {
       "alias": "Brazilian deltarune enjoyer",
       "last_match_date": 1795093926,
-      "last_seen_online_ts": 1795104841,
+      "last_seen_online_ts": 1795106652,
       "max_elo": 1123,
       "profile_id": 952169,
       "steam_id": "76561199150201581"
