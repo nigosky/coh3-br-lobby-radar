@@ -1,5 +1,10 @@
 {
-  "active_alerts": [],
+  "active_alerts": [
+    {
+      "message_id": "1572984523497541744",
+      "sent_at": 1795099123
+    }
+  ],
   "elo_cache": {
     "1005730": 1555,
     "1022333": 1318,
@@ -36,10 +41,13 @@
     "991764": 1478
   },
   "elo_cache_ts": 1795082622,
-  "last_alert_coh3_pids": [],
-  "last_alert_ts": 1795054138,
-  "last_digest": "([], [(900358, '', False), (19747, '', False), (1226910, '', False), (5768, '', False), (559962, 'Football Manager 2024', False)], [])",
-  "last_steam_fast_sig": "([], [('76561198058548575', '', False), ('76561198062871244', 'Football Manager 2024', False), ('76561198070545853', '', False), ('76561198140782132', '', False), ('76561198205052385', '', False)])",
-  "last_sync_ts": 1795095503,
-  "panel_message_id": "1572969322840719361"
+  "last_alert_coh3_pids": [
+    79327,
+    337051
+  ],
+  "last_alert_ts": 1795099123,
+  "last_digest": "([(79327, False), (337051, False)], [(900358, '', False), (19747, '', False), (1226910, '', False), (5768, '', False), (559962, 'Football Manager 2024', False)], [])",
+  "last_steam_fast_sig": "(['76561197963172584', '76561197981615184'], [('76561198058548575', '', False), ('76561198062871244', 'Football Manager 2024', False), ('76561198070545853', '', False), ('76561198140782132', '', False), ('76561198205052385', '', False)])",
+  "last_sync_ts": 1795099123,
+  "panel_message_id": "1572984504849662133"
 }
