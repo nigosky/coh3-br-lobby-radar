@@ -100,6 +100,23 @@ def create_hardened_ssl_context() -> ssl.SSLContext:
     return ctx
 
 
+class HttpsOnlySchemeHandler(urllib.request.BaseHandler):
+    """Bloqueia no nível do OpenerDirector qualquer esquema fora de HTTPS (defesa em profundidade anti-SSRF/LFI)."""
+
+    handler_order = 100
+
+    def default_open(self, req: Any) -> Any:
+        scheme = str(getattr(req, "type", "") or "").lower()
+        if scheme != "https":
+            raise urllib.error.URLError(f"Esquema '{scheme or '<vazio>'}' bloqueado pela política HTTPS-only.")
+        return None
+
+    http_open = default_open
+    ftp_open = default_open
+    file_open = default_open
+    data_open = default_open
+
+
 class StrictNoRedirectHandler(urllib.request.HTTPRedirectHandler):
     """Bloqueia qualquer redirecionamento HTTP 3xx (proteção estrita contra SSRF e vazamento de headers)."""
 
@@ -114,8 +131,9 @@ class StrictNoRedirectHandler(urllib.request.HTTPRedirectHandler):
 
 
 def build_no_redirect_https_opener() -> urllib.request.OpenerDirector:
-    """Constrói OpenerDirector HTTPS seguro sem redirecionamentos, preservando suporte a proxy do ambiente."""
+    """Constrói OpenerDirector HTTPS-only seguro sem redirecionamentos, preservando suporte a proxy do ambiente."""
     return urllib.request.build_opener(
+        HttpsOnlySchemeHandler(),
         urllib.request.HTTPSHandler(context=create_hardened_ssl_context()),
         StrictNoRedirectHandler(),
     )
@@ -166,10 +184,11 @@ def validate_discord_webhook_url(url: str, allow_message_subpath: bool = False) 
 
 
 def read_bounded_http_body(resp: Any, max_bytes: int) -> bytes:
-    """Lê resposta HTTP com limite rígido no fio e na descompressão Gzip (anti-Gzip-Bomb)."""
-    raw = resp.read(max_bytes + 1)
-    if len(raw) > max_bytes:
-        raise RuntimeError(f"Resposta HTTP excedeu o limite máximo seguro ({max_bytes} bytes).")
+    """Lê resposta HTTP com limite rígido no fio e na descompressão Gzip em chunks (anti-Gzip-Bomb / CWE-409)."""
+    limit = max(1, int(max_bytes))
+    raw = resp.read(limit + 1)
+    if len(raw) > limit:
+        raise RuntimeError(f"Resposta HTTP excedeu o limite máximo seguro ({limit} bytes).")
 
     encoding = ""
     if hasattr(resp, "headers") and resp.headers is not None:
@@ -177,14 +196,28 @@ def read_bounded_http_body(resp: Any, max_bytes: int) -> bytes:
 
     if encoding in ("gzip", "x-gzip") and raw:
         decomp = zlib.decompressobj(16 + zlib.MAX_WBITS)
-        out = decomp.decompress(raw, max_bytes + 1)
-        if decomp.unconsumed_tail or len(out) > max_bytes:
-            raise RuntimeError(f"Payload Gzip descomprimido excedeu o limite seguro ({max_bytes} bytes).")
-        tail = decomp.flush(max_bytes + 1 - len(out))
-        out += tail
-        if len(out) > max_bytes:
-            raise RuntimeError(f"Payload Gzip descomprimido excedeu o limite seguro ({max_bytes} bytes).")
-        return out
+        out_chunks: list[bytes] = []
+        total = 0
+        chunk_size = 65_536
+        try:
+            for offset in range(0, len(raw), chunk_size):
+                piece = decomp.decompress(raw[offset : offset + chunk_size], limit + 1 - total)
+                total += len(piece)
+                if total > limit or decomp.unconsumed_tail:
+                    raise RuntimeError(f"Payload Gzip descomprimido excedeu o limite seguro ({limit} bytes).")
+                if piece:
+                    out_chunks.append(piece)
+            if not decomp.eof:
+                raise RuntimeError("Payload Gzip truncado ou malformado bloqueado por segurança.")
+            tail = decomp.flush()
+            if tail:
+                total += len(tail)
+                if total > limit:
+                    raise RuntimeError(f"Payload Gzip descomprimido excedeu o limite seguro ({limit} bytes).")
+                out_chunks.append(tail)
+        except zlib.error as exc:
+            raise RuntimeError("Payload Gzip inválido ou corrompido.") from exc
+        return b"".join(out_chunks)
 
     return raw
 
