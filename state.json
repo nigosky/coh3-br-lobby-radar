@@ -49,19 +49,19 @@
   "elo_cache_ts": 1795103941,
   "last_alert_coh3_pids": [],
   "last_alert_ts": 1795099123,
-  "last_digest": "(([(1226910, True)], [(79327, '', False), (639157, '', False), (19747, '', False), (1022333, '', False), (28937, '', False), (337051, '', False), (735940, '', False), (84821, '', False), (99722, '', False), (559962, 'Football Manager 2024', False), (58737, 'The King is Watching', False)], []), ([(71299, False), (649535, False), (1295138, False), (1385115, False), (1231212, False), (1095498, False), (839, False)], [(1178218, '', False), (383796, '', False), (6880, '', False), (739693, '', False), (1274951, '', False), (739986, '', False), (401275, '', False), (593274, '', False), (209811, '', False), (952169, '', False), (1200197, '', False), (122829, '', False), (309253, '', False), (351821, '', False), (956645, '', False), (29436, '', False), (20262, '', False), (1429760, '', False), (40833, 'Umamusume: Pretty Derby', False), (1162890, 'Epic Seven', False), (22246, 'Slay the Spire 2', False), (965932, 'Warhammer 40,000: Gladius - Relics o', False), (1177151, 'ROB RUN', False), (976559, '', False), (131786, '', False), (900421, '', False), (1180172, '', False), (24999, '', False), (1020290, '', False), (105384, '', False), (790373, '', False), (11376, '', False), (533746, '', False), (1042204, '', False), (738999, '', False), (1123905, 'Cyberpunk 2077', False), (26003, 'Sea of Thieves', False), (1257730, 'Vampire Survivors', False)], [84816, 1254791]))",
+  "last_digest": "(([(1226910, False)], [(79327, '', False), (639157, '', False), (19747, '', False), (1022333, '', False), (28937, '', False), (337051, '', False), (735940, '', False), (84821, '', False), (99722, '', False), (559962, 'Football Manager 2024', False), (58737, 'The King is Watching', False)], []), ([(71299, False), (649535, False), (1295138, False), (1385115, False), (1231212, False), (1285769, False), (1158074, False)], [(1178218, '', False), (383796, '', False), (6880, '', False), (739693, '', False), (1274951, '', False), (739986, '', False), (401275, '', False), (593274, '', False), (952169, '', False), (1200197, '', False), (122829, '', False), (309253, '', False), (351821, '', False), (956645, '', False), (29436, '', False), (20262, '', False), (1429760, '', False), (40833, 'Umamusume: Pretty Derby', False), (1162890, 'Epic Seven', False), (22246, 'Slay the Spire 2', False), (965932, 'Warhammer 40,000: Gladius - Relics o', False), (1177151, 'ROB RUN', False), (976559, '', False), (131786, '', False), (900421, '', False), (428227, '', False), (970468, '', False), (1318025, '', False), (957597, '', False), (34770, '', False), (1257087, '', False), (206875, '', False), (1290028, '', False), (1279100, '', False), (1022387, '', False), (1064661, '', False), (15063, '', False), (108410, '', False), (1428997, '', False), (173761, '', False)], [1383062, 209811, 1411117, 1254791]))",
   "last_steam_fast_sig": "(['76561198140782132'], [('76561197963172584', '', False), ('76561197979883434', '', False), ('76561197981615184', '', False), ('76561197993922195', 'The King is Watching', False), ('76561198021071716', '', False), ('76561198034510845', '', False), ('76561198058548575', '', False), ('76561198062871244', 'Football Manager 2024', False), ('76561198076576055', '', False), ('76561198089948995', '', False), ('76561198264285149', '', False)])",
-  "last_sync_ts": 1795109152,
+  "last_sync_ts": 1795109452,
   "layout_version": 5,
-  "other_br_rotation_offset": 184,
-  "panel_links_message_id": "1573026674419699814",
-  "panel_message_id": "1573026670548357130",
+  "other_br_rotation_offset": 32,
+  "panel_links_message_id": "1573027939338158142",
+  "panel_message_id": "1573027934393082042",
   "panel_message_ids": [
-    "1573026670548357130",
-    "1573026672779989134",
-    "1573026674419699814"
+    "1573027934393082042",
+    "1573027937630814218",
+    "1573027939338158142"
   ],
-  "panel_outros_message_id": "1573026672779989134",
+  "panel_outros_message_id": "1573027937630814218",
   "veteranos_steam_cache": {
     "1097608": "76561199498421192",
     "23250": "76561198028378060",
