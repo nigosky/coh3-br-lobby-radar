@@ -69,8 +69,12 @@ COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
 OTHER_BR_ACTIVE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400  # 30 dias (1 mês)
 OTHER_BR_INVISIBLE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400
 MAX_OTHER_BR_ACTIVE_PER_CYCLE = 220
-OTHER_BR_ROTATION_SLICE = 40
+OTHER_BR_ROTATION_SLICE = 64
+OTHER_BR_HOT_ONLINE_PIN_SEC = 90 * 60     # 90 min: fixa no ciclo de 5 min quem foi visto online há pouco
+OTHER_BR_HOT_INGAME_PIN_SEC = 2 * 3600    # 2h: fixa quem foi visto jogando há pouco
+OTHER_BR_HOT_MATCH_PIN_SEC = 3 * 3600     # 3h: fixa quem jogou partida CoH3 há pouco
 MAX_OTHER_BR_RELIC_INVISIBLE_CHECK = 200
+MAX_OTHER_BR_RECENT_HISTORY_CHECK = 25    # Consulta getRecentMatchHistoryByProfileId (Custom / vs IA) para online com jogos ocultos
 RECENT_RELIC_WINDOW_MINUTES = 35
 STEAM_INGAME_VISIBLE_TTL_SEC = 14 * 86400
 STEAM_INGAME_VISIBLE_REFRESH_SEC = 6 * 3600
@@ -309,8 +313,10 @@ def _select_other_br_candidates(
     """
     Seleciona EXCLUSIVAMENTE 'Outros Brasileiros' ATIVOS no CoH3 (partida nos últimos 30 dias):
     - Inativos (> 30 dias sem partida no CoH3 ou sem histórico) jamais são checados ou exibidos.
-    - Os 220 de maior evidência (ELO alto em qualquer modo/facção + maior atividade no CoH3) são
-      verificados em TODOS os ciclos de 5 min; o excedente ativo (<= 30d) rotaciona em fatias de 40 contas.
+    - Jogadores vistos online/em jogo/com partida há pouco (independente do ELO!) são FIXADOS em TODOS
+      os ciclos de 5 min para não desaparecerem na fila de rotação.
+    - As demais vagas até `MAX_OTHER_BR_ACTIVE_PER_CYCLE` (220) são preenchidas pelos de maior evidência
+      (ELO alto + atividade no CoH3), e o excedente dormente rotaciona em fatias de `OTHER_BR_ROTATION_SLICE` (64).
     """
     active_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
     active_rows = [
@@ -338,9 +344,24 @@ def _select_other_br_candidates(
             int(r["profile_id"]),
         )
 
+    hot_online_cutoff = now - OTHER_BR_HOT_ONLINE_PIN_SEC
+    hot_ingame_cutoff = now - OTHER_BR_HOT_INGAME_PIN_SEC
+    hot_match_cutoff = now - OTHER_BR_HOT_MATCH_PIN_SEC
+
+    def _is_hot_player(r: dict[str, Any]) -> bool:
+        return (
+            int(r.get("last_seen_online_ts", 0) or 0) >= hot_online_cutoff
+            or int(r.get("last_seen_ingame_ts", 0) or 0) >= hot_ingame_cutoff
+            or int(r.get("last_match_date", 0) or 0) >= hot_match_cutoff
+        )
+
     active_rows.sort(key=_candidate_sort_key)
-    selected = active_rows[:MAX_OTHER_BR_ACTIVE_PER_CYCLE]
-    overflow_active = active_rows[MAX_OTHER_BR_ACTIVE_PER_CYCLE:]
+    hot_rows = [r for r in active_rows if _is_hot_player(r)]
+    regular_rows = [r for r in active_rows if not _is_hot_player(r)]
+    prioritized_rows = hot_rows + regular_rows
+
+    selected = prioritized_rows[:MAX_OTHER_BR_ACTIVE_PER_CYCLE]
+    overflow_active = prioritized_rows[MAX_OTHER_BR_ACTIVE_PER_CYCLE:]
 
     next_offset = 0
     if overflow_active:
@@ -375,6 +396,28 @@ def _call_batch_presence(
     if "stop_on_rate_limit" in params:
         kwargs["stop_on_rate_limit"] = stop_on_rate_limit
     return fn(steam_ids, **kwargs)
+
+
+def _call_latest_matches_batch(
+    r_client: Any,
+    profile_ids: list[int],
+    *,
+    max_workers: int = 3,
+) -> dict[int, dict[str, Any]]:
+    fn = getattr(r_client, "fetch_latest_matches_batch", None)
+    if fn is None or not profile_ids:
+        return {}
+    try:
+        params = inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        params = {}
+    kwargs: dict[str, Any] = {}
+    if "max_workers" in params:
+        kwargs["max_workers"] = max_workers
+    raw = fn(profile_ids, **kwargs)
+    if not isinstance(raw, dict):
+        return {}
+    return {int(pid): m for pid, m in raw.items() if isinstance(m, dict)}
 
 
 def run_lobby_radar_sync(
@@ -793,6 +836,47 @@ def run_lobby_radar_sync(
                         community_dirty = True
         except Exception as exc:
             logger.debug("Falha transitória ao checar invisíveis de Outros Brasileiros: %s", redact_secrets(exc))
+
+    # `getPersonalStat` enxerga apenas partidas ranqueadas (1v1-4v4) e ignora Customizadas / vs IA.
+    # Para contas ONLINE livres com detalhes de jogos ocultos na Steam ainda sem partida recente,
+    # consulta `getRecentMatchHistoryByProfileId` (priorizando quem jogou mais recentemente).
+    recent_cutoff_sec = RECENT_RELIC_WINDOW_MINUTES * 60
+    unmatched_hidden_online = [
+        pid
+        for pid in online_hidden_candidates
+        if not (
+            pid in other_latest_matches
+            and (now - int(other_latest_matches[pid].get("completion_time", 0) or 0)) <= recent_cutoff_sec
+        )
+    ]
+    if unmatched_hidden_online and hasattr(r_client, "fetch_latest_matches_batch"):
+        unmatched_hidden_online.sort(
+            key=lambda p: (
+                -int((community_players.get(str(p)) or {}).get("last_match_date", 0) or 0),
+                -int((community_players.get(str(p)) or {}).get("total_matches", 0) or 0),
+                p,
+            )
+        )
+        try:
+            hist_matches = _call_latest_matches_batch(
+                r_client,
+                unmatched_hidden_online[:MAX_OTHER_BR_RECENT_HISTORY_CHECK],
+                max_workers=3,
+            )
+            for pid, m in hist_matches.items():
+                ct = int(m.get("completion_time", 0) or 0)
+                if ct <= 0:
+                    continue
+                if (now - ct) <= recent_cutoff_sec:
+                    prev_m = other_latest_matches.get(pid)
+                    if prev_m is None or ct > int(prev_m.get("completion_time", 0)):
+                        other_latest_matches[pid] = m
+                crow = community_players.get(str(pid))
+                if crow is not None and ct > int(crow.get("last_match_date", 0) or 0):
+                    crow["last_match_date"] = ct
+                    community_dirty = True
+        except Exception as exc:
+            logger.debug("Falha transitória ao checar histórico Custom/IA de Outros Brasileiros: %s", redact_secrets(exc))
 
     if community_dirty:
         community_cache["players"] = community_players

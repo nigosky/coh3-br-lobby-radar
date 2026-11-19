@@ -17,7 +17,7 @@ from discord_lobby import (
     build_lobby_radar_image_payload,
     build_lobby_radar_links_payload,
 )
-from lobby_radar import run_lobby_radar_sync
+from lobby_radar import _select_other_br_candidates, run_lobby_radar_sync
 
 FAKE_WEBHOOK = "/".join(
     (
@@ -899,6 +899,187 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             saved2 = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(saved2["veteranos_steam_privacy"]["1226910"], "public")
             self.assertEqual(saved2["veteranos_steam_privacy"]["1022333"], "public_games_hidden")
+
+    def test_pax_xavier_regression_hot_pinning_and_custom_match_detection_for_outros_br(self) -> None:
+        """
+        Reproduz o caso `Pax Xavier youtube` (`pid=13516`, ELO 908, 2330 partidas):
+        1) Mesmo abaixo do top 220 em ELO, jogadores vistos online/ativos recentemente são FIXADOS
+           em todos os ciclos de 5 min (nunca somem por 20 min na fila de rotação!).
+        2) Quando o perfil oculta jogos na Steam e joga Custom/vs IA (que `getPersonalStat` não vê),
+           `fetch_latest_matches_batch` detecta a partida recente e promove o jogador para `in_coh3`.
+        """
+        now = 1_800_000_000
+        pax_pid = 13516
+        pax_sid = "76561198000943380"
+
+        # Monta 260 jogadores dormentes de ELO alto (1500+) + Pax Xavier (ELO 908, visto online há 5 min)
+        players: dict[str, dict[str, Any]] = {}
+        for i in range(260):
+            pid = 800000 + i
+            players[str(pid)] = {
+                "profile_id": pid,
+                "steam_id": f"76561198800{i:06d}",
+                "alias": f"DormantHigh{i:03d}",
+                "max_elo": 1550,
+                "last_match_date": now - 5 * 86400,
+                "total_matches": 300,
+                "last_seen_online_ts": 0,
+            }
+        players[str(pax_pid)] = {
+            "profile_id": pax_pid,
+            "steam_id": pax_sid,
+            "alias": "Pax Xavier youtube",
+            "max_elo": 908,
+            "last_match_date": now - 2 * 3600,
+            "total_matches": 2330,
+            "last_seen_online_ts": now - 300,
+        }
+
+        # Verifica que Pax Xavier entra em TODOS os offsets de rotação (jamais cai no overflow de 25 min!)
+        for rot in (0, 40, 80, 120):
+            selected, _ = _select_other_br_candidates(players, now=now, rotation_offset=rot)
+            sel_pids = {int(r["profile_id"]) for r in selected}
+            self.assertIn(pax_pid, sel_pids, msg=f"Pax Xavier sumiu na rotação rot={rot}")
+
+        # Agora testa fim a fim: Steam oculta jogos, getPersonalStat só vê ranqueada de 2h atrás,
+        # mas fetch_latest_matches_batch vê partida Custom concluída há 10 min!
+        class _PaxPresenceClient:
+            def fetch_batch_presence(
+                self,
+                steam_ids: list[str],
+                max_workers: int = 6,
+                pace_delay_sec: float = 0.0,
+                stop_on_rate_limit: bool = False,
+            ) -> dict[str, dict[str, Any]]:
+                _ = (max_workers, pace_delay_sec, stop_on_rate_limit)
+                out: dict[str, dict[str, Any]] = {}
+                for sid in steam_ids:
+                    if sid == pax_sid:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "privacy_state": "public",
+                            "visibility_state": "3",
+                            "has_public_game_details": False,
+                            "has_coh3_in_recent_games": False,
+                            "most_played_count": 0,
+                            "online_state": "online",
+                            "is_in_coh3": False,
+                            "is_online_steam": True,
+                            "is_away": False,
+                            "other_game": "",
+                            "avatar_url": "",
+                        }
+                    else:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "privacy_state": "public",
+                            "visibility_state": "3",
+                            "has_public_game_details": True,
+                            "has_coh3_in_recent_games": True,
+                            "most_played_count": 1,
+                            "online_state": "offline",
+                            "is_in_coh3": False,
+                            "is_online_steam": False,
+                            "is_away": False,
+                            "other_game": "",
+                            "avatar_url": "",
+                        }
+                return out
+
+        class _PaxRelicClient:
+            def __init__(self) -> None:
+                self.history_checked_pids: list[int] = []
+
+            def fetch_latest_matches_and_br_participants(
+                self,
+                profile_ids: list[int],
+                max_workers: int = 6,
+            ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+                _ = (profile_ids, max_workers)
+                return {}, {}, {}
+
+            def fetch_latest_matches_batch(
+                self,
+                profile_ids: list[int],
+                max_workers: int = 3,
+            ) -> dict[int, dict[str, Any]]:
+                _ = max_workers
+                self.history_checked_pids.extend(profile_ids)
+                if pax_pid in profile_ids:
+                    return {
+                        pax_pid: {
+                            "profile_id": pax_pid,
+                            "match_id": 99911,
+                            "completion_time": now - 10 * 60,  # Partida Custom concluída há 10 min!
+                            "mode": "Custom",
+                        }
+                    }
+                return {}
+
+            def fetch_peak_elo_by_profile_ids(self, profile_ids: list[int]) -> dict[int, int]:
+                return {pid: 1200 for pid in profile_ids}
+
+            def fetch_profile_stats_batch(
+                self,
+                profile_ids: list[int],
+                pace_delay_sec: float = 0.22,
+            ) -> dict[int, dict[str, Any]]:
+                _ = pace_delay_sec
+                if pax_pid in profile_ids:
+                    # getPersonalStat só enxerga a última ranqueada (2h atrás), não a Custom!
+                    return {
+                        pax_pid: {
+                            "profile_id": pax_pid,
+                            "steam_id": pax_sid,
+                            "alias": "Pax Xavier youtube",
+                            "country": "br",
+                            "max_elo": 908,
+                            "last_match_date": now - 2 * 3600,
+                            "last_match_mode": "4v4",
+                            "total_matches": 2330,
+                        }
+                    }
+                return {}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            comm_path = Path(tmp) / "br_community.json"
+            comm_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 2,
+                        "updated_at": now - 600,
+                        "source": "open_data",
+                        "players": players,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            fake_discord = _FakeDiscordClient()
+            fake_relic = _PaxRelicClient()
+
+            summary = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=fake_discord,
+                presence_client=_PaxPresenceClient(),  # type: ignore[arg-type]
+                relic_client=fake_relic,  # type: ignore[arg-type]
+                now_ts=now,
+            )
+            self.assertIn(pax_pid, fake_relic.history_checked_pids)
+            self.assertEqual(summary["other_br_in_coh3"], 1)
+            self.assertEqual(summary["other_br_online_steam"], 0)
+
+            updated_comm = json.loads(comm_path.read_text(encoding="utf-8"))
+            self.assertEqual(updated_comm["players"][str(pax_pid)]["last_match_date"], now - 10 * 60)
+
+            links_post = fake_discord.calls[2][2]
+            assert links_post is not None
+            oth_desc = links_post["embeds"][1]["description"]
+            self.assertIn("Pax Xavier youtube", oth_desc)
+            self.assertIn("no CoH3", oth_desc)
 
 
 if __name__ == "__main__":
