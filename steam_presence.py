@@ -979,13 +979,23 @@ RELIC_PUBLIC_XML_LAG_PROMOTE_SEC = 300  # 5 min: cobre atraso de cache do XML St
 PROMINENCE_TIER_ORDER: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
 
 
-def steam_presence_hides_coh3_game(pres: dict[str, Any] | None) -> bool:
+def steam_presence_hides_coh3_game(
+    pres: dict[str, Any] | None,
+    *,
+    known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
+) -> bool:
     """
     Indica se o XML público da Steam oculta o status de jogo CoH3 deste perfil:
-    - 'Detalhes dos jogos' está em Amigos/Privado (`has_public_game_details == False`), OU
-    - CoH3 está marcado individualmente como privado (ausente em `<mostPlayedGames>` com < 3 jogos).
+    - Retorna False se o perfil já exibe `<inGameInfo>` (`is_in_coh3` ou `other_game`) OU foi observado
+      recentemente com `<inGameInfo>` (`known_ingame_visible_sids`, diferenciando contas que apenas ocultam
+      horas jogadas/<mostPlayedGames> mas expõem o jogo atual!).
+    - Caso contrário, retorna True se 'Detalhes dos jogos' está em Amigos/Privado (`has_public_game_details == False`)
+      ou se CoH3 está marcado individualmente como privado (ausente em `<mostPlayedGames>` com < 3 jogos).
     """
-    if not isinstance(pres, dict) or pres.get("is_in_coh3"):
+    if not isinstance(pres, dict) or pres.get("is_in_coh3") or str(pres.get("other_game") or "").strip():
+        return False
+    sid = str(pres.get("steam_id") or "").strip()
+    if sid and known_ingame_visible_sids and sid in known_ingame_visible_sids:
         return False
     has_gd = bool(pres.get("has_public_game_details", True))
     if not has_gd:
@@ -1051,6 +1061,7 @@ def _build_category_lists(
     recent_cutoff_sec: int,
     category: str,
     max_coh3_inactivity_sec: int | None = None,
+    known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], int]:
     canonical_entries: dict[int, dict[str, Any]] = {}
     secondary_rows: list[dict[str, Any]] = []
@@ -1138,9 +1149,10 @@ def _build_category_lists(
         # na Steam (jamais offline, jamais em outro jogo, jamais ausente):
         # - Se o perfil Steam oculta "Detalhes dos jogos"/CoH3 (ou relata `in-game` sem nome): janela de 35 min
         #   para manter o jogador em "Jogando CoH3" durante partidas consecutivas e fila/menu.
-        # - Se os detalhes são públicos: janela curta de 5 min (300s) para cobrir atraso de cache do XML Steam.
+        # - Se os detalhes são públicos (ou `<inGameInfo>` já foi observado): janela curta de 5 min (300s).
         steam_hides_coh3_game = bool(online_pres_candidates) and all(
-            steam_presence_hides_coh3_game(p) for p in online_pres_candidates
+            steam_presence_hides_coh3_game(p, known_ingame_visible_sids=known_ingame_visible_sids)
+            for p in online_pres_candidates
         )
         steam_in_unknown_game = any(
             str(p.get("online_state") or "").lower() == "in-game"
@@ -1274,6 +1286,7 @@ def build_lobby_radar_snapshot(
     other_elo_by_pid: dict[int, int] | None = None,
     other_br_total_catalog: int | None = None,
     other_br_active_days: int = OTHER_BR_ACTIVE_COH3_DAYS,
+    known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """
     Consolida as duas categorias do Radar de Lobby:
@@ -1296,6 +1309,7 @@ def build_lobby_radar_snapshot(
         now=now,
         recent_cutoff_sec=recent_cutoff_sec,
         category="veteranos",
+        known_ingame_visible_sids=known_ingame_visible_sids,
     )
 
     # Garante separação estrita: nenhum Veterano (nem conta secundária) pode aparecer em "Outros Brasileiros"
@@ -1338,6 +1352,7 @@ def build_lobby_radar_snapshot(
         recent_cutoff_sec=recent_cutoff_sec,
         category="outros_brasileiros",
         max_coh3_inactivity_sec=other_inactivity_sec,
+        known_ingame_visible_sids=known_ingame_visible_sids,
     )
 
     xml_ok_accounts = sum(1 for v in merged_other_pres.values() if v.get("ok"))
