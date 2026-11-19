@@ -70,6 +70,7 @@ jobs:
           DISCORD_LOBBY_WEBHOOK_URL: ${{ secrets.DISCORD_LOBBY_WEBHOOK_URL }}
           FORCE_SYNC: ${{ (github.event_name == 'workflow_dispatch' && inputs.force_sync) || false }}
           RELAY_ENABLED_VAR: ${{ vars.RADAR_AUTO_RELAY_ENABLED }}
+          RELAY_CYCLES_VAR: ${{ vars.RADAR_RELAY_CYCLES }}
           AUTO_RELAY_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.auto_relay }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
@@ -79,8 +80,11 @@ jobs:
             exit 0
           fi
 
-          # Kill-switch administrativo via Repository Variable RADAR_AUTO_RELAY_ENABLED=false
+          # Validacao numerica estrita [1..24] (padrao 12 ciclos = 60 min)
           CYCLES=12
+          if [[ "${RELAY_CYCLES_VAR:-}" =~ ^[0-9]+$ ]] && [ "${RELAY_CYCLES_VAR}" -ge 1 ] && [ "${RELAY_CYCLES_VAR}" -le 24 ]; then
+            CYCLES="${RELAY_CYCLES_VAR}"
+          fi
           if [ "${RELAY_ENABLED_VAR:-true}" = "false" ]; then
             CYCLES=1
           elif [ "${EVENT_NAME}" = "workflow_dispatch" ] && [ "${AUTO_RELAY_INPUT:-true}" = "false" ]; then
