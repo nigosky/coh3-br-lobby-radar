@@ -222,6 +222,8 @@ def _make_empty_presence(steam_id: str, privacy_state: str = "error") -> dict[st
         "privacy_state": privacy_state,
         "visibility_state": "",
         "has_public_game_details": False,
+        "has_coh3_in_recent_games": False,
+        "most_played_count": 0,
         "online_state": "offline",
         "is_in_coh3": False,
         "is_online_steam": False,
@@ -286,6 +288,8 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
             "privacy_state": privacy_state,
             "visibility_state": visibility_raw,
             "has_public_game_details": False,
+            "has_coh3_in_recent_games": False,
+            "most_played_count": 0,
             "online_state": "offline",
             "is_in_coh3": False,
             "is_online_steam": False,
@@ -304,25 +308,53 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
 
     # Extrai jogo atual EXCLUSIVAMENTE do bloco `<profile>/<inGameInfo>` (jamais de `<mostPlayedGames>`!)
     in_game_el = root.find("./inGameInfo")
+    most_played_items = root.findall("./mostPlayedGames/mostPlayedGame")
+    hours_2wk_raw = _clean_xml_text(root.findtext("./hoursPlayed2Wk"), max_len=16).replace(",", ".")
+    try:
+        hours_2wk_val = float(hours_2wk_raw) if hours_2wk_raw else 0.0
+    except ValueError:
+        hours_2wk_val = 0.0
+
+    # `<mostPlayedGames>` é lido APENAS como indicador de privacidade (se CoH3 aparece nos detalhes públicos);
+    # JAMAIS marca `is_in_coh3 = True`!
+    has_coh3_in_recent_games = False
+    for mp in most_played_items:
+        mp_name = _clean_xml_text(mp.findtext("./gameName"), max_len=80).lower()
+        mp_link = _clean_xml_text(mp.findtext("./gameLink"), max_len=160).lower()
+        if f"/app/{COH3_STEAM_APP_ID}" in mp_link or "company of heroes 3" in mp_name:
+            has_coh3_in_recent_games = True
+            break
+
+    # Steam XML costuma emitir `<hoursPlayed2Wk>0.0</hoursPlayed2Wk>` ou `<mostPlayedGames/>` vazio mesmo
+    # quando "Detalhes dos jogos" está em Amigos/Privado — exige > 0.0, item real ou `<inGameInfo>`!
     has_public_game_details = bool(
         in_game_el is not None
-        or root.find("./mostPlayedGames") is not None
-        or _clean_xml_text(root.findtext("./hoursPlayed2Wk"), max_len=16)
+        or len(most_played_items) > 0
+        or hours_2wk_val > 0.0
     )
+
     in_game_name = ""
     in_game_link = ""
+    in_game_icon = ""
     if online_state == "in-game" and in_game_el is not None:
         in_game_name = _clean_xml_text(in_game_el.findtext("./gameName"), max_len=80)
         in_game_link = _clean_xml_text(in_game_el.findtext("./gameLink"), max_len=160)
+        in_game_icon = _clean_xml_text(in_game_el.findtext("./gameIcon"), max_len=200)
 
     in_game_name_lower = in_game_name.lower()
     in_game_link_lower = in_game_link.lower()
+    in_game_icon_lower = in_game_icon.lower()
 
     is_in_coh3 = online_state == "in-game" and (
         f"/app/{COH3_STEAM_APP_ID}" in in_game_link_lower
+        or f"/{COH3_STEAM_APP_ID}/" in in_game_icon_lower
         or in_game_name_lower == "company of heroes 3"
         or "company of heroes 3" in in_game_name_lower
-        or (in_game_el is None and "in-game" in state_msg_lower and "company of heroes 3" in state_msg_lower)
+        or (
+            in_game_el is None
+            and ("in-game" in state_msg_lower or "em jogo" in state_msg_lower)
+            and "company of heroes 3" in state_msg_lower
+        )
     )
 
     # Se `onlineState` veio como `in-game`, mas não há `<inGameInfo>` nem menção `In-Game` em `stateMessage`
@@ -331,8 +363,8 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
     if online_state == "in-game" and not is_in_coh3:
         if in_game_name:
             other_game = in_game_name[:36]
-        elif state_msg_lower.startswith("in-game"):
-            cleaned_msg = re.sub(r"(?i)^in-game[:\s-]*", "", state_msg).strip()
+        elif state_msg_lower.startswith(("in-game", "em jogo")):
+            cleaned_msg = re.sub(r"(?i)^(?:in-game|em jogo)[:\s-]*", "", state_msg).strip()
             other_game = cleaned_msg[:36]
 
     is_online_steam = online_state in ("online", "in-game")
@@ -345,6 +377,8 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
         "privacy_state": privacy_state,
         "visibility_state": visibility_raw,
         "has_public_game_details": has_public_game_details,
+        "has_coh3_in_recent_games": bool(has_coh3_in_recent_games),
+        "most_played_count": len(most_played_items),
         "online_state": online_state,
         "is_in_coh3": bool(is_in_coh3),
         "is_online_steam": bool(is_online_steam),
@@ -619,9 +653,7 @@ class RelicActivityClient:
         if ct <= 0:
             return None
         mt_id = int(latest.get("matchtype_id", -1))
-        if 5 <= mt_id <= 16:
-            return None  # Ignora Co-Op vs IA puro
-        mode_lbl = FALLBACK_MATCH_TYPES.get(mt_id, "Partida")
+        mode_lbl = "vs IA" if (5 <= mt_id <= 16) else FALLBACK_MATCH_TYPES.get(mt_id, "Partida")
         return {
             "profile_id": pid,
             "match_id": int(latest.get("id", 0) or 0),
@@ -688,9 +720,7 @@ class RelicActivityClient:
                 if ct <= 0:
                     continue
                 mt_id = int(mstat.get("matchtype_id", -1))
-                if 5 <= mt_id <= 16:
-                    continue
-                mode_lbl = FALLBACK_MATCH_TYPES.get(mt_id, "Partida")
+                mode_lbl = "vs IA" if (5 <= mt_id <= 16) else FALLBACK_MATCH_TYPES.get(mt_id, "Partida")
                 match_id = int(mstat.get("id", 0) or 0)
                 for rep in mstat.get("matchhistoryreportresults") or []:
                     if not isinstance(rep, dict):
@@ -945,7 +975,24 @@ class RelicActivityClient:
 
 
 OTHER_BR_ACTIVE_COH3_DAYS = 30  # Máximo de 30 dias (1 mês) sem jogar CoH3 para constar em "Outros Brasileiros"
+RELIC_PUBLIC_XML_LAG_PROMOTE_SEC = 300  # 5 min: cobre atraso de cache do XML Steam para perfis com detalhes públicos
 PROMINENCE_TIER_ORDER: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
+
+
+def steam_presence_hides_coh3_game(pres: dict[str, Any] | None) -> bool:
+    """
+    Indica se o XML público da Steam oculta o status de jogo CoH3 deste perfil:
+    - 'Detalhes dos jogos' está em Amigos/Privado (`has_public_game_details == False`), OU
+    - CoH3 está marcado individualmente como privado (ausente em `<mostPlayedGames>` com < 3 jogos).
+    """
+    if not isinstance(pres, dict) or pres.get("is_in_coh3"):
+        return False
+    has_gd = bool(pres.get("has_public_game_details", True))
+    if not has_gd:
+        return True
+    has_coh3_recent = bool(pres.get("has_coh3_in_recent_games", True))
+    mp_count = int(pres.get("most_played_count", 3) or 0)
+    return (not has_coh3_recent) and mp_count < 3
 
 
 def classify_other_br_prominence(
@@ -1047,8 +1094,9 @@ def _build_category_lists(
         pres_candidates = [presence_by_steam.get(s) for s in meta["steam_ids_all"] if s in presence_by_steam]
         pres_candidates = [p for p in pres_candidates if p is not None]
 
-        is_in_coh3 = any(bool(p.get("is_in_coh3")) for p in pres_candidates)
+        is_in_coh3_steam = any(bool(p.get("is_in_coh3")) for p in pres_candidates)
         is_online = any(bool(p.get("is_online_steam")) for p in pres_candidates)
+        online_pres_candidates = [p for p in pres_candidates if p.get("is_online_steam")]
         active_steam_id = meta["steam_id"]
         avatar_url = ""
         other_game = ""
@@ -1086,6 +1134,29 @@ def _build_category_lists(
         )
         total_matches = max(0, int(meta.get("total_matches", 0) or 0))
 
+        # Promoção segura para `in_coh3` por corroboração da Relic API quando o jogador está ONLINE e livre
+        # na Steam (jamais offline, jamais em outro jogo, jamais ausente):
+        # - Se o perfil Steam oculta "Detalhes dos jogos"/CoH3 (ou relata `in-game` sem nome): janela de 35 min
+        #   para manter o jogador em "Jogando CoH3" durante partidas consecutivas e fila/menu.
+        # - Se os detalhes são públicos: janela curta de 5 min (300s) para cobrir atraso de cache do XML Steam.
+        steam_hides_coh3_game = bool(online_pres_candidates) and all(
+            steam_presence_hides_coh3_game(p) for p in online_pres_candidates
+        )
+        steam_in_unknown_game = any(
+            str(p.get("online_state") or "").lower() == "in-game"
+            and not p.get("is_in_coh3")
+            and not str(p.get("other_game") or "").strip()
+            for p in online_pres_candidates
+        )
+        is_in_coh3_via_relic = False
+        if (not is_in_coh3_steam) and is_online and (not other_game) and (not is_away) and last_ct > 0:
+            if steam_hides_coh3_game or steam_in_unknown_game:
+                is_in_coh3_via_relic = age_sec <= recent_cutoff_sec
+            else:
+                is_in_coh3_via_relic = age_sec <= RELIC_PUBLIC_XML_LAG_PROMOTE_SEC
+
+        is_in_coh3 = is_in_coh3_steam or is_in_coh3_via_relic
+
         if category == "outros_brasileiros":
             prom_tier, prom_score = classify_other_br_prominence(
                 max_elo=max_elo,
@@ -1114,12 +1185,18 @@ def _build_category_lists(
             "last_coh3_age_days": int(coh3_age_sec // 86400) if coh3_age_sec is not None else None,
             "other_game": other_game,
             "is_away": is_away,
+            "in_coh3_via_relic": bool(is_in_coh3_via_relic),
             "category": category,
             "steam_profile_url": f"https://steamcommunity.com/profiles/{active_steam_id}" if active_steam_id else "",
         }
 
         if is_in_coh3:
-            if last_ct > 0 and age_sec <= 900:
+            if is_in_coh3_via_relic:
+                if age_sec <= 900:
+                    status_note = f"No CoH3 (Relic) • {last_mode or 'partida'} há {max(1, age_min)} min (menu/fila)"
+                else:
+                    status_note = f"No CoH3 (Relic) • {last_mode or 'partida'} há {max(1, age_min)} min (jogos ocultos)"
+            elif last_ct > 0 and age_sec <= 900:
                 status_note = f"No CoH3 • saiu de {last_mode or 'partida'} há {max(1, age_min)} min (provável menu/fila!)"
             else:
                 status_note = "Com Company of Heroes 3 aberto agora"

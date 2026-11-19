@@ -5,12 +5,14 @@ from __future__ import annotations
 import unittest
 
 from steam_presence import (
+    RelicActivityClient,
     SteamPresenceClient,
     build_lobby_radar_snapshot,
     classify_other_br_prominence,
     extract_br_players_from_opendata_payload,
     extract_br_players_from_relic_leaderboard_payload,
     parse_steam_profile_xml,
+    steam_presence_hides_coh3_game,
 )
 
 SAMPLE_SID = "76561197963172584"
@@ -421,6 +423,202 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         extracted = extract_br_players_from_opendata_payload(opendata)
         self.assertEqual(extracted[700001]["max_elo"], 1520)
         self.assertEqual(extracted[700001]["total_matches"], 110)
+
+    def test_xml_hidden_game_details_with_zero_hours_and_empty_most_played_tags(self) -> None:
+        """Steam XML pode retornar `<hoursPlayed2Wk>0.0</hoursPlayed2Wk>` e `<mostPlayedGames/>` mesmo com jogos ocultos."""
+        gaules_sid = "76561198264285149"
+        xml_zero_hours = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <profile>
+            <steamID64>{gaules_sid}</steamID64>
+            <onlineState>online</onlineState>
+            <stateMessage><![CDATA[Online]]></stateMessage>
+            <privacyState>public</privacyState>
+            <visibilityState>3</visibilityState>
+            <hoursPlayed2Wk>0.0</hoursPlayed2Wk>
+            <mostPlayedGames></mostPlayedGames>
+        </profile>"""
+        parsed_hidden = parse_steam_profile_xml(xml_zero_hours, gaules_sid)
+        self.assertTrue(parsed_hidden["ok"])
+        self.assertTrue(parsed_hidden["is_online_steam"])
+        self.assertFalse(parsed_hidden["is_in_coh3"])
+        self.assertFalse(parsed_hidden["has_public_game_details"])
+        self.assertFalse(parsed_hidden["has_coh3_in_recent_games"])
+        self.assertEqual(parsed_hidden["most_played_count"], 0)
+        self.assertTrue(steam_presence_hides_coh3_game(parsed_hidden))
+
+        xml_per_game_private = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <profile>
+            <steamID64>{gaules_sid}</steamID64>
+            <onlineState>online</onlineState>
+            <stateMessage><![CDATA[Online]]></stateMessage>
+            <privacyState>public</privacyState>
+            <visibilityState>3</visibilityState>
+            <hoursPlayed2Wk>14.2</hoursPlayed2Wk>
+            <mostPlayedGames>
+                <mostPlayedGame>
+                    <gameName><![CDATA[Counter-Strike 2]]></gameName>
+                    <gameLink><![CDATA[https://steamcommunity.com/app/730]]></gameLink>
+                </mostPlayedGame>
+            </mostPlayedGames>
+        </profile>"""
+        parsed_per_game = parse_steam_profile_xml(xml_per_game_private, gaules_sid)
+        self.assertTrue(parsed_per_game["has_public_game_details"])
+        self.assertFalse(parsed_per_game["has_coh3_in_recent_games"])
+        self.assertEqual(parsed_per_game["most_played_count"], 1)
+        self.assertTrue(steam_presence_hides_coh3_game(parsed_per_game))
+
+        xml_public_coh3 = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <profile>
+            <steamID64>{gaules_sid}</steamID64>
+            <onlineState>online</onlineState>
+            <stateMessage><![CDATA[Online]]></stateMessage>
+            <privacyState>public</privacyState>
+            <visibilityState>3</visibilityState>
+            <hoursPlayed2Wk>12.5</hoursPlayed2Wk>
+            <mostPlayedGames>
+                <mostPlayedGame>
+                    <gameName><![CDATA[Company of Heroes 3]]></gameName>
+                    <gameLink><![CDATA[https://steamcommunity.com/app/1677280]]></gameLink>
+                </mostPlayedGame>
+            </mostPlayedGames>
+        </profile>"""
+        parsed_pub = parse_steam_profile_xml(xml_public_coh3, gaules_sid)
+        self.assertTrue(parsed_pub["has_public_game_details"])
+        self.assertTrue(parsed_pub["has_coh3_in_recent_games"])
+        self.assertFalse(parsed_pub["is_in_coh3"])
+        self.assertFalse(steam_presence_hides_coh3_game(parsed_pub))
+
+    def test_gaules_regression_online_with_hidden_game_details_promoted_to_coh3_without_false_positives(self) -> None:
+        """Reproduz exatamente o caso `gaules`: online na Steam com jogos ocultos + partida recente na Relic -> `in_coh3`."""
+        now = 1_800_000_000
+        gaules_sid = "76561198264285149"
+        xml_gaules = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <profile>
+            <steamID64>{gaules_sid}</steamID64>
+            <onlineState>online</onlineState>
+            <stateMessage><![CDATA[Online]]></stateMessage>
+            <privacyState>public</privacyState>
+            <visibilityState>3</visibilityState>
+            <hoursPlayed2Wk>0.0</hoursPlayed2Wk>
+            <mostPlayedGames/>
+        </profile>"""
+        pres_gaules = parse_steam_profile_xml(xml_gaules, gaules_sid)
+
+        # 1) gaules jogou há 1 min e depois há 22 min (durante próxima partida) -> SEMPRE em `in_coh3`!
+        for age_sec, expected_sub in ((60, "menu/fila"), (22 * 60, "jogos ocultos")):
+            snap = build_lobby_radar_snapshot(
+                custom_players=[{"profile_id": 1022333, "steam_id": gaules_sid, "original_alias": "gaules"}],
+                presence_by_steam={gaules_sid: pres_gaules},
+                latest_matches_by_pid={1022333: {"profile_id": 1022333, "completion_time": now - age_sec, "mode": "4v4"}},
+                elo_by_pid={1022333: 1318},
+                now_ts=now,
+            )
+            self.assertEqual([p["profile_id"] for p in snap["veteranos"]["in_coh3"]], [1022333])
+            self.assertEqual(snap["veteranos"]["online_steam"], [])
+            self.assertTrue(snap["veteranos"]["in_coh3"][0]["in_coh3_via_relic"])
+            self.assertIn(expected_sub, snap["veteranos"]["in_coh3"][0]["status_note"])
+
+        # 2) Guardas anti-falso-positivo para jogos ocultos:
+        # 2a) Partida há 45 min (> 35 min) -> volta para online_steam
+        snap_stale = build_lobby_radar_snapshot(
+            custom_players=[{"profile_id": 1022333, "steam_id": gaules_sid, "original_alias": "gaules"}],
+            presence_by_steam={gaules_sid: pres_gaules},
+            latest_matches_by_pid={1022333: {"profile_id": 1022333, "completion_time": now - 45 * 60, "mode": "4v4"}},
+            now_ts=now,
+        )
+        self.assertEqual(snap_stale["veteranos"]["in_coh3"], [])
+        self.assertEqual([p["profile_id"] for p in snap_stale["veteranos"]["online_steam"]], [1022333])
+
+        # 2b) Em outro jogo ou Ausente (mesmo 1 min após CoH3) -> NUNCA promove a in_coh3!
+        for mut in ({"other_game": "Football Manager 2024"}, {"is_away": True}):
+            pres_busy = dict(pres_gaules, **mut)
+            snap_busy = build_lobby_radar_snapshot(
+                custom_players=[{"profile_id": 1022333, "steam_id": gaules_sid, "original_alias": "gaules"}],
+                presence_by_steam={gaules_sid: pres_busy},
+                latest_matches_by_pid={1022333: {"profile_id": 1022333, "completion_time": now - 60, "mode": "4v4"}},
+                now_ts=now,
+            )
+            self.assertEqual(snap_busy["veteranos"]["in_coh3"], [])
+            self.assertEqual([p["profile_id"] for p in snap_busy["veteranos"]["online_steam"]], [1022333])
+
+        # 2c) Offline na Steam + partida há 1 min -> vai para recent_relic (Invisíveis), NUNCA in_coh3!
+        pres_offline = dict(pres_gaules, is_online_steam=False, online_state="offline")
+        snap_off = build_lobby_radar_snapshot(
+            custom_players=[{"profile_id": 1022333, "steam_id": gaules_sid, "original_alias": "gaules"}],
+            presence_by_steam={gaules_sid: pres_offline},
+            latest_matches_by_pid={1022333: {"profile_id": 1022333, "completion_time": now - 60, "mode": "4v4"}},
+            now_ts=now,
+        )
+        self.assertEqual(snap_off["veteranos"]["in_coh3"], [])
+        self.assertEqual([p["profile_id"] for p in snap_off["veteranos"]["recent_relic"]], [1022333])
+
+        # 3) Perfil com detalhes públicos (CoH3 visível em <mostPlayedGames>):
+        #    <= 5 min (atraso XML) promove; 10 min (fechou o jogo) fica em online_steam!
+        xml_public = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <profile>
+            <steamID64>{SAMPLE_SID}</steamID64>
+            <onlineState>online</onlineState>
+            <stateMessage><![CDATA[Online]]></stateMessage>
+            <privacyState>public</privacyState>
+            <visibilityState>3</visibilityState>
+            <hoursPlayed2Wk>18.0</hoursPlayed2Wk>
+            <mostPlayedGames>
+                <mostPlayedGame>
+                    <gameName><![CDATA[Company of Heroes 3]]></gameName>
+                    <gameLink><![CDATA[https://steamcommunity.com/app/1677280]]></gameLink>
+                </mostPlayedGame>
+            </mostPlayedGames>
+        </profile>"""
+        pres_pub = parse_steam_profile_xml(xml_public, SAMPLE_SID)
+
+        snap_pub_lag = build_lobby_radar_snapshot(
+            custom_players=[{"profile_id": 79327, "steam_id": SAMPLE_SID, "original_alias": "Chacineiro"}],
+            presence_by_steam={SAMPLE_SID: pres_pub},
+            latest_matches_by_pid={79327: {"profile_id": 79327, "completion_time": now - 120, "mode": "2v2"}},
+            now_ts=now,
+        )
+        self.assertEqual([p["profile_id"] for p in snap_pub_lag["veteranos"]["in_coh3"]], [79327])
+
+        snap_pub_closed = build_lobby_radar_snapshot(
+            custom_players=[{"profile_id": 79327, "steam_id": SAMPLE_SID, "original_alias": "Chacineiro"}],
+            presence_by_steam={SAMPLE_SID: pres_pub},
+            latest_matches_by_pid={79327: {"profile_id": 79327, "completion_time": now - 600, "mode": "2v2"}},
+            now_ts=now,
+        )
+        self.assertEqual(snap_pub_closed["veteranos"]["in_coh3"], [])
+        self.assertEqual([p["profile_id"] for p in snap_pub_closed["veteranos"]["online_steam"]], [79327])
+
+        # 4) onlineState="in-game" com stateMessage="In-Game" (sem <inGameInfo>) + partida há 20 min -> in_coh3!
+        xml_ingame_bare = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <profile>
+            <steamID64>{gaules_sid}</steamID64>
+            <onlineState>in-game</onlineState>
+            <stateMessage><![CDATA[In-Game]]></stateMessage>
+            <privacyState>public</privacyState>
+            <visibilityState>3</visibilityState>
+        </profile>"""
+        pres_bare = parse_steam_profile_xml(xml_ingame_bare, gaules_sid)
+        self.assertEqual(pres_bare["online_state"], "in-game")
+        self.assertEqual(pres_bare["other_game"], "")
+        snap_bare = build_lobby_radar_snapshot(
+            custom_players=[{"profile_id": 1022333, "steam_id": gaules_sid, "original_alias": "gaules"}],
+            presence_by_steam={gaules_sid: pres_bare},
+            latest_matches_by_pid={1022333: {"profile_id": 1022333, "completion_time": now - 20 * 60, "mode": "3v3"}},
+            now_ts=now,
+        )
+        self.assertEqual([p["profile_id"] for p in snap_bare["veteranos"]["in_coh3"]], [1022333])
+
+    def test_relic_match_parser_keeps_coop_vs_ai_matches_as_vs_ia(self) -> None:
+        payload = {
+            "matchHistoryStats": [
+                {"id": 555, "completiontime": 1_800_000_000, "matchtype_id": 6},
+            ]
+        }
+        parsed = RelicActivityClient._parse_latest_match_for_pid(1022333, payload)
+        self.assertIsNotNone(parsed)
+        assert parsed is not None
+        self.assertEqual(parsed["mode"], "vs IA")
+        self.assertEqual(parsed["completion_time"], 1_800_000_000)
 
 
 if __name__ == "__main__":

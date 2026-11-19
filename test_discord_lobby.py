@@ -619,6 +619,144 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(im.width, 1100)
             self.assertLess(im.width * im.height, Image.MAX_IMAGE_PIXELS)
 
+    def test_sync_promotes_online_hidden_game_details_for_veterano_and_outro_br_and_flags_privacy(self) -> None:
+        now = 1_800_000_000
+        gaules_sid = "76561198264285149"
+        other_hidden_sid = "76561198922222222"
+
+        class _HiddenGamesPresenceClient:
+            def fetch_batch_presence(
+                self,
+                steam_ids: list[str],
+                max_workers: int = 6,
+                pace_delay_sec: float = 0.0,
+                stop_on_rate_limit: bool = False,
+            ) -> dict[str, dict[str, Any]]:
+                _ = (max_workers, pace_delay_sec, stop_on_rate_limit)
+                out: dict[str, dict[str, Any]] = {}
+                for sid in steam_ids:
+                    if sid in (gaules_sid, other_hidden_sid):
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "privacy_state": "public",
+                            "visibility_state": "3",
+                            "has_public_game_details": False,
+                            "has_coh3_in_recent_games": False,
+                            "most_played_count": 0,
+                            "online_state": "online",
+                            "is_in_coh3": False,
+                            "is_online_steam": True,
+                            "is_away": False,
+                            "other_game": "",
+                            "avatar_url": "",
+                        }
+                    else:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "privacy_state": "public",
+                            "visibility_state": "3",
+                            "has_public_game_details": True,
+                            "has_coh3_in_recent_games": True,
+                            "most_played_count": 1,
+                            "online_state": "offline",
+                            "is_in_coh3": False,
+                            "is_online_steam": False,
+                            "is_away": False,
+                            "other_game": "",
+                            "avatar_url": "",
+                        }
+                return out
+
+        class _HiddenGamesRelicClient:
+            def __init__(self) -> None:
+                self.stats_checked_pids: list[int] = []
+
+            def fetch_latest_matches_and_br_participants(
+                self,
+                profile_ids: list[int],
+                max_workers: int = 6,
+            ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+                _ = (profile_ids, max_workers)
+                # gaules (1022333) acabou de jogar 4v4 há 20 min (com detalhes de jogos ocultos na Steam)
+                return (
+                    {1022333: {"profile_id": 1022333, "match_id": 777, "completion_time": now - 20 * 60, "mode": "4v4"}},
+                    {},
+                    {},
+                )
+
+            def fetch_peak_elo_by_profile_ids(self, profile_ids: list[int]) -> dict[int, int]:
+                return {pid: (1318 if pid == 1022333 else 1200) for pid in profile_ids}
+
+            def discover_br_players_from_open_data(self, now_ts: int | None = None) -> dict[int, dict[str, Any]]:
+                _ = now_ts
+                return {
+                    900002: {
+                        "profile_id": 900002,
+                        "steam_id": other_hidden_sid,
+                        "alias": "OutroJogosOcultos",
+                        "max_elo": 1450,
+                        "last_match_date": now - 3600,
+                        "total_matches": 120,
+                    }
+                }
+
+            def fetch_profile_stats_batch(
+                self,
+                profile_ids: list[int],
+                pace_delay_sec: float = 0.22,
+            ) -> dict[int, dict[str, Any]]:
+                _ = pace_delay_sec
+                self.stats_checked_pids.extend(profile_ids)
+                out: dict[int, dict[str, Any]] = {}
+                if 900002 in profile_ids:
+                    out[900002] = {
+                        "profile_id": 900002,
+                        "steam_id": other_hidden_sid,
+                        "alias": "OutroJogosOcultos",
+                        "country": "br",
+                        "max_elo": 1460,
+                        "last_match_date": now - 18 * 60,
+                        "last_match_mode": "2v2",
+                        "total_matches": 121,
+                    }
+                return out
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            comm_path = Path(tmp) / "br_community.json"
+            fake_discord = _FakeDiscordClient()
+            fake_relic = _HiddenGamesRelicClient()
+
+            summary = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=fake_discord,
+                presence_client=_HiddenGamesPresenceClient(),  # type: ignore[arg-type]
+                relic_client=fake_relic,  # type: ignore[arg-type]
+                now_ts=now,
+            )
+            # gaules (Veterano) e OutroJogosOcultos (Outro BR) ambos promovidos a in_coh3!
+            self.assertEqual(summary["in_coh3"], 1)
+            self.assertEqual(summary["online_steam"], 0)
+            self.assertEqual(summary["other_br_in_coh3"], 1)
+            self.assertEqual(summary["other_br_online_steam"], 0)
+            self.assertIn(900002, fake_relic.stats_checked_pids)
+
+            saved = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved["veteranos_steam_privacy"]["1022333"], "public_games_hidden")
+
+            # Verifica texto dos links enviados na 3ª mensagem POST
+            links_post = fake_discord.calls[2][2]
+            assert links_post is not None
+            vet_desc = links_post["embeds"][0]["description"]
+            oth_desc = links_post["embeds"][1]["description"]
+            self.assertIn("🎮 [**gaules** ↗]", vet_desc)
+            self.assertIn("*(via Relic há 20m)*", vet_desc)
+            self.assertIn("🎮 [**OutroJogosOcultos** ↗]", oth_desc)
+            self.assertIn("*(via Relic há 18m)*", oth_desc)
+
 
 if __name__ == "__main__":
     unittest.main()

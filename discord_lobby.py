@@ -261,11 +261,21 @@ def _format_category_vertical_description(
                 if not is_veteranos:
                     star = "⭐ " if tier == "high" else ""
                     elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
-                    rec_tag = f" *(saiu de partida há {max(1, int(age_m))}m)*" if (age_m is not None and int(age_m) <= 15) else (_format_coh3_recency_tag(pl) if show_coh3_recency else "")
+                    if age_m is not None and int(age_m) <= 15:
+                        rec_tag = f" *(saiu de partida há {max(1, int(age_m))}m)*"
+                    elif pl.get("in_coh3_via_relic") and age_m is not None:
+                        rec_tag = f" *(via Relic há {max(1, int(age_m))}m)*"
+                    else:
+                        rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
                     link_txt = f"[**{nm}** ↗]({surl})" if surl else f"**{nm}**"
                     coh3_lines.append(f"• {star}🎮 {link_txt}{elo_txt}{rec_tag}")
                 else:
-                    tag = f" *(saiu de partida há {max(1, int(age_m))}m)*" if (age_m is not None and int(age_m) <= 15) else ""
+                    if age_m is not None and int(age_m) <= 15:
+                        tag = f" *(saiu de partida há {max(1, int(age_m))}m)*"
+                    elif pl.get("in_coh3_via_relic") and age_m is not None:
+                        tag = f" *(via Relic há {max(1, int(age_m))}m)*"
+                    else:
+                        tag = ""
                     if surl:
                         coh3_lines.append(f"• 🎮 [**{nm}** ↗]({surl}){tag}")
                     else:
