@@ -39,10 +39,12 @@ from security import (
 from steam_presence import (
     CORE_BR_ROSTER,
     OTHER_BR_ACTIVE_COH3_DAYS,
+    PROMINENCE_TIER_ORDER,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
     SteamPresenceClient,
     build_lobby_radar_snapshot,
+    classify_other_br_prominence,
     compute_lobby_state_digest,
 )
 
@@ -59,7 +61,8 @@ DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
 # 4m30s garante que o ciclo de 5 min (300s) nunca pule a atualização por 1-2s de jitter do relógio
 PANEL_HEARTBEAT_REFRESH_SEC = 270
-PANEL_LAYOUT_VERSION = 3
+PANEL_LAYOUT_VERSION = 4
+COMMUNITY_SCHEMA_VERSION = 2
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
 OTHER_BR_ACTIVE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400  # 30 dias (1 mês)
@@ -87,14 +90,14 @@ def save_state(state_path: Path, state: dict[str, Any]) -> None:
 
 def load_community_cache(cache_path: Path = DEFAULT_COMMUNITY_CACHE_PATH) -> dict[str, Any]:
     if not cache_path.is_file():
-        return {"updated_at": 0, "source": "", "players": {}}
+        return {"schema_version": 0, "updated_at": 0, "source": "", "players": {}}
     try:
         parsed = json.loads(cache_path.read_text(encoding="utf-8"))
         if isinstance(parsed, dict) and isinstance(parsed.get("players"), dict):
             return parsed
     except Exception:
         pass
-    return {"updated_at": 0, "source": "", "players": {}}
+    return {"schema_version": 0, "updated_at": 0, "source": "", "players": {}}
 
 
 def save_community_cache(cache_path: Path, cache: dict[str, Any]) -> None:
@@ -184,6 +187,51 @@ def _resolve_veteranos_roster(
     return roster, dirty
 
 
+def _build_veteranos_privacy_diagnostics(
+    vet_roster: list[dict[str, Any]],
+    vet_presence_map: dict[str, dict[str, Any]],
+    vet_latest_matches: dict[int, dict[str, Any]],
+    *,
+    now: int,
+) -> dict[str, str]:
+    """
+    Classifica a visibilidade Steam de cada conta dos Veteranos (`public`, `private`, `friendsonly`,
+    `public_games_hidden`, `not_found`, etc.) para diagnóstico transparente de quem não aparece no radar.
+    """
+    diag: dict[str, str] = {}
+    two_weeks_sec = 14 * 86400
+    for row in vet_roster:
+        pid = int(row.get("profile_id", 0) or 0)
+        sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+        if pid <= 0:
+            continue
+        if not sid:
+            diag[str(pid)] = "no_steam_id"
+            continue
+        pres = vet_presence_map.get(sid)
+        if not isinstance(pres, dict):
+            diag[str(pid)] = "unchecked"
+            continue
+        priv = str(pres.get("privacy_state") or "unknown").strip().lower()
+        vis = str(pres.get("visibility_state") or "").strip()
+        if priv in ("private", "friendsonly", "usersonly"):
+            diag[str(pid)] = priv
+        elif priv == "public" and vis not in ("", "3"):
+            diag[str(pid)] = "private"
+        elif priv == "public":
+            has_gd = bool(pres.get("has_public_game_details"))
+            last_m = vet_latest_matches.get(pid) or {}
+            last_ct = int(last_m.get("completion_time", 0) or 0)
+            played_last_14d = last_ct > 0 and (now - last_ct) <= two_weeks_sec
+            if (not has_gd) and played_last_14d and (not pres.get("is_in_coh3")):
+                diag[str(pid)] = "public_games_hidden"
+            else:
+                diag[str(pid)] = "public"
+        else:
+            diag[str(pid)] = priv
+    return diag
+
+
 def _merge_player_into_community(
     players_dict: dict[str, dict[str, Any]],
     entry: dict[str, Any],
@@ -191,6 +239,7 @@ def _merge_player_into_community(
     vet_pids: set[int],
     vet_sids: set[str],
     min_last_match_date: int = 0,
+    replace_matches: bool = False,
 ) -> bool:
     pid = int(entry.get("profile_id", 0) or 0)
     sid = str(entry.get("steam_id") or "").replace("/steam/", "").strip()
@@ -201,6 +250,7 @@ def _merge_player_into_community(
     alias = strip_unsafe_chars(entry.get("alias") or "")[:40] or f"Jogador {pid}"
     max_elo = max(0, int(entry.get("max_elo", 0) or 0))
     last_md = max(0, int(entry.get("last_match_date", 0) or 0))
+    total_matches = max(0, int(entry.get("total_matches", 0) or 0))
     prev = players_dict.get(key)
     effective_lmd = max(last_md, int(prev.get("last_match_date", 0) or 0)) if prev is not None else last_md
     if min_last_match_date > 0 and effective_lmd < min_last_match_date:
@@ -213,6 +263,7 @@ def _merge_player_into_community(
             "alias": alias,
             "max_elo": max_elo,
             "last_match_date": last_md,
+            "total_matches": total_matches,
             "last_seen_online_ts": max(0, int(entry.get("last_seen_online_ts", 0) or 0)),
         }
         return True
@@ -230,6 +281,14 @@ def _merge_player_into_community(
     if last_md > int(prev.get("last_match_date", 0) or 0):
         prev["last_match_date"] = last_md
         changed = True
+    prev_matches = max(0, int(prev.get("total_matches", 0) or 0))
+    if replace_matches and total_matches > 0:
+        if total_matches != prev_matches:
+            prev["total_matches"] = total_matches
+            changed = True
+    elif total_matches > prev_matches:
+        prev["total_matches"] = total_matches
+        changed = True
     return changed
 
 
@@ -242,8 +301,8 @@ def _select_other_br_candidates(
     """
     Seleciona EXCLUSIVAMENTE 'Outros Brasileiros' ATIVOS no CoH3 (partida nos últimos 30 dias):
     - Inativos (> 30 dias sem partida no CoH3 ou sem histórico) jamais são checados ou exibidos.
-    - Os 220 mais recentemente ativos no CoH3 são verificados a cada ciclo de 5 min; o excedente ativo (<= 30d)
-      é rotacionado em fatias de 40 contas por ciclo.
+    - Os 220 de maior evidência (ELO alto em qualquer modo/facção + maior atividade no CoH3) são
+      verificados em TODOS os ciclos de 5 min; o excedente ativo (<= 30d) rotaciona em fatias de 40 contas.
     """
     active_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
     active_rows = [
@@ -257,14 +316,21 @@ def _select_other_br_candidates(
     if not active_rows:
         return [], 0
 
-    active_rows.sort(
-        key=lambda r: (
-            int(r.get("last_match_date", 0) or 0),
-            int(r.get("max_elo", 0) or 0),
+    def _candidate_sort_key(r: dict[str, Any]) -> tuple[int, int, int, int, int]:
+        lmd = int(r.get("last_match_date", 0) or 0)
+        elo = int(r.get("max_elo", 0) or 0)
+        matches = int(r.get("total_matches", 0) or 0)
+        age_hours = max(0, (now - lmd) // 3600) if lmd > 0 else 720
+        tier, score = classify_other_br_prominence(elo, age_hours, total_matches=matches)
+        return (
+            PROMINENCE_TIER_ORDER.get(tier, 1),
+            -score,
+            -elo,
+            -lmd,
             int(r["profile_id"]),
-        ),
-        reverse=True,
-    )
+        )
+
+    active_rows.sort(key=_candidate_sort_key)
     selected = active_rows[:MAX_OTHER_BR_ACTIVE_PER_CYCLE]
     overflow_active = active_rows[MAX_OTHER_BR_ACTIVE_PER_CYCLE:]
 
@@ -456,10 +522,43 @@ def run_lobby_radar_sync(
 
     vet_elo_by_pid = {int(k): int(v) for k, v in elo_cache_raw.items() if str(k).isdigit()}
 
+    # Diagnóstico leve de privacidade Steam dos Veteranos (identifica perfis privados/amigos/jogos ocultos)
+    vet_privacy_diag = _build_veteranos_privacy_diagnostics(
+        vet_roster,
+        vet_presence_map,
+        vet_latest_matches,
+        now=now,
+    )
+    if vet_privacy_diag and vet_privacy_diag != state.get("veteranos_steam_privacy"):
+        state["veteranos_steam_privacy"] = vet_privacy_diag
+        state_dirty = True
+    if vet_privacy_diag:
+        alias_by_pid = {int(r["profile_id"]): str(r.get("original_alias") or r["profile_id"]) for r in vet_roster}
+        priv_names = [
+            f"{alias_by_pid.get(int(pid), pid)}({st})"
+            for pid, st in sorted(vet_privacy_diag.items(), key=lambda kv: alias_by_pid.get(int(kv[0]), kv[0]).lower())
+            if st in ("private", "friendsonly", "usersonly")
+        ]
+        hidden_games = [
+            alias_by_pid.get(int(pid), pid)
+            for pid, st in sorted(vet_privacy_diag.items(), key=lambda kv: alias_by_pid.get(int(kv[0]), kv[0]).lower())
+            if st == "public_games_hidden"
+        ]
+        pub_cnt = sum(1 for st in vet_privacy_diag.values() if st == "public")
+        logger.info(
+            "[RADAR VETERANOS PRIVACIDADE] Públicos: %d | Privados/Amigos: %d%s | Jogos ocultos (suspeito): %d%s",
+            pub_cnt,
+            len(priv_names),
+            f" [{', '.join(priv_names)}]" if priv_names else "",
+            len(hidden_games),
+            f" [{', '.join(hidden_games)}]" if hidden_games else "",
+        )
+
     # 4. PRIORIDADE 2 — Categoria "Outros Brasileiros" (catálogo BR + Steam XML + Invisíveis na Relic)
     community_cache = load_community_cache(comm_path)
     community_players: dict[str, dict[str, Any]] = dict(community_cache.get("players") or {})
     community_updated_at = int(community_cache.get("updated_at", 0) or 0)
+    community_schema_ver = int(community_cache.get("schema_version", 0) or 0)
     community_dirty = False
 
     active_coh3_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
@@ -483,8 +582,12 @@ def run_lobby_radar_sync(
             OTHER_BR_ACTIVE_COH3_DAYS,
         )
 
-    # Atualização periódica (12h) do catálogo global de brasileiros ativos no CoH3 (<= 30 dias)
-    need_discovery = (not community_players) or ((now - community_updated_at) >= COMMUNITY_DISCOVERY_TTL_SEC)
+    # Atualização periódica (12h) ou migração de esquema (total_matches) do catálogo global de brasileiros ativos (<= 30d)
+    need_discovery = (
+        (not community_players)
+        or (community_schema_ver < COMMUNITY_SCHEMA_VERSION)
+        or ((now - community_updated_at) >= COMMUNITY_DISCOVERY_TTL_SEC)
+    )
     if need_discovery and hasattr(r_client, "discover_br_players_from_open_data"):
         discovered: dict[int, dict[str, Any]] = {}
         source_lbl = ""
@@ -514,8 +617,10 @@ def run_lobby_radar_sync(
                     vet_pids=vet_pids_set,
                     vet_sids=vet_sids_set,
                     min_last_match_date=active_coh3_cutoff,
+                    replace_matches=True,
                 ):
                     community_dirty = True
+            community_cache["schema_version"] = COMMUNITY_SCHEMA_VERSION
             community_cache["updated_at"] = now
             community_cache["source"] = source_lbl
             community_dirty = True
@@ -589,6 +694,7 @@ def run_lobby_radar_sync(
             for pid, st in other_stats.items():
                 lmd = int(st.get("last_match_date", 0) or 0)
                 elo = int(st.get("max_elo", 0) or 0)
+                t_matches = max(0, int(st.get("total_matches", 0) or 0))
                 if elo > other_elo_by_pid.get(pid, 0):
                     other_elo_by_pid[pid] = elo
                 if lmd > 0 and (now - lmd) <= recent_cutoff_sec:
@@ -607,6 +713,9 @@ def run_lobby_radar_sync(
                         community_dirty = True
                     if lmd > int(crow.get("last_match_date", 0) or 0):
                         crow["last_match_date"] = lmd
+                        community_dirty = True
+                    if t_matches > int(crow.get("total_matches", 0) or 0):
+                        crow["total_matches"] = t_matches
                         community_dirty = True
                     al = str(st.get("alias") or "").strip()
                     if al and al != crow.get("alias"):

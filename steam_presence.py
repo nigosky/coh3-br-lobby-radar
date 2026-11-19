@@ -220,6 +220,8 @@ def _make_empty_presence(steam_id: str, privacy_state: str = "error") -> dict[st
     return {
         "steam_id": steam_id,
         "privacy_state": privacy_state,
+        "visibility_state": "",
+        "has_public_game_details": False,
         "online_state": "offline",
         "is_in_coh3": False,
         "is_online_steam": False,
@@ -282,6 +284,8 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
         return {
             "steam_id": steam_id,
             "privacy_state": privacy_state,
+            "visibility_state": visibility_raw,
+            "has_public_game_details": False,
             "online_state": "offline",
             "is_in_coh3": False,
             "is_online_steam": False,
@@ -300,6 +304,11 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
 
     # Extrai jogo atual EXCLUSIVAMENTE do bloco `<profile>/<inGameInfo>` (jamais de `<mostPlayedGames>`!)
     in_game_el = root.find("./inGameInfo")
+    has_public_game_details = bool(
+        in_game_el is not None
+        or root.find("./mostPlayedGames") is not None
+        or _clean_xml_text(root.findtext("./hoursPlayed2Wk"), max_len=16)
+    )
     in_game_name = ""
     in_game_link = ""
     if online_state == "in-game" and in_game_el is not None:
@@ -334,6 +343,8 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
     return {
         "steam_id": steam_id,
         "privacy_state": privacy_state,
+        "visibility_state": visibility_raw,
+        "has_public_game_details": has_public_game_details,
         "online_state": online_state,
         "is_in_coh3": bool(is_in_coh3),
         "is_online_steam": bool(is_online_steam),
@@ -358,10 +369,13 @@ def _merge_discovered_br_player(
     alias: str,
     max_elo: int = 0,
     last_match_date: int = 0,
+    total_matches: int = 0,
+    accumulate_matches: bool = False,
 ) -> None:
     if profile_id <= 0 or not STEAM_ID64_VALID_RE.fullmatch(steam_id):
         return
     clean_alias = strip_unsafe_chars(alias)[:40] or f"Jogador {profile_id}"
+    m_cnt = max(0, int(total_matches or 0))
     existing = catalog.get(profile_id)
     if existing is None:
         catalog[profile_id] = {
@@ -370,6 +384,7 @@ def _merge_discovered_br_player(
             "alias": clean_alias,
             "max_elo": max(0, int(max_elo or 0)),
             "last_match_date": max(0, int(last_match_date or 0)),
+            "total_matches": m_cnt,
         }
         return
     if clean_alias and not clean_alias.startswith("Jogador "):
@@ -378,6 +393,11 @@ def _merge_discovered_br_player(
         existing["max_elo"] = int(max_elo)
     if int(last_match_date or 0) > int(existing.get("last_match_date", 0) or 0):
         existing["last_match_date"] = int(last_match_date)
+    prev_m = max(0, int(existing.get("total_matches", 0) or 0))
+    if accumulate_matches:
+        existing["total_matches"] = prev_m + m_cnt
+    elif m_cnt > prev_m:
+        existing["total_matches"] = m_cnt
 
 
 def extract_br_players_from_opendata_payload(data: dict[str, Any]) -> dict[int, dict[str, Any]]:
@@ -390,6 +410,9 @@ def extract_br_players_from_opendata_payload(data: dict[str, Any]) -> dict[int, 
             continue
         rating = int(float(row.get("rating", 0) or 0))
         lmd = int(row.get("lastmatchdate", 0) or 0)
+        wins = max(0, int(row.get("wins", 0) or 0))
+        losses = max(0, int(row.get("losses", 0) or 0))
+        matches_in_row = wins + losses
         for member in row.get("members") or []:
             if not isinstance(member, dict):
                 continue
@@ -405,6 +428,8 @@ def extract_br_players_from_opendata_payload(data: dict[str, Any]) -> dict[int, 
                 alias=alias,
                 max_elo=rating,
                 last_match_date=lmd,
+                total_matches=matches_in_row,
+                accumulate_matches=True,
             )
     return found
 
@@ -414,7 +439,7 @@ def extract_br_players_from_relic_leaderboard_payload(data: dict[str, Any]) -> d
     found: dict[int, dict[str, Any]] = {}
     if not isinstance(data, dict):
         return found
-    stats_by_sg: dict[int, tuple[int, int]] = {}
+    stats_by_sg: dict[int, tuple[int, int, int]] = {}
     for lstat in data.get("leaderboardStats") or []:
         if not isinstance(lstat, dict):
             continue
@@ -423,14 +448,16 @@ def extract_br_players_from_relic_leaderboard_payload(data: dict[str, Any]) -> d
             continue
         rating = int(float(lstat.get("rating", 0) or 0))
         lmd = int(lstat.get("lastmatchdate", 0) or 0)
-        prev_r, prev_lmd = stats_by_sg.get(sgid, (0, 0))
-        stats_by_sg[sgid] = (max(prev_r, rating), max(prev_lmd, lmd))
+        wins = max(0, int(lstat.get("wins", 0) or 0))
+        losses = max(0, int(lstat.get("losses", 0) or 0))
+        prev_r, prev_lmd, prev_m = stats_by_sg.get(sgid, (0, 0, 0))
+        stats_by_sg[sgid] = (max(prev_r, rating), max(prev_lmd, lmd), prev_m + wins + losses)
 
     for sg in data.get("statGroups") or []:
         if not isinstance(sg, dict):
             continue
         sgid = int(sg.get("id", 0) or 0)
-        rating, lmd = stats_by_sg.get(sgid, (0, 0))
+        rating, lmd, m_cnt = stats_by_sg.get(sgid, (0, 0, 0))
         for member in sg.get("members") or []:
             if not isinstance(member, dict):
                 continue
@@ -446,6 +473,8 @@ def extract_br_players_from_relic_leaderboard_payload(data: dict[str, Any]) -> d
                 alias=alias,
                 max_elo=rating,
                 last_match_date=lmd,
+                total_matches=m_cnt,
+                accumulate_matches=True,
             )
     return found
 
@@ -475,6 +504,7 @@ class SteamPresenceClient:
             "Pragma": "no-cache",
         }
 
+        last_parsed: dict[str, Any] | None = None
         for attempt in range(2):
             req = urllib.request.Request(url, headers=headers, method="GET")
             try:
@@ -482,7 +512,10 @@ class SteamPresenceClient:
                     raw_bytes = read_bounded_http_body(resp, MAX_STEAM_PRESENCE_XML_BYTES)
                 xml_text = raw_bytes.decode("utf-8", errors="ignore")
                 parsed = parse_steam_profile_xml(xml_text, sid)
+                last_parsed = parsed
                 if parsed["ok"]:
+                    return parsed
+                if parsed.get("privacy_state") in ("not_found", "blocked_dtd", "mismatch"):
                     return parsed
             except urllib.error.HTTPError as exc:
                 if exc.code in (429, 403):
@@ -499,7 +532,7 @@ class SteamPresenceClient:
                 else:
                     logger.debug("Falha transitória ao ler presença XML Steam (%s): %s", sid, redact_secrets(exc))
 
-        return _make_empty_presence(sid, privacy_state="error")
+        return last_parsed if last_parsed is not None else _make_empty_presence(sid, privacy_state="error")
 
     def fetch_batch_presence(
         self,
@@ -734,6 +767,7 @@ class RelicActivityClient:
                                     "max_elo": 0,
                                     "last_match_date": 0,
                                     "last_match_mode": "",
+                                    "total_matches": 0,
                                 },
                             )
                             sid = extract_steam_id_from_relic_name(m.get("name"))
@@ -768,11 +802,13 @@ class RelicActivityClient:
                             "max_elo": 0,
                             "last_match_date": 0,
                             "last_match_mode": "",
+                            "total_matches": 0,
                         },
                     )
                     rating = int(float(lstat.get("rating", 0) or 0))
-                    wins = int(lstat.get("wins", 0) or 0)
-                    losses = int(lstat.get("losses", 0) or 0)
+                    wins = max(0, int(lstat.get("wins", 0) or 0))
+                    losses = max(0, int(lstat.get("losses", 0) or 0))
+                    entry["total_matches"] = int(entry.get("total_matches", 0) or 0) + wins + losses
                     if rating > 0 and (wins + losses) > 0 and rating > int(entry["max_elo"]):
                         entry["max_elo"] = rating
                     lmd = int(lstat.get("lastmatchdate", 0) or 0)
@@ -836,8 +872,8 @@ class RelicActivityClient:
             probe = _fetch_one_file(day_ts, "1v1", "american")
             if probe is not None:
                 chosen_day = day_ts
-                for pid, item in probe.items():
-                    _merge_discovered_br_player(catalog, **item)
+                for item in probe.values():
+                    _merge_discovered_br_player(catalog, accumulate_matches=True, **item)
                 break
 
         if chosen_day is None:
@@ -856,7 +892,7 @@ class RelicActivityClient:
             if not part:
                 continue
             for item in part.values():
-                _merge_discovered_br_player(catalog, **item)
+                _merge_discovered_br_player(catalog, accumulate_matches=True, **item)
 
         return catalog
 
@@ -893,7 +929,7 @@ class RelicActivityClient:
                         data = json.loads(read_bounded_http_body(resp, MAX_RELIC_RESPONSE_BYTES).decode("utf-8"))
                     part = extract_br_players_from_relic_leaderboard_payload(data)
                     for item in part.values():
-                        _merge_discovered_br_player(catalog, **item)
+                        _merge_discovered_br_player(catalog, accumulate_matches=True, **item)
                     if len(data.get("leaderboardStats") or []) < page_size:
                         break
                 except urllib.error.HTTPError as exc:
@@ -909,6 +945,53 @@ class RelicActivityClient:
 
 
 OTHER_BR_ACTIVE_COH3_DAYS = 30  # Máximo de 30 dias (1 mês) sem jogar CoH3 para constar em "Outros Brasileiros"
+PROMINENCE_TIER_ORDER: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
+
+
+def classify_other_br_prominence(
+    max_elo: int,
+    coh3_age_hours: int | None,
+    *,
+    total_matches: int = 0,
+    is_in_coh3: bool = False,
+) -> tuple[str, int]:
+    """
+    Classifica a evidência visual e a ordem de prioridade de jogadores em 'Outros Brasileiros'
+    combinando o maior ELO (independente de modo ou facção) + atividade no CoH3 (recência + volume):
+    - `high` (Destaque / Alta evidência): ELO alto e boa atividade recente no CoH3.
+    - `medium` (Regular): ELO intermediário e atividade consistente.
+    - `low` (Baixa evidência): ELO mais baixo (<= 1020) e/ou pouca atividade recente/baixa rodagem.
+    """
+    elo = max(0, int(max_elo or 0))
+    matches = max(0, int(total_matches or 0))
+    age_days = (max(0, int(coh3_age_hours)) / 24.0) if coh3_age_hours is not None else (0.5 if is_in_coh3 else 30.0)
+
+    recency_bonus = max(0.0, 180.0 * (1.0 - min(age_days, 30.0) / 30.0))
+    if age_days <= 2.0:
+        recency_bonus += 80.0
+    elif age_days <= 7.0:
+        recency_bonus += 35.0
+    vol_bonus = min(90.0, matches * 0.45) if matches > 0 else 0.0
+    score = int(round(elo + recency_bonus + vol_bonus))
+
+    if (
+        (elo >= 1250 and (age_days <= 7.0 or is_in_coh3))
+        or (elo >= 1400 and age_days <= 14.0)
+        or (elo >= 1200 and age_days <= 3.0 and (matches == 0 or matches >= 30))
+    ):
+        tier = "high"
+    elif (
+        elo <= 1020
+        or (elo < 1100 and age_days > 3.0)
+        or (elo < 1200 and age_days > 7.0)
+        or (elo < 1350 and age_days > 14.0)
+        or (0 < matches < 15 and elo < 1150)
+    ):
+        tier = "low"
+    else:
+        tier = "medium"
+
+    return tier, score
 
 
 def _build_category_lists(
@@ -943,6 +1026,7 @@ def _build_category_lists(
             "profile_ids_all": [pid],
             "fallback_elo": int(row.get("max_elo", 0) or 0),
             "catalog_last_match_date": int(row.get("last_match_date", 0) or 0),
+            "total_matches": max(0, int(row.get("total_matches", 0) or 0)),
         }
 
     for sec in secondary_rows:
@@ -995,10 +1079,23 @@ def _build_category_lists(
         last_mode = str(best_match.get("mode") or "") if best_match else ""
         effective_coh3_ts = max(last_ct, int(meta.get("catalog_last_match_date", 0) or 0))
         coh3_age_sec = max(0, now - effective_coh3_ts) if effective_coh3_ts > 0 else None
+        coh3_age_hours = int(coh3_age_sec // 3600) if coh3_age_sec is not None else None
         max_elo = max(
             [int(meta.get("fallback_elo", 0) or 0)]
             + [int(best_elo_map.get(cpid, 0) or 0) for cpid in meta["profile_ids_all"]]
         )
+        total_matches = max(0, int(meta.get("total_matches", 0) or 0))
+
+        if category == "outros_brasileiros":
+            prom_tier, prom_score = classify_other_br_prominence(
+                max_elo=max_elo,
+                coh3_age_hours=coh3_age_hours,
+                total_matches=total_matches,
+                is_in_coh3=is_in_coh3,
+            )
+        else:
+            # Veteranos SEMPRE aparecem com destaque total, independente de ELO ou atividade
+            prom_tier, prom_score = "veterano", max_elo
 
         player_card = {
             "profile_id": pid,
@@ -1006,11 +1103,14 @@ def _build_category_lists(
             "alias": meta["alias"],
             "avatar_url": avatar_url,
             "max_elo": max_elo,
+            "total_matches": total_matches,
+            "prominence_tier": prom_tier,
+            "prominence_score": prom_score,
             "last_completion_time": last_ct,
             "last_age_min": int(age_min) if last_ct > 0 else None,
             "last_mode": last_mode,
             "last_coh3_match_date": effective_coh3_ts,
-            "last_coh3_age_hours": int(coh3_age_sec // 3600) if coh3_age_sec is not None else None,
+            "last_coh3_age_hours": coh3_age_hours,
             "last_coh3_age_days": int(coh3_age_sec // 86400) if coh3_age_sec is not None else None,
             "other_game": other_game,
             "is_away": is_away,
@@ -1047,9 +1147,39 @@ def _build_category_lists(
             player_card["status_note"] = f"Concluiu {last_mode or 'partida'} há {max(1, age_min)} min (Steam privada/invisível)"
             recent_relic_list.append(player_card)
 
-    in_coh3_list.sort(key=lambda x: (x["last_age_min"] if x["last_age_min"] is not None else 9999, -x["max_elo"], x["alias"].lower()))
-    online_steam_list.sort(key=lambda x: (1 if x["other_game"] else (1 if x["is_away"] else 0), -x["max_elo"], x["alias"].lower()))
-    recent_relic_list.sort(key=lambda x: (x["last_age_min"] if x["last_age_min"] is not None else 9999, -x["max_elo"], x["alias"].lower()))
+    if category == "outros_brasileiros":
+        in_coh3_list.sort(
+            key=lambda x: (
+                PROMINENCE_TIER_ORDER.get(str(x.get("prominence_tier") or "medium"), 1),
+                -int(x.get("prominence_score", 0)),
+                -int(x.get("max_elo", 0)),
+                x["last_age_min"] if x["last_age_min"] is not None else 9999,
+                x["alias"].lower(),
+            )
+        )
+        online_steam_list.sort(
+            key=lambda x: (
+                1 if x.get("prominence_tier") == "low" else 0,
+                1 if (x["other_game"] or x["is_away"]) else 0,
+                PROMINENCE_TIER_ORDER.get(str(x.get("prominence_tier") or "medium"), 1),
+                -int(x.get("prominence_score", 0)),
+                -int(x.get("max_elo", 0)),
+                x["alias"].lower(),
+            )
+        )
+        recent_relic_list.sort(
+            key=lambda x: (
+                PROMINENCE_TIER_ORDER.get(str(x.get("prominence_tier") or "medium"), 1),
+                -int(x.get("prominence_score", 0)),
+                -int(x.get("max_elo", 0)),
+                x["last_age_min"] if x["last_age_min"] is not None else 9999,
+                x["alias"].lower(),
+            )
+        )
+    else:
+        in_coh3_list.sort(key=lambda x: (x["last_age_min"] if x["last_age_min"] is not None else 9999, -x["max_elo"], x["alias"].lower()))
+        online_steam_list.sort(key=lambda x: (1 if x["other_game"] else (1 if x["is_away"] else 0), -x["max_elo"], x["alias"].lower()))
+        recent_relic_list.sort(key=lambda x: (x["last_age_min"] if x["last_age_min"] is not None else 9999, -x["max_elo"], x["alias"].lower()))
 
     return in_coh3_list, online_steam_list, recent_relic_list, len(canonical_entries)
 

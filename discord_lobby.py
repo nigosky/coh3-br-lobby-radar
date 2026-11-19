@@ -21,7 +21,7 @@ from security import (
     strip_unsafe_chars,
     validate_discord_webhook_url,
 )
-from steam_presence import STEAM_ID64_VALID_RE
+from steam_presence import STEAM_ID64_VALID_RE, classify_other_br_prominence
 
 logger = logging.getLogger("coh3_br.lobby.discord")
 
@@ -153,11 +153,46 @@ def _format_coh3_recency_tag(pl: dict[str, Any]) -> str:
     return f" *(CoH3 há {d_int}d)*"
 
 
+def _format_coh3_recency_compact(pl: dict[str, Any]) -> str:
+    hrs = pl.get("last_coh3_age_hours")
+    days = pl.get("last_coh3_age_days")
+    if hrs is None:
+        return ""
+    h_int = max(0, int(hrs))
+    if h_int < 1:
+        return "<1h"
+    if h_int < 24:
+        return f"{h_int}h"
+    d_int = max(1, int(days if days is not None else (h_int // 24)))
+    return f"{d_int}d"
+
+
+def _resolve_discord_prominence_tier(pl: dict[str, Any], *, is_veteranos: bool, is_in_coh3: bool = False) -> str:
+    if is_veteranos:
+        return "veterano"
+    raw = str(pl.get("prominence_tier") or "").strip().lower()
+    if raw in ("high", "medium", "low"):
+        return raw
+    elo = int(pl.get("max_elo", 0) or 0)
+    hrs = pl.get("last_coh3_age_hours")
+    if hrs is None and elo > 0:
+        hrs = 0
+    tier, _ = classify_other_br_prominence(
+        max_elo=elo,
+        coh3_age_hours=hrs,
+        total_matches=int(pl.get("total_matches", 0) or 0),
+        is_in_coh3=is_in_coh3,
+    )
+    return tier
+
+
 def _append_vertical_section(
     blocks: list[str],
     header: str,
     lines: list[str],
     remaining_chars: int,
+    *,
+    omitted_prefix: str = "• ",
 ) -> int:
     """Adiciona uma seção em lista vertical respeitando o orçamento de caracteres sem jamais quebrar links Markdown."""
     if not lines or remaining_chars < len(header) + 40:
@@ -166,7 +201,7 @@ def _append_vertical_section(
     accepted: list[str] = []
     used = len(header) + 2  # header + "\n" + separador
     total_lines = len(lines)
-    reserve_tail = 42
+    reserve_tail = 48
 
     for idx, line in enumerate(lines):
         need = len(line) + 1
@@ -174,7 +209,7 @@ def _append_vertical_section(
         limit = remaining_chars - (reserve_tail if has_more_after else 0)
         if used + need > limit:
             omitted = total_lines - idx
-            accepted.append(f"• _...e mais {omitted} jogador(es)_")
+            accepted.append(f"{omitted_prefix}_...e mais {omitted} jogador(es)_")
             used += len(accepted[-1]) + 1
             break
         accepted.append(line)
@@ -190,12 +225,14 @@ def _format_category_vertical_description(
     bucket: dict[str, Any],
     *,
     empty_message: str,
+    is_veteranos: bool = True,
     show_coh3_recency: bool = False,
     max_chars: int = 2650,
-    coh3_cap: int = 16,
-    free_cap: int = 20,
-    busy_cap: int = 10,
-    recent_cap: int = 10,
+    coh3_cap: int = 45,
+    free_cap: int = 45,
+    busy_cap: int = 45,
+    recent_cap: int = 45,
+    low_cap: int = 8,
 ) -> str:
     in_coh3: list[dict[str, Any]] = list(bucket.get("in_coh3") or [])
     online_steam: list[dict[str, Any]] = list(bucket.get("online_steam") or [])
@@ -203,29 +240,61 @@ def _format_category_vertical_description(
 
     blocks: list[str] = []
     rem = max(400, int(max_chars))
+    low_entries: list[tuple[dict[str, Any], str]] = []
 
     if in_coh3:
-        coh3_lines: list[str] = []
-        for pl in in_coh3[:coh3_cap]:
-            nm = sanitize_discord_text(pl.get("alias"), 24)
-            surl = build_safe_steam_profile_url(pl.get("steam_id"))
-            age_m = pl.get("last_age_min")
-            tag = f" *(saiu de partida há {max(1, int(age_m))}m)*" if (age_m is not None and int(age_m) <= 15) else ""
-            if surl:
-                coh3_lines.append(f"• 🎮 [**{nm}** ↗]({surl}){tag}")
+        prom_coh3: list[dict[str, Any]] = []
+        for pl in in_coh3:
+            if not is_veteranos and _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=True) == "low":
+                low_entries.append((pl, "no CoH3"))
             else:
-                coh3_lines.append(f"• 🎮 **{nm}**{tag}")
-        if len(in_coh3) > coh3_cap:
-            coh3_lines.append(f"• _...e mais {len(in_coh3) - coh3_cap} no CoH3_")
-        rem = _append_vertical_section(
-            blocks,
-            "**Jogando CoH3 agora (clique para abrir na Steam):**",
-            coh3_lines,
-            rem,
-        )
+                prom_coh3.append(pl)
 
-    free_online = [p for p in online_steam if not p.get("other_game") and not p.get("is_away")]
-    busy_online = [p for p in online_steam if p.get("other_game") or p.get("is_away")]
+        if prom_coh3:
+            coh3_lines: list[str] = []
+            for pl in prom_coh3[:coh3_cap]:
+                nm = sanitize_discord_text(pl.get("alias"), 24)
+                surl = build_safe_steam_profile_url(pl.get("steam_id"))
+                age_m = pl.get("last_age_min")
+                tier = _resolve_discord_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
+                elo_val = int(pl.get("max_elo", 0) or 0)
+                if not is_veteranos:
+                    star = "⭐ " if tier == "high" else ""
+                    elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
+                    rec_tag = f" *(saiu de partida há {max(1, int(age_m))}m)*" if (age_m is not None and int(age_m) <= 15) else (_format_coh3_recency_tag(pl) if show_coh3_recency else "")
+                    link_txt = f"[**{nm}** ↗]({surl})" if surl else f"**{nm}**"
+                    coh3_lines.append(f"• {star}🎮 {link_txt}{elo_txt}{rec_tag}")
+                else:
+                    tag = f" *(saiu de partida há {max(1, int(age_m))}m)*" if (age_m is not None and int(age_m) <= 15) else ""
+                    if surl:
+                        coh3_lines.append(f"• 🎮 [**{nm}** ↗]({surl}){tag}")
+                    else:
+                        coh3_lines.append(f"• 🎮 **{nm}**{tag}")
+            if len(prom_coh3) > coh3_cap:
+                coh3_lines.append(f"• _...e mais {len(prom_coh3) - coh3_cap} no CoH3_")
+            rem = _append_vertical_section(
+                blocks,
+                "**Jogando CoH3 agora (clique para abrir na Steam):**",
+                coh3_lines,
+                rem,
+            )
+
+    free_online: list[dict[str, Any]] = []
+    busy_online: list[dict[str, Any]] = []
+    for p in online_steam:
+        is_busy = bool(p.get("other_game") or p.get("is_away"))
+        if not is_veteranos and _resolve_discord_prominence_tier(p, is_veteranos=False, is_in_coh3=False) == "low":
+            if p.get("other_game"):
+                low_entries.append((p, sanitize_discord_text(p.get("other_game"), 20)))
+            elif p.get("is_away"):
+                low_entries.append((p, "ausente"))
+            else:
+                low_entries.append((p, _format_coh3_recency_compact(p) or "Steam"))
+            continue
+        if is_busy:
+            busy_online.append(p)
+        else:
+            free_online.append(p)
 
     if free_online:
         on_lines: list[str] = []
@@ -233,7 +302,19 @@ def _format_category_vertical_description(
             nm = sanitize_discord_text(pl.get("alias"), 24)
             surl = build_safe_steam_profile_url(pl.get("steam_id"))
             rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
-            on_lines.append((f"• [**{nm}** ↗]({surl})" if surl else f"• **{nm}**") + rec_tag)
+            if not is_veteranos:
+                tier = _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
+                elo_val = int(pl.get("max_elo", 0) or 0)
+                if tier == "high":
+                    elo_txt = f" — **{elo_val} ELO**" if elo_val > 0 else ""
+                    link_txt = f"[**{nm}** ↗]({surl})" if surl else f"**{nm}**"
+                    on_lines.append(f"• ⭐ {link_txt}{elo_txt}{rec_tag}")
+                else:
+                    elo_txt = f" — {elo_val} ELO" if elo_val > 0 else ""
+                    link_txt = f"[{nm} ↗]({surl})" if surl else nm
+                    on_lines.append(f"• {link_txt}{elo_txt}{rec_tag}")
+            else:
+                on_lines.append((f"• [**{nm}** ↗]({surl})" if surl else f"• **{nm}**") + rec_tag)
         if len(free_online) > free_cap:
             on_lines.append(f"• _...e mais {len(free_online) - free_cap} online livres_")
         rem = _append_vertical_section(
@@ -249,7 +330,14 @@ def _format_category_vertical_description(
             nm = sanitize_discord_text(pl.get("alias"), 24)
             surl = build_safe_steam_profile_url(pl.get("steam_id"))
             og = sanitize_discord_text(pl.get("other_game"), 36) if pl.get("other_game") else "Ausente"
-            bz_lines.append((f"• [{nm} ↗]({surl})" if surl else f"• {nm}") + f" *({og})*")
+            if not is_veteranos:
+                tier = _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
+                elo_val = int(pl.get("max_elo", 0) or 0)
+                star = "⭐ " if tier == "high" else ""
+                elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
+                bz_lines.append((f"• {star}[{nm} ↗]({surl})" if surl else f"• {star}{nm}") + f"{elo_txt} *({og})*")
+            else:
+                bz_lines.append((f"• [{nm} ↗]({surl})" if surl else f"• {nm}") + f" *({og})*")
         if len(busy_online) > busy_cap:
             bz_lines.append(f"• _...e mais {len(busy_online) - busy_cap} em outro jogo / ausentes_")
         rem = _append_vertical_section(
@@ -260,22 +348,66 @@ def _format_category_vertical_description(
         )
 
     if recent_relic:
-        rec_lines: list[str] = []
-        for pl in recent_relic[:recent_cap]:
-            nm = sanitize_discord_text(pl.get("alias"), 24)
-            surl = build_safe_steam_profile_url(pl.get("steam_id"))
-            age_m = max(1, int(pl.get("last_age_min") or 1))
-            if surl:
-                rec_lines.append(f"• [**{nm}** ↗]({surl}) *(há {age_m}m)*")
+        prom_recent: list[dict[str, Any]] = []
+        for pl in recent_relic:
+            if not is_veteranos and _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=False) == "low":
+                age_m = max(1, int(pl.get("last_age_min") or 1))
+                low_entries.append((pl, f"invisível há {age_m}m"))
             else:
-                rec_lines.append(f"• **{nm}** *(há {age_m}m)*")
-        if len(recent_relic) > recent_cap:
-            rec_lines.append(f"• _...e mais {len(recent_relic) - recent_cap} invisíveis ativos_")
+                prom_recent.append(pl)
+
+        if prom_recent:
+            rec_lines: list[str] = []
+            for pl in prom_recent[:recent_cap]:
+                nm = sanitize_discord_text(pl.get("alias"), 24)
+                surl = build_safe_steam_profile_url(pl.get("steam_id"))
+                age_m = max(1, int(pl.get("last_age_min") or 1))
+                if not is_veteranos:
+                    tier = _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
+                    elo_val = int(pl.get("max_elo", 0) or 0)
+                    star = "⭐ " if tier == "high" else ""
+                    elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
+                    link_txt = f"[**{nm}** ↗]({surl})" if (surl and tier == "high") else (f"[{nm} ↗]({surl})" if surl else f"**{nm}**")
+                    rec_lines.append(f"• {star}{link_txt}{elo_txt} *(há {age_m}m)*")
+                else:
+                    if surl:
+                        rec_lines.append(f"• [**{nm}** ↗]({surl}) *(há {age_m}m)*")
+                    else:
+                        rec_lines.append(f"• **{nm}** *(há {age_m}m)*")
+            if len(prom_recent) > recent_cap:
+                rec_lines.append(f"• _...e mais {len(prom_recent) - recent_cap} invisíveis ativos_")
+            rem = _append_vertical_section(
+                blocks,
+                "⏱️ **Invisíveis / Steam privada (ativos há pouco):**",
+                rec_lines,
+                rem,
+            )
+
+    # Baixa evidência (somente para Outros Brasileiros): subtexto discreto (-#) ao final
+    if not is_veteranos and low_entries and rem >= 90:
+        low_lines: list[str] = []
+        for pl, detail in low_entries[:low_cap]:
+            nm = sanitize_discord_text(pl.get("alias"), 22)
+            surl = build_safe_steam_profile_url(pl.get("steam_id"))
+            elo_val = int(pl.get("max_elo", 0) or 0)
+            meta_parts: list[str] = []
+            if elo_val > 0:
+                meta_parts.append(str(elo_val))
+            if detail:
+                meta_parts.append(detail)
+            meta_str = f" ({' · '.join(meta_parts)})" if meta_parts else ""
+            if surl:
+                low_lines.append(f"-# • [{nm} ↗]({surl}){meta_str}")
+            else:
+                low_lines.append(f"-# • {nm}{meta_str}")
+        if len(low_entries) > low_cap:
+            low_lines.append(f"-# _...e mais {len(low_entries) - low_cap} de baixa evidência_")
         _append_vertical_section(
             blocks,
-            "⏱️ **Invisíveis / Steam privada (ativos há pouco):**",
-            rec_lines,
+            "-# _Baixa evidência (ELO baixo / pouca atividade):_",
+            low_lines,
             rem,
+            omitted_prefix="-# ",
         )
 
     if not blocks:
@@ -289,8 +421,9 @@ def build_lobby_radar_links_payload(
 ) -> dict[str, Any]:
     """
     Monta a mensagem dedicada exclusivamente às listas verticais com links diretos da Steam (sem imagem anexa):
-    1. Embed superior (sempre acima): Categoria `Veteranos` (monitorados no tracker de partidas).
-    2. Embed inferior (sempre abaixo): Categoria `Outros Brasileiros` (ativos no CoH3 nos últimos 30 dias).
+    1. Embed superior (sempre acima): Categoria `Veteranos` — SEMPRE exibe todos, independente de ELO ou atividade.
+    2. Embed inferior (sempre abaixo): Categoria `Outros Brasileiros` (ativos <=30d) — destaque para ELO alto + ativos;
+       ELO baixo e pouca atividade em subtexto discreto ao final.
     """
     vet = _extract_snapshot_category(snapshot, "veteranos")
     oth = _extract_snapshot_category(snapshot, "outros_brasileiros")
@@ -299,14 +432,26 @@ def build_lobby_radar_links_payload(
     vet_desc = _format_category_vertical_description(
         vet,
         empty_message="_Nenhum veterano monitorado com status público online ou partida recente neste instante._",
+        is_veteranos=True,
         show_coh3_recency=False,
-        max_chars=2650,
+        max_chars=3500,
+        coh3_cap=45,
+        free_cap=45,
+        busy_cap=45,
+        recent_cap=45,
     )
+    oth_budget = min(3800, max(900, 5650 - len(vet_desc) - 280))
     oth_desc = _format_category_vertical_description(
         oth,
         empty_message=f"_Nenhum outro brasileiro ativo no CoH3 (≤{oth_days}d) online ou jogando neste instante._",
+        is_veteranos=False,
         show_coh3_recency=True,
-        max_chars=2650,
+        max_chars=oth_budget,
+        coh3_cap=14,
+        free_cap=16,
+        busy_cap=8,
+        recent_cap=8,
+        low_cap=8,
     )
 
     vet_color = (
@@ -332,8 +477,8 @@ def build_lobby_radar_links_payload(
         "footer": {
             "text": (
                 f"Veteranos: {len(vet['in_coh3'])} CoH3 / {len(vet['online_steam'])} Steam • "
-                f"Outros BR ≤{oth_days}d: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam • "
-                "Atualizado automaticamente a cada 5 min"
+                f"Outros BR ≤{oth_days}d: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam (⭐ = ELO alto + ativo) • "
+                "Atualizado a cada 5 min"
             )
         },
         "timestamp": datetime.now(tz=timezone.utc).isoformat(),

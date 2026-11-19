@@ -7,6 +7,7 @@ import unittest
 from steam_presence import (
     SteamPresenceClient,
     build_lobby_radar_snapshot,
+    classify_other_br_prominence,
     extract_br_players_from_opendata_payload,
     extract_br_players_from_relic_leaderboard_payload,
     parse_steam_profile_xml,
@@ -326,6 +327,100 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         sids = [f"765611980000000{i:02d}" for i in range(25)]
         client.fetch_batch_presence(sids, max_workers=1, stop_on_rate_limit=True, rate_limit_threshold=2)
         self.assertEqual(len(calls), 2)
+
+    def test_other_br_prominence_tiers_rank_high_elo_active_above_low_and_veteranos_never_filtered(self) -> None:
+        now = 1_800_000_000
+        # Classificação direta: ELO alto + ativo = high; intermediário = medium; ELO baixo / pouca atividade = low
+        t_high, s_high = classify_other_br_prominence(1580, 12, total_matches=180)
+        t_med, s_med = classify_other_br_prominence(1120, 18, total_matches=60)
+        t_low_elo, s_low_elo = classify_other_br_prominence(780, 10, total_matches=40)
+        t_low_act, s_low_act = classify_other_br_prominence(1080, 12 * 24, total_matches=40)
+        self.assertEqual(t_high, "high")
+        self.assertEqual(t_med, "medium")
+        self.assertEqual(t_low_elo, "low")
+        self.assertEqual(t_low_act, "low")
+        self.assertGreater(s_high, s_med)
+        self.assertGreater(s_med, s_low_act)
+        self.assertGreater(s_med, s_low_elo)
+
+        # Veterano com ELO muito baixo e zero partidas recentes SEMPRE aparece com destaque total ("veterano")
+        vet_roster = [
+            {"profile_id": 1001, "steam_id": "76561198000001001", "original_alias": "VetBaixoEloInativo", "max_elo": 620, "last_match_date": 0},
+        ]
+        other_roster = [
+            {"profile_id": 2001, "steam_id": "76561198000002001", "alias": "LowEloBR", "max_elo": 700, "last_match_date": now - 10 * 3600, "total_matches": 25},
+            {"profile_id": 2002, "steam_id": "76561198000002002", "alias": "PoucaAtividadeBR", "max_elo": 1080, "last_match_date": now - 15 * 86400, "total_matches": 30},
+            {"profile_id": 2003, "steam_id": "76561198000002003", "alias": "MedioAtivoBR", "max_elo": 1130, "last_match_date": now - 18 * 3600, "total_matches": 80},
+            {"profile_id": 2004, "steam_id": "76561198000002004", "alias": "HighEloAtivoBR", "max_elo": 1590, "last_match_date": now - 14 * 3600, "total_matches": 210},
+            {"profile_id": 2005, "steam_id": "76561198000002005", "alias": "HighEloOutroJogo", "max_elo": 1480, "last_match_date": now - 20 * 3600, "total_matches": 150},
+        ]
+        vet_pres = {
+            "76561198000001001": {"steam_id": "76561198000001001", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
+        }
+        other_pres = {
+            "76561198000002001": {"steam_id": "76561198000002001", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
+            "76561198000002002": {"steam_id": "76561198000002002", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
+            "76561198000002003": {"steam_id": "76561198000002003", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
+            "76561198000002004": {"steam_id": "76561198000002004", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
+            "76561198000002005": {"steam_id": "76561198000002005", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "Dota 2", "is_away": False, "avatar_url": ""},
+        }
+        snap = build_lobby_radar_snapshot(
+            vet_roster,
+            vet_pres,
+            now_ts=now,
+            other_br_players=other_roster,
+            other_presence_by_steam=other_pres,
+        )
+        # Veterano com ELO baixo e inativo sempre entra integralmente
+        self.assertEqual([p["profile_id"] for p in snap["veteranos"]["online_steam"]], [1001])
+        self.assertEqual(snap["veteranos"]["online_steam"][0]["prominence_tier"], "veterano")
+
+        # Outros Brasileiros: High (livre) -> Medium (livre) -> High (outro jogo) -> Low (no fim!)
+        oth_ids = [p["profile_id"] for p in snap["outros_brasileiros"]["online_steam"]]
+        oth_tiers = [p["prominence_tier"] for p in snap["outros_brasileiros"]["online_steam"]]
+        self.assertEqual(oth_ids[:3], [2004, 2003, 2005])
+        self.assertEqual(set(oth_ids[3:]), {2001, 2002})
+        self.assertEqual(oth_tiers, ["high", "medium", "high", "low", "low"])
+
+    def test_xml_game_details_flag_and_opendata_total_matches(self) -> None:
+        xml_hidden_games = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <profile>
+            <steamID64>{SAMPLE_SID}</steamID64>
+            <onlineState>offline</onlineState>
+            <stateMessage>Offline</stateMessage>
+            <privacyState>public</privacyState>
+            <visibilityState>3</visibilityState>
+        </profile>"""
+        parsed_hidden = parse_steam_profile_xml(xml_hidden_games, SAMPLE_SID)
+        self.assertTrue(parsed_hidden["ok"])
+        self.assertFalse(parsed_hidden["has_public_game_details"])
+        self.assertEqual(parsed_hidden["visibility_state"], "3")
+
+        opendata = {
+            "leaderboards": [
+                {
+                    "rating": 1410,
+                    "wins": 40,
+                    "losses": 30,
+                    "lastmatchdate": 1_800_000_000,
+                    "members": [
+                        {"profile_id": 700001, "name": "/steam/76561198777777771", "alias": "AtivoBR", "country": "br"},
+                    ],
+                },
+                {
+                    "rating": 1520,
+                    "wins": 25,
+                    "losses": 15,
+                    "lastmatchdate": 1_800_000_100,
+                    "members": [
+                        {"profile_id": 700001, "name": "/steam/76561198777777771", "alias": "AtivoBR", "country": "br"},
+                    ],
+                },
+            ]
+        }
+        extracted = extract_br_players_from_opendata_payload(opendata)
+        self.assertEqual(extracted[700001]["max_elo"], 1520)
+        self.assertEqual(extracted[700001]["total_matches"], 110)
 
 
 if __name__ == "__main__":
