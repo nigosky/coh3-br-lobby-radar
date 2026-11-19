@@ -1,19 +1,22 @@
 # 📡 CoH3 Brasil — Radar de Lobby Ao Vivo (`coh3-br-lobby-radar`)
 
-Projeto dedicado e independente para monitorar **quem está jogando Company of Heroes 3 agora** ou **online na Steam pronto para convite** entre os 32 Veteranos Brasileiros monitorados — direto em um canal exclusivo do Discord.
+Projeto dedicado e independente para monitorar **quem está jogando Company of Heroes 3 agora**, **online na Steam pronto para convite** ou **invisível / Steam privada ativo recentemente** em duas categorias separadas no Discord:
+- **Veteranos (sempre acima)**: os 43 jogadores (44 contas) monitorados no tracker de partidas.
+- **Outros Brasileiros (sempre abaixo)**: catálogo automático de todos os demais jogadores brasileiros de CoH3 (`country == "br"`).
 
 ## Arquitetura (Zero Chaves da Steam • 100% Gratuito)
 
 1. **Presença Pública XML da Comunidade Steam (`steam_presence.py`)**:
-   - Consulta `https://steamcommunity.com/profiles/<SteamID64>/?xml=1&l=english&_=<ts>` em paralelo (~1,3s para as 33 contas) com TLS 1.2+, allowlist estrita, `Cache-Control: no-cache`, proteção anti-XXE/DTD e limite de 64 KB.
+   - Consulta `https://steamcommunity.com/profiles/<SteamID64>/?xml=1&l=english&_=<ts>` com TLS 1.2+, allowlist estrita, `Cache-Control: no-cache`, proteção anti-XXE/DTD, limite de 64 KB e *circuit-breaker* anti-429 para os demais brasileiros (preservando prioridade total aos Veteranos).
    - Lê exclusivamente os nós diretos `<profile>` e `<profile>/<inGameInfo>` (ignorando `<mostPlayedGames>` e resumos livres), exigindo `privacyState == "public"`, `visibilityState == "3"` e consistência com `<stateMessage>` para eliminar falsos positivos de jogadores offline.
-2. **Enriquecimento Oficial na API da Relic (`RelicActivityClient`)**:
-   - Cruza com `getRecentMatchHistoryByProfileId` e `getPersonalStat` para indicar quem **acabou de sair de uma partida** (`<= 15 min` = provável menu/fila!) e quem jogou nos últimos **35 min** mesmo com Steam privada/invisível.
+2. **Descoberta Automática da Comunidade BR + Enriquecimento na API da Relic (`RelicActivityClient`)**:
+   - Atualiza automaticamente `br_community.json` a cada 12h via **COH3 Stats Open Data** (`storage.coh3stats.com`), fallback na **Relic API América do Sul** (`getLeaderboard2`) e descoberta passiva de participantes brasileiros (`country == "br"`) nas partidas dos Veteranos.
+   - Detecta jogadores **invisíveis / Steam privada** ativos nos últimos **35 min** cruzando `getRecentMatchHistoryByProfileId` e `getPersonalStat` em lote (`lastmatchdate`).
 3. **Painel Vivo em Duas Mensagens Distintas + Aviso Curto Auto-Limpante (`card_renderer.py`, `discord_lobby.py`, `lobby_radar.py`)**:
-   - **Painel Vivo Separado (Atualizado a cada 5 min)**: a cada ciclo de 5 minutos, publica **duas mensagens separadas** no Discord (`POST`) e **apaga automaticamente o par anterior** (`DELETE`):
-     1. **Mensagem 1 — Card Gráfico Grande (`1100px`)**: imagem PNG enviada como anexo puro (sem `embed`), permitindo ao Discord exibi-la em largura máxima sem compressão lateral de caixa de embed.
-     2. **Mensagem 2 — Links Diretos da Steam (Lista Vertical)**: mensagem dedicada apenas à lista vertical com links clicáveis dos perfis Steam dos veteranos ativos/online.
-   - **Aviso Curto**: enviado quando `>= 2` veteranos estão com o CoH3 aberto (respeitando *cooldown* de 60 min) e **apagado automaticamente após 2 horas**, preservando sempre as duas mensagens do Painel Vivo Fixo.
+   - **Painel Vivo Separado (Atualizado a cada 5 min)**: publica **duas mensagens separadas** no Discord (`POST`) e **apaga automaticamente o par anterior** (`DELETE`):
+     1. **Mensagem 1 — Card Gráfico Grande (`1100px`)**: imagem PNG enviada como anexo puro (sem `embed`), exibindo **Veteranos** acima e **Outros Brasileiros** abaixo.
+     2. **Mensagem 2 — Links Diretos da Steam (Listas Verticais)**: dois blocos verticais com links clicáveis dos perfis Steam (**Veteranos** acima e **Outros Brasileiros** abaixo).
+   - **Aviso Curto**: enviado quando `>= 2` Veteranos estão com o CoH3 aberto (respeitando *cooldown* de 60 min) e **apagado automaticamente após 2 horas**, preservando sempre as duas mensagens do Painel Vivo Fixo.
 
 ## Configuração no GitHub Actions
 

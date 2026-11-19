@@ -108,20 +108,82 @@ def build_lobby_radar_image_payload(
     }
 
 
-def build_lobby_radar_links_payload(
-    snapshot: dict[str, Any],
-    bot_username: str = "CoH3 Brasil Radar",
-) -> dict[str, Any]:
-    """Monta a mensagem dedicada exclusivamente ao texto com links diretos da Steam (sem imagem anexa)."""
-    in_coh3: list[dict[str, Any]] = list(snapshot.get("in_coh3") or [])
-    online_steam: list[dict[str, Any]] = list(snapshot.get("online_steam") or [])
-    recent_relic: list[dict[str, Any]] = list(snapshot.get("recent_relic") or [])
+COLOR_OTHER_BR_ONLINE = 0x14B8A6  # Verde-água Outros Brasileiros
+COLOR_OTHER_BR_IDLE = 0x64748B    # Ardósia neutro
 
-    desc_blocks: list[str] = []
+
+def _extract_snapshot_category(snapshot: dict[str, Any], key: str) -> dict[str, Any]:
+    raw = snapshot.get(key)
+    if isinstance(raw, dict):
+        return {
+            "total_monitored": int(raw.get("total_monitored") or 0),
+            "in_coh3": list(raw.get("in_coh3") or []),
+            "online_steam": list(raw.get("online_steam") or []),
+            "recent_relic": list(raw.get("recent_relic") or []),
+        }
+    if key == "veteranos":
+        return {
+            "total_monitored": int(snapshot.get("total_monitored_unique") or 43),
+            "in_coh3": list(snapshot.get("in_coh3") or []),
+            "online_steam": list(snapshot.get("online_steam") or []),
+            "recent_relic": list(snapshot.get("recent_relic") or []),
+        }
+    return {"total_monitored": 0, "in_coh3": [], "online_steam": [], "recent_relic": []}
+
+
+def _append_vertical_section(
+    blocks: list[str],
+    header: str,
+    lines: list[str],
+    remaining_chars: int,
+) -> int:
+    """Adiciona uma seção em lista vertical respeitando o orçamento de caracteres sem jamais quebrar links Markdown."""
+    if not lines or remaining_chars < len(header) + 40:
+        return remaining_chars
+
+    accepted: list[str] = []
+    used = len(header) + 2  # header + "\n" + separador
+    total_lines = len(lines)
+    reserve_tail = 42
+
+    for idx, line in enumerate(lines):
+        need = len(line) + 1
+        has_more_after = (idx + 1) < total_lines
+        limit = remaining_chars - (reserve_tail if has_more_after else 0)
+        if used + need > limit:
+            omitted = total_lines - idx
+            accepted.append(f"• _...e mais {omitted} jogador(es)_")
+            used += len(accepted[-1]) + 1
+            break
+        accepted.append(line)
+        used += need
+
+    if accepted:
+        blocks.append(f"{header}\n" + "\n".join(accepted))
+        return max(0, remaining_chars - used - 2)
+    return remaining_chars
+
+
+def _format_category_vertical_description(
+    bucket: dict[str, Any],
+    *,
+    empty_message: str,
+    max_chars: int = 2650,
+    coh3_cap: int = 16,
+    free_cap: int = 20,
+    busy_cap: int = 10,
+    recent_cap: int = 10,
+) -> str:
+    in_coh3: list[dict[str, Any]] = list(bucket.get("in_coh3") or [])
+    online_steam: list[dict[str, Any]] = list(bucket.get("online_steam") or [])
+    recent_relic: list[dict[str, Any]] = list(bucket.get("recent_relic") or [])
+
+    blocks: list[str] = []
+    rem = max(400, int(max_chars))
 
     if in_coh3:
         coh3_lines: list[str] = []
-        for pl in in_coh3[:14]:
+        for pl in in_coh3[:coh3_cap]:
             nm = sanitize_discord_text(pl.get("alias"), 24)
             surl = build_safe_steam_profile_url(pl.get("steam_id"))
             age_m = pl.get("last_age_min")
@@ -130,46 +192,120 @@ def build_lobby_radar_links_payload(
                 coh3_lines.append(f"• 🎮 [**{nm}** ↗]({surl}){tag}")
             else:
                 coh3_lines.append(f"• 🎮 **{nm}**{tag}")
-        desc_blocks.append("**Jogando CoH3 agora (clique para abrir na Steam):**\n" + "\n".join(coh3_lines))
+        if len(in_coh3) > coh3_cap:
+            coh3_lines.append(f"• _...e mais {len(in_coh3) - coh3_cap} no CoH3_")
+        rem = _append_vertical_section(
+            blocks,
+            "**Jogando CoH3 agora (clique para abrir na Steam):**",
+            coh3_lines,
+            rem,
+        )
 
     free_online = [p for p in online_steam if not p.get("other_game") and not p.get("is_away")]
     busy_online = [p for p in online_steam if p.get("other_game") or p.get("is_away")]
 
     if free_online:
         on_lines: list[str] = []
-        for pl in free_online[:18]:
+        for pl in free_online[:free_cap]:
             nm = sanitize_discord_text(pl.get("alias"), 24)
             surl = build_safe_steam_profile_url(pl.get("steam_id"))
             on_lines.append(f"• [**{nm}** ↗]({surl})" if surl else f"• **{nm}**")
-        desc_blocks.append("🟢 **Online e livres na Steam:**\n" + "\n".join(on_lines))
+        if len(free_online) > free_cap:
+            on_lines.append(f"• _...e mais {len(free_online) - free_cap} online livres_")
+        rem = _append_vertical_section(
+            blocks,
+            "🟢 **Online e livres na Steam:**",
+            on_lines,
+            rem,
+        )
 
     if busy_online:
         bz_lines: list[str] = []
-        for pl in busy_online[:10]:
+        for pl in busy_online[:busy_cap]:
             nm = sanitize_discord_text(pl.get("alias"), 24)
             surl = build_safe_steam_profile_url(pl.get("steam_id"))
             og = sanitize_discord_text(pl.get("other_game"), 36) if pl.get("other_game") else "Ausente"
             bz_lines.append((f"• [{nm} ↗]({surl})" if surl else f"• {nm}") + f" *({og})*")
-        desc_blocks.append("🕹️ **Em outro jogo / ausentes:**\n" + "\n".join(bz_lines))
+        if len(busy_online) > busy_cap:
+            bz_lines.append(f"• _...e mais {len(busy_online) - busy_cap} em outro jogo / ausentes_")
+        rem = _append_vertical_section(
+            blocks,
+            "🕹️ **Em outro jogo / ausentes:**",
+            bz_lines,
+            rem,
+        )
 
     if recent_relic:
-        rec_lines = [
-            f"• **{sanitize_discord_text(p.get('alias'), 24)}** *(há {max(1, int(p.get('last_age_min') or 1))}m)*"
-            for p in recent_relic[:8]
-        ]
-        desc_blocks.append("⏱️ **Jogaram há pouco (Steam privada/invisível):**\n" + "\n".join(rec_lines))
+        rec_lines: list[str] = []
+        for pl in recent_relic[:recent_cap]:
+            nm = sanitize_discord_text(pl.get("alias"), 24)
+            surl = build_safe_steam_profile_url(pl.get("steam_id"))
+            age_m = max(1, int(pl.get("last_age_min") or 1))
+            if surl:
+                rec_lines.append(f"• [**{nm}** ↗]({surl}) *(há {age_m}m)*")
+            else:
+                rec_lines.append(f"• **{nm}** *(há {age_m}m)*")
+        if len(recent_relic) > recent_cap:
+            rec_lines.append(f"• _...e mais {len(recent_relic) - recent_cap} invisíveis ativos_")
+        _append_vertical_section(
+            blocks,
+            "⏱️ **Invisíveis / Steam privada (ativos há pouco):**",
+            rec_lines,
+            rem,
+        )
 
-    if not desc_blocks:
-        desc_blocks.append("_Nenhum veterano monitorado com status público online ou partida recente neste instante._")
+    if not blocks:
+        return empty_message
+    return "\n\n".join(blocks)
 
-    color = COLOR_LOBBY_GAME if in_coh3 else (COLOR_LOBBY_ONLINE if online_steam else COLOR_LOBBY_IDLE)
-    embed = {
-        "title": "🔗 LINKS RÁPIDOS DA STEAM — CONVIDAR VETERANOS",
-        "description": "\n\n".join(desc_blocks)[:4000],
-        "color": color,
+
+def build_lobby_radar_links_payload(
+    snapshot: dict[str, Any],
+    bot_username: str = "CoH3 Brasil Radar",
+) -> dict[str, Any]:
+    """
+    Monta a mensagem dedicada exclusivamente às listas verticais com links diretos da Steam (sem imagem anexa):
+    1. Embed superior (sempre acima): Categoria `Veteranos` (monitorados no tracker de partidas).
+    2. Embed inferior (sempre abaixo): Categoria `Outros Brasileiros` (demais jogadores BR de CoH3).
+    """
+    vet = _extract_snapshot_category(snapshot, "veteranos")
+    oth = _extract_snapshot_category(snapshot, "outros_brasileiros")
+
+    vet_desc = _format_category_vertical_description(
+        vet,
+        empty_message="_Nenhum veterano monitorado com status público online ou partida recente neste instante._",
+        max_chars=2650,
+    )
+    oth_desc = _format_category_vertical_description(
+        oth,
+        empty_message="_Nenhum outro jogador brasileiro online na Steam, no CoH3 ou ativo na Relic neste instante._",
+        max_chars=2650,
+    )
+
+    vet_color = (
+        COLOR_LOBBY_GAME
+        if vet["in_coh3"]
+        else (COLOR_LOBBY_ONLINE if vet["online_steam"] else COLOR_LOBBY_IDLE)
+    )
+    oth_color = (
+        COLOR_LOBBY_GAME
+        if oth["in_coh3"]
+        else (COLOR_OTHER_BR_ONLINE if (oth["online_steam"] or oth["recent_relic"]) else COLOR_OTHER_BR_IDLE)
+    )
+
+    vet_embed = {
+        "title": "🎖️ VETERANOS — LINKS RÁPIDOS DA STEAM",
+        "description": vet_desc,
+        "color": vet_color,
+    }
+    oth_embed = {
+        "title": "🇧🇷 OUTROS BRASILEIROS — LINKS RÁPIDOS DA STEAM",
+        "description": oth_desc,
+        "color": oth_color,
         "footer": {
             "text": (
-                f"No CoH3: {len(in_coh3)} • Online Steam: {len(online_steam)} • "
+                f"Veteranos: {len(vet['in_coh3'])} CoH3 / {len(vet['online_steam'])} Steam • "
+                f"Outros BR: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam • "
                 "Atualizado automaticamente a cada 5 min"
             )
         },
@@ -181,7 +317,7 @@ def build_lobby_radar_links_payload(
         "avatar_url": BOT_AVATAR_URL,
         "allowed_mentions": SAFE_ALLOWED_MENTIONS,
         "content": "",
-        "embeds": [embed],
+        "embeds": [vet_embed, oth_embed],
     }
 
 
@@ -201,8 +337,10 @@ def build_lobby_alert_payload(
     bot_username: str = "CoH3 Brasil Radar",
 ) -> dict[str, Any]:
     """Monta aviso curto de movimentação ativa no CoH3 (auto-apagado após `retention_hours` horas)."""
-    in_coh3: list[dict[str, Any]] = list(snapshot.get("in_coh3") or [])
-    online_steam: list[dict[str, Any]] = list(snapshot.get("online_steam") or [])
+    vet = _extract_snapshot_category(snapshot, "veteranos")
+    oth = _extract_snapshot_category(snapshot, "outros_brasileiros")
+    in_coh3: list[dict[str, Any]] = vet["in_coh3"]
+    online_steam: list[dict[str, Any]] = vet["online_steam"]
 
     linked_names: list[str] = []
     for pl in in_coh3[:8]:
@@ -212,12 +350,14 @@ def build_lobby_alert_payload(
 
     extra_coh3 = f" +{len(in_coh3) - 8}" if len(in_coh3) > 8 else ""
     free_cnt = sum(1 for p in online_steam if not p.get("other_game") and not p.get("is_away"))
-    online_tail = f"  •  🟢 **+{free_cnt} livre(s) na Steam** para fechar time!" if free_cnt > 0 else ""
+    online_tail = f"  •  🟢 **+{free_cnt} Veterano(s) livre(s) na Steam**" if free_cnt > 0 else ""
+    oth_coh3_cnt = len(oth["in_coh3"])
+    oth_tail = f"  •  🇧🇷 **+{oth_coh3_cnt} Outro(s) BR no CoH3**" if oth_coh3_cnt > 0 else ""
 
     plural = "Veteranos" if len(in_coh3) != 1 else "Veterano"
     content = (
         f"🔥 **MOVIMENTO NO LOBBY AGORA!** — 🎮 **{len(in_coh3)} {plural} no CoH3:** "
-        f"{', '.join(linked_names)}{extra_coh3}{online_tail}\n"
+        f"{', '.join(linked_names)}{extra_coh3}{online_tail}{oth_tail}\n"
         f"-# _Veja os detalhes completos no card do Radar no canal • Este aviso curto é limpo automaticamente em {max(1, int(retention_hours))}h._"
     )
 
