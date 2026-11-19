@@ -627,13 +627,13 @@
     "1095498": {
       "alias": "gallyver",
       "br_source": "open_data_lb",
-      "last_match_date": 1795113469,
+      "last_match_date": 1795115502,
       "last_seen_ingame_ts": 1795112501,
       "last_seen_online_ts": 1795114600,
       "max_elo": 1000,
       "profile_id": 1095498,
       "steam_id": "76561198340499602",
-      "total_matches": 296
+      "total_matches": 297
     },
     "1096289": {
       "alias": "[OMJ] Lore",
@@ -2108,12 +2108,12 @@
     "128231": {
       "alias": "E5p4rTaN0",
       "br_source": "open_data_lb",
-      "last_match_date": 1795113627,
+      "last_match_date": 1795116035,
       "last_seen_online_ts": 1795114600,
       "max_elo": 1045,
       "profile_id": 128231,
       "steam_id": "76561198022850599",
-      "total_matches": 2726
+      "total_matches": 2727
     },
     "1282829": {
       "alias": "Dr Christian Troy",
@@ -5255,7 +5255,7 @@
       "alias": "GuiReis",
       "br_source": "open_data_matches",
       "last_match_date": 1794709125,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795116155,
       "max_elo": 1044,
       "profile_id": 1467296,
       "steam_id": "76561198052052555",
@@ -8845,7 +8845,7 @@
       "alias": "Kotuka Theu Ku",
       "br_source": "open_data_matches",
       "last_match_date": 1794921121,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795116155,
       "max_elo": 1000,
       "profile_id": 795009,
       "steam_id": "76561198304424044",
@@ -9466,7 +9466,7 @@
       "alias": "MEStre",
       "br_source": "open_data_matches",
       "last_match_date": 1794262194,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795116155,
       "max_elo": 1048,
       "profile_id": 900961,
       "steam_id": "76561198007648957",
@@ -9876,7 +9876,7 @@
     "952169": {
       "alias": "Brazilian deltarune enjoyer",
       "br_source": "open_data_lb",
-      "last_match_date": 1795112962,
+      "last_match_date": 1795116191,
       "last_seen_online_ts": 1795114600,
       "max_elo": 1123,
       "profile_id": 952169,
