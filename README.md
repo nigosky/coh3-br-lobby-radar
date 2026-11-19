@@ -13,11 +13,12 @@ Projeto dedicado e independente para monitorar **quem está jogando Company of H
 2. **Descoberta Automática da Comunidade BR + Enriquecimento na API da Relic (`RelicActivityClient`)**:
    - Atualiza automaticamente `br_community.json` a cada 12h via **COH3 Stats Open Data** (`storage.coh3stats.com`), fallback na **Relic API América do Sul** (`getLeaderboard2`) e descoberta passiva de participantes brasileiros (`country == "br"`) nas partidas dos Veteranos.
    - Detecta jogadores **invisíveis / Steam privada** ativos nos últimos **35 min** cruzando `getRecentMatchHistoryByProfileId` e `getPersonalStat` em lote (`lastmatchdate`).
-3. **Painel Vivo em Duas Mensagens Distintas + Aviso Curto Auto-Limpante (`card_renderer.py`, `discord_lobby.py`, `lobby_radar.py`)**:
-   - **Painel Vivo Separado (Atualizado a cada 5 min)**: publica **duas mensagens separadas** no Discord (`POST`) e **apaga automaticamente o par anterior** (`DELETE`):
-     1. **Mensagem 1 — Card Gráfico Grande (`1100px`)**: imagem PNG enviada como anexo puro (sem `embed`), exibindo **todos os Veteranos** acima e **Outros Brasileiros** abaixo (com destaque dourado `★` para ELO alto + ativos e faixa discreta ao final para baixa evidência).
-     2. **Mensagem 2 — Links Diretos da Steam (Listas Verticais)**: dois blocos verticais com links clicáveis dos perfis Steam (**Veteranos** acima sem corte e **Outros Brasileiros** abaixo com `⭐` no topo e subtexto `-#` para baixa evidência).
-   - **Aviso Curto**: enviado quando `>= 2` Veteranos estão com o CoH3 aberto (respeitando *cooldown* de 60 min) e **apagado automaticamente após 2 horas**, preservando sempre as duas mensagens do Painel Vivo Fixo.
+3. **Painel Vivo em Três Mensagens (2 Cards Horizontais Grandes + Links Verticais) (`card_renderer.py`, `discord_lobby.py`, `lobby_radar.py`)**:
+   - **Painel Vivo Separado (Atualizado a cada 5 min)**: publica **três mensagens separadas** no Discord (`POST`) e **apaga automaticamente o conjunto anterior** (`DELETE`):
+     1. **Mensagem 1 — Card Gráfico Grande `Veteranos` (`1100px`, proporção horizontal)**: anexo PNG puro (sem `embed`) ocupando a largura máxima de exibição do Discord (`~550px`), exibindo **todos os Veteranos** sem corte.
+     2. **Mensagem 2 — Card Gráfico Grande `Outros Brasileiros` (`1100px`, proporção horizontal)**: anexo PNG puro (sem `embed`) em largura máxima no Discord (`~525–550px`), com destaque dourado `★` para ELO alto + ativos e faixa discreta ao final para baixa evidência.
+     3. **Mensagem 3 — Links Diretos da Steam (Listas Verticais)**: dois blocos verticais com links clicáveis dos perfis Steam (**Veteranos** acima sem corte e **Outros Brasileiros** abaixo com `⭐` no topo e subtexto `-#` para baixa evidência).
+   - **Aviso Curto**: enviado quando `>= 2` Veteranos estão com o CoH3 aberto (respeitando *cooldown* de 60 min) e **apagado automaticamente após 2 horas**, preservando sempre todas as mensagens do Painel Vivo Fixo.
 
 ## Configuração no GitHub Actions
 

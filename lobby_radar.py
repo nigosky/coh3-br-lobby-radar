@@ -61,7 +61,7 @@ DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
 # 4m30s garante que o ciclo de 5 min (300s) nunca pule a atualização por 1-2s de jitter do relógio
 PANEL_HEARTBEAT_REFRESH_SEC = 270
-PANEL_LAYOUT_VERSION = 4
+PANEL_LAYOUT_VERSION = 5
 COMMUNITY_SCHEMA_VERSION = 2
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
@@ -111,6 +111,7 @@ def _extract_panel_message_ids(state: dict[str, Any]) -> list[str]:
     if isinstance(stored_list, list):
         raw_candidates.extend(stored_list)
     raw_candidates.append(state.get("panel_message_id"))
+    raw_candidates.append(state.get("panel_outros_message_id"))
     raw_candidates.append(state.get("panel_links_message_id"))
     deduped: list[str] = []
     for item in raw_candidates:
@@ -421,7 +422,8 @@ def run_lobby_radar_sync(
 
     panel_ids = _extract_panel_message_ids(state)
     has_complete_panel_pair = (
-        len(panel_ids) >= 2
+        len(panel_ids) >= 3
+        and bool(str(state.get("panel_outros_message_id") or "").strip())
         and bool(str(state.get("panel_links_message_id") or "").strip())
         and int(state.get("layout_version", 0) or 0) >= PANEL_LAYOUT_VERSION
     )
@@ -766,11 +768,12 @@ def run_lobby_radar_sync(
     if should_patch_panel:
         prev_panel_ids = list(panel_ids)
         new_panel_ids = discord.upsert_lobby_radar_messages(snapshot, existing_message_ids=prev_panel_ids)
-        if len(new_panel_ids) >= 2:
+        if len(new_panel_ids) >= 3:
             panel_ids = list(new_panel_ids)
             state["panel_message_ids"] = panel_ids
             state["panel_message_id"] = panel_ids[0]
-            state["panel_links_message_id"] = panel_ids[1]
+            state["panel_outros_message_id"] = panel_ids[1]
+            state["panel_links_message_id"] = panel_ids[2]
             state["layout_version"] = PANEL_LAYOUT_VERSION
             state["last_digest"] = digest
             state["last_steam_fast_sig"] = fast_sig
@@ -778,10 +781,11 @@ def run_lobby_radar_sync(
             state_dirty = True
             summary["panel_updated"] = True
             logger.info(
-                "[RADAR LOBBY] Painel 2-categorias publicado (Imagem ID %s + Links ID %s | anteriores removidos: %s | "
-                "Veteranos: %d CoH3 / %d Steam / %d Inv | Outros BR [%d/%d]: %d CoH3 / %d Steam / %d Inv).",
+                "[RADAR LOBBY] Painel 3-mensagens publicado (Card Veteranos ID %s + Card Outros BR ID %s + Links ID %s | "
+                "anteriores removidos: %s | Veteranos: %d CoH3 / %d Steam / %d Inv | Outros BR [%d/%d]: %d CoH3 / %d Steam / %d Inv).",
                 panel_ids[0],
                 panel_ids[1],
+                panel_ids[2],
                 ", ".join(prev_panel_ids) if prev_panel_ids else "nenhum",
                 summary["in_coh3"],
                 summary["online_steam"],

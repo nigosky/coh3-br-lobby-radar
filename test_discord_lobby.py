@@ -11,7 +11,7 @@ from typing import Any
 
 from PIL import Image
 
-from card_renderer import SteamAvatarProvider, render_lobby_radar_card_png
+from card_renderer import SteamAvatarProvider, render_lobby_radar_card_png, render_lobby_radar_cards_png
 from discord_lobby import (
     DiscordLobbyWebhookClient,
     build_lobby_radar_image_payload,
@@ -34,7 +34,7 @@ class _FakeDiscordClient(DiscordLobbyWebhookClient):
         super().__init__(webhook_url=FAKE_WEBHOOK, allow_avatar_network=False)
         self.calls: list[tuple[str, str, dict[str, Any] | None, list[tuple[str, bytes, str]] | None]] = []
         self._next_id = 1900000000000000001
-        self.fail_on_second_post = False
+        self.fail_on_post_number: int | None = None
 
     def _request(
         self,
@@ -46,8 +46,8 @@ class _FakeDiscordClient(DiscordLobbyWebhookClient):
         self.calls.append((method, url, payload, files))
         if method == "POST":
             post_count = sum(1 for m, _, _, _ in self.calls if m == "POST")
-            if self.fail_on_second_post and post_count == 2:
-                raise RuntimeError("Falha simulada no segundo POST")
+            if self.fail_on_post_number is not None and post_count == self.fail_on_post_number:
+                raise RuntimeError(f"Falha simulada no POST #{post_count}")
             mid = str(self._next_id)
             self._next_id += 1
             return 200, {"id": mid}
@@ -337,6 +337,24 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(him.width, 1100)
             self.assertLess(him.width * him.height, Image.MAX_IMAGE_PIXELS)
 
+        vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for card_bytes in (vet_png, oth_png):
+            self.assertTrue(card_bytes.startswith(b"\x89PNG\r\n\x1a\n"))
+            with Image.open(io.BytesIO(card_bytes)) as cim:
+                self.assertEqual(cim.width, 1100)
+                # Proporção horizontal (altura bem abaixo da largura) para atingir ~550px de largura real no Discord!
+                self.assertLessEqual(cim.height, 760)
+                self.assertLess(cim.width * cim.height, Image.MAX_IMAGE_PIXELS)
+
+        heavy_vet, heavy_oth = render_lobby_radar_cards_png(heavy, SteamAvatarProvider(allow_network=False))
+        for hbytes in (heavy_vet, heavy_oth):
+            with Image.open(io.BytesIO(hbytes)) as him:
+                self.assertEqual(him.width, 1100)
+                self.assertLess(him.width * him.height, Image.MAX_IMAGE_PIXELS)
+        with Image.open(io.BytesIO(heavy_oth)) as hoim:
+            # Card Outros Brasileiros adapta limite online para continuar largo no Discord mesmo com pico alto
+            self.assertLessEqual(hoim.height, 860)
+
     def test_payloads_separate_image_and_two_vertical_category_embeds(self) -> None:
         snap = self._sample_snapshot()
         img_payload = build_lobby_radar_image_payload()
@@ -372,32 +390,49 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         )
         self.assertLess(total_chars, 5900)
 
-    def test_upsert_posts_two_separate_messages_and_deletes_legacy_and_previous_messages(self) -> None:
+    def test_upsert_posts_three_separate_messages_and_deletes_legacy_and_previous_messages(self) -> None:
         client = _FakeDiscordClient()
         snap = self._sample_snapshot()
 
-        created_pair = client.upsert_lobby_radar_messages(snap, existing_message_ids=["1572969322840719361"])
-        self.assertEqual(created_pair, ["1900000000000000001", "1900000000000000002"])
-        self.assertEqual([c[0] for c in client.calls], ["POST", "POST", "DELETE"])
+        # Migração 1 -> 3 mensagens: Card Veteranos + Card Outros BR + Links Verticais, depois DELETE da antiga
+        created_trio = client.upsert_lobby_radar_messages(snap, existing_message_ids=["1572969322840719361"])
+        self.assertEqual(created_trio, ["1900000000000000001", "1900000000000000002", "1900000000000000003"])
+        self.assertEqual([c[0] for c in client.calls], ["POST", "POST", "POST", "DELETE"])
         self.assertIsNotNone(client.calls[0][3])
+        self.assertTrue(client.calls[0][3][0][0].startswith("lobby_radar_veteranos_"))
         self.assertEqual(client.calls[0][2]["embeds"], [])
-        self.assertIsNone(client.calls[1][3])
-        self.assertEqual(len(client.calls[1][2]["embeds"]), 2)
-        self.assertTrue(client.calls[2][1].endswith("/messages/1572969322840719361"))
+        self.assertIsNotNone(client.calls[1][3])
+        self.assertTrue(client.calls[1][3][0][0].startswith("lobby_radar_outros_"))
+        self.assertEqual(client.calls[1][2]["embeds"], [])
+        self.assertIsNone(client.calls[2][3])
+        self.assertEqual(len(client.calls[2][2]["embeds"]), 2)
+        self.assertTrue(client.calls[3][1].endswith("/messages/1572969322840719361"))
 
         client.calls.clear()
-        next_pair = client.upsert_lobby_radar_messages(snap, existing_message_ids=created_pair)
-        self.assertEqual(next_pair, ["1900000000000000003", "1900000000000000004"])
-        self.assertEqual([c[0] for c in client.calls], ["POST", "POST", "DELETE", "DELETE"])
+        next_trio = client.upsert_lobby_radar_messages(snap, existing_message_ids=created_trio)
+        self.assertEqual(next_trio, ["1900000000000000004", "1900000000000000005", "1900000000000000006"])
+        self.assertEqual([c[0] for c in client.calls], ["POST", "POST", "POST", "DELETE", "DELETE", "DELETE"])
 
-    def test_upsert_rolls_back_first_message_if_second_post_fails(self) -> None:
-        client = _FakeDiscordClient()
-        client.fail_on_second_post = True
+    def test_upsert_rolls_back_partial_messages_if_second_or_third_post_fails(self) -> None:
         snap = self._sample_snapshot()
+
+        # Falha no 2º POST: apaga o 1º card parcial e mantém a mensagem anterior intacta
+        client = _FakeDiscordClient()
+        client.fail_on_post_number = 2
         with self.assertRaises(RuntimeError):
             client.upsert_lobby_radar_messages(snap, existing_message_ids=["1572969322840719361"])
         self.assertEqual([c[0] for c in client.calls], ["POST", "POST", "DELETE"])
         self.assertTrue(client.calls[2][1].endswith("/messages/1900000000000000001"))
+
+        # Falha no 3º POST: apaga os 2 cards parciais e mantém a mensagem anterior intacta
+        client3 = _FakeDiscordClient()
+        client3.fail_on_post_number = 3
+        with self.assertRaises(RuntimeError):
+            client3.upsert_lobby_radar_messages(snap, existing_message_ids=["1572969322840719361"])
+        self.assertEqual([c[0] for c in client3.calls], ["POST", "POST", "POST", "DELETE", "DELETE"])
+        deleted_urls = [c[1] for c in client3.calls if c[0] == "DELETE"]
+        self.assertTrue(deleted_urls[0].endswith("/messages/1900000000000000002"))
+        self.assertTrue(deleted_urls[1].endswith("/messages/1900000000000000001"))
 
     def test_sync_discovers_other_br_detects_all_three_states_and_protects_panel(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -448,7 +483,12 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(summary["other_br_recent_relic"], 1)
 
             saved = json.loads(state_path.read_text(encoding="utf-8"))
-            self.assertEqual(saved["panel_message_ids"], ["1900000000000000001", "1900000000000000002"])
+            self.assertEqual(
+                saved["panel_message_ids"],
+                ["1900000000000000001", "1900000000000000002", "1900000000000000003"],
+            )
+            self.assertEqual(saved["panel_outros_message_id"], "1900000000000000002")
+            self.assertEqual(saved["panel_links_message_id"], "1900000000000000003")
             self.assertEqual(saved["veteranos_steam_cache"]["58737"], "76561198099958737")
             self.assertIn("veteranos_steam_privacy", saved)
             self.assertEqual(saved["veteranos_steam_privacy"]["79327"], "public")
