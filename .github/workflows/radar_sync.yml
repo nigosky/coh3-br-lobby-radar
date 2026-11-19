@@ -2,8 +2,8 @@ name: CoH3 Brasil — Radar de Lobby Ao Vivo
 
 on:
   schedule:
-    # Repositorio publico (minutos 100% gratuitos): atualiza o Radar de Lobby a cada 5 min!
-    - cron: "*/5 * * * *"
+    # Minutos deslocados (+3) fora das janelas congestionadas (:00, :05, :10...) para evitar descarte de fila no GitHub Actions
+    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
   push:
     branches:
       - main
@@ -11,12 +11,15 @@ on:
       - "**.py"
       - "assets/**"
       - ".github/workflows/**"
+  repository_dispatch:
+    types:
+      - sync-lobby-radar
   workflow_dispatch:
     inputs:
       force_sync:
         description: "Forcar atualizacao imediata do Painel Vivo Fixo no Discord?"
         required: false
-        default: true
+        default: false
         type: boolean
 
 permissions: {}
@@ -58,7 +61,7 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: "1"
           DISCORD_LOBBY_WEBHOOK_URL: ${{ secrets.DISCORD_LOBBY_WEBHOOK_URL }}
-          FORCE_SYNC: ${{ inputs.force_sync }}
+          FORCE_SYNC: ${{ github.event_name == 'workflow_dispatch' && inputs.force_sync || github.event.client_payload.force_sync }}
         run: |
           set -euo pipefail
           if [ -z "${DISCORD_LOBBY_WEBHOOK_URL:-}" ]; then

@@ -6,7 +6,7 @@ Opera 100% autônomo (repositório próprio, estado JSON leve, zero chave da Ste
 1. Limpa automaticamente avisos curtos (`active_alerts`) com mais de `alert_cleanup_hours` (padrão 2h),
    protegendo sempre o Painel Vivo Fixo (`panel_message_id`).
 2. Consulta presença pública XML da Steam das 33 contas monitoradas (~1,3s em paralelo).
-3. Se a presença mudou (ou se passaram >= 25 min para renovar o carimbo de horário):
+3. Se a presença mudou (ou se passaram >= 15 min para renovar o carimbo de horário):
    - Consulta na Relic API a última partida concluída e o pico de ELO (cacheado por 6h em `state.json`).
    - Atualiza o Painel Vivo Fixo no Discord via `PATCH` in-place (ou `POST` na 1ª vez).
 4. Envia aviso curto com auto-limpeza quando `>= 2` veteranos estão com o CoH3 aberto (cooldown de 60 min).
@@ -48,7 +48,7 @@ DEFAULT_ALERT_CLEANUP_HOURS = 2
 DEFAULT_ALERT_COOLDOWN_MINUTES = 60
 DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
-PANEL_HEARTBEAT_REFRESH_SEC = 25 * 60
+PANEL_HEARTBEAT_REFRESH_SEC = 15 * 60
 
 
 def load_state(state_path: Path = DEFAULT_STATE_PATH) -> dict[str, Any]:
@@ -183,7 +183,7 @@ def run_lobby_radar_sync(
     prev_fast_sig = str(state.get("last_steam_fast_sig") or "")
     last_sync_ts = int(state.get("last_sync_ts", 0) or 0)
 
-    # Atalho econômico: se ninguém entrou/saiu da Steam/CoH3 e o painel foi sincronizado há < 25 min, não gasta chamadas extras
+    # Atalho econômico: se ninguém entrou/saiu da Steam/CoH3 e o painel foi sincronizado há < 15 min, não gasta chamadas extras
     if (
         not force
         and panel_id is not None
