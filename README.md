@@ -18,15 +18,11 @@ Projeto dedicado e independente para monitorar **quem está jogando Company of H
 Em **`Settings -> Secrets and variables -> Actions`**, adicione o secret:
 - **`DISCORD_LOBBY_WEBHOOK_URL`**: URL do Webhook do canal de Lobby no Discord.
 
-### Agendamento Alternativo de Alta Precisão (Cron Externo Gratuito)
+### Motor Autônomo Anti-Falha de Cron (`Self-Relay` 100% Seguro)
 
-O workflow [`.github/workflows/radar_sync.yml`](.github/workflows/radar_sync.yml) usa minutos deslocados fora de pico (`3,8,13,18,23,28,33,38,43,48,53,58 * * * *`). Para garantir execução pontual a cada 5 min mesmo quando o agendador interno do GitHub Actions sofrer atrasos, configure um disparador gratuito (ex.: **[cron-job.org](https://cron-job.org)** ou **Cloudflare Workers**):
-
-- **Método:** `POST`
-- **URL (`workflow_dispatch`):** `https://api.github.com/repos/nigosky/coh3-br-lobby-radar/actions/workflows/radar_sync.yml/dispatches`
-- **Headers:**
-  - `Accept: application/vnd.github+json`
-  - `Authorization: Bearer <FINE_GRAINED_PAT_ACTIONS_WRITE>`
-  - `Content-Type: application/json`
-- **Body:** `{"ref":"main"}`
-- *(Alternativa via `repository_dispatch`)*: `POST https://api.github.com/repos/nigosky/coh3-br-lobby-radar/dispatches` com body `{"event_type":"sync-lobby-radar"}` (requer permissão `Contents: Read and write`).
+Para contornar atrasos ou descartes silenciosos do agendador `schedule` interno do GitHub Actions, [`.github/workflows/radar_sync.yml`](.github/workflows/radar_sync.yml) opera com **Cadeia Autônoma Endurecida (`Self-Relay`)**:
+- Cada sessão executa **12 ciclos exatos de 5 minutos** (`60 min`) dentro do runner e, ao finalizar, salva o `state.json` e auto-agenda a próxima sessão via `workflow_dispatch` usando apenas o **`GITHUB_TOKEN` efêmero** (zero Personal Access Tokens extras).
+- **Travas de Segurança em 1º Lugar:**
+  - `concurrency` exclusivo (`cancel-in-progress: false`) + checagem via API antes do re-disparo garantem **no máximo 1 instância ativa** (impossível empilhar ou multiplicar jobs).
+  - Escopo estrito a `github.repository == 'nigosky/coh3-br-lobby-radar'` e `refs/heads/main`, com `actions/checkout` fixado por SHA imutável e zero scripts/pip de terceiros.
+  - **Kill-switch imediato:** para pausar a cadeia autônoma sem editar código, basta cancelar a execução em andamento na aba *Actions* (passos com `!cancelled()`) ou definir a variável de repositório `RADAR_AUTO_RELAY_ENABLED=false`.
