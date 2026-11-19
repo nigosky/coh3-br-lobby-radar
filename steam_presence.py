@@ -30,6 +30,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from security import (
+    HttpsOnlySchemeHandler,
     build_no_redirect_https_opener,
     create_hardened_ssl_context,
     read_bounded_http_body,
@@ -214,6 +215,7 @@ def _get_steam_opener() -> urllib.request.OpenerDirector:
     opener = getattr(_THREAD_LOCAL, "steam_opener", None)
     if opener is None:
         opener = urllib.request.build_opener(
+            HttpsOnlySchemeHandler(),
             urllib.request.HTTPSHandler(context=create_hardened_ssl_context()),
             _SteamPresenceRedirectHandler(),
         )
@@ -918,7 +920,7 @@ class SteamPresenceClient:
             )
             try:
                 req = urllib.request.Request(url, headers=headers, method="GET")
-                with _get_steam_opener().open(req, timeout=15) as resp:
+                with _get_relic_opener().open(req, timeout=15) as resp:
                     raw = read_bounded_http_body(resp, MAX_STEAM_GROUP_XML_BYTES)
                 sids, curr_page, total_pages = parse_steam_group_members_xml(raw.decode("utf-8", errors="ignore"))
                 for sid in sids:

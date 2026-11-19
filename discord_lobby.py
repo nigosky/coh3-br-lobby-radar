@@ -607,7 +607,8 @@ class DiscordLobbyWebhookClient:
                 if exc.code == 429:
                     retry_after = 2.0
                     try:
-                        err_json = json.loads(exc.read(4096).decode("utf-8"))
+                        err_raw = read_bounded_http_body(exc, 4096)
+                        err_json = json.loads(err_raw.decode("utf-8"))
                         retry_after = min(max(float(err_json.get("retry_after", 2.0)), 0.5), 30.0)
                     except Exception:
                         pass
@@ -618,7 +619,11 @@ class DiscordLobbyWebhookClient:
                     continue
                 if exc.code == 404 and method_upper in ("PATCH", "DELETE"):
                     return 404, None
-                err_body = redact_secrets(exc.read(1024).decode("utf-8", errors="replace"))
+                try:
+                    err_raw = read_bounded_http_body(exc, 2048)
+                except Exception:
+                    err_raw = exc.read(1024)
+                err_body = redact_secrets(err_raw[:1024].decode("utf-8", errors="replace"))
                 raise RuntimeError(f"Erro HTTP {exc.code} no Discord Webhook: {err_body}") from None
             except (urllib.error.URLError, TimeoutError) as exc:
                 if attempt < 2:

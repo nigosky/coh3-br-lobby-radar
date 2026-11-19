@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: Checkout seguro (SHA imutavel)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           fetch-depth: 0
@@ -98,6 +98,8 @@ jobs:
             CYCLES=1
           fi
 
+          SECRET_PATTERN="(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -116,18 +118,21 @@ jobs:
 
             python3 lobby_radar.py "${ARGS[@]}"
 
-            # Persiste state.json e br_community.json imediatamente apos cada ciclo alterado
-            if ! grep -RInEi "(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+" state.json br_community.json *.py 2>/dev/null; then
-              for f in state.json br_community.json; do
-                if [ -f "${f}" ]; then
-                  git add -- "${f}"
-                fi
-              done
-              if ! git diff --cached --quiet; then
-                git commit -m "chore(lobby-state): atualizar estado do Radar de Lobby [skip ci]"
-                git pull --rebase -X theirs origin main || git rebase --abort 2>/dev/null || true
-                git push origin "HEAD:main" || true
+            # Bloqueia imediatamente qualquer vazamento de Webhook/token/chave privada em arquivos rastreados
+            if git ls-files -z | xargs -0 grep -InE "${SECRET_PATTERN}" 2>/dev/null; then
+              echo "::error::Bloqueio de seguranca acionado: segredo/Webhook detectado em arquivo rastreado!"
+              exit 1
+            fi
+
+            for f in state.json br_community.json; do
+              if [ -f "${f}" ]; then
+                git add -- "${f}"
               fi
+            done
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(lobby-state): atualizar estado do Radar de Lobby [skip ci]"
+              git pull --rebase -X theirs origin main || git rebase --abort 2>/dev/null || true
+              git push origin "HEAD:main" || true
             fi
 
             if [ "${cycle}" -lt "${CYCLES}" ]; then
@@ -147,9 +152,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Bloqueia qualquer URL de Webhook em arquivos rastreados antes de qualquer git commit/push
-          if grep -RInEi "(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+" state.json br_community.json *.py 2>/dev/null; then
-            echo "::error::Bloqueio de seguranca acionado: padrao de URL de Webhook detectado em arquivo rastreado!"
+          # Bloqueia qualquer URL de Webhook, token GitHub ou chave privada em TODOS os arquivos rastreados
+          SECRET_PATTERN="(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+          if git ls-files -z | xargs -0 grep -InE "${SECRET_PATTERN}" 2>/dev/null; then
+            echo "::error::Bloqueio de seguranca acionado: padrao de segredo/Webhook detectado em arquivo rastreado!"
             exit 1
           fi
 
@@ -195,6 +201,11 @@ jobs:
           if [ "${EVENT_NAME}" = "workflow_dispatch" ] && [ "${AUTO_RELAY_INPUT:-true}" = "false" ]; then
             echo "Execucao unica solicitada (auto_relay=false); nao agendando proxima sessao."
             exit 0
+          fi
+
+          if ! [[ "${GITHUB_RUN_ID:-}" =~ ^[0-9]+$ ]]; then
+            echo "::error::GITHUB_RUN_ID invalido."
+            exit 1
           fi
 
           # Dupla checagem anti-duplicidade: se ja houver outro run queued/in_progress na fila, nao empilha outro!
