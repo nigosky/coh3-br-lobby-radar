@@ -22,6 +22,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 from typing import Any
 
 from security import (
@@ -108,29 +109,12 @@ CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 31145, "steam_id": "76561197985268629", "original_alias": "vonMises"},
 ]
 
-_ONLINE_STATE_RE = re.compile(r"<onlineState>\s*([^<\s]+)\s*</onlineState>", re.IGNORECASE)
-_PRIVACY_STATE_RE = re.compile(r"<privacyState>\s*([^<\s]+)\s*</privacyState>", re.IGNORECASE)
-_GAME_NAME_RE = re.compile(
-    r"<gameName>\s*(?:<!\[CDATA\[(.*?)\]\]>|([^<]*))\s*</gameName>",
-    re.IGNORECASE | re.DOTALL,
-)
-_GAME_LINK_RE = re.compile(
-    r"<gameLink>\s*(?:<!\[CDATA\[(.*?)\]\]>|([^<]*))\s*</gameLink>",
-    re.IGNORECASE | re.DOTALL,
-)
-_STATE_MSG_RE = re.compile(
-    r"<stateMessage>\s*(?:<!\[CDATA\[(.*?)\]\]>|([^<]*))\s*</stateMessage>",
-    re.IGNORECASE | re.DOTALL,
-)
-_AVATAR_MEDIUM_RE = re.compile(
-    r"<avatarMedium>\s*<!\[CDATA\[(https://[^\s\]]+)\]\]>\s*</avatarMedium>",
-    re.IGNORECASE,
-)
-_AVATAR_FULL_RE = re.compile(
-    r"<avatarFull>\s*<!\[CDATA\[(https://[^\s\]]+)\]\]>\s*</avatarFull>",
-    re.IGNORECASE,
-)
 _HTML_TAG_STRIP_RE = re.compile(r"<[^>]+>")
+_XML_UNSAFE_DECL_RE = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+_OFFLINE_STATE_MSG_RE = re.compile(
+    r"^(?:currently\s+offline|offline|last\s+online\b|última\s+vez\s+online\b)",
+    re.IGNORECASE,
+)
 
 _THREAD_LOCAL = threading.local()
 
@@ -142,11 +126,19 @@ class _SteamPresenceRedirectHandler(urllib.request.HTTPRedirectHandler):
 
     def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
         try:
-            validate_https_endpoint(
+            parsed_new = validate_https_endpoint(
                 newurl,
                 ALLOWED_STEAM_COMMUNITY_HOSTS,
                 path_regex=STEAM_REDIRECT_PATH_RE,
             )
+            q_new = dict(urllib.parse.parse_qsl(parsed_new.query))
+            if q_new.get("xml") != "1":
+                q_orig = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(req.full_url).query))
+                q_new["xml"] = "1"
+                q_new["l"] = q_orig.get("l") or "english"
+                if "_" in q_orig:
+                    q_new["_"] = q_orig["_"]
+                newurl = urllib.parse.urlunparse(parsed_new._replace(query=urllib.parse.urlencode(q_new)))
         except ValueError as exc:
             raise urllib.error.HTTPError(req.full_url, code, f"Redirect Steam bloqueado: {exc}", headers, fp) from None
         return super().redirect_request(req, fp, code, msg, headers, newurl)
@@ -171,81 +163,153 @@ def _get_relic_opener() -> urllib.request.OpenerDirector:
     return opener
 
 
-def _extract_xml_tag(pattern: re.Pattern[str], xml_text: str) -> str:
-    m = pattern.search(xml_text)
-    if not m:
+def _clean_xml_text(raw: str | None, max_len: int = 80) -> str:
+    if not raw:
         return ""
-    if m.lastindex and m.lastindex >= 2:
-        raw = m.group(1) if m.group(1) is not None else (m.group(2) or "")
-    else:
-        raw = m.group(1) or ""
     unescaped = html.unescape(_HTML_TAG_STRIP_RE.sub(" ", raw))
-    return strip_unsafe_chars(unescaped)[:80]
+    return strip_unsafe_chars(unescaped)[:max_len]
+
+
+def _make_empty_presence(steam_id: str, privacy_state: str = "error") -> dict[str, Any]:
+    return {
+        "steam_id": steam_id,
+        "privacy_state": privacy_state,
+        "online_state": "offline",
+        "is_in_coh3": False,
+        "is_online_steam": False,
+        "is_away": False,
+        "other_game": "",
+        "state_message": "",
+        "avatar_url": "",
+        "ok": False,
+    }
 
 
 def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
-    """Analisa com segurança o XML público de um perfil Steam e extrai presença online, jogo atual e avatar."""
-    online_state = _extract_xml_tag(_ONLINE_STATE_RE, xml_text).lower()
-    privacy_state = _extract_xml_tag(_PRIVACY_STATE_RE, xml_text).lower() or "unknown"
-    game_name = _extract_xml_tag(_GAME_NAME_RE, xml_text)
-    game_link = _extract_xml_tag(_GAME_LINK_RE, xml_text)
-    state_msg = _extract_xml_tag(_STATE_MSG_RE, xml_text)
+    """
+    Analisa com segurança estrita o XML público de um perfil Steam (`<profile>`):
+    - Rejeita declarações `<!DOCTYPE` e `<!ENTITY` (proteção anti-XXE / Billion Laughs — CWE-611 / CWE-776).
+    - Lê exclusivamente filhos diretos de `<profile>` e `<profile>/<inGameInfo>`, impedindo falsos positivos
+      causados por `<mostPlayedGames>` (histórico recente de CoH3 quando offline) ou texto livre em `<summary>`.
+    - Exige simultaneamente `privacyState == "public"`, `onlineState == "in-game"` e `<inGameInfo>` válido do CoH3.
+    """
+    raw_xml = (xml_text or "").lstrip("\ufeff \t\r\n")
+    if not raw_xml or len(raw_xml) > MAX_STEAM_PRESENCE_XML_BYTES:
+        return _make_empty_presence(steam_id, privacy_state="empty")
 
-    av_m = _AVATAR_MEDIUM_RE.search(xml_text) or _AVATAR_FULL_RE.search(xml_text)
-    avatar_url = av_m.group(1).strip() if av_m else ""
+    if _XML_UNSAFE_DECL_RE.search(raw_xml):
+        logger.warning("XML Steam rejeitado por política anti-XXE/DTD (%s).", steam_id)
+        return _make_empty_presence(steam_id, privacy_state="blocked_dtd")
 
+    try:
+        root = ET.fromstring(raw_xml)
+    except ET.ParseError:
+        return _make_empty_presence(steam_id, privacy_state="parse_error")
+
+    root_tag = (root.tag or "").strip().lower()
+    if root_tag == "response":
+        # Exemplo de erro Steam: <response><error><![CDATA[The specified profile could not be found.]]></error></response>
+        return _make_empty_presence(steam_id, privacy_state="not_found")
+    if root_tag != "profile":
+        return _make_empty_presence(steam_id, privacy_state="unknown")
+
+    xml_sid = _clean_xml_text(root.findtext("./steamID64"), max_len=24)
+    if xml_sid and STEAM_ID64_VALID_RE.fullmatch(steam_id) and xml_sid != steam_id:
+        logger.warning("Divergência de steamID64 no XML (%s != %s); descartando por segurança.", xml_sid, steam_id)
+        return _make_empty_presence(steam_id, privacy_state="mismatch")
+
+    privacy_state = _clean_xml_text(root.findtext("./privacyState"), max_len=32).lower() or "unknown"
+    visibility_raw = _clean_xml_text(root.findtext("./visibilityState"), max_len=8)
+    raw_online_state = _clean_xml_text(root.findtext("./onlineState"), max_len=24).lower()
+    state_msg = _clean_xml_text(root.findtext("./stateMessage"), max_len=80)
     state_msg_lower = state_msg.lower()
-    game_name_lower = game_name.lower()
-    is_in_coh3 = (
-        f"/app/{COH3_STEAM_APP_ID}" in game_link.lower()
-        or "company of heroes 3" in game_name_lower
-        or ("in-game" in online_state and "company of heroes 3" in state_msg_lower)
+
+    avatar_candidate = (
+        (root.findtext("./avatarMedium") or "").strip()
+        or (root.findtext("./avatarFull") or "").strip()
+    )
+    avatar_url = avatar_candidate if avatar_candidate.startswith("https://") and len(avatar_candidate) <= 256 else ""
+
+    # Perfis não públicos (private / friendsonly / usersOnly / visibilityState != 3) nunca expõem presença confiável
+    is_public_profile = privacy_state == "public" and visibility_raw in ("", "3")
+    if not is_public_profile:
+        return {
+            "steam_id": steam_id,
+            "privacy_state": privacy_state,
+            "online_state": "offline",
+            "is_in_coh3": False,
+            "is_online_steam": False,
+            "is_away": False,
+            "other_game": "",
+            "state_message": state_msg[:60],
+            "avatar_url": avatar_url,
+            "ok": privacy_state != "unknown",
+        }
+
+    # Normaliza `onlineState`: somente 'online' ou 'in-game' são aceitos, e apenas se `stateMessage` não contradisser
+    if raw_online_state in ("online", "in-game") and not _OFFLINE_STATE_MSG_RE.search(state_msg):
+        online_state = raw_online_state
+    else:
+        online_state = "offline"
+
+    # Extrai jogo atual EXCLUSIVAMENTE do bloco `<profile>/<inGameInfo>` (jamais de `<mostPlayedGames>`!)
+    in_game_el = root.find("./inGameInfo")
+    in_game_name = ""
+    in_game_link = ""
+    if online_state == "in-game" and in_game_el is not None:
+        in_game_name = _clean_xml_text(in_game_el.findtext("./gameName"), max_len=80)
+        in_game_link = _clean_xml_text(in_game_el.findtext("./gameLink"), max_len=160)
+
+    in_game_name_lower = in_game_name.lower()
+    in_game_link_lower = in_game_link.lower()
+
+    is_in_coh3 = online_state == "in-game" and (
+        f"/app/{COH3_STEAM_APP_ID}" in in_game_link_lower
+        or in_game_name_lower == "company of heroes 3"
+        or "company of heroes 3" in in_game_name_lower
+        or (in_game_el is None and "in-game" in state_msg_lower and "company of heroes 3" in state_msg_lower)
     )
 
+    # Se `onlineState` veio como `in-game`, mas não há `<inGameInfo>` nem menção `In-Game` em `stateMessage`
+    # (p.ex. detalhes de jogos privados ou transição de saída do jogo), trata apenas como `online` comum
     other_game = ""
     if online_state == "in-game" and not is_in_coh3:
-        if game_name:
-            other_game = game_name[:36]
-        elif "in-game" in state_msg_lower:
-            cleaned_msg = re.sub(r"(?i)^in-game\s*", "", state_msg).strip()
+        if in_game_name:
+            other_game = in_game_name[:36]
+        elif state_msg_lower.startswith("in-game"):
+            cleaned_msg = re.sub(r"(?i)^in-game[:\s-]*", "", state_msg).strip()
             other_game = cleaned_msg[:36]
 
-    is_away = any(tok in state_msg_lower for tok in ("away", "ausente", "snooze", "busy", "ocupado"))
+    is_online_steam = online_state in ("online", "in-game")
+    is_away = is_online_steam and any(
+        tok in state_msg_lower for tok in ("away", "ausente", "snooze", "soneca", "busy", "ocupado")
+    )
 
     return {
         "steam_id": steam_id,
         "privacy_state": privacy_state,
         "online_state": online_state,
         "is_in_coh3": bool(is_in_coh3),
-        "is_online_steam": online_state in ("online", "in-game"),
+        "is_online_steam": bool(is_online_steam),
         "is_away": bool(is_away),
         "other_game": other_game,
         "state_message": state_msg[:60],
         "avatar_url": avatar_url,
-        "ok": bool(online_state or privacy_state != "unknown"),
+        "ok": True,
     }
 
 
 class SteamPresenceClient:
-    """Cliente seguro (TLS 1.2+, allowlist estrita, zero chave) para presença pública da Comunidade Steam."""
+    """Cliente seguro (TLS 1.2+, allowlist estrita, anti-cache CDN, zero chave) para presença pública Steam."""
 
     def fetch_one_presence(self, steam_id: str) -> dict[str, Any]:
         sid = str(steam_id or "").replace("/steam/", "").strip()
         if not STEAM_ID64_VALID_RE.fullmatch(sid):
-            return {
-                "steam_id": sid,
-                "privacy_state": "invalid",
-                "online_state": "offline",
-                "is_in_coh3": False,
-                "is_online_steam": False,
-                "is_away": False,
-                "other_game": "",
-                "state_message": "",
-                "avatar_url": "",
-                "ok": False,
-            }
+            return _make_empty_presence(sid, privacy_state="invalid")
 
-        url = f"https://steamcommunity.com/profiles/{sid}/?xml=1"
+        cache_buster = int(time.time() * 1000)
+        qs = urllib.parse.urlencode({"xml": "1", "l": "english", "_": str(cache_buster)})
+        url = f"https://steamcommunity.com/profiles/{sid}/?{qs}"
         validate_https_endpoint(
             url,
             ALLOWED_STEAM_COMMUNITY_HOSTS,
@@ -253,9 +317,11 @@ class SteamPresenceClient:
             path_regex=STEAM_PROFILE_XML_PATH_RE,
         )
         headers = {
-            "User-Agent": "CoH3-BR-Lobby-Radar/1.0",
+            "User-Agent": "CoH3-BR-Lobby-Radar/1.1",
             "Accept": "application/xml,text/xml;q=0.9,*/*;q=0.1",
             "Accept-Encoding": "gzip",
+            "Cache-Control": "no-cache, no-store, max-age=0",
+            "Pragma": "no-cache",
         }
 
         for attempt in range(2):
@@ -273,18 +339,7 @@ class SteamPresenceClient:
                 else:
                     logger.debug("Falha transitória ao ler presença XML Steam (%s): %s", sid, redact_secrets(exc))
 
-        return {
-            "steam_id": sid,
-            "privacy_state": "error",
-            "online_state": "offline",
-            "is_in_coh3": False,
-            "is_online_steam": False,
-            "is_away": False,
-            "other_game": "",
-            "state_message": "",
-            "avatar_url": "",
-            "ok": False,
-        }
+        return _make_empty_presence(sid, privacy_state="error")
 
     def fetch_batch_presence(self, steam_ids: list[str], max_workers: int = 6) -> dict[str, dict[str, Any]]:
         unique_sids = list(dict.fromkeys(str(s).replace("/steam/", "").strip() for s in steam_ids if s))
