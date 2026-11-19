@@ -391,14 +391,15 @@ class CandidateVerificationAntiFalsePositiveTests(unittest.TestCase):
         self.assertFalse(parsed["is_steam_brazil"])
         self.assertTrue(parsed["has_brazil_steam_group"])
 
-    def test_candidate_verify_priority_puts_blank_country_sa_before_confirmed_foreign(self) -> None:
+    def test_candidate_verify_priority_puts_sa_blank_and_meme_flags_before_foreign_teammates(self) -> None:
         now = 1_800_000_000
         blank_sa = {"profile_id": 1, "max_elo": 1150, "region_id": SOUTH_AMERICA_REGION_ID, "country": "", "last_match_date": now - 3600}
-        arg_high = {"profile_id": 2, "max_elo": 1750, "region_id": SOUTH_AMERICA_REGION_ID, "country": "ar", "last_match_date": now - 100}
-        self.assertLess(
-            _candidate_verify_priority(blank_sa, now=now),
-            _candidate_verify_priority(arg_high, now=now),
-        )
+        meme_sa = {"profile_id": 2, "max_elo": 1620, "region_id": SOUTH_AMERICA_REGION_ID, "country": "de", "last_match_date": now - 3600}
+        arg_high = {"profile_id": 3, "max_elo": 1750, "region_id": SOUTH_AMERICA_REGION_ID, "country": "ar", "last_match_date": now - 100}
+        eu_teammate = {"profile_id": 4, "max_elo": 1800, "region_id": 2074435, "country": "us", "br_teammate_count": 12, "last_match_date": now - 100}
+        self.assertLess(_candidate_verify_priority(blank_sa, now=now), _candidate_verify_priority(arg_high, now=now))
+        self.assertLess(_candidate_verify_priority(meme_sa, now=now), _candidate_verify_priority(arg_high, now=now))
+        self.assertLess(_candidate_verify_priority(meme_sa, now=now), _candidate_verify_priority(eu_teammate, now=now))
 
 
 class DeepBrDiscoveryIntegrationTests(unittest.TestCase):

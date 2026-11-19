@@ -104,12 +104,11 @@ def _verify_candidate_is_brazilian(
 
 def _candidate_verify_priority(cand: dict[str, Any], *, now: int) -> tuple[int, int, int, int, int]:
     """
-    Ordena candidatos não-`br` para verificação Steam maximizando a taxa de descoberta real de brasileiros:
-    - Bucket 0: País EM BRANCO na Relic (`country == ""`) na América do Sul, com tag BR ou co-play >= 2 (prioridade máxima!).
-    - Bucket 1: Tag explícita `[BR]` ou squad muito frequente com BRs (`>= 5` jogos na mesma equipe).
-    - Bucket 2: América do Sul com bandeira não-hispânica / meme (`us`, `de`, `pt`, `aq`, `va`...) e ELO >= 1150.
-    - Bucket 3: América do Sul com bandeira hispânica (`ar`, `cl`, etc.) somente com co-play >= 3 ou ELO >= 1450.
-    - Bucket 4: Demais candidatos residuais.
+    Ordena candidatos não-`br` para verificação Steam maximizando a descoberta real de brasileiros sem bandeira BR:
+    - Bucket 0: Tag explícita `[BR]`/`COHBR`/`Brasil` (global) OU América do Sul com país vazio/não-hispânico (bandeiras meme `de`/`us`/`pt`/`aq`...).
+    - Bucket 1: América do Sul com país hispânico (`ar`/`cl`...) e ELO >= 1200 ou co-play >= 3 com BRs.
+    - Bucket 2: Demais jogadores ativos da América do Sul (`region_id == 2074438`).
+    - Bucket 3: Demais candidatos com país em branco fora da SA.
     """
     elo = int(cand.get("max_elo", 0) or 0)
     reg = int(cand.get("region_id", 0) or 0)
@@ -118,16 +117,14 @@ def _candidate_verify_priority(cand: dict[str, Any], *, now: int) -> tuple[int, 
     has_tag = has_explicit_br_alias_tag(cand.get("alias"))
     lmd = int(cand.get("last_match_date", 0) or 0)
 
-    if not ctry and (reg == SOUTH_AMERICA_REGION_ID or has_tag or tm_cnt >= 2):
+    if has_tag or (reg == SOUTH_AMERICA_REGION_ID and (not ctry or ctry not in _HISPANIC_SA_COUNTRIES)):
         bucket = 0
-    elif has_tag or tm_cnt >= 5:
+    elif reg == SOUTH_AMERICA_REGION_ID and (elo >= 1200 or tm_cnt >= 3):
         bucket = 1
-    elif reg == SOUTH_AMERICA_REGION_ID and ctry not in _HISPANIC_SA_COUNTRIES and elo >= 1150:
+    elif reg == SOUTH_AMERICA_REGION_ID:
         bucket = 2
-    elif reg == SOUTH_AMERICA_REGION_ID and (tm_cnt >= 3 or elo >= 1450):
-        bucket = 3
     else:
-        bucket = 4
+        bucket = 3
 
     return (bucket, -elo, -tm_cnt, -(lmd if lmd <= now else now), int(cand.get("profile_id", 0) or 0))
 
@@ -356,8 +353,8 @@ def run_deep_br_discovery(
             del cand_pool[pid]
         elif int(c.get("last_match_date", 0) or 0) < active_cutoff:
             del cand_pool[pid]
-        # Descarta ruído óbvio (país estrangeiro confirmado fora da SA sem tag BR e com pouco co-play)
-        elif ctry and reg != SOUTH_AMERICA_REGION_ID and not has_tag and tm_cnt < 5:
+        # Descarta estrangeiros confirmados fora da América do Sul sem tag explícita BR (evita gastar cota em aleatórios 4v4)
+        elif ctry and reg != SOUTH_AMERICA_REGION_ID and not has_tag:
             del cand_pool[pid]
 
     active_candidates = sorted(cand_pool.values(), key=lambda c: _candidate_verify_priority(c, now=now))
