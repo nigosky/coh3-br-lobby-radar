@@ -1,21 +1,22 @@
 # 📡 CoH3 Brasil — Radar de Lobby Ao Vivo (`coh3-br-lobby-radar`)
 
 Projeto dedicado e independente para monitorar **quem está jogando Company of Heroes 3 agora**, **online na Steam pronto para convite** ou **invisível / Steam privada ativo recentemente** em duas categorias separadas no Discord:
-- **Veteranos (sempre acima)**: os 43 jogadores (44 contas) monitorados no tracker de partidas.
-- **Outros Brasileiros (sempre abaixo)**: somente jogadores brasileiros **ativos no CoH3** (`country == "br"` com partida no CoH3 nos últimos **30 dias**, descartando automaticamente inativos).
+- **Veteranos (sempre acima)**: os 43 jogadores (44 contas) monitorados no tracker de partidas — **sempre exibidos integralmente**, independente de ELO ou atividade recente.
+- **Outros Brasileiros (sempre abaixo)**: somente jogadores brasileiros **ativos no CoH3** (`country == "br"` com partida no CoH3 nos últimos **30 dias**, descartando automaticamente inativos), com **destaque (`★` / `⭐`) para maior ELO (em qualquer modo ou facção) + maior atividade**, e **baixa evidência compacta/discreta** para ELO mais baixo e pouca atividade.
 
 ## Arquitetura (Zero Chaves da Steam • 100% Gratuito)
 
 1. **Presença Pública XML da Comunidade Steam (`steam_presence.py`)**:
    - Consulta `https://steamcommunity.com/profiles/<SteamID64>/?xml=1&l=english&_=<ts>` com TLS 1.2+, allowlist estrita, `Cache-Control: no-cache`, proteção anti-XXE/DTD, limite de 64 KB e *circuit-breaker* anti-429 para os demais brasileiros (preservando prioridade total aos Veteranos).
    - Lê exclusivamente os nós diretos `<profile>` e `<profile>/<inGameInfo>` (ignorando `<mostPlayedGames>` e resumos livres), exigindo `privacyState == "public"`, `visibilityState == "3"` e consistência com `<stateMessage>` para eliminar falsos positivos de jogadores offline.
+   - Registra diagnóstico leve de visibilidade Steam dos Veteranos (`veteranos_steam_privacy` em `state.json`) para identificar perfis privados, somente amigos ou com detalhes de jogos ocultos.
 2. **Descoberta Automática da Comunidade BR + Enriquecimento na API da Relic (`RelicActivityClient`)**:
    - Atualiza automaticamente `br_community.json` a cada 12h via **COH3 Stats Open Data** (`storage.coh3stats.com`), fallback na **Relic API América do Sul** (`getLeaderboard2`) e descoberta passiva de participantes brasileiros (`country == "br"`) nas partidas dos Veteranos.
    - Detecta jogadores **invisíveis / Steam privada** ativos nos últimos **35 min** cruzando `getRecentMatchHistoryByProfileId` e `getPersonalStat` em lote (`lastmatchdate`).
 3. **Painel Vivo em Duas Mensagens Distintas + Aviso Curto Auto-Limpante (`card_renderer.py`, `discord_lobby.py`, `lobby_radar.py`)**:
    - **Painel Vivo Separado (Atualizado a cada 5 min)**: publica **duas mensagens separadas** no Discord (`POST`) e **apaga automaticamente o par anterior** (`DELETE`):
-     1. **Mensagem 1 — Card Gráfico Grande (`1100px`)**: imagem PNG enviada como anexo puro (sem `embed`), exibindo **Veteranos** acima e **Outros Brasileiros** abaixo.
-     2. **Mensagem 2 — Links Diretos da Steam (Listas Verticais)**: dois blocos verticais com links clicáveis dos perfis Steam (**Veteranos** acima e **Outros Brasileiros** abaixo).
+     1. **Mensagem 1 — Card Gráfico Grande (`1100px`)**: imagem PNG enviada como anexo puro (sem `embed`), exibindo **todos os Veteranos** acima e **Outros Brasileiros** abaixo (com destaque dourado `★` para ELO alto + ativos e faixa discreta ao final para baixa evidência).
+     2. **Mensagem 2 — Links Diretos da Steam (Listas Verticais)**: dois blocos verticais com links clicáveis dos perfis Steam (**Veteranos** acima sem corte e **Outros Brasileiros** abaixo com `⭐` no topo e subtexto `-#` para baixa evidência).
    - **Aviso Curto**: enviado quando `>= 2` Veteranos estão com o CoH3 aberto (respeitando *cooldown* de 60 min) e **apagado automaticamente após 2 horas**, preservando sempre as duas mensagens do Painel Vivo Fixo.
 
 ## Configuração no GitHub Actions

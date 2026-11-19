@@ -21,6 +21,7 @@ from security import (
     strip_unsafe_chars,
     validate_https_endpoint,
 )
+from steam_presence import classify_other_br_prominence
 
 # Proteção estrita contra Decompression Bomb (CWE-409)
 Image.MAX_IMAGE_PIXELS = 4_000_000
@@ -330,9 +331,171 @@ def _format_coh3_recency_short(pl: dict[str, Any]) -> str:
     return f"CoH3 há {d_int}d"
 
 
+def _resolve_prominence_tier(pl: dict[str, Any], *, is_veteranos: bool, is_in_coh3: bool = False) -> str:
+    if is_veteranos:
+        return "veterano"
+    raw = str(pl.get("prominence_tier") or "").strip().lower()
+    if raw in ("high", "medium", "low"):
+        return raw
+    elo = int(pl.get("max_elo", 0) or 0)
+    hrs = pl.get("last_coh3_age_hours")
+    if hrs is None and elo > 0:
+        hrs = 0
+    tier, _ = classify_other_br_prominence(
+        max_elo=elo,
+        coh3_age_hours=hrs,
+        total_matches=int(pl.get("total_matches", 0) or 0),
+        is_in_coh3=is_in_coh3,
+    )
+    return tier
+
+
+def _split_prominent_and_low(
+    players: list[dict[str, Any]],
+    *,
+    is_veteranos: bool,
+    is_in_coh3: bool = False,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if is_veteranos:
+        return list(players), []
+    prominent: list[dict[str, Any]] = []
+    low: list[dict[str, Any]] = []
+    for pl in players:
+        if _resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=is_in_coh3) == "low":
+            low.append(pl)
+        else:
+            prominent.append(pl)
+    return prominent, low
+
+
+def _format_low_player_token(pl: dict[str, Any], *, show_age_min: bool = False) -> str:
+    alias = strip_unsafe_chars(str(pl.get("alias") or "BR"))[:18] or "BR"
+    elo = int(pl.get("max_elo", 0) or 0)
+    parts: list[str] = []
+    if elo > 0:
+        parts.append(str(elo))
+    if show_age_min and pl.get("last_age_min") is not None:
+        parts.append(f"{max(1, int(pl['last_age_min']))}m")
+    else:
+        days = pl.get("last_coh3_age_days")
+        if days is not None and int(days) >= 3:
+            parts.append(f"{int(days)}d")
+    if parts:
+        return f"{alias} ({', '.join(parts)})"
+    return alias
+
+
+def _wrap_compact_low_lines(
+    draw: ImageDraw.ImageDraw,
+    low_players: list[dict[str, Any]],
+    *,
+    prefix: str,
+    max_px: int,
+    max_lines: int = 2,
+    font_size: int = 13,
+    show_age_min: bool = False,
+) -> list[str]:
+    if not low_players:
+        return []
+    tokens = [_format_low_player_token(pl, show_age_min=show_age_min) for pl in low_players]
+    fnt = pick_font("Baixa evidência · " + " ".join(tokens[:6]), size=font_size, bold=False)
+
+    lines: list[str] = []
+    curr = prefix
+    placed = 0
+    total = len(tokens)
+
+    for idx, tok in enumerate(tokens):
+        sep = "" if curr == prefix else " · "
+        remaining_after = total - (idx + 1)
+        tail_reserve = f" · +{remaining_after}" if (len(lines) + 1 >= max_lines and remaining_after > 0) else ""
+        cand = f"{curr}{sep}{tok}"
+        if text_width(draw, cand + tail_reserve, fnt) <= max_px:
+            curr = cand
+            placed += 1
+        else:
+            if curr != prefix:
+                if len(lines) + 1 >= max_lines:
+                    omitted = total - placed
+                    if omitted > 0:
+                        curr = f"{curr} · +{omitted}"
+                    lines.append(curr)
+                    return lines
+                lines.append(curr)
+                curr = tok
+                placed += 1
+            else:
+                # Primeiro item sozinho excede max_px; trunca com segurança
+                t_disp, _ = truncate_to_px(draw, cand, max_px=max_px - 36, size=font_size, bold=False)
+                curr = t_disp
+                placed += 1
+                if len(lines) + 1 >= max_lines:
+                    omitted = total - placed
+                    if omitted > 0:
+                        curr = f"{curr} · +{omitted}"
+                    lines.append(curr)
+                    return lines
+
+    if curr:
+        lines.append(curr)
+    return lines[:max_lines]
+
+
+def _draw_gold_elo_pill(
+    draw: ImageDraw.ImageDraw,
+    *,
+    right_x: int,
+    top_y: int,
+    text: str,
+    font_size: int = 16,
+) -> int:
+    """Desenha selo dourado de destaque (`★ 1583`) alinhado à direita e retorna o X esquerdo do selo."""
+    fnt = pick_font(text, size=font_size, bold=True)
+    tw = int(text_width(draw, text, fnt))
+    pad_x = 9
+    pill_w = tw + pad_x * 2
+    pill_h = font_size + 9
+    x0 = right_x - pill_w
+    draw.rounded_rectangle(
+        (x0, top_y, right_x, top_y + pill_h),
+        radius=7,
+        fill=(54, 42, 16, 255),
+        outline=(234, 179, 8, 215),
+        width=1,
+    )
+    draw.text((x0 + pad_x, top_y + 3), text, font=fnt, fill=(253, 224, 71, 255))
+    return x0
+
+
+def _draw_low_prominence_strip(
+    draw: ImageDraw.ImageDraw,
+    *,
+    y: int,
+    width: int,
+    rail_w: int,
+    lines: list[str],
+    bg_color: tuple[int, int, int, int],
+    line_h: int = 19,
+    pad_y: int = 6,
+    font_size: int = 13,
+) -> int:
+    if not lines:
+        return y
+    strip_h = pad_y * 2 + len(lines) * line_h
+    draw.rectangle((rail_w, y, width, y + strip_h), fill=bg_color)
+    draw.line([(24, y), (width - 20, y)], fill=(30, 36, 46, 255), width=1)
+    for idx, ln in enumerate(lines):
+        fnt = pick_font(ln, size=font_size, bold=False)
+        draw.text((28, y + pad_y + idx * line_h), ln, font=fnt, fill=(104, 118, 138, 255))
+    return y + strip_h
+
+
 def _measure_category_height(
+    draw: ImageDraw.ImageDraw,
     bucket: dict[str, Any],
     *,
+    width: int,
+    is_veteranos: bool,
     show_empty_sections: bool,
     coh3_cap: int,
     online_cap: int,
@@ -344,10 +507,13 @@ def _measure_category_height(
     online_row_h: int,
     recent_row_h: int,
     overflow_h: int,
+    low_line_h: int = 19,
+    low_pad_y: int = 6,
 ) -> int:
     in_coh3 = bucket["in_coh3"]
     online = bucket["online_steam"]
     recent = bucket["recent_relic"]
+    low_max_px = width - 54
 
     h = cat_hdr_h
     if not show_empty_sections and not in_coh3 and not online and not recent:
@@ -356,29 +522,70 @@ def _measure_category_height(
     if in_coh3 or show_empty_sections:
         h += sec_hdr_h
         if in_coh3:
-            vis = min(len(in_coh3), coh3_cap)
-            h += vis * coh3_row_h
-            if len(in_coh3) > coh3_cap:
-                h += overflow_h
+            prom, low = _split_prominent_and_low(in_coh3, is_veteranos=is_veteranos, is_in_coh3=True)
+            vis = min(len(prom), coh3_cap)
+            if vis > 0:
+                if is_veteranos and vis > 14:
+                    h += ((vis + 1) // 2) * coh3_row_h + 6
+                else:
+                    h += vis * coh3_row_h
+                if len(prom) > coh3_cap:
+                    h += overflow_h
+            if low:
+                low_lines = _wrap_compact_low_lines(
+                    draw,
+                    low,
+                    prefix=f"Baixa evidência ({len(low)}): ",
+                    max_px=low_max_px,
+                    max_lines=2,
+                )
+                h += low_pad_y * 2 + len(low_lines) * low_line_h
         else:
             h += empty_row_h
 
     if online or show_empty_sections:
         h += sec_hdr_h
         if online:
-            vis = min(len(online), online_cap)
-            grid_rows = (vis + 1) // 2
-            h += grid_rows * online_row_h + 8
-            if len(online) > online_cap:
-                h += overflow_h
+            prom, low = _split_prominent_and_low(online, is_veteranos=is_veteranos, is_in_coh3=False)
+            vis = min(len(prom), online_cap)
+            if vis > 0:
+                grid_rows = (vis + 1) // 2
+                h += grid_rows * online_row_h + 8
+                if len(prom) > online_cap:
+                    h += overflow_h
+            if low:
+                low_lines = _wrap_compact_low_lines(
+                    draw,
+                    low,
+                    prefix=f"Baixa evidência ({len(low)}): ",
+                    max_px=low_max_px,
+                    max_lines=3,
+                )
+                h += low_pad_y * 2 + len(low_lines) * low_line_h
         else:
             h += empty_row_h
 
     if recent:
-        vis = min(len(recent), recent_cap)
-        h += sec_hdr_h + vis * recent_row_h + 8
-        if len(recent) > recent_cap:
-            h += overflow_h
+        h += sec_hdr_h
+        prom, low = _split_prominent_and_low(recent, is_veteranos=is_veteranos, is_in_coh3=False)
+        vis = min(len(prom), recent_cap)
+        if vis > 0:
+            if is_veteranos and vis > 10:
+                h += ((vis + 1) // 2) * recent_row_h + 8
+            else:
+                h += vis * recent_row_h + 8
+            if len(prom) > recent_cap:
+                h += overflow_h
+        if low:
+            low_lines = _wrap_compact_low_lines(
+                draw,
+                low,
+                prefix=f"Baixa evidência ({len(low)}): ",
+                max_px=low_max_px,
+                max_lines=2,
+                show_age_min=True,
+            )
+            h += low_pad_y * 2 + len(low_lines) * low_line_h
 
     return h
 
@@ -403,12 +610,15 @@ def _draw_category_block(
     online_row_h: int,
     recent_row_h: int,
     overflow_h: int,
+    low_line_h: int = 19,
+    low_pad_y: int = 6,
 ) -> int:
     in_coh3 = bucket["in_coh3"]
     online = bucket["online_steam"]
     recent = bucket["recent_relic"]
     total_cat = int(bucket.get("total_monitored") or 0)
     active_days = int(bucket.get("active_window_days") or 30)
+    low_max_px = width - 54
 
     flag_br = get_br_flag(w=26, h=18)
     flag_xs = get_br_flag(w=22, h=15)
@@ -476,52 +686,137 @@ def _draw_category_block(
             draw.text((30, y + 14), e_txt, font=e_fnt, fill=(148, 163, 184, 255))
             y += empty_row_h
         else:
-            vis_coh3 = in_coh3[:coh3_cap]
-            for idx, pl in enumerate(vis_coh3):
-                r_bg = (20, 31, 25, 255) if idx % 2 == 0 else (17, 26, 22, 255)
-                draw.rectangle((rail_w, y, width, y + coh3_row_h), fill=r_bg)
-                draw.line([(20, y + coh3_row_h - 1), (width - 18, y + coh3_row_h - 1)], fill=(32, 48, 39, 255), width=1)
+            prom_coh3, low_coh3 = _split_prominent_and_low(in_coh3, is_veteranos=is_veteranos, is_in_coh3=True)
+            vis_coh3 = prom_coh3[:coh3_cap]
+            if vis_coh3:
+                if is_veteranos and len(vis_coh3) > 14:
+                    # Grade compacta de 2 colunas para mostrar TODOS os Veteranos sem truncamento
+                    grid_rows = (len(vis_coh3) + 1) // 2
+                    mid_x = rail_w + (width - rail_w) // 2
+                    grid_h = grid_rows * coh3_row_h + 6
+                    draw.rectangle((rail_w, y, width, y + grid_h), fill=(18, 28, 23, 255))
+                    draw.line([(mid_x, y + 4), (mid_x, y + grid_h - 4)], fill=(32, 48, 39, 255), width=1)
+                    for idx, pl in enumerate(vis_coh3):
+                        row_i = idx // 2
+                        col_i = idx % 2
+                        cx0 = 24 if col_i == 0 else (mid_x + 16)
+                        cx_limit = (mid_x - 14) if col_i == 0 else (width - 18)
+                        ry = y + 3 + row_i * coh3_row_h
+                        if col_i == 0 and row_i > 0:
+                            draw.line([(20, ry), (width - 18, ry)], fill=(28, 42, 34, 255), width=1)
+                        av_im = avatar_provider.get_circular_avatar(
+                            size=40,
+                            alias=str(pl.get("alias") or "BR"),
+                            avatar_url=str(pl.get("avatar_url") or ""),
+                            ring_color=(74, 222, 128, 255),
+                        )
+                        img.paste(av_im, (cx0, ry + 8), av_im)
+                        img.paste(flag_xs, (cx0 + 48, ry + 10), flag_xs)
+                        elo_val = int(pl.get("max_elo", 0) or 0)
+                        elo_tag = f"{elo_val}" if elo_val > 0 else "S/R"
+                        ef = pick_font(elo_tag, size=16, bold=True, condensed=True)
+                        ew = int(text_width(draw, elo_tag, ef))
+                        draw.text((cx_limit - ew, ry + 9), elo_tag, font=ef, fill=(226, 232, 240, 255))
+                        name_x = cx0 + 76
+                        disp_alias, a_fnt = truncate_to_px(
+                            draw,
+                            str(pl.get("alias") or ""),
+                            max_px=max(90, (cx_limit - ew - 10) - name_x - 26),
+                            size=18,
+                            bold=True,
+                        )
+                        draw.text((name_x, ry + 6), disp_alias, font=a_fnt, fill=(240, 253, 244, 255))
+                        img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 8), vet_xs)
+                        note_raw = str(pl.get("status_note") or "No CoH3 agora")
+                        st_disp, st_fnt = truncate_to_px(draw, note_raw, max_px=max(100, cx_limit - (cx0 + 48)), size=14, bold=False)
+                        note_col = (253, 224, 71, 255) if "menu/fila" in note_raw else (134, 239, 172, 255)
+                        draw.text((cx0 + 48, ry + 32), st_disp, font=st_fnt, fill=note_col)
+                    y += grid_h
+                else:
+                    for idx, pl in enumerate(vis_coh3):
+                        tier = _resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
+                        is_high = (not is_veteranos) and (tier == "high")
+                        if is_high:
+                            r_bg = (23, 38, 28, 255) if idx % 2 == 0 else (20, 34, 25, 255)
+                            ring_c = (250, 204, 21, 255)
+                        else:
+                            r_bg = (20, 31, 25, 255) if idx % 2 == 0 else (17, 26, 22, 255)
+                            ring_c = (74, 222, 128, 255)
 
-                av_im = avatar_provider.get_circular_avatar(
-                    size=44,
-                    alias=str(pl.get("alias") or "BR"),
-                    avatar_url=str(pl.get("avatar_url") or ""),
-                    ring_color=(74, 222, 128, 255),
+                        draw.rectangle((rail_w, y, width, y + coh3_row_h), fill=r_bg)
+                        if is_high:
+                            draw.rectangle((rail_w, y + 2, rail_w + 4, y + coh3_row_h - 2), fill=(250, 204, 21, 240))
+                        draw.line([(20, y + coh3_row_h - 1), (width - 18, y + coh3_row_h - 1)], fill=(32, 48, 39, 255), width=1)
+
+                        av_im = avatar_provider.get_circular_avatar(
+                            size=44,
+                            alias=str(pl.get("alias") or "BR"),
+                            avatar_url=str(pl.get("avatar_url") or ""),
+                            ring_color=ring_c,
+                        )
+                        img.paste(av_im, (28, y + 7), av_im)
+                        img.paste(flag_br, (82, y + 20), flag_br)
+
+                        elo_val = int(pl.get("max_elo", 0) or 0)
+                        note_raw = str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora")
+                        note_disp, n_fnt = truncate_to_px(draw, note_raw, max_px=520, size=17, bold=True)
+                        nw = text_width(draw, note_disp, n_fnt)
+                        note_x = width - 26 - nw
+                        note_col = (253, 224, 71, 255) if "menu/fila" in note_raw else (134, 239, 172, 255)
+                        draw.text((note_x, y + 18), note_disp, font=n_fnt, fill=note_col)
+
+                        if is_high and elo_val > 0:
+                            elo_x = _draw_gold_elo_pill(
+                                draw,
+                                right_x=int(note_x - 20),
+                                top_y=y + 15,
+                                text=f"★ {elo_val} ELO",
+                                font_size=16,
+                            )
+                        else:
+                            elo_str = f"{elo_val} ELO" if elo_val > 0 else "S/R"
+                            elo_fnt = pick_font(elo_str, size=17, bold=True, condensed=True)
+                            ew = text_width(draw, elo_str, elo_fnt)
+                            elo_x = int(note_x - 24 - ew)
+                            draw.text((elo_x, y + 18), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
+
+                        badge_pad = 34 if is_veteranos else 10
+                        max_alias_px = max(120, int(elo_x - 118 - badge_pad))
+                        alias_sz = 21 if (is_veteranos or is_high) else 19
+                        alias_col = (254, 249, 195, 255) if is_high else (240, 253, 244, 255)
+                        disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_alias_px, size=alias_sz, bold=True)
+                        draw.text((118, y + (15 if alias_sz >= 21 else 17)), disp_alias, font=a_fnt, fill=alias_col)
+                        if is_veteranos:
+                            bx = int(118 + text_width(draw, disp_alias, a_fnt) + 8)
+                            img.paste(vet_sm, (bx, y + 18), vet_sm)
+
+                        y += coh3_row_h
+
+                if len(prom_coh3) > coh3_cap:
+                    draw.rectangle((rail_w, y, width, y + overflow_h), fill=(17, 26, 22, 255))
+                    ov_txt = f"+{len(prom_coh3) - coh3_cap} jogador(es) adicional(is) no CoH3 — veja todos na lista de links abaixo."
+                    ov_fnt = pick_font(ov_txt, size=14, bold=False)
+                    draw.text((30, y + 6), ov_txt, font=ov_fnt, fill=(134, 239, 172, 255))
+                    y += overflow_h
+
+            if low_coh3:
+                low_lines = _wrap_compact_low_lines(
+                    draw,
+                    low_coh3,
+                    prefix=f"Baixa evidência ({len(low_coh3)}): ",
+                    max_px=low_max_px,
+                    max_lines=2,
                 )
-                img.paste(av_im, (28, y + 7), av_im)
-                img.paste(flag_br, (82, y + 20), flag_br)
-
-                elo_val = int(pl.get("max_elo", 0) or 0)
-                elo_str = f"{elo_val} ELO" if elo_val > 0 else "S/R"
-                elo_fnt = pick_font(elo_str, size=17, bold=True, condensed=True)
-
-                note_raw = str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora")
-                note_disp, n_fnt = truncate_to_px(draw, note_raw, max_px=545, size=17, bold=True)
-                nw = text_width(draw, note_disp, n_fnt)
-                note_x = width - 26 - nw
-                note_col = (253, 224, 71, 255) if "menu/fila" in note_raw else (134, 239, 172, 255)
-                draw.text((note_x, y + 18), note_disp, font=n_fnt, fill=note_col)
-
-                ew = text_width(draw, elo_str, elo_fnt)
-                elo_x = note_x - 24 - ew
-                draw.text((elo_x, y + 18), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
-
-                badge_pad = 34 if is_veteranos else 10
-                max_alias_px = max(120, int(elo_x - 118 - badge_pad))
-                disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_alias_px, size=21, bold=True)
-                draw.text((118, y + 15), disp_alias, font=a_fnt, fill=(240, 253, 244, 255))
-                if is_veteranos:
-                    bx = int(118 + text_width(draw, disp_alias, a_fnt) + 8)
-                    img.paste(vet_sm, (bx, y + 18), vet_sm)
-
-                y += coh3_row_h
-
-            if len(in_coh3) > coh3_cap:
-                draw.rectangle((rail_w, y, width, y + overflow_h), fill=(17, 26, 22, 255))
-                ov_txt = f"+{len(in_coh3) - coh3_cap} jogador(es) adicional(is) no CoH3 — veja todos na lista de links abaixo."
-                ov_fnt = pick_font(ov_txt, size=14, bold=False)
-                draw.text((30, y + 6), ov_txt, font=ov_fnt, fill=(134, 239, 172, 255))
-                y += overflow_h
+                y = _draw_low_prominence_strip(
+                    draw,
+                    y=y,
+                    width=width,
+                    rail_w=rail_w,
+                    lines=low_lines,
+                    bg_color=(16, 22, 20, 255),
+                    line_h=low_line_h,
+                    pad_y=low_pad_y,
+                )
 
     # SUBSEÇÃO B: ONLINE NA STEAM (GRADE 2 COLUNAS)
     if online or is_veteranos:
@@ -532,6 +827,11 @@ def _draw_category_block(
         s2_txt = f"ONLINE NA STEAM  •  DISPONÍVEIS PARA CHAMAR ({len(online)})"
         s2_fnt = pick_font(s2_txt, size=18, bold=True, condensed=True)
         draw.text((52, y + 9), s2_txt, font=s2_fnt, fill=(125, 211, 252, 255))
+        if not is_veteranos and any(_resolve_prominence_tier(p, is_veteranos=False) == "high" for p in online):
+            leg_txt = "★ ELO alto + ativo no topo"
+            leg_fnt = pick_font(leg_txt, size=14, bold=True)
+            lw = text_width(draw, leg_txt, leg_fnt)
+            draw.text((width - 24 - lw, y + 11), leg_txt, font=leg_fnt, fill=(253, 224, 71, 235))
         y += sec_hdr_h
 
         if not online:
@@ -541,81 +841,125 @@ def _draw_category_block(
             draw.text((30, y + 14), e2_txt, font=e2_fnt, fill=(148, 163, 184, 255))
             y += empty_row_h
         else:
-            vis_online = online[:online_cap]
-            online_grid_rows = (len(vis_online) + 1) // 2
-            mid_x = rail_w + (width - rail_w) // 2
-            grid_h = online_grid_rows * online_row_h + 8
-            draw.rectangle((rail_w, y, width, y + grid_h), fill=(18, 22, 29, 255))
-            draw.line([(mid_x, y + 6), (mid_x, y + grid_h - 6)], fill=(36, 44, 58, 255), width=1)
+            prom_online, low_online = _split_prominent_and_low(online, is_veteranos=is_veteranos, is_in_coh3=False)
+            vis_online = prom_online[:online_cap]
+            if vis_online:
+                online_grid_rows = (len(vis_online) + 1) // 2
+                mid_x = rail_w + (width - rail_w) // 2
+                grid_h = online_grid_rows * online_row_h + 8
+                draw.rectangle((rail_w, y, width, y + grid_h), fill=(18, 22, 29, 255))
+                draw.line([(mid_x, y + 6), (mid_x, y + grid_h - 6)], fill=(36, 44, 58, 255), width=1)
 
-            for idx, pl in enumerate(vis_online):
-                row_i = idx // 2
-                col_i = idx % 2
-                cx0 = 24 if col_i == 0 else (mid_x + 16)
-                cx_limit = (mid_x - 14) if col_i == 0 else (width - 18)
-                ry = y + 4 + row_i * online_row_h
+                for idx, pl in enumerate(vis_online):
+                    row_i = idx // 2
+                    col_i = idx % 2
+                    cx0 = 24 if col_i == 0 else (mid_x + 16)
+                    cx_limit = (mid_x - 14) if col_i == 0 else (width - 18)
+                    cell_x0 = (rail_w + 4) if col_i == 0 else (mid_x + 4)
+                    cell_x1 = (mid_x - 4) if col_i == 0 else (width - 6)
+                    ry = y + 4 + row_i * online_row_h
 
-                if col_i == 0 and row_i > 0:
-                    draw.line([(20, ry), (width - 18, ry)], fill=(29, 35, 46, 255), width=1)
+                    if col_i == 0 and row_i > 0:
+                        draw.line([(20, ry), (width - 18, ry)], fill=(29, 35, 46, 255), width=1)
 
-                has_other = bool(pl.get("other_game"))
-                is_away = bool(pl.get("is_away"))
-                ring_c = (148, 163, 184, 235) if (has_other or is_away) else (56, 189, 248, 245)
+                    tier = _resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
+                    is_high = (not is_veteranos) and (tier == "high")
+                    has_other = bool(pl.get("other_game"))
+                    is_away = bool(pl.get("is_away"))
 
-                av_im = avatar_provider.get_circular_avatar(
-                    size=38,
-                    alias=str(pl.get("alias") or "BR"),
-                    avatar_url=str(pl.get("avatar_url") or ""),
-                    ring_color=ring_c,
+                    if is_high:
+                        draw.rectangle((cell_x0, ry + 2, cell_x1, ry + online_row_h - 2), fill=(24, 33, 45, 255))
+                        draw.rectangle((cell_x0, ry + 3, cell_x0 + 3, ry + online_row_h - 3), fill=(250, 204, 21, 235))
+                        ring_c = (217, 170, 56, 225) if (has_other or is_away) else (250, 204, 21, 255)
+                    else:
+                        ring_c = (148, 163, 184, 235) if (has_other or is_away) else (56, 189, 248, 245)
+
+                    av_im = avatar_provider.get_circular_avatar(
+                        size=38,
+                        alias=str(pl.get("alias") or "BR"),
+                        avatar_url=str(pl.get("avatar_url") or ""),
+                        ring_color=ring_c,
+                    )
+                    img.paste(av_im, (cx0, ry + 8), av_im)
+                    img.paste(flag_xs, (cx0 + 46, ry + 10), flag_xs)
+
+                    elo_val = int(pl.get("max_elo", 0) or 0)
+                    elo_w = 0
+                    if elo_val > 0:
+                        if is_high:
+                            pill_left = _draw_gold_elo_pill(
+                                draw,
+                                right_x=cx_limit,
+                                top_y=ry + 6,
+                                text=f"★ {elo_val}",
+                                font_size=15,
+                            )
+                            elo_w = cx_limit - pill_left
+                        else:
+                            elo_tag = f"{elo_val}"
+                            ef = pick_font(elo_tag, size=16, bold=True, condensed=True)
+                            elo_w = int(text_width(draw, elo_tag, ef))
+                            draw.text((cx_limit - elo_w, ry + 9), elo_tag, font=ef, fill=(203, 213, 225, 255))
+
+                    name_x = cx0 + 74
+                    badge_pad = 26 if is_veteranos else 8
+                    max_nm_px = max(90, (cx_limit - elo_w - 10) - name_x - badge_pad)
+                    disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_nm_px, size=18, bold=True)
+                    if is_high:
+                        nm_col = (248, 240, 198, 255) if (has_other or is_away) else (254, 249, 195, 255)
+                    else:
+                        nm_col = (226, 232, 240, 255) if (has_other or is_away) else (186, 230, 253, 255)
+                    draw.text((name_x, ry + 6), disp_alias, font=a_fnt, fill=nm_col)
+                    if is_veteranos:
+                        img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 8), vet_xs)
+
+                    rec_tag = _format_coh3_recency_short(pl) if not is_veteranos else ""
+                    if has_other:
+                        sub_st = f"Em outro jogo: {pl['other_game']}"
+                        sub_col = (148, 163, 184, 255)
+                    elif is_away:
+                        sub_st = f"Ausente • {rec_tag}" if rec_tag else "Online (Ausente na Steam)"
+                        sub_col = (148, 163, 184, 255)
+                    elif pl.get("last_age_min") is not None and int(pl["last_age_min"]) <= 35:
+                        sub_st = f"Livre • jogou CoH3 há {max(1, int(pl['last_age_min']))} min"
+                        sub_col = (134, 239, 172, 255)
+                    elif rec_tag:
+                        sub_st = f"Livre na Steam • {rec_tag}"
+                        sub_col = (134, 239, 172, 255) if is_high else (125, 211, 252, 255)
+                    else:
+                        sub_st = "Livre na Steam para chamar"
+                        sub_col = (125, 211, 252, 255)
+
+                    st_disp, st_fnt = truncate_to_px(draw, sub_st, max_px=max(100, cx_limit - (cx0 + 46)), size=15, bold=False)
+                    draw.text((cx0 + 46, ry + 30), st_disp, font=st_fnt, fill=sub_col)
+
+                y += grid_h
+
+                if len(prom_online) > online_cap:
+                    draw.rectangle((rail_w, y, width, y + overflow_h), fill=(18, 22, 29, 255))
+                    ov_txt = f"+{len(prom_online) - online_cap} jogador(es) adicional(is) online na Steam — veja a lista de links abaixo."
+                    ov_fnt = pick_font(ov_txt, size=14, bold=False)
+                    draw.text((30, y + 6), ov_txt, font=ov_fnt, fill=(125, 211, 252, 255))
+                    y += overflow_h
+
+            if low_online:
+                low_lines = _wrap_compact_low_lines(
+                    draw,
+                    low_online,
+                    prefix=f"Baixa evidência ({len(low_online)}): ",
+                    max_px=low_max_px,
+                    max_lines=3,
                 )
-                img.paste(av_im, (cx0, ry + 8), av_im)
-                img.paste(flag_xs, (cx0 + 46, ry + 10), flag_xs)
-
-                elo_val = int(pl.get("max_elo", 0) or 0)
-                elo_tag = f"{elo_val}" if elo_val > 0 else ""
-                elo_w = 0
-                if elo_tag:
-                    ef = pick_font(elo_tag, size=16, bold=True, condensed=True)
-                    elo_w = int(text_width(draw, elo_tag, ef))
-                    draw.text((cx_limit - elo_w, ry + 9), elo_tag, font=ef, fill=(203, 213, 225, 255))
-
-                name_x = cx0 + 74
-                badge_pad = 26 if is_veteranos else 8
-                max_nm_px = max(90, (cx_limit - elo_w - 10) - name_x - badge_pad)
-                disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_nm_px, size=18, bold=True)
-                nm_col = (226, 232, 240, 255) if (has_other or is_away) else (186, 230, 253, 255)
-                draw.text((name_x, ry + 6), disp_alias, font=a_fnt, fill=nm_col)
-                if is_veteranos:
-                    img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 8), vet_xs)
-
-                rec_tag = _format_coh3_recency_short(pl) if not is_veteranos else ""
-                if has_other:
-                    sub_st = f"Em outro jogo: {pl['other_game']}"
-                    sub_col = (148, 163, 184, 255)
-                elif is_away:
-                    sub_st = f"Ausente • {rec_tag}" if rec_tag else "Online (Ausente na Steam)"
-                    sub_col = (148, 163, 184, 255)
-                elif pl.get("last_age_min") is not None and int(pl["last_age_min"]) <= 35:
-                    sub_st = f"Livre • jogou CoH3 há {max(1, int(pl['last_age_min']))} min"
-                    sub_col = (134, 239, 172, 255)
-                elif rec_tag:
-                    sub_st = f"Livre na Steam • {rec_tag}"
-                    sub_col = (125, 211, 252, 255)
-                else:
-                    sub_st = "Livre na Steam para chamar"
-                    sub_col = (125, 211, 252, 255)
-
-                st_disp, st_fnt = truncate_to_px(draw, sub_st, max_px=max(100, cx_limit - (cx0 + 46)), size=15, bold=False)
-                draw.text((cx0 + 46, ry + 30), st_disp, font=st_fnt, fill=sub_col)
-
-            y += grid_h
-
-            if len(online) > online_cap:
-                draw.rectangle((rail_w, y, width, y + overflow_h), fill=(18, 22, 29, 255))
-                ov_txt = f"+{len(online) - online_cap} jogador(es) adicional(is) online na Steam — veja a lista de links abaixo."
-                ov_fnt = pick_font(ov_txt, size=14, bold=False)
-                draw.text((30, y + 6), ov_txt, font=ov_fnt, fill=(125, 211, 252, 255))
-                y += overflow_h
+                y = _draw_low_prominence_strip(
+                    draw,
+                    y=y,
+                    width=width,
+                    rail_w=rail_w,
+                    lines=low_lines,
+                    bg_color=(15, 19, 25, 255),
+                    line_h=low_line_h,
+                    pad_y=low_pad_y,
+                )
 
     # SUBSEÇÃO C (OPCIONAL): INVISÍVEIS / STEAM PRIVADA (ATIVOS HÁ POUCO NA RELIC)
     if recent:
@@ -628,50 +972,127 @@ def _draw_category_block(
         draw.text((52, y + 9), s3_txt, font=s3_fnt, fill=(253, 224, 71, 255))
         y += sec_hdr_h
 
-        vis_recent = recent[:recent_cap]
-        for idx, pl in enumerate(vis_recent):
-            r_bg = (26, 23, 18, 255) if idx % 2 == 0 else (22, 20, 16, 255)
-            draw.rectangle((rail_w, y, width, y + recent_row_h), fill=r_bg)
-            av_im = avatar_provider.get_circular_avatar(
-                size=36,
-                alias=str(pl.get("alias") or "BR"),
-                avatar_url=str(pl.get("avatar_url") or ""),
-                ring_color=(245, 184, 46, 235),
+        prom_recent, low_recent = _split_prominent_and_low(recent, is_veteranos=is_veteranos, is_in_coh3=False)
+        vis_recent = prom_recent[:recent_cap]
+        if vis_recent:
+            if is_veteranos and len(vis_recent) > 10:
+                grid_rows = (len(vis_recent) + 1) // 2
+                mid_x = rail_w + (width - rail_w) // 2
+                grid_h = grid_rows * recent_row_h + 8
+                draw.rectangle((rail_w, y, width, y + grid_h), fill=(24, 21, 16, 255))
+                draw.line([(mid_x, y + 4), (mid_x, y + grid_h - 4)], fill=(54, 45, 28, 255), width=1)
+                for idx, pl in enumerate(vis_recent):
+                    row_i = idx // 2
+                    col_i = idx % 2
+                    cx0 = 24 if col_i == 0 else (mid_x + 16)
+                    cx_limit = (mid_x - 14) if col_i == 0 else (width - 18)
+                    ry = y + 4 + row_i * recent_row_h
+                    av_im = avatar_provider.get_circular_avatar(
+                        size=34,
+                        alias=str(pl.get("alias") or "BR"),
+                        avatar_url=str(pl.get("avatar_url") or ""),
+                        ring_color=(245, 184, 46, 235),
+                    )
+                    img.paste(av_im, (cx0, ry + 8), av_im)
+                    img.paste(flag_xs, (cx0 + 42, ry + 10), flag_xs)
+                    elo_val = int(pl.get("max_elo", 0) or 0)
+                    elo_tag = f"{elo_val}" if elo_val > 0 else ""
+                    ew = 0
+                    if elo_tag:
+                        ef = pick_font(elo_tag, size=15, bold=True, condensed=True)
+                        ew = int(text_width(draw, elo_tag, ef))
+                        draw.text((cx_limit - ew, ry + 8), elo_tag, font=ef, fill=(226, 232, 240, 255))
+                    name_x = cx0 + 70
+                    disp_alias, a_fnt = truncate_to_px(
+                        draw,
+                        str(pl.get("alias") or ""),
+                        max_px=max(80, (cx_limit - ew - 8) - name_x - 24),
+                        size=17,
+                        bold=True,
+                    )
+                    draw.text((name_x, ry + 5), disp_alias, font=a_fnt, fill=(254, 243, 199, 255))
+                    img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 6), vet_xs)
+                    note_r = str(pl.get("status_note") or "Partida recente na Relic")
+                    nd, nf = truncate_to_px(draw, note_r, max_px=max(90, cx_limit - (cx0 + 42)), size=14, bold=False)
+                    draw.text((cx0 + 42, ry + 28), nd, font=nf, fill=(253, 230, 138, 255))
+                y += grid_h
+            else:
+                for idx, pl in enumerate(vis_recent):
+                    tier = _resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
+                    is_high = (not is_veteranos) and (tier == "high")
+                    r_bg = (30, 26, 19, 255) if is_high else ((26, 23, 18, 255) if idx % 2 == 0 else (22, 20, 16, 255))
+                    draw.rectangle((rail_w, y, width, y + recent_row_h), fill=r_bg)
+                    if is_high:
+                        draw.rectangle((rail_w, y + 2, rail_w + 4, y + recent_row_h - 2), fill=(250, 204, 21, 240))
+                    av_im = avatar_provider.get_circular_avatar(
+                        size=36,
+                        alias=str(pl.get("alias") or "BR"),
+                        avatar_url=str(pl.get("avatar_url") or ""),
+                        ring_color=(250, 204, 21, 255) if is_high else (245, 184, 46, 235),
+                    )
+                    img.paste(av_im, (28, y + 7), av_im)
+                    img.paste(flag_br, (74, y + 16), flag_br)
+
+                    note_r = str(pl.get("status_note") or "Partida recente na Relic")
+                    nd, nf = truncate_to_px(draw, note_r, max_px=520, size=16, bold=True)
+                    nw = text_width(draw, nd, nf)
+                    nx = width - 26 - nw
+                    draw.text((nx, y + 15), nd, font=nf, fill=(253, 230, 138, 255))
+
+                    elo_val = int(pl.get("max_elo", 0) or 0)
+                    right_limit_x = nx
+                    if elo_val > 0:
+                        if is_high:
+                            right_limit_x = _draw_gold_elo_pill(
+                                draw,
+                                right_x=int(nx - 20),
+                                top_y=y + 12,
+                                text=f"★ {elo_val} ELO",
+                                font_size=15,
+                            )
+                        else:
+                            elo_str = f"{elo_val} ELO"
+                            elo_fnt = pick_font(elo_str, size=16, bold=True, condensed=True)
+                            ew = text_width(draw, elo_str, elo_fnt)
+                            elo_x = nx - 24 - ew
+                            draw.text((elo_x, y + 15), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
+                            right_limit_x = elo_x
+
+                    badge_pad = 34 if is_veteranos else 10
+                    disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max(100, int(right_limit_x - 110 - badge_pad)), size=18, bold=True)
+                    draw.text((110, y + 13), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
+                    if is_veteranos:
+                        img.paste(vet_sm, (int(110 + text_width(draw, disp_alias, a_fnt) + 7), y + 14), vet_sm)
+                    y += recent_row_h
+                draw.rectangle((rail_w, y, width, y + 8), fill=(22, 20, 16, 255))
+                y += 8
+
+            if len(prom_recent) > recent_cap:
+                draw.rectangle((rail_w, y, width, y + overflow_h), fill=(22, 20, 16, 255))
+                ov_txt = f"+{len(prom_recent) - recent_cap} jogador(es) invisível(is) adicional(is) — veja na lista de links abaixo."
+                ov_fnt = pick_font(ov_txt, size=14, bold=False)
+                draw.text((30, y + 6), ov_txt, font=ov_fnt, fill=(253, 224, 71, 255))
+                y += overflow_h
+
+        if low_recent:
+            low_lines = _wrap_compact_low_lines(
+                draw,
+                low_recent,
+                prefix=f"Baixa evidência ({len(low_recent)}): ",
+                max_px=low_max_px,
+                max_lines=2,
+                show_age_min=True,
             )
-            img.paste(av_im, (28, y + 7), av_im)
-            img.paste(flag_br, (74, y + 16), flag_br)
-
-            note_r = str(pl.get("status_note") or "Partida recente na Relic")
-            nd, nf = truncate_to_px(draw, note_r, max_px=540, size=16, bold=True)
-            nw = text_width(draw, nd, nf)
-            nx = width - 26 - nw
-            draw.text((nx, y + 15), nd, font=nf, fill=(253, 230, 138, 255))
-
-            elo_val = int(pl.get("max_elo", 0) or 0)
-            right_limit_x = nx
-            if elo_val > 0:
-                elo_str = f"{elo_val} ELO"
-                elo_fnt = pick_font(elo_str, size=16, bold=True, condensed=True)
-                ew = text_width(draw, elo_str, elo_fnt)
-                elo_x = nx - 24 - ew
-                draw.text((elo_x, y + 15), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
-                right_limit_x = elo_x
-
-            badge_pad = 34 if is_veteranos else 10
-            disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max(100, int(right_limit_x - 110 - badge_pad)), size=18, bold=True)
-            draw.text((110, y + 13), disp_alias, font=a_fnt, fill=(254, 243, 199, 255))
-            if is_veteranos:
-                img.paste(vet_sm, (int(110 + text_width(draw, disp_alias, a_fnt) + 7), y + 14), vet_sm)
-            y += recent_row_h
-        draw.rectangle((rail_w, y, width, y + 8), fill=(22, 20, 16, 255))
-        y += 8
-
-        if len(recent) > recent_cap:
-            draw.rectangle((rail_w, y, width, y + overflow_h), fill=(22, 20, 16, 255))
-            ov_txt = f"+{len(recent) - recent_cap} jogador(es) invisível(is) adicional(is) — veja na lista de links abaixo."
-            ov_fnt = pick_font(ov_txt, size=14, bold=False)
-            draw.text((30, y + 6), ov_txt, font=ov_fnt, fill=(253, 224, 71, 255))
-            y += overflow_h
+            y = _draw_low_prominence_strip(
+                draw,
+                y=y,
+                width=width,
+                rail_w=rail_w,
+                lines=low_lines,
+                bg_color=(20, 18, 15, 255),
+                line_h=low_line_h,
+                pad_y=low_pad_y,
+            )
 
     return y
 
@@ -682,8 +1103,8 @@ def render_lobby_radar_card_png(
 ) -> bytes:
     """
     Renderiza o Painel Vivo Fixo em alta resolução (1100px) em duas categorias claras:
-    1. Veteranos (sempre acima)
-    2. Outros Brasileiros (sempre abaixo)
+    1. Veteranos (sempre acima — mostra TODOS os online/ativos, independente de ELO ou atividade)
+    2. Outros Brasileiros (sempre abaixo — destaque para ELO alto + mais ativos; baixa evidência compacta ao final)
     """
     width = 1100
     vet_bucket = _extract_category_bucket(snapshot, "veteranos")
@@ -705,12 +1126,25 @@ def render_lobby_radar_card_png(
     footer_h = 38
     rail_w = 10
 
+    # Veteranos NUNCA são truncados (todos os 43 jogadores únicos sempre elegíveis sem filtro de ELO/atividade)
+    vet_coh3_cap = 45
+    vet_online_cap = 45
+    vet_recent_cap = 45
+
+    oth_coh3_cap = 12
+    oth_online_cap = 16
+    oth_recent_cap = 6
+
+    measure_draw = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
     vet_h = _measure_category_height(
+        measure_draw,
         vet_bucket,
+        width=width,
+        is_veteranos=True,
         show_empty_sections=True,
-        coh3_cap=12,
-        online_cap=20,
-        recent_cap=6,
+        coh3_cap=vet_coh3_cap,
+        online_cap=vet_online_cap,
+        recent_cap=vet_recent_cap,
         cat_hdr_h=cat_hdr_h,
         sec_hdr_h=sec_hdr_h,
         coh3_row_h=coh3_row_h,
@@ -720,11 +1154,14 @@ def render_lobby_radar_card_png(
         overflow_h=overflow_h,
     )
     oth_h = _measure_category_height(
+        measure_draw,
         oth_bucket,
+        width=width,
+        is_veteranos=False,
         show_empty_sections=False,
-        coh3_cap=10,
-        online_cap=18,
-        recent_cap=6,
+        coh3_cap=oth_coh3_cap,
+        online_cap=oth_online_cap,
+        recent_cap=oth_recent_cap,
         cat_hdr_h=cat_hdr_h,
         sec_hdr_h=sec_hdr_h,
         coh3_row_h=coh3_row_h,
@@ -734,7 +1171,33 @@ def render_lobby_radar_card_png(
         overflow_h=overflow_h,
     )
 
+    # Trava estrita anti-Decompression-Bomb (width * total_h < Image.MAX_IMAGE_PIXELS)
+    max_safe_h = (Image.MAX_IMAGE_PIXELS // width) - 40
     total_h = header_h + vet_h + oth_h + footer_h
+    if total_h > max_safe_h:
+        # Prioriza manter 100% dos Veteranos e ajusta limites de Outros Brasileiros primeiro
+        oth_coh3_cap = min(oth_coh3_cap, 6)
+        oth_online_cap = min(oth_online_cap, 8)
+        oth_recent_cap = min(oth_recent_cap, 4)
+        oth_h = _measure_category_height(
+            measure_draw,
+            oth_bucket,
+            width=width,
+            is_veteranos=False,
+            show_empty_sections=False,
+            coh3_cap=oth_coh3_cap,
+            online_cap=oth_online_cap,
+            recent_cap=oth_recent_cap,
+            cat_hdr_h=cat_hdr_h,
+            sec_hdr_h=sec_hdr_h,
+            coh3_row_h=coh3_row_h,
+            empty_row_h=empty_row_h,
+            online_row_h=online_row_h,
+            recent_row_h=recent_row_h,
+            overflow_h=overflow_h,
+        )
+        total_h = header_h + vet_h + oth_h + footer_h
+
     img = Image.new("RGBA", (width, total_h), (16, 19, 25, 255))
     draw = ImageDraw.Draw(img)
 
@@ -793,9 +1256,9 @@ def render_lobby_radar_card_png(
         bucket=vet_bucket,
         avatar_provider=avatar_provider,
         is_veteranos=True,
-        coh3_cap=12,
-        online_cap=20,
-        recent_cap=6,
+        coh3_cap=vet_coh3_cap,
+        online_cap=vet_online_cap,
+        recent_cap=vet_recent_cap,
         cat_hdr_h=cat_hdr_h,
         sec_hdr_h=sec_hdr_h,
         coh3_row_h=coh3_row_h,
@@ -815,9 +1278,9 @@ def render_lobby_radar_card_png(
         bucket=oth_bucket,
         avatar_provider=avatar_provider,
         is_veteranos=False,
-        coh3_cap=10,
-        online_cap=18,
-        recent_cap=6,
+        coh3_cap=oth_coh3_cap,
+        online_cap=oth_online_cap,
+        recent_cap=oth_recent_cap,
         cat_hdr_h=cat_hdr_h,
         sec_hdr_h=sec_hdr_h,
         coh3_row_h=coh3_row_h,
@@ -833,9 +1296,9 @@ def render_lobby_radar_card_png(
     oth_tot = int(oth_bucket.get("total_monitored") or 0)
     oth_days = int(oth_bucket.get("active_window_days") or 30)
     foot_txt = (
-        f"Monitorando {vet_tot} Veteranos"
-        + (f" + {oth_tot} Outros BR ativos no CoH3 (≤{oth_days}d)" if oth_tot > 0 else "")
-        + "  •  Use a lista vertical de links Steam abaixo!"
+        f"Veteranos: todos exibidos ({vet_tot})"
+        + (f"  •  Outros BR ≤{oth_days}d ({oth_tot}): ★ ELO alto + ativos em destaque" if oth_tot > 0 else "")
+        + "  •  Links Steam abaixo!"
     )
     f_fnt = pick_font(foot_txt, size=15, bold=False)
     draw.text((28, y + 10), foot_txt, font=f_fnt, fill=(148, 163, 184, 255))

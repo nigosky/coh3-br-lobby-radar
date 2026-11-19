@@ -450,12 +450,134 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             saved = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(saved["panel_message_ids"], ["1900000000000000001", "1900000000000000002"])
             self.assertEqual(saved["veteranos_steam_cache"]["58737"], "76561198099958737")
+            self.assertIn("veteranos_steam_privacy", saved)
+            self.assertEqual(saved["veteranos_steam_privacy"]["79327"], "public")
 
             comm = json.loads(comm_path.read_text(encoding="utf-8"))
+            self.assertEqual(comm.get("schema_version"), 2)
             self.assertNotIn("79327", comm["players"])
             self.assertNotIn("900004", comm["players"])
             self.assertNotIn("900099", comm["players"])
             self.assertEqual(sorted(comm["players"].keys()), ["900001", "900002", "900003"])
+
+    def test_veteranos_always_lists_all_players_and_outros_br_distinguishes_high_vs_low_prominence(self) -> None:
+        vet_online = [
+            {
+                "profile_id": 100 + i,
+                "steam_id": f"76561198000001{i:03d}",
+                "alias": f"VetLowElo{i:02d}",
+                "max_elo": 650 + i,
+                "prominence_tier": "veterano",
+                "other_game": "",
+                "is_away": False,
+                "last_age_min": None,
+                "avatar_url": "",
+            }
+            for i in range(25)
+        ]
+        oth_in_coh3 = [
+            {
+                "profile_id": 9101,
+                "steam_id": "76561198900009101",
+                "alias": "TopCoH3BR",
+                "max_elo": 1620,
+                "prominence_tier": "high",
+                "last_coh3_age_hours": 5,
+                "last_coh3_age_days": 0,
+                "status_note": "Com Company of Heroes 3 aberto agora",
+                "avatar_url": "",
+            },
+            {
+                "profile_id": 9102,
+                "steam_id": "76561198900009102",
+                "alias": "LowCoH3BR",
+                "max_elo": 610,
+                "prominence_tier": "low",
+                "last_coh3_age_hours": 30,
+                "last_coh3_age_days": 1,
+                "status_note": "Com Company of Heroes 3 aberto agora",
+                "avatar_url": "",
+            },
+        ]
+        oth_online = [
+            {
+                "profile_id": 9201,
+                "steam_id": "76561198900009201",
+                "alias": "TopSteamBR",
+                "max_elo": 1580,
+                "prominence_tier": "high",
+                "last_coh3_age_hours": 14,
+                "last_coh3_age_days": 0,
+                "other_game": "",
+                "is_away": False,
+                "avatar_url": "",
+            },
+            {
+                "profile_id": 9202,
+                "steam_id": "76561198900009202",
+                "alias": "MedSteamBR",
+                "max_elo": 1130,
+                "prominence_tier": "medium",
+                "last_coh3_age_hours": 18,
+                "last_coh3_age_days": 0,
+                "other_game": "",
+                "is_away": False,
+                "avatar_url": "",
+            },
+            {
+                "profile_id": 9203,
+                "steam_id": "76561198900009203",
+                "alias": "LowSteamBR",
+                "max_elo": 720,
+                "prominence_tier": "low",
+                "last_coh3_age_hours": 24 * 15,
+                "last_coh3_age_days": 15,
+                "other_game": "",
+                "is_away": False,
+                "avatar_url": "",
+            },
+        ]
+        snap = {
+            "timestamp": 1_800_000_000,
+            "veteranos": {"total_monitored": 43, "in_coh3": [], "online_steam": vet_online, "recent_relic": []},
+            "outros_brasileiros": {
+                "total_monitored": 412,
+                "active_window_days": 30,
+                "in_coh3": oth_in_coh3,
+                "online_steam": oth_online,
+                "recent_relic": [],
+            },
+        }
+        payload = build_lobby_radar_links_payload(snap)
+        vet_desc = payload["embeds"][0]["description"]
+        oth_desc = payload["embeds"][1]["description"]
+
+        # Todos os 25 Veteranos de ELO baixo aparecem sem corte nem subtexto discreto!
+        for i in range(25):
+            self.assertIn(f"VetLowElo{i:02d}", vet_desc)
+        self.assertNotIn("...e mais", vet_desc)
+        self.assertNotIn("-# ", vet_desc)
+
+        # Outros Brasileiros destaca ELO alto + ativos com ⭐ no topo e rebaixa low para -# no rodapé
+        self.assertIn("⭐ 🎮 [**TopCoH3BR** ↗]", oth_desc)
+        self.assertIn("⭐ [**TopSteamBR** ↗]", oth_desc)
+        self.assertIn("**1580 ELO**", oth_desc)
+        self.assertIn("-# _Baixa evidência", oth_desc)
+        self.assertIn("-# • [LowCoH3BR ↗]", oth_desc)
+        self.assertIn("-# • [LowSteamBR ↗]", oth_desc)
+        self.assertLess(oth_desc.index("TopSteamBR"), oth_desc.index("MedSteamBR"))
+        self.assertLess(oth_desc.index("MedSteamBR"), oth_desc.index("LowSteamBR"))
+
+        total_chars = sum(
+            len(e.get("title", "")) + len(e.get("description", "")) + len((e.get("footer") or {}).get("text", ""))
+            for e in payload["embeds"]
+        )
+        self.assertLess(total_chars, 5900)
+
+        png = render_lobby_radar_card_png(snap, SteamAvatarProvider(allow_network=False))
+        with Image.open(io.BytesIO(png)) as im:
+            self.assertEqual(im.width, 1100)
+            self.assertLess(im.width * im.height, Image.MAX_IMAGE_PIXELS)
 
 
 if __name__ == "__main__":
