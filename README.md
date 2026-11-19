@@ -10,9 +10,9 @@ Projeto dedicado e independente para monitorar **quem está jogando Company of H
 2. **Enriquecimento Oficial na API da Relic (`RelicActivityClient`)**:
    - Cruza com `getRecentMatchHistoryByProfileId` e `getPersonalStat` para indicar quem **acabou de sair de uma partida** (`<= 15 min` = provável menu/fila!) e quem jogou nos últimos **35 min** mesmo com Steam privada/invisível.
 3. **Painel Vivo em Duas Mensagens Distintas + Aviso Curto Auto-Limpante (`card_renderer.py`, `discord_lobby.py`, `lobby_radar.py`)**:
-   - **Painel Vivo Separado (2 Mensagens Sempre Limpas)**: a cada mudança real de presença (ou a cada 15 min), publica **duas mensagens separadas** no Discord (`POST`) e **apaga automaticamente o par anterior** (`DELETE`):
+   - **Painel Vivo Separado (Atualizado a cada 5 min)**: a cada ciclo de 5 minutos, publica **duas mensagens separadas** no Discord (`POST`) e **apaga automaticamente o par anterior** (`DELETE`):
      1. **Mensagem 1 — Card Gráfico Grande (`1100px`)**: imagem PNG enviada como anexo puro (sem `embed`), permitindo ao Discord exibi-la em largura máxima sem compressão lateral de caixa de embed.
-     2. **Mensagem 2 — Links Diretos da Steam**: mensagem dedicada apenas ao texto com links clicáveis dos perfis Steam dos veteranos ativos/online.
+     2. **Mensagem 2 — Links Diretos da Steam (Lista Vertical)**: mensagem dedicada apenas à lista vertical com links clicáveis dos perfis Steam dos veteranos ativos/online.
    - **Aviso Curto**: enviado quando `>= 2` veteranos estão com o CoH3 aberto (respeitando *cooldown* de 60 min) e **apagado automaticamente após 2 horas**, preservando sempre as duas mensagens do Painel Vivo Fixo.
 
 ## Configuração no GitHub Actions

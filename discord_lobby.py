@@ -120,44 +120,44 @@ def build_lobby_radar_links_payload(
     desc_blocks: list[str] = []
 
     if in_coh3:
-        coh3_links: list[str] = []
-        for pl in in_coh3[:12]:
-            nm = sanitize_discord_text(pl.get("alias"), 22)
+        coh3_lines: list[str] = []
+        for pl in in_coh3[:14]:
+            nm = sanitize_discord_text(pl.get("alias"), 24)
             surl = build_safe_steam_profile_url(pl.get("steam_id"))
             age_m = pl.get("last_age_min")
             tag = f" *(saiu de partida há {max(1, int(age_m))}m)*" if (age_m is not None and int(age_m) <= 15) else ""
             if surl:
-                coh3_links.append(f"🎮 [**{nm}** ↗]({surl}){tag}")
+                coh3_lines.append(f"• 🎮 [**{nm}** ↗]({surl}){tag}")
             else:
-                coh3_links.append(f"🎮 **{nm}**{tag}")
-        desc_blocks.append("**Jogando CoH3 agora (clique para abrir na Steam):**\n" + "  •  ".join(coh3_links))
+                coh3_lines.append(f"• 🎮 **{nm}**{tag}")
+        desc_blocks.append("**Jogando CoH3 agora (clique para abrir na Steam):**\n" + "\n".join(coh3_lines))
 
     free_online = [p for p in online_steam if not p.get("other_game") and not p.get("is_away")]
     busy_online = [p for p in online_steam if p.get("other_game") or p.get("is_away")]
 
     if free_online:
-        on_links: list[str] = []
-        for pl in free_online[:16]:
-            nm = sanitize_discord_text(pl.get("alias"), 20)
+        on_lines: list[str] = []
+        for pl in free_online[:18]:
+            nm = sanitize_discord_text(pl.get("alias"), 24)
             surl = build_safe_steam_profile_url(pl.get("steam_id"))
-            on_links.append(f"[**{nm}** ↗]({surl})" if surl else f"**{nm}**")
-        desc_blocks.append("🟢 **Online e livres na Steam:** " + "  •  ".join(on_links))
+            on_lines.append(f"• [**{nm}** ↗]({surl})" if surl else f"• **{nm}**")
+        desc_blocks.append("🟢 **Online e livres na Steam:**\n" + "\n".join(on_lines))
 
     if busy_online:
-        bz_links: list[str] = []
-        for pl in busy_online[:8]:
-            nm = sanitize_discord_text(pl.get("alias"), 20)
+        bz_lines: list[str] = []
+        for pl in busy_online[:10]:
+            nm = sanitize_discord_text(pl.get("alias"), 24)
             surl = build_safe_steam_profile_url(pl.get("steam_id"))
             og = sanitize_discord_text(pl.get("other_game"), 36) if pl.get("other_game") else "Ausente"
-            bz_links.append((f"[{nm} ↗]({surl})" if surl else nm) + f" *({og})*")
-        desc_blocks.append("🕹️ **Em outro jogo / ausentes:** " + "  •  ".join(bz_links))
+            bz_lines.append((f"• [{nm} ↗]({surl})" if surl else f"• {nm}") + f" *({og})*")
+        desc_blocks.append("🕹️ **Em outro jogo / ausentes:**\n" + "\n".join(bz_lines))
 
     if recent_relic:
-        rec_names = [
-            f"**{sanitize_discord_text(p.get('alias'), 20)}** *(há {max(1, int(p.get('last_age_min') or 1))}m)*"
-            for p in recent_relic[:6]
+        rec_lines = [
+            f"• **{sanitize_discord_text(p.get('alias'), 24)}** *(há {max(1, int(p.get('last_age_min') or 1))}m)*"
+            for p in recent_relic[:8]
         ]
-        desc_blocks.append("⏱️ **Jogaram há pouco (Steam privada/invisível):** " + "  •  ".join(rec_names))
+        desc_blocks.append("⏱️ **Jogaram há pouco (Steam privada/invisível):**\n" + "\n".join(rec_lines))
 
     if not desc_blocks:
         desc_blocks.append("_Nenhum veterano monitorado com status público online ou partida recente neste instante._")
@@ -170,7 +170,7 @@ def build_lobby_radar_links_payload(
         "footer": {
             "text": (
                 f"No CoH3: {len(in_coh3)} • Online Steam: {len(online_steam)} • "
-                "Checado automaticamente a cada 5 min"
+                "Atualizado automaticamente a cada 5 min"
             )
         },
         "timestamp": datetime.now(tz=timezone.utc).isoformat(),
