@@ -13,7 +13,7 @@ import urllib.request
 from datetime import datetime, timezone
 from typing import Any
 
-from card_renderer import SteamAvatarProvider, render_lobby_radar_card_png
+from card_renderer import SteamAvatarProvider, render_lobby_radar_card_png, render_lobby_radar_cards_png
 from security import (
     build_no_redirect_https_opener,
     read_bounded_http_body,
@@ -673,56 +673,79 @@ class DiscordLobbyWebhookClient:
         existing_message_ids: list[str] | tuple[str, ...] | None = None,
     ) -> list[str]:
         """
-        Publica o Painel Vivo em DUAS mensagens separadas no Discord:
-        1. Mensagem 1 (Imagem Grande): anexo PNG em alta resolução (1100px) SEM embed para largura máxima.
-        2. Mensagem 2 (Links Steam): embed limpo apenas com o texto e links diretos da Steam (sem imagem).
-        Após confirmar ambas, apaga todas as mensagens anteriores do painel (incluindo migração de 1 -> 2 mensagens).
+        Publica o Painel Vivo em TRÊS mensagens separadas no Discord para máxima legibilidade das imagens:
+        1. Mensagem 1 (Card Grande Veteranos): PNG horizontal (1100px, sem embed) -> largura máxima (~550px) no Discord.
+        2. Mensagem 2 (Card Grande Outros Brasileiros): PNG horizontal (1100px, sem embed) -> largura máxima (~550px).
+        3. Mensagem 3 (Links Steam): embeds limpos em lista vertical (Veteranos acima, Outros Brasileiros abaixo).
+        Após confirmar todas as novas mensagens, apaga todas as mensagens anteriores do painel (migração 1/2 -> 3).
         """
         if not self.is_configured:
             return []
 
         now_ts = int(snapshot.get("timestamp") or time.time())
-        unique_filename = f"lobby_radar_{now_ts}.png"
-        png_bytes = render_lobby_radar_card_png(snapshot, avatar_provider=self._avatar_provider)
-        files = [(unique_filename, png_bytes, "image/png")]
+        vet_png, oth_png = render_lobby_radar_cards_png(snapshot, avatar_provider=self._avatar_provider)
+        vet_filename = f"lobby_radar_veteranos_{now_ts}.png"
+        oth_filename = f"lobby_radar_outros_{now_ts}.png"
 
         wait_url = self._append_wait_param(self._webhook_url)
-
-        # 1. Publica Mensagem 1: Imagem Grande dedicada (sem Embed)
         image_payload = build_lobby_radar_image_payload(bot_username=self.bot_username)
-        _, img_data = self._request("POST", wait_url, image_payload, files=files)
-        image_msg_id = self._extract_snowflake(img_data)
-        if not image_msg_id:
-            return []
-
-        # 2. Publica Mensagem 2: Links Steam dedicados (sem Imagem)
         links_payload = build_lobby_radar_links_payload(snapshot, bot_username=self.bot_username)
+
+        created_ids: list[str] = []
+
+        def _rollback_partial() -> None:
+            for partial_id in reversed(created_ids):
+                try:
+                    self.delete_message(partial_id)
+                except Exception:
+                    pass
+
         try:
+            # 1. Mensagem 1: Card Grande Veteranos (sempre acima)
+            _, vet_data = self._request(
+                "POST",
+                wait_url,
+                image_payload,
+                files=[(vet_filename, vet_png, "image/png")],
+            )
+            vet_msg_id = self._extract_snowflake(vet_data)
+            if not vet_msg_id:
+                return []
+            created_ids.append(vet_msg_id)
+
+            # 2. Mensagem 2: Card Grande Outros Brasileiros (sempre abaixo de Veteranos)
+            _, oth_data = self._request(
+                "POST",
+                wait_url,
+                image_payload,
+                files=[(oth_filename, oth_png, "image/png")],
+            )
+            oth_msg_id = self._extract_snowflake(oth_data)
+            if not oth_msg_id:
+                _rollback_partial()
+                return []
+            created_ids.append(oth_msg_id)
+
+            # 3. Mensagem 3: Links Steam em lista vertical (sem imagem)
             _, links_data = self._request("POST", wait_url, links_payload)
             links_msg_id = self._extract_snowflake(links_data)
+            if not links_msg_id:
+                _rollback_partial()
+                return []
+            created_ids.append(links_msg_id)
         except Exception as exc:
-            logger.warning(
-                "Falha ao enviar mensagem de links após imagem (%s); revertendo imagem parcial: %s",
-                image_msg_id,
-                redact_secrets(exc),
-            )
-            try:
-                self.delete_message(image_msg_id)
-            except Exception:
-                pass
+            if created_ids:
+                logger.warning(
+                    "Falha ao publicar conjunto completo do painel (%s); revertendo mensagens parciais: %s",
+                    ", ".join(created_ids),
+                    redact_secrets(exc),
+                )
+                _rollback_partial()
             raise
 
-        if not links_msg_id:
-            try:
-                self.delete_message(image_msg_id)
-            except Exception:
-                pass
-            return []
+        new_protected = frozenset(created_ids)
 
-        new_pair = [image_msg_id, links_msg_id]
-        new_protected = frozenset(new_pair)
-
-        # 3. Só após confirmar ambas as novas mensagens, apaga todas as mensagens antigas do painel
+        # 4. Só após confirmar todas as 3 novas mensagens, apaga todas as mensagens antigas do painel
         seen_old: set[str] = set()
         for raw_old in (existing_message_ids or []):
             clean_old = str(raw_old or "").strip()
@@ -743,7 +766,7 @@ class DiscordLobbyWebhookClient:
                     redact_secrets(exc),
                 )
 
-        return new_pair
+        return created_ids
 
     def upsert_lobby_radar_message(self, snapshot: dict[str, Any], existing_message_id: str | None) -> str | None:
         old_ids = [existing_message_id] if existing_message_id else []
