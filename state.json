@@ -38,8 +38,8 @@
   "elo_cache_ts": 1795082622,
   "last_alert_coh3_pids": [],
   "last_alert_ts": 1795054138,
-  "last_digest": "([], [(19747, '', False), (1226910, '', False), (5768, '', False), (559962, 'Football Manager 2024', False)], [])",
-  "last_steam_fast_sig": "([], [('76561198058548575', '', False), ('76561198062871244', 'Football Manager 2024', False), ('76561198140782132', '', False), ('76561198205052385', '', False)])",
-  "last_sync_ts": 1795089444,
-  "panel_message_id": "1572943897238311065"
+  "last_digest": "([], [(900358, '', False), (19747, '', False), (1226910, '', False), (5768, '', False), (559962, 'Football Manager 2024', False)], [])",
+  "last_steam_fast_sig": "([], [('76561198058548575', '', False), ('76561198062871244', 'Football Manager 2024', False), ('76561198070545853', '', False), ('76561198140782132', '', False), ('76561198205052385', '', False)])",
+  "last_sync_ts": 1795092776,
+  "panel_message_id": "1572957888706510979"
 }
