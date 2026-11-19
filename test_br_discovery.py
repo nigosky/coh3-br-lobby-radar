@@ -317,27 +317,27 @@ class CandidateVerificationAntiFalsePositiveTests(unittest.TestCase):
             ),
             "sa_br_tag",
         )
-        # 4. País em branco + SA + >=5 partidas na mesma equipe com BRs + Steam sem país estrangeiro -> aceito (`sa_br_squad`)
+        # 4. País em branco + SA + >=3 partidas na mesma equipe com BRs + Steam sem país estrangeiro -> aceito (`sa_br_squad`)
         self.assertEqual(
             _verify_candidate_is_brazilian(
-                {"country": "", "region_id": SOUTH_AMERICA_REGION_ID, "alias": "SquadMate", "br_teammate_count": 5},
+                {"country": "", "region_id": SOUTH_AMERICA_REGION_ID, "alias": "SquadMate", "br_teammate_count": 3},
                 {"location": "", "is_steam_brazil": False},
             ),
             "sa_br_squad",
         )
-        # 5. País em branco + SA + <5 partidas squad sem tag BR e sem Steam Brazil -> REJEITADO
+        # 5. País em branco + SA + <3 partidas squad sem tag BR e sem Steam Brazil -> REJEITADO
         self.assertEqual(
             _verify_candidate_is_brazilian(
-                {"country": "", "region_id": SOUTH_AMERICA_REGION_ID, "alias": "RandomSA", "br_teammate_count": 3},
+                {"country": "", "region_id": SOUTH_AMERICA_REGION_ID, "alias": "RandomSA", "br_teammate_count": 2},
                 {"location": "", "is_steam_brazil": False},
             ),
             "",
         )
-        # 6. País em branco + Steam declara explicitamente Argentina -> REJEITADO mesmo com tag/squad
+        # 6. País em branco + Steam declara explicitamente Argentina -> REJEITADO mesmo com tag/squad/grupo
         self.assertEqual(
             _verify_candidate_is_brazilian(
                 {"country": "", "region_id": SOUTH_AMERICA_REGION_ID, "alias": "[BR] Fake", "br_teammate_count": 9},
-                {"location": "Cordoba, Argentina", "is_steam_brazil": False},
+                {"location": "Cordoba, Argentina", "is_steam_brazil": False, "has_brazil_steam_group": True},
             ),
             "",
         )
@@ -349,14 +349,55 @@ class CandidateVerificationAntiFalsePositiveTests(unittest.TestCase):
             ),
             "",
         )
+        # 8. Bandeira meme/non-hispanic em SA (ex.: Alemanha 'de') com grupo Steam Brasil e sem localização estrangeira -> aceito!
+        self.assertEqual(
+            _verify_candidate_is_brazilian(
+                {"country": "de", "region_id": SOUTH_AMERICA_REGION_ID, "alias": "PanzerAce", "br_teammate_count": 1},
+                {"location": "", "is_steam_brazil": False, "has_brazil_steam_group": True},
+            ),
+            "steam_br_group_xml",
+        )
+        # 9. Argentino ('ar') em SA mesmo se entrar em grupo Steam BR -> REJEITADO!
+        self.assertEqual(
+            _verify_candidate_is_brazilian(
+                {"country": "ar", "region_id": SOUTH_AMERICA_REGION_ID, "alias": "ArgInGroup", "br_teammate_count": 2},
+                {"location": "", "is_steam_brazil": False, "has_brazil_steam_group": True},
+            ),
+            "",
+        )
 
-    def test_candidate_verify_priority_puts_high_elo_sa_first(self) -> None:
+    def test_parse_steam_profile_xml_detects_brazil_steam_group(self) -> None:
+        sid = "76561198123456789"
+        grp_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <profile>
+            <steamID64>{sid}</steamID64>
+            <steamID><![CDATA[PanzerAce]]></steamID>
+            <onlineState>offline</onlineState>
+            <stateMessage><![CDATA[Offline]]></stateMessage>
+            <privacyState>public</privacyState>
+            <visibilityState>3</visibilityState>
+            <location><![CDATA[]]></location>
+            <groups>
+                <group isPrimary="1">
+                    <groupID64>103582791434301234</groupID64>
+                    <groupName><![CDATA[Company of Heroes 2 Brasil]]></groupName>
+                    <groupURL><![CDATA[CoH2BR]]></groupURL>
+                </group>
+            </groups>
+        </profile>
+        """
+        parsed = parse_steam_profile_xml(grp_xml, sid)
+        self.assertTrue(parsed["ok"])
+        self.assertFalse(parsed["is_steam_brazil"])
+        self.assertTrue(parsed["has_brazil_steam_group"])
+
+    def test_candidate_verify_priority_puts_blank_country_sa_before_confirmed_foreign(self) -> None:
         now = 1_800_000_000
-        high_sa = {"profile_id": 1, "max_elo": 1650, "region_id": SOUTH_AMERICA_REGION_ID, "country": "", "last_match_date": now - 3600}
-        low_sa = {"profile_id": 2, "max_elo": 950, "region_id": SOUTH_AMERICA_REGION_ID, "country": "ar", "last_match_date": now - 100}
+        blank_sa = {"profile_id": 1, "max_elo": 1150, "region_id": SOUTH_AMERICA_REGION_ID, "country": "", "last_match_date": now - 3600}
+        arg_high = {"profile_id": 2, "max_elo": 1750, "region_id": SOUTH_AMERICA_REGION_ID, "country": "ar", "last_match_date": now - 100}
         self.assertLess(
-            _candidate_verify_priority(high_sa, now=now),
-            _candidate_verify_priority(low_sa, now=now),
+            _candidate_verify_priority(blank_sa, now=now),
+            _candidate_verify_priority(arg_high, now=now),
         )
 
 

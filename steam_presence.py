@@ -83,13 +83,14 @@ COH3STATS_LEADERBOARD_PATH_RE = re.compile(
 COH3STATS_MATCHES_PATH_RE = re.compile(r"^/matches/matches-\d{9,11}\.json$")
 
 _STEAM_BRAZIL_LOC_RE = re.compile(r"(?i)\b(?:brazil|brasil)\b")
+_STEAM_BRAZIL_GROUP_RE = re.compile(r"(?i)\b(?:brazil|brasil|brasileir[oa]s?|coh2br|companybr|cohbr|gamersclub)\b")
 _EXPLICIT_BR_TAG_RE = re.compile(
     r"(?i)(?:[\[\(\{]\s*(?:br|cohbr|br\s*[-/]\s*[a-z]{2}|cohbr\s*[-/]\s*[a-z]{2}|feb)\s*[\]\)\}]"
     r"|(?:^|[\s._|-])(?:brasil|brazil|cohbr|huebr)(?:$|[\s._|-])"
     r"|(?:_|-|\.)br(?![a-z0-9]))"
 )
 
-MAX_STEAM_PRESENCE_XML_BYTES = 65_536   # 64 KB
+MAX_STEAM_PRESENCE_XML_BYTES = 131_072  # 128 KB (cobre <groups> completos com folga segura)
 MAX_STEAM_GROUP_XML_BYTES = 2 * 1024 * 1024  # 2 MB
 MAX_RELIC_RESPONSE_BYTES = 2 * 1024 * 1024  # 2 MB
 MAX_OPENDATA_RESPONSE_BYTES = 128 * 1024 * 1024  # 128 MB limite seguro anti-bomb para leaderboards Open Data
@@ -288,6 +289,7 @@ def _make_empty_presence(steam_id: str, privacy_state: str = "error") -> dict[st
         "most_played_count": 0,
         "location": "",
         "is_steam_brazil": False,
+        "has_brazil_steam_group": False,
         "online_state": "offline",
         "is_in_coh3": False,
         "is_online_steam": False,
@@ -340,6 +342,15 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
     location = _clean_xml_text(root.findtext("./location"), max_len=80)
     steam_br = is_brazil_steam_location(location)
 
+    has_brazil_steam_group = False
+    for grp in root.findall("./groups/group"):
+        g_name = _clean_xml_text(grp.findtext("./groupName"), max_len=80)
+        g_url = _clean_xml_text(grp.findtext("./groupURL"), max_len=80)
+        g_head = _clean_xml_text(grp.findtext("./headline"), max_len=80)
+        if _STEAM_BRAZIL_GROUP_RE.search(f"{g_name} {g_url} {g_head}"):
+            has_brazil_steam_group = True
+            break
+
     avatar_candidate = (
         (root.findtext("./avatarMedium") or "").strip()
         or (root.findtext("./avatarFull") or "").strip()
@@ -358,6 +369,7 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
             "most_played_count": 0,
             "location": location,
             "is_steam_brazil": steam_br,
+            "has_brazil_steam_group": has_brazil_steam_group,
             "online_state": "offline",
             "is_in_coh3": False,
             "is_online_steam": False,
@@ -449,6 +461,7 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
         "most_played_count": len(most_played_items),
         "location": location,
         "is_steam_brazil": steam_br,
+        "has_brazil_steam_group": has_brazil_steam_group,
         "online_state": online_state,
         "is_in_coh3": bool(is_in_coh3),
         "is_online_steam": bool(is_online_steam),
