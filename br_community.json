@@ -458,7 +458,8 @@
       "alias": "Tenshi",
       "br_source": "open_data_matches",
       "last_match_date": 1794789287,
-      "last_seen_online_ts": 0,
+      "last_seen_ingame_ts": 1795118554,
+      "last_seen_online_ts": 1795118554,
       "max_elo": 1155,
       "profile_id": 1066445,
       "steam_id": "76561199016996635",
@@ -2423,12 +2424,12 @@
     "1304125": {
       "alias": "LordBaconBR",
       "br_source": "open_data_lb",
-      "last_match_date": 1795034644,
+      "last_match_date": 1795118382,
       "last_seen_online_ts": 1795117054,
       "max_elo": 1012,
       "profile_id": 1304125,
       "steam_id": "76561199482244877",
-      "total_matches": 795
+      "total_matches": 796
     },
     "1304518": {
       "alias": "B4NDEIRA",
@@ -9940,7 +9941,7 @@
       "alias": "Venom snake",
       "br_source": "open_data_lb",
       "last_match_date": 1794517486,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795118554,
       "max_elo": 1194,
       "profile_id": 96038,
       "steam_id": "76561198038473331",
