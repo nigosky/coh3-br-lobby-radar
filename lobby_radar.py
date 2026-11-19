@@ -272,24 +272,29 @@ def run_lobby_radar_sync(
         if prev_alert_pids:
             state["last_alert_coh3_pids"] = []
             state_dirty = True
-    elif (
-        len(curr_coh3_pids) >= max(1, int(alert_min_in_coh3))
-        and has_new_entrant
-        and (now - last_alert_ts) >= cooldown_sec
-    ):
-        alert_id = discord.send_lobby_alert_message(snapshot, retention_hours=alert_cleanup_hours)
-        if alert_id:
-            state["active_alerts"].append({"message_id": alert_id, "sent_at": now})
-            state["last_alert_ts"] = now
-            state["last_alert_coh3_pids"] = curr_coh3_pids
+    else:
+        still_present = sorted(pid for pid in prev_alert_pids if pid in curr_coh3_pids)
+        if still_present != sorted(prev_alert_pids):
+            state["last_alert_coh3_pids"] = still_present
             state_dirty = True
-            summary["alert_sent"] = True
-            logger.info(
-                "[RADAR LOBBY] Aviso curto enviado (ID %s | %d veteranos no CoH3 | limpeza em %dh).",
-                alert_id,
-                len(curr_coh3_pids),
-                alert_cleanup_hours,
-            )
+        if (
+            len(curr_coh3_pids) >= max(1, int(alert_min_in_coh3))
+            and has_new_entrant
+            and (now - last_alert_ts) >= cooldown_sec
+        ):
+            alert_id = discord.send_lobby_alert_message(snapshot, retention_hours=alert_cleanup_hours)
+            if alert_id:
+                state["active_alerts"].append({"message_id": alert_id, "sent_at": now})
+                state["last_alert_ts"] = now
+                state["last_alert_coh3_pids"] = curr_coh3_pids
+                state_dirty = True
+                summary["alert_sent"] = True
+                logger.info(
+                    "[RADAR LOBBY] Aviso curto enviado (ID %s | %d veteranos no CoH3 | limpeza em %dh).",
+                    alert_id,
+                    len(curr_coh3_pids),
+                    alert_cleanup_hours,
+                )
 
     if state_dirty:
         save_state(state_path, state)
