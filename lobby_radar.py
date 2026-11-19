@@ -6,9 +6,9 @@ Opera 100% autônomo (repositório próprio, estado JSON leve, zero chave da Ste
 1. Limpa automaticamente avisos curtos (`active_alerts`) com mais de `alert_cleanup_hours` (padrão 2h),
    protegendo sempre as duas mensagens do Painel Vivo Fixo (`panel_message_ids`).
 2. Consulta presença pública XML da Steam das 33 contas monitoradas (~1,3s em paralelo).
-3. Se a presença mudou (ou se passaram >= 15 min para renovar o carimbo de horário):
+3. A cada ciclo de 5 minutos (ou imediatamente em qualquer mudança de presença):
    - Consulta na Relic API a última partida concluída e o pico de ELO (cacheado por 6h em `state.json`).
-   - Gera nova imagem PNG grande (1100px) do card e publica DUAS mensagens distintas no Discord (`POST` da imagem dedicada + `POST` dos links da Steam), apagando em seguida as mensagens anteriores do painel (`DELETE`).
+   - Gera nova imagem PNG grande (1100px) do card e publica DUAS mensagens distintas no Discord (`POST` da imagem dedicada + `POST` dos links da Steam em lista vertical), apagando em seguida as mensagens anteriores do painel (`DELETE`).
 4. Envia aviso curto com auto-limpeza quando `>= 2` veteranos estão com o CoH3 aberto (cooldown de 60 min).
 """
 
@@ -48,7 +48,7 @@ DEFAULT_ALERT_CLEANUP_HOURS = 2
 DEFAULT_ALERT_COOLDOWN_MINUTES = 60
 DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
-PANEL_HEARTBEAT_REFRESH_SEC = 15 * 60
+PANEL_HEARTBEAT_REFRESH_SEC = 5 * 60
 
 
 def load_state(state_path: Path = DEFAULT_STATE_PATH) -> dict[str, Any]:

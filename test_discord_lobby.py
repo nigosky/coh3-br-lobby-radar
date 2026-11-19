@@ -155,8 +155,12 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertEqual(len(links_payload["embeds"]), 1)
         emb = links_payload["embeds"][0]
         self.assertNotIn("image", emb)
-        self.assertIn("https://steamcommunity.com/profiles/76561197963172584", emb["description"])
-        self.assertIn("Football Manager 2024", emb["description"])
+        desc = emb["description"]
+        self.assertIn("https://steamcommunity.com/profiles/76561197963172584", desc)
+        self.assertIn("Football Manager 2024", desc)
+        self.assertNotIn("  •  ", desc)
+        self.assertIn("\n• [**Margheriti** ↗]", desc)
+        self.assertIn("\n• [É o Gabe ↗]", desc)
 
     def test_upsert_posts_two_separate_messages_and_deletes_legacy_and_previous_messages(self) -> None:
         client = _FakeDiscordClient()

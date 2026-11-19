@@ -98,11 +98,44 @@ jobs:
             CYCLES=1
           fi
 
-          ARGS=(--verify-webhook --loop-cycles "${CYCLES}" --loop-interval-sec 300)
-          if [ "${FORCE_SYNC}" = "true" ]; then
-            ARGS+=(--force)
-          fi
-          python3 lobby_radar.py "${ARGS[@]}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for ((cycle=1; cycle<=CYCLES; cycle++)); do
+            CYCLE_START="$(date +%s)"
+            ARGS=()
+            if [ "${cycle}" -eq 1 ]; then
+              ARGS+=(--verify-webhook)
+              if [ "${FORCE_SYNC}" = "true" ]; then
+                ARGS+=(--force)
+              fi
+            fi
+
+            python3 lobby_radar.py "${ARGS[@]}"
+
+            # Persiste state.json imediatamente apos cada ciclo alterado (evita mensagens orfas se a sessao for cancelada)
+            if ! grep -RInEi "(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+" state.json *.py 2>/dev/null; then
+              if [ -f "state.json" ]; then
+                git add -- state.json
+                if ! git diff --cached --quiet; then
+                  git commit -m "chore(lobby-state): atualizar estado do Radar de Lobby [skip ci]"
+                  git pull --rebase -X theirs origin main || git rebase --abort 2>/dev/null || true
+                  git push origin "HEAD:main" || true
+                fi
+              fi
+            fi
+
+            if [ "${cycle}" -lt "${CYCLES}" ]; then
+              NOW_EPOCH="$(date +%s)"
+              ELAPSED="$((NOW_EPOCH - CYCLE_START))"
+              SLEEP_SEC="$((300 - ELAPSED))"
+              if [ "${SLEEP_SEC}" -lt 5 ]; then
+                SLEEP_SEC=5
+              fi
+              echo "[RADAR LOOP] Ciclo ${cycle}/${CYCLES} concluido em ${ELAPSED}s; proximo ciclo em ${SLEEP_SEC}s."
+              sleep "${SLEEP_SEC}"
+            fi
+          done
 
       - name: Auditoria anti-vazamento e persistencia de estado (state.json)
         if: always()
