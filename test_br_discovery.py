@@ -717,6 +717,76 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
             self.assertEqual(saved["players"]["33487"]["br_source"], "manual_other_br")
             self.assertEqual(saved["players"]["33487"]["max_elo"], 1645)
 
+    def test_arranged_teams_extraction_and_partner_verification_priority(self) -> None:
+        from steam_presence import extract_br_arranged_teams_from_matches_payload
+
+        now = 1_800_000_000
+        # 3 partidas 2v2 Allies no mesmo dia UTC com BR (920001) + Expat EUA (920002) -> Arranged Team oficial!
+        matches = []
+        for idx in range(3):
+            matches.append(
+                {
+                    "id": 88000 + idx,
+                    "matchtype_id": 2,
+                    "completiontime": now - 3600 * (3 - idx),
+                    "matchhistoryreportresults": [
+                        {
+                            "profile_id": 920001,
+                            "teamid": 0,
+                            "race_id": 129494,
+                            "profile": {
+                                "name": "/steam/76561198000920001",
+                                "alias": "CraqueBR",
+                                "country": "br",
+                                "leaderboardregion_id": SOUTH_AMERICA_REGION_ID,
+                            },
+                            "matchhistorymember": {"wins": 80, "losses": 20, "oldrating": 1650, "newrating": 1670},
+                        },
+                        {
+                            "profile_id": 920002,
+                            "teamid": 0,
+                            "race_id": 197345,
+                            "profile": {
+                                "name": "/steam/76561198000920002",
+                                "alias": "ParceiroUS",
+                                "country": "us",
+                                "leaderboardregion_id": 2074436,
+                            },
+                            "matchhistorymember": {"wins": 70, "losses": 25, "oldrating": 1610, "newrating": 1630},
+                        },
+                    ],
+                }
+            )
+        day_teams = extract_br_arranged_teams_from_matches_payload({"matches": matches})
+        self.assertEqual(len(day_teams), 1)
+        team = next(iter(day_teams.values()))
+        self.assertEqual(team["mode"], "2v2")
+        self.assertEqual(team["side"], "Allies")
+        self.assertEqual(team["games"], 3)
+        self.assertEqual(team["member_pids"], [920001, 920002])
+
+        # Parceiro de Arranged Team BR com bandeira US entra em Bucket 0 (antes de estrangeiros comuns)
+        arranged_us = {
+            "profile_id": 920002,
+            "max_elo": 1630,
+            "region_id": 2074436,
+            "country": "us",
+            "in_br_arranged_team": True,
+            "last_match_date": now - 1000,
+        }
+        arg_high = {
+            "profile_id": 920003,
+            "max_elo": 1800,
+            "region_id": SOUTH_AMERICA_REGION_ID,
+            "country": "ar",
+            "last_match_date": now - 100,
+        }
+        self.assertEqual(_candidate_verify_priority(arranged_us, now=now)[0], 0)
+        self.assertLess(
+            _candidate_verify_priority(arranged_us, now=now),
+            _candidate_verify_priority(arg_high, now=now),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
