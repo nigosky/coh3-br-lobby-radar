@@ -629,6 +629,94 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
             self.assertNotIn("910002", players)
             self.assertNotIn("910005", players)
 
+    def test_manual_other_br_generick_us_expat_resolved_and_preserved(self) -> None:
+        from lobby_radar import resolve_manual_other_br_entries
+        from steam_presence import MANUAL_OTHER_BR_PLAYERS
+
+        now = 1_800_000_000
+        self.assertTrue(
+            any(int(r.get("profile_id", 0) or 0) == 33487 for r in MANUAL_OTHER_BR_PLAYERS),
+            "Generick (pid=33487) deve estar cadastrado em MANUAL_OTHER_BR_PLAYERS.",
+        )
+
+        class _FakeRelicGenerick:
+            def fetch_profile_stats_batch(
+                self, profile_ids: list[int], pace_delay_sec: float = 0.15
+            ) -> dict[int, dict[str, Any]]:
+                if 33487 not in profile_ids:
+                    return {}
+                return {
+                    33487: {
+                        "profile_id": 33487,
+                        "steam_id": "76561198000033487",
+                        "alias": "Generick",
+                        "country": "us",
+                        "max_elo": 1645,
+                        "last_match_date": now - 40 * 86400,  # leaderboard decaiu, mas jogou partida recente!
+                        "total_matches": 890,
+                    }
+                }
+
+            def fetch_latest_matches_batch(
+                self, profile_ids: list[int], max_workers: int = 2
+            ) -> dict[int, dict[str, Any]]:
+                if 33487 not in profile_ids:
+                    return {}
+                return {
+                    33487: {
+                        "profile_id": 33487,
+                        "match_id": 99933487,
+                        "completion_time": now - 3600,
+                        "mode": "Custom",
+                    }
+                }
+
+            def discover_br_and_candidates_from_open_data(
+                self, now_ts: int | None = None
+            ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[str, Any]]:
+                return {}, {}, {"chosen_day": now, "files_ok": 16, "files_failed": [], "total_bytes": 1000}
+
+            def discover_br_and_candidates_from_open_data_matches(
+                self, **kwargs: Any
+            ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[str, Any]]:
+                return {}, {}, {"days_requested": 1, "days_ok": 1, "days_failed": 0, "matches_scanned": 0}
+
+            def discover_br_and_candidates_from_relic_sa(
+                self, **kwargs: Any
+            ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+                return {}, {}
+
+        resolved = resolve_manual_other_br_entries(
+            _FakeRelicGenerick(),
+            MANUAL_OTHER_BR_PLAYERS,
+            vet_pids=set(),
+            vet_sids=set(),
+        )
+        self.assertIn(33487, resolved)
+        self.assertEqual(resolved[33487]["alias"], "Generick")
+        self.assertEqual(resolved[33487]["max_elo"], 1645)
+        self.assertEqual(resolved[33487]["last_match_date"], now - 3600)
+        self.assertEqual(resolved[33487]["br_source"], "manual_other_br")
+
+        with tempfile.TemporaryDirectory() as td:
+            comm_path = Path(td) / "br_community.json"
+            state_path = Path(td) / "state.json"
+            run_deep_br_discovery(
+                community_cache_path=comm_path,
+                state_path=state_path,
+                relic_client=_FakeRelicGenerick(),  # type: ignore[arg-type]
+                presence_client=None,
+                match_days=1,
+                max_steam_verify=0,
+                steam_groups=(),
+                now_ts=now,
+            )
+            saved = json.loads(comm_path.read_text(encoding="utf-8"))
+            self.assertIn("33487", saved["players"])
+            self.assertEqual(saved["players"]["33487"]["alias"], "Generick")
+            self.assertEqual(saved["players"]["33487"]["br_source"], "manual_other_br")
+            self.assertEqual(saved["players"]["33487"]["max_elo"], 1645)
+
 
 if __name__ == "__main__":
     unittest.main()
