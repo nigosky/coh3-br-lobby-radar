@@ -169,6 +169,12 @@ CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 1097608, "steam_id": "", "original_alias": "Winter Animal"},
 ]
 
+# Brasileiros confirmados residentes no exterior (EUA/Europa/bandeira diferente na Steam/Relic)
+# monitorados permanentemente na categoria "Outros Brasileiros" (SteamID64, ELO e atividade resolvidos via Relic API)
+MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
+    {"profile_id": 33487, "steam_id": "", "original_alias": "Generick"},
+]
+
 _HTML_TAG_STRIP_RE = re.compile(r"<[^>]+>")
 _XML_UNSAFE_DECL_RE = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
 _OFFLINE_STATE_MSG_RE = re.compile(

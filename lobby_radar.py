@@ -38,6 +38,7 @@ from security import (
 )
 from steam_presence import (
     CORE_BR_ROSTER,
+    MANUAL_OTHER_BR_PLAYERS,
     OTHER_BR_ACTIVE_COH3_DAYS,
     PROMINENCE_TIER_ORDER,
     STEAM_ID64_VALID_RE,
@@ -67,6 +68,7 @@ PANEL_LAYOUT_VERSION = 5
 COMMUNITY_SCHEMA_VERSION = 3
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
+MANUAL_OTHER_BR_RECHECK_TTL_SEC = 6 * 3600
 OTHER_BR_ACTIVE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400  # 30 dias (1 mês)
 OTHER_BR_INVISIBLE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400
 MAX_OTHER_BR_ACTIVE_PER_CYCLE = 220
@@ -436,6 +438,81 @@ def _call_latest_matches_batch(
     return {int(pid): m for pid, m in raw.items() if isinstance(m, dict)}
 
 
+def resolve_manual_other_br_entries(
+    r_client: Any,
+    manual_players: list[dict[str, Any]],
+    *,
+    vet_pids: set[int],
+    vet_sids: set[str],
+) -> dict[int, dict[str, Any]]:
+    """
+    Resolve via Relic API (`getPersonalStat` + `getRecentMatchHistoryByProfileId`) os brasileiros
+    confirmados cadastrados manualmente em `MANUAL_OTHER_BR_PLAYERS` (ex.: brasileiros residentes
+    nos EUA/Europa cuja bandeira na Relic/Steam não é `br`).
+    """
+    targets: dict[int, dict[str, Any]] = {}
+    for row in manual_players:
+        pid = int(row.get("profile_id", 0) or 0)
+        sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+        if pid <= 0 or pid in vet_pids or (sid and sid in vet_sids):
+            continue
+        targets[pid] = {
+            "profile_id": pid,
+            "steam_id": sid if STEAM_ID64_VALID_RE.fullmatch(sid) else "",
+            "alias": str(row.get("original_alias") or row.get("alias") or "").strip(),
+        }
+    if not targets:
+        return {}
+
+    target_pids = list(targets.keys())
+    stats_map: dict[int, dict[str, Any]] = {}
+    if hasattr(r_client, "fetch_profile_stats_batch"):
+        try:
+            raw_stats = r_client.fetch_profile_stats_batch(target_pids, pace_delay_sec=0.15)
+            if isinstance(raw_stats, dict):
+                stats_map = {int(k): v for k, v in raw_stats.items() if isinstance(v, dict)}
+        except Exception as exc:
+            logger.debug("Falha transitória ao resolver MANUAL_OTHER_BR_PLAYERS (stats): %s", redact_secrets(exc))
+
+    valid_resolved_pids: list[int] = []
+    for pid, base in targets.items():
+        st = stats_map.get(pid) or {}
+        sid = str(st.get("steam_id") or base["steam_id"] or "").replace("/steam/", "").strip()
+        if STEAM_ID64_VALID_RE.fullmatch(sid) and sid not in vet_sids:
+            valid_resolved_pids.append(pid)
+
+    latest_map: dict[int, dict[str, Any]] = {}
+    if valid_resolved_pids:
+        try:
+            latest_map = _call_latest_matches_batch(r_client, valid_resolved_pids, max_workers=2)
+        except Exception as exc:
+            logger.debug("Falha transitória ao resolver MANUAL_OTHER_BR_PLAYERS (matches): %s", redact_secrets(exc))
+
+    resolved: dict[int, dict[str, Any]] = {}
+    for pid in valid_resolved_pids:
+        base = targets[pid]
+        st = stats_map.get(pid) or {}
+        lm = latest_map.get(pid) or {}
+        sid = str(st.get("steam_id") or base["steam_id"] or "").replace("/steam/", "").strip()
+        alias = str(st.get("alias") or base["alias"] or f"Jogador {pid}").strip()
+        max_elo = max(0, int(st.get("max_elo", 0) or 0))
+        total_matches = max(0, int(st.get("total_matches", 0) or 0))
+        lmd = max(
+            int(st.get("last_match_date", 0) or 0),
+            int(lm.get("completion_time", 0) or 0),
+        )
+        resolved[pid] = {
+            "profile_id": pid,
+            "steam_id": sid,
+            "alias": alias,
+            "max_elo": max_elo,
+            "last_match_date": lmd,
+            "total_matches": total_matches,
+            "br_source": "manual_other_br",
+        }
+    return resolved
+
+
 def run_lobby_radar_sync(
     state_path: Path = DEFAULT_STATE_PATH,
     community_cache_path: Path | None = None,
@@ -739,6 +816,58 @@ def run_lobby_radar_sync(
             min_last_match_date=active_coh3_cutoff,
         ):
             community_dirty = True
+
+    # Brasileiros confirmados residentes no exterior (`MANUAL_OTHER_BR_PLAYERS`, ex.: Generick nos EUA):
+    # resolvidos imediatamente quando novos ou periodicamente (6h/descoberta) caso voltem a jogar após >30d
+    manual_checked_pids = {int(x) for x in (state.get("manual_other_br_checked_pids") or []) if int(x or 0) > 0}
+    manual_checked_ts = int(state.get("manual_other_br_checked_ts", 0) or 0)
+    manual_to_sync = [
+        row
+        for row in MANUAL_OTHER_BR_PLAYERS
+        if int(row.get("profile_id", 0) or 0) > 0
+        and int(row.get("profile_id", 0) or 0) not in vet_pids_set
+        and (
+            need_discovery
+            or force
+            or (
+                str(int(row["profile_id"])) not in community_players
+                and (
+                    int(row["profile_id"]) not in manual_checked_pids
+                    or (now - manual_checked_ts) >= MANUAL_OTHER_BR_RECHECK_TTL_SEC
+                )
+            )
+        )
+    ]
+    if manual_to_sync:
+        manual_resolved = resolve_manual_other_br_entries(
+            r_client,
+            manual_to_sync,
+            vet_pids=vet_pids_set,
+            vet_sids=vet_sids_set,
+        )
+        for item in manual_resolved.values():
+            if _merge_player_into_community(
+                community_players,
+                item,
+                vet_pids=vet_pids_set,
+                vet_sids=vet_sids_set,
+                min_last_match_date=active_coh3_cutoff,
+                replace_matches=False,
+            ):
+                community_dirty = True
+                logger.info(
+                    "[RADAR COMUNIDADE BR] Brasileiro manual ativo sincronizado: %s (pid=%d, ELO=%d, %d jogos).",
+                    item.get("alias") or item["profile_id"],
+                    int(item["profile_id"]),
+                    int(item.get("max_elo", 0) or 0),
+                    int(item.get("total_matches", 0) or 0),
+                )
+        if manual_resolved:
+            updated_checked = sorted(manual_checked_pids | set(manual_resolved.keys()))
+            if updated_checked != sorted(manual_checked_pids) or manual_checked_ts != now:
+                state["manual_other_br_checked_pids"] = updated_checked
+                state["manual_other_br_checked_ts"] = now
+                state_dirty = True
 
     rotation_offset = int(state.get("other_br_rotation_offset", 0) or 0)
     selected_others, next_rotation_offset = _select_other_br_candidates(

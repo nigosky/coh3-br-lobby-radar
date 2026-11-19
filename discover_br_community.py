@@ -35,11 +35,13 @@ from lobby_radar import (
     _resolve_veteranos_roster,
     load_community_cache,
     load_state,
+    resolve_manual_other_br_entries,
     save_community_cache,
 )
 from security import configure_secure_logging, redact_secrets
 from steam_presence import (
     BRAZILIAN_COH_STEAM_GROUPS,
+    MANUAL_OTHER_BR_PLAYERS,
     OTHER_BR_ACTIVE_COH3_DAYS,
     SOUTH_AMERICA_REGION_ID,
     STEAM_ID64_VALID_RE,
@@ -394,6 +396,24 @@ def run_deep_br_discovery(
             len(verify_slice),
             dict(sorted(bucket_counts.items())),
             steam_verified_count,
+        )
+
+    # 4c. Brasileiros confirmados no exterior (`MANUAL_OTHER_BR_PLAYERS`) resolvidos direto na Relic API
+    manual_resolved = resolve_manual_other_br_entries(
+        r_client,
+        MANUAL_OTHER_BR_PLAYERS,
+        vet_pids=vet_pids,
+        vet_sids=vet_sids,
+    )
+    if manual_resolved:
+        for item in manual_resolved.values():
+            _merge_discovered_br_player(br_pool, accumulate_matches=False, **item)
+        sources_used.append("manual_other_br")
+        logger.info(
+            "[STAGE 4c — BRASILEIROS NO EXTERIOR (MANUAL)] %d perfil(is) resolvido(s) via Relic API (ativos <=%dd: %d).",
+            len(manual_resolved),
+            OTHER_BR_ACTIVE_COH3_DAYS,
+            sum(1 for x in manual_resolved.values() if int(x.get("last_match_date", 0) or 0) >= active_cutoff),
         )
 
     # 5. Filtra apenas ativos no CoH3 (<= 30d) e enriquece TODOS com ELO máximo real / total_matches na Relic API
