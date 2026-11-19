@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import unittest
 
-from steam_presence import build_lobby_radar_snapshot, parse_steam_profile_xml
+from steam_presence import (
+    SteamPresenceClient,
+    build_lobby_radar_snapshot,
+    extract_br_players_from_opendata_payload,
+    extract_br_players_from_relic_leaderboard_payload,
+    parse_steam_profile_xml,
+)
 
 SAMPLE_SID = "76561197963172584"
 
@@ -192,6 +198,122 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         self.assertEqual(snap["in_coh3"], [])
         self.assertEqual(snap["online_steam"], [])
         self.assertEqual(snap["recent_relic"], [])
+
+    def test_extract_br_players_from_opendata_and_relic_leaderboards(self) -> None:
+        opendata = {
+            "leaderboards": [
+                {
+                    "rating": 1480.6,
+                    "lastmatchdate": 1_800_000_000,
+                    "members": [
+                        {"profile_id": 500001, "name": "/steam/76561198111111111", "alias": "CariocaBR", "country": "br"},
+                    ],
+                },
+                {
+                    "rating": 1620,
+                    "lastmatchdate": 1_800_001_000,
+                    "members": [
+                        {"profile_id": 500001, "name": "/steam/76561198111111111", "alias": "CariocaBR", "country": "BR"},
+                    ],
+                },
+                {
+                    "rating": 1900,
+                    "lastmatchdate": 1_800_001_000,
+                    "members": [
+                        {"profile_id": 500002, "name": "/steam/76561198222222222", "alias": "GringoUS", "country": "us"},
+                    ],
+                },
+                {
+                    "rating": 1300,
+                    "lastmatchdate": 1_800_000_500,
+                    "members": [
+                        {"profile_id": 500003, "name": "/xbl/9999", "alias": "XboxBR", "country": "br"},
+                    ],
+                },
+            ]
+        }
+        br_open = extract_br_players_from_opendata_payload(opendata)
+        self.assertEqual(list(br_open.keys()), [500001])
+        self.assertEqual(br_open[500001]["max_elo"], 1620)
+        self.assertEqual(br_open[500001]["last_match_date"], 1_800_001_000)
+
+        relic_lb = {
+            "statGroups": [
+                {
+                    "id": 9001,
+                    "members": [
+                        {"profile_id": 600001, "name": "/steam/76561198333333333", "alias": "PaulistaBR", "country": "br"}
+                    ],
+                },
+                {
+                    "id": 9002,
+                    "members": [
+                        {"profile_id": 600002, "name": "/steam/76561198444444444", "alias": "HermanoAR", "country": "ar"}
+                    ],
+                },
+            ],
+            "leaderboardStats": [
+                {"statgroup_id": 9001, "rating": 1350, "lastmatchdate": 1_800_000_200},
+                {"statgroup_id": 9002, "rating": 1500, "lastmatchdate": 1_800_000_300},
+            ],
+        }
+        br_relic = extract_br_players_from_relic_leaderboard_payload(relic_lb)
+        self.assertEqual(list(br_relic.keys()), [600001])
+        self.assertEqual(br_relic[600001]["alias"], "PaulistaBR")
+
+    def test_dual_category_snapshot_separates_veteranos_and_outros_brasileiros_without_duplicates(self) -> None:
+        vet_roster = [{"profile_id": 79327, "steam_id": SAMPLE_SID, "original_alias": "Chacineiro"}]
+        other_roster = [
+            # Duplicata proposital de Veterano — deve ser bloqueada em Outros Brasileiros!
+            {"profile_id": 79327, "steam_id": SAMPLE_SID, "alias": "Chacineiro"},
+            {"profile_id": 500001, "steam_id": "76561198111111111", "alias": "OutroNoCoH3", "max_elo": 1410},
+            {"profile_id": 500002, "steam_id": "76561198222222222", "alias": "OutroNaSteam", "max_elo": 1220},
+            {"profile_id": 500003, "steam_id": "76561198333333333", "alias": "OutroInvisivel", "max_elo": 1380},
+        ]
+        vet_pres = {
+            SAMPLE_SID: {"steam_id": SAMPLE_SID, "ok": True, "is_in_coh3": True, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
+        }
+        other_pres = {
+            "76561198111111111": {"steam_id": "76561198111111111", "ok": True, "is_in_coh3": True, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
+            "76561198222222222": {"steam_id": "76561198222222222", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
+            "76561198333333333": {"steam_id": "76561198333333333", "ok": True, "is_in_coh3": False, "is_online_steam": False, "other_game": "", "is_away": False, "avatar_url": ""},
+        }
+        other_matches = {
+            500003: {"profile_id": 500003, "match_id": 99, "completion_time": 1_800_000_000 - 600, "mode": "2v2"},
+        }
+        snap = build_lobby_radar_snapshot(
+            vet_roster,
+            vet_pres,
+            now_ts=1_800_000_000,
+            other_br_players=other_roster,
+            other_presence_by_steam=other_pres,
+            other_latest_matches_by_pid=other_matches,
+            other_br_total_catalog=120,
+        )
+        self.assertEqual([p["profile_id"] for p in snap["veteranos"]["in_coh3"]], [79327])
+        self.assertEqual([p["profile_id"] for p in snap["outros_brasileiros"]["in_coh3"]], [500001])
+        self.assertEqual([p["profile_id"] for p in snap["outros_brasileiros"]["online_steam"]], [500002])
+        self.assertEqual([p["profile_id"] for p in snap["outros_brasileiros"]["recent_relic"]], [500003])
+        self.assertEqual(snap["outros_brasileiros"]["total_monitored"], 120)
+
+    def test_steam_rate_limit_circuit_breaker_stops_batch_early(self) -> None:
+        calls: list[str] = []
+
+        class _RateLimitedSteamClient(SteamPresenceClient):
+            def fetch_one_presence(self, steam_id: str) -> dict[str, object]:
+                calls.append(steam_id)
+                return {
+                    "steam_id": steam_id,
+                    "ok": False,
+                    "rate_limited": True,
+                    "is_in_coh3": False,
+                    "is_online_steam": False,
+                }
+
+        client = _RateLimitedSteamClient()
+        sids = [f"765611980000000{i:02d}" for i in range(25)]
+        client.fetch_batch_presence(sids, max_workers=1, stop_on_rate_limit=True, rate_limit_threshold=2)
+        self.assertEqual(len(calls), 2)
 
 
 if __name__ == "__main__":
