@@ -46,6 +46,7 @@ from steam_presence import (
     build_lobby_radar_snapshot,
     classify_other_br_prominence,
     compute_lobby_state_digest,
+    steam_presence_hides_coh3_game,
 )
 
 configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
@@ -220,11 +221,10 @@ def _build_veteranos_privacy_diagnostics(
         elif priv == "public" and vis not in ("", "3"):
             diag[str(pid)] = "private"
         elif priv == "public":
-            has_gd = bool(pres.get("has_public_game_details"))
             last_m = vet_latest_matches.get(pid) or {}
             last_ct = int(last_m.get("completion_time", 0) or 0)
             played_last_14d = last_ct > 0 and (now - last_ct) <= two_weeks_sec
-            if (not has_gd) and played_last_14d and (not pres.get("is_in_coh3")):
+            if steam_presence_hides_coh3_game(pres) and played_last_14d and (not pres.get("is_in_coh3")):
                 diag[str(pid)] = "public_games_hidden"
             else:
                 diag[str(pid)] = "public"
@@ -675,19 +675,38 @@ def run_lobby_radar_sync(
                 row["last_seen_online_ts"] = now
                 community_dirty = True
 
-    # Detecção de "Outros Brasileiros" INVISÍVEIS / STEAM PRIVADA ativos nos últimos 35 min via getPersonalStat em lote
+    # Detecção via Relic `getPersonalStat` em lote para "Outros Brasileiros":
+    # 1) Prioridade máxima: contas ONLINE livres na Steam com detalhes de jogos ocultos (para promover a `in_coh3`!).
+    # 2) Demais contas ONLINE livres na Steam (cobre atraso de cache XML <= 5 min).
+    # 3) Contas OFFLINE / Steam privada (detecta invisíveis ativos nos últimos 35 min).
     other_latest_matches: dict[int, dict[str, Any]] = dict(br_participant_matches)
     other_elo_by_pid: dict[int, int] = {
         int(r["profile_id"]): int(r.get("max_elo", 0) or 0) for r in selected_others if int(r.get("max_elo", 0) or 0) > 0
     }
     inv_cutoff = now - OTHER_BR_INVISIBLE_MATCH_WINDOW_SEC
-    invisible_candidates = [
-        int(r["profile_id"])
-        for r in selected_others
-        if int(r.get("last_match_date", 0) or 0) >= inv_cutoff
-        and not (other_presence_map.get(str(r.get("steam_id") or "")) or {}).get("is_in_coh3")
-        and not (other_presence_map.get(str(r.get("steam_id") or "")) or {}).get("is_online_steam")
-    ][:MAX_OTHER_BR_RELIC_INVISIBLE_CHECK]
+    online_hidden_candidates: list[int] = []
+    online_public_candidates: list[int] = []
+    offline_candidates: list[int] = []
+    for r in selected_others:
+        if int(r.get("last_match_date", 0) or 0) < inv_cutoff:
+            continue
+        rpid = int(r["profile_id"])
+        pres = other_presence_map.get(str(r.get("steam_id") or "")) or {}
+        if pres.get("is_in_coh3"):
+            continue
+        if pres.get("is_online_steam"):
+            if pres.get("other_game") or pres.get("is_away"):
+                continue
+            if steam_presence_hides_coh3_game(pres) or str(pres.get("online_state") or "").lower() == "in-game":
+                online_hidden_candidates.append(rpid)
+            else:
+                online_public_candidates.append(rpid)
+        else:
+            offline_candidates.append(rpid)
+
+    invisible_candidates = (
+        online_hidden_candidates + online_public_candidates + offline_candidates
+    )[:MAX_OTHER_BR_RELIC_INVISIBLE_CHECK]
 
     if invisible_candidates and hasattr(r_client, "fetch_profile_stats_batch"):
         recent_cutoff_sec = RECENT_RELIC_WINDOW_MINUTES * 60
