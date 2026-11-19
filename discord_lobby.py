@@ -197,7 +197,7 @@ def build_lobby_alert_payload(
     content = (
         f"🔥 **MOVIMENTO NO LOBBY AGORA!** — 🎮 **{len(in_coh3)} {plural} no CoH3:** "
         f"{', '.join(linked_names)}{extra_coh3}{online_tail}\n"
-        f"-# _Veja os detalhes no Painel Vivo acima • Este aviso curto é limpo automaticamente em {max(1, int(retention_hours))}h._"
+        f"-# _Veja os detalhes completos no card do Radar no canal • Este aviso curto é limpo automaticamente em {max(1, int(retention_hours))}h._"
     )
 
     return {
@@ -327,23 +327,36 @@ class DiscordLobbyWebhookClient:
     def upsert_lobby_radar_message(self, snapshot: dict[str, Any], existing_message_id: str | None) -> str | None:
         if not self.is_configured:
             return None
+
+        now_ts = int(snapshot.get("timestamp") or time.time())
+        unique_filename = f"lobby_radar_{now_ts}.png"
         png_bytes = render_lobby_radar_card_png(snapshot, avatar_provider=self._avatar_provider)
-        files = [("lobby_radar.png", png_bytes, "image/png")]
-        payload = build_lobby_radar_payload(snapshot, bot_username=self.bot_username)
+        files = [(unique_filename, png_bytes, "image/png")]
+        payload = build_lobby_radar_payload(
+            snapshot,
+            bot_username=self.bot_username,
+            attachment_filename=unique_filename,
+        )
 
-        clean_msg_id = (existing_message_id or "").strip()
-        if clean_msg_id and SNOWFLAKE_ID_RE.fullmatch(clean_msg_id):
-            parsed = urllib.parse.urlparse(self._webhook_url)
-            msg_url = urllib.parse.urlunparse(parsed._replace(path=f"{parsed.path.rstrip('/')}/messages/{clean_msg_id}"))
-            status, data = self._request("PATCH", msg_url, payload, files=files)
-            if status != 404:
-                patched_id = self._extract_snowflake(data)
-                if patched_id:
-                    return patched_id
-            logger.info("Painel de Lobby anterior (%s) não encontrado (404); criando novo.", clean_msg_id)
-
+        # 1. Publica primeiro o novo Painel Vivo com imagem inédita (evita cache da CDN do Discord e mantém no fim do canal)
         _, data = self._request("POST", self._append_wait_param(self._webhook_url), payload, files=files)
-        return self._extract_snowflake(data)
+        new_msg_id = self._extract_snowflake(data)
+        if not new_msg_id:
+            return None
+
+        # 2. Só após confirmar o envio do novo card, apaga a mensagem antiga do painel
+        clean_old_id = (existing_message_id or "").strip()
+        if clean_old_id and SNOWFLAKE_ID_RE.fullmatch(clean_old_id) and clean_old_id != new_msg_id:
+            try:
+                self.delete_message(clean_old_id, protected_message_id=new_msg_id)
+            except Exception as exc:
+                logger.warning(
+                    "Falha transitória ao apagar painel anterior (%s): %s",
+                    clean_old_id,
+                    redact_secrets(exc),
+                )
+
+        return new_msg_id
 
     def send_lobby_alert_message(self, snapshot: dict[str, Any], retention_hours: int = 2) -> str | None:
         if not self.is_configured or not snapshot.get("in_coh3"):
