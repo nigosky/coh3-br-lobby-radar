@@ -2,7 +2,7 @@ name: CoH3 Brasil — Radar de Lobby Ao Vivo
 
 on:
   schedule:
-    # Minutos deslocados (+3) fora das janelas congestionadas (:00, :05, :10...) para evitar descarte de fila no GitHub Actions
+    # Fallback de auto-recuperacao: caso a cadeia autonoma seja pausada manualmente, o cron religa sozinho
     - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
   push:
     branches:
@@ -17,9 +17,14 @@ on:
   workflow_dispatch:
     inputs:
       force_sync:
-        description: "Forcar atualizacao imediata do Painel Vivo Fixo no Discord?"
+        description: "Forcar atualizacao imediata do card no 1o ciclo?"
         required: false
         default: false
+        type: boolean
+      auto_relay:
+        description: "Manter cadeia autonoma de ciclos de 5 min ativa (1h por sessao)?"
+        required: false
+        default: true
         type: boolean
 
 permissions: {}
@@ -30,16 +35,18 @@ concurrency:
 
 jobs:
   sync-lobby-radar:
+    if: github.repository == 'nigosky/coh3-br-lobby-radar' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 70
     permissions:
       contents: write
+      actions: write
 
     steps:
       - name: Checkout seguro (SHA imutavel)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ github.ref_name }}
+          ref: main
           fetch-depth: 0
 
       - name: Garantir renderizador grafico (apt oficial assinado GPG, zero pip)
@@ -57,11 +64,14 @@ jobs:
             sudo apt-get install -y --no-install-recommends "${NEED_PKGS[@]}"
           fi
 
-      - name: Sincronizar Radar de Lobby Ao Vivo (Steam XML + Relic -> Discord)
+      - name: Sincronizar Radar a cada 5 min (sessao de 12 ciclos = 60 min)
         env:
           PYTHONDONTWRITEBYTECODE: "1"
           DISCORD_LOBBY_WEBHOOK_URL: ${{ secrets.DISCORD_LOBBY_WEBHOOK_URL }}
-          FORCE_SYNC: ${{ github.event_name == 'workflow_dispatch' && inputs.force_sync || github.event.client_payload.force_sync }}
+          FORCE_SYNC: ${{ (github.event_name == 'workflow_dispatch' && inputs.force_sync) || false }}
+          RELAY_ENABLED_VAR: ${{ vars.RADAR_AUTO_RELAY_ENABLED }}
+          AUTO_RELAY_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.auto_relay }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           if [ -z "${DISCORD_LOBBY_WEBHOOK_URL:-}" ]; then
@@ -69,19 +79,26 @@ jobs:
             exit 0
           fi
 
-          ARGS=(--verify-webhook)
-          if [ "${FORCE_SYNC:-false}" = "true" ]; then
+          # Kill-switch administrativo via Repository Variable RADAR_AUTO_RELAY_ENABLED=false
+          CYCLES=12
+          if [ "${RELAY_ENABLED_VAR:-true}" = "false" ]; then
+            CYCLES=1
+          elif [ "${EVENT_NAME}" = "workflow_dispatch" ] && [ "${AUTO_RELAY_INPUT:-true}" = "false" ]; then
+            CYCLES=1
+          fi
+
+          ARGS=(--verify-webhook --loop-cycles "${CYCLES}" --loop-interval-sec 300)
+          if [ "${FORCE_SYNC}" = "true" ]; then
             ARGS+=(--force)
           fi
           python3 lobby_radar.py "${ARGS[@]}"
 
       - name: Auditoria anti-vazamento e persistencia de estado (state.json)
-        env:
-          TARGET_BRANCH: ${{ github.ref_name }}
+        if: always()
         run: |
           set -euo pipefail
 
-          # Bloqueia qualquer URL de Webhook em arquivos rastreados
+          # Bloqueia qualquer URL de Webhook em arquivos rastreados antes de qualquer git commit/push
           if grep -RInEi "(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+" state.json *.py 2>/dev/null; then
             echo "::error::Bloqueio de seguranca acionado: padrao de URL de Webhook detectado em arquivo rastreado!"
             exit 1
@@ -92,18 +109,55 @@ jobs:
           fi
 
           if git diff --cached --quiet; then
-            echo "Nenhuma alteracao em state.json neste ciclo."
+            echo "Nenhuma alteracao em state.json nesta sessao."
           else
-            BRANCH_NAME="${TARGET_BRANCH:-main}"
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -m "chore(lobby-state): atualizar estado do Radar de Lobby [skip ci]"
             for attempt in 1 2 3; do
-              git pull --rebase -X theirs origin "${BRANCH_NAME}" || true
-              if git push origin "HEAD:${BRANCH_NAME}"; then
-                echo "Estado salvo com sucesso em ${BRANCH_NAME}."
+              # Na estrategia --rebase, 'theirs' representa o commit local sendo re-aplicado (nosso state.json mais recente!)
+              git pull --rebase -X theirs origin main || {
+                git rebase --abort 2>/dev/null || true
+              }
+              if git push origin "HEAD:main"; then
+                echo "Estado salvo com sucesso em main."
                 break
               fi
               sleep 2
             done
           fi
+
+      - name: Auto-agendar proxima sessao autonoma (Relay seguro via GITHUB_TOKEN efemero)
+        if: always() && !cancelled()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELAY_ENABLED_VAR: ${{ vars.RADAR_AUTO_RELAY_ENABLED }}
+          AUTO_RELAY_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.auto_relay }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+
+          if [ "${RELAY_ENABLED_VAR:-true}" = "false" ]; then
+            echo "Kill-switch RADAR_AUTO_RELAY_ENABLED=false ativo; cadeia autonoma encerrada com seguranca."
+            exit 0
+          fi
+          if [ "${EVENT_NAME}" = "workflow_dispatch" ] && [ "${AUTO_RELAY_INPUT:-true}" = "false" ]; then
+            echo "Execucao unica solicitada (auto_relay=false); nao agendando proxima sessao."
+            exit 0
+          fi
+
+          # Dupla checagem anti-duplicidade: se ja houver outro run queued/in_progress na fila, nao empilha outro!
+          PENDING_COUNT="$(gh api 'repos/nigosky/coh3-br-lobby-radar/actions/workflows/radar_sync.yml/runs?per_page=10' \
+            --jq '[.workflow_runs[] | select((.status == "queued" or .status == "in_progress" or .status == "waiting") and (.id != '"${GITHUB_RUN_ID}"'))] | length')"
+
+          if [ "${PENDING_COUNT:-0}" -gt 0 ]; then
+            echo "Ja existe ${PENDING_COUNT} sessao pendente/em andamento; evitando disparo duplicado."
+            exit 0
+          fi
+
+          gh workflow run radar_sync.yml \
+            --repo nigosky/coh3-br-lobby-radar \
+            --ref main \
+            -f force_sync=false \
+            -f auto_relay=true
+          echo "Proxima sessao autonoma de 60 min agendada com sucesso via GITHUB_TOKEN efemero!"

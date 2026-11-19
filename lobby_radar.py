@@ -297,23 +297,66 @@ def run_lobby_radar_sync(
     return summary
 
 
+MAX_SAFE_LOOP_CYCLES = 24
+MIN_SAFE_LOOP_INTERVAL_SEC = 60
+MAX_SAFE_LOOP_INTERVAL_SEC = 900
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="CoH3 Brasil — Radar de Lobby Ao Vivo (Steam XML + Relic API)")
     parser.add_argument("--state", type=Path, default=DEFAULT_STATE_PATH, help="Caminho para state.json")
     parser.add_argument("--force", action="store_true", help="Força atualização imediata do Painel Vivo no Discord")
     parser.add_argument("--verify-webhook", action="store_true", help="Verifica conectividade do Webhook antes do ciclo")
+    parser.add_argument(
+        "--loop-cycles",
+        type=int,
+        default=1,
+        help="Número de ciclos consecutivos nesta sessão (1 a 24, padrão 1)",
+    )
+    parser.add_argument(
+        "--loop-interval-sec",
+        type=int,
+        default=300,
+        help="Intervalo alvo em segundos entre o início de cada ciclo (60 a 900, padrão 300 = 5 min)",
+    )
     args = parser.parse_args()
 
-    try:
-        run_lobby_radar_sync(
-            state_path=args.state,
-            force=bool(args.force),
-            verify_webhook=bool(args.verify_webhook),
-        )
-        return 0
-    except Exception as exc:
-        logger.exception("Erro na execução do Radar de Lobby Ao Vivo: %s", redact_secrets(exc))
-        return 1
+    cycles = max(1, min(int(args.loop_cycles or 1), MAX_SAFE_LOOP_CYCLES))
+    interval_sec = max(MIN_SAFE_LOOP_INTERVAL_SEC, min(int(args.loop_interval_sec or 300), MAX_SAFE_LOOP_INTERVAL_SEC))
+
+    had_error = False
+    for idx in range(cycles):
+        cycle_start = time.monotonic()
+        try:
+            run_lobby_radar_sync(
+                state_path=args.state,
+                force=bool(args.force) if idx == 0 else False,
+                verify_webhook=bool(args.verify_webhook) if idx == 0 else False,
+            )
+        except Exception as exc:
+            had_error = True
+            logger.exception(
+                "Erro no ciclo %d/%d do Radar de Lobby Ao Vivo: %s",
+                idx + 1,
+                cycles,
+                redact_secrets(exc),
+            )
+            if cycles == 1:
+                return 1
+
+        if idx + 1 < cycles:
+            elapsed = time.monotonic() - cycle_start
+            sleep_sec = max(5.0, float(interval_sec) - elapsed)
+            logger.info(
+                "[RADAR LOOP] Ciclo %d/%d concluído em %.1fs; próximo ciclo em %.0fs.",
+                idx + 1,
+                cycles,
+                elapsed,
+                sleep_sec,
+            )
+            time.sleep(sleep_sec)
+
+    return 1 if (had_error and cycles == 1) else 0
 
 
 if __name__ == "__main__":
