@@ -5,8 +5,8 @@ Projeto dedicado e independente para monitorar **quem está jogando Company of H
 ## Arquitetura (Zero Chaves da Steam • 100% Gratuito)
 
 1. **Presença Pública XML da Comunidade Steam (`steam_presence.py`)**:
-   - Consulta `https://steamcommunity.com/profiles/<SteamID64>/?xml=1` em paralelo (~1,3s para as 33 contas) com TLS 1.2+, allowlist estrita e limite de 64 KB.
-   - Detecta quem está com o **CoH3 aberto** (`AppID 1677280`, `<gameName>` ou `<stateMessage>`), quem está **Online na Steam** e extrai o avatar atualizado.
+   - Consulta `https://steamcommunity.com/profiles/<SteamID64>/?xml=1&l=english&_=<ts>` em paralelo (~1,3s para as 33 contas) com TLS 1.2+, allowlist estrita, `Cache-Control: no-cache`, proteção anti-XXE/DTD e limite de 64 KB.
+   - Lê exclusivamente os nós diretos `<profile>` e `<profile>/<inGameInfo>` (ignorando `<mostPlayedGames>` e resumos livres), exigindo `privacyState == "public"`, `visibilityState == "3"` e consistência com `<stateMessage>` para eliminar falsos positivos de jogadores offline.
 2. **Enriquecimento Oficial na API da Relic (`RelicActivityClient`)**:
    - Cruza com `getRecentMatchHistoryByProfileId` e `getPersonalStat` para indicar quem **acabou de sair de uma partida** (`<= 15 min` = provável menu/fila!) e quem jogou nos últimos **35 min** mesmo com Steam privada/invisível.
 3. **Painel Vivo Fixo + Aviso Curto Auto-Limpante (`card_renderer.py`, `discord_lobby.py`, `lobby_radar.py`)**:
