@@ -165,6 +165,14 @@ class _FakeRelicClient:
                 "max_elo": 1510,
                 "last_match_date": now - 7200,
             },
+            # Jogador inativo no CoH3 há 60 dias: deve ser ignorado/podado de Outros Brasileiros!
+            900004: {
+                "profile_id": 900004,
+                "steam_id": "76561198944444444",
+                "alias": "InativoNoCoH3",
+                "max_elo": 1400,
+                "last_match_date": now - 60 * 86400,
+            },
         }
 
     def fetch_profile_stats_batch(
@@ -404,6 +412,24 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                 "last_sync_ts": 1_799_999_900,
             }
             state_path.write_text(json.dumps(initial_state), encoding="utf-8")
+            comm_path.write_text(
+                json.dumps(
+                    {
+                        "updated_at": 1_799_000_000,
+                        "source": "open_data",
+                        "players": {
+                            "900099": {
+                                "profile_id": 900099,
+                                "steam_id": "76561198999999999",
+                                "alias": "AntigoInativo",
+                                "max_elo": 1200,
+                                "last_match_date": 1_800_000_000 - 100 * 86400,
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
 
             fake_discord = _FakeDiscordClient()
             summary = run_lobby_radar_sync(
@@ -427,6 +453,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
 
             comm = json.loads(comm_path.read_text(encoding="utf-8"))
             self.assertNotIn("79327", comm["players"])
+            self.assertNotIn("900004", comm["players"])
+            self.assertNotIn("900099", comm["players"])
             self.assertEqual(sorted(comm["players"].keys()), ["900001", "900002", "900003"])
 
 

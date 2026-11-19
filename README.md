@@ -2,7 +2,7 @@
 
 Projeto dedicado e independente para monitorar **quem está jogando Company of Heroes 3 agora**, **online na Steam pronto para convite** ou **invisível / Steam privada ativo recentemente** em duas categorias separadas no Discord:
 - **Veteranos (sempre acima)**: os 43 jogadores (44 contas) monitorados no tracker de partidas.
-- **Outros Brasileiros (sempre abaixo)**: catálogo automático de todos os demais jogadores brasileiros de CoH3 (`country == "br"`).
+- **Outros Brasileiros (sempre abaixo)**: somente jogadores brasileiros **ativos no CoH3** (`country == "br"` com partida no CoH3 nos últimos **30 dias**, descartando automaticamente inativos).
 
 ## Arquitetura (Zero Chaves da Steam • 100% Gratuito)
 

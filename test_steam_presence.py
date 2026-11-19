@@ -262,13 +262,18 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         self.assertEqual(br_relic[600001]["alias"], "PaulistaBR")
 
     def test_dual_category_snapshot_separates_veteranos_and_outros_brasileiros_without_duplicates(self) -> None:
+        now = 1_800_000_000
         vet_roster = [{"profile_id": 79327, "steam_id": SAMPLE_SID, "original_alias": "Chacineiro"}]
         other_roster = [
             # Duplicata proposital de Veterano — deve ser bloqueada em Outros Brasileiros!
-            {"profile_id": 79327, "steam_id": SAMPLE_SID, "alias": "Chacineiro"},
-            {"profile_id": 500001, "steam_id": "76561198111111111", "alias": "OutroNoCoH3", "max_elo": 1410},
-            {"profile_id": 500002, "steam_id": "76561198222222222", "alias": "OutroNaSteam", "max_elo": 1220},
-            {"profile_id": 500003, "steam_id": "76561198333333333", "alias": "OutroInvisivel", "max_elo": 1380},
+            {"profile_id": 79327, "steam_id": SAMPLE_SID, "alias": "Chacineiro", "last_match_date": now - 3600},
+            {"profile_id": 500001, "steam_id": "76561198111111111", "alias": "OutroNoCoH3", "max_elo": 1410, "last_match_date": now - 90 * 86400},
+            {"profile_id": 500002, "steam_id": "76561198222222222", "alias": "OutroNaSteamAtivo", "max_elo": 1220, "last_match_date": now - 5 * 86400},
+            {"profile_id": 500003, "steam_id": "76561198333333333", "alias": "OutroInvisivel", "max_elo": 1380, "last_match_date": now - 3 * 86400},
+            # Inativo no CoH3 há 45 dias (mas online na Steam) — deve ser excluído!
+            {"profile_id": 500004, "steam_id": "76561198444444444", "alias": "OutroInativo45d", "max_elo": 1500, "last_match_date": now - 45 * 86400},
+            # Sem histórico de CoH3 (last_match_date=0, online na Steam) — deve ser excluído!
+            {"profile_id": 500005, "steam_id": "76561198555555555", "alias": "OutroSemPartida", "max_elo": 0, "last_match_date": 0},
         ]
         vet_pres = {
             SAMPLE_SID: {"steam_id": SAMPLE_SID, "ok": True, "is_in_coh3": True, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
@@ -277,24 +282,31 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
             "76561198111111111": {"steam_id": "76561198111111111", "ok": True, "is_in_coh3": True, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
             "76561198222222222": {"steam_id": "76561198222222222", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
             "76561198333333333": {"steam_id": "76561198333333333", "ok": True, "is_in_coh3": False, "is_online_steam": False, "other_game": "", "is_away": False, "avatar_url": ""},
+            "76561198444444444": {"steam_id": "76561198444444444", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
+            "76561198555555555": {"steam_id": "76561198555555555", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False, "avatar_url": ""},
         }
         other_matches = {
-            500003: {"profile_id": 500003, "match_id": 99, "completion_time": 1_800_000_000 - 600, "mode": "2v2"},
+            500003: {"profile_id": 500003, "match_id": 99, "completion_time": now - 600, "mode": "2v2"},
         }
         snap = build_lobby_radar_snapshot(
             vet_roster,
             vet_pres,
-            now_ts=1_800_000_000,
+            now_ts=now,
             other_br_players=other_roster,
             other_presence_by_steam=other_pres,
             other_latest_matches_by_pid=other_matches,
             other_br_total_catalog=120,
+            other_br_active_days=30,
         )
         self.assertEqual([p["profile_id"] for p in snap["veteranos"]["in_coh3"]], [79327])
+        # Quem abriu CoH3 agora entra sempre, mesmo se última partida fosse antiga
         self.assertEqual([p["profile_id"] for p in snap["outros_brasileiros"]["in_coh3"]], [500001])
+        # Apenas o brasileiro ativo nos últimos 30d (500002) entra em online_steam; inativos (500004, 500005) são filtrados!
         self.assertEqual([p["profile_id"] for p in snap["outros_brasileiros"]["online_steam"]], [500002])
+        self.assertEqual(snap["outros_brasileiros"]["online_steam"][0]["last_coh3_age_days"], 5)
         self.assertEqual([p["profile_id"] for p in snap["outros_brasileiros"]["recent_relic"]], [500003])
         self.assertEqual(snap["outros_brasileiros"]["total_monitored"], 120)
+        self.assertEqual(snap["outros_brasileiros"]["active_window_days"], 30)
 
     def test_steam_rate_limit_circuit_breaker_stops_batch_early(self) -> None:
         calls: list[str] = []

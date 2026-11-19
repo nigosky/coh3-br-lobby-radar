@@ -117,6 +117,7 @@ def _extract_snapshot_category(snapshot: dict[str, Any], key: str) -> dict[str, 
     if isinstance(raw, dict):
         return {
             "total_monitored": int(raw.get("total_monitored") or 0),
+            "active_window_days": int(raw.get("active_window_days") or 30),
             "in_coh3": list(raw.get("in_coh3") or []),
             "online_steam": list(raw.get("online_steam") or []),
             "recent_relic": list(raw.get("recent_relic") or []),
@@ -124,11 +125,32 @@ def _extract_snapshot_category(snapshot: dict[str, Any], key: str) -> dict[str, 
     if key == "veteranos":
         return {
             "total_monitored": int(snapshot.get("total_monitored_unique") or 43),
+            "active_window_days": 0,
             "in_coh3": list(snapshot.get("in_coh3") or []),
             "online_steam": list(snapshot.get("online_steam") or []),
             "recent_relic": list(snapshot.get("recent_relic") or []),
         }
-    return {"total_monitored": 0, "in_coh3": [], "online_steam": [], "recent_relic": []}
+    return {
+        "total_monitored": 0,
+        "active_window_days": 30,
+        "in_coh3": [],
+        "online_steam": [],
+        "recent_relic": [],
+    }
+
+
+def _format_coh3_recency_tag(pl: dict[str, Any]) -> str:
+    hrs = pl.get("last_coh3_age_hours")
+    days = pl.get("last_coh3_age_days")
+    if hrs is None:
+        return ""
+    h_int = max(0, int(hrs))
+    if h_int < 1:
+        return " *(CoH3 há <1h)*"
+    if h_int < 24:
+        return f" *(CoH3 há {h_int}h)*"
+    d_int = max(1, int(days if days is not None else (h_int // 24)))
+    return f" *(CoH3 há {d_int}d)*"
 
 
 def _append_vertical_section(
@@ -168,6 +190,7 @@ def _format_category_vertical_description(
     bucket: dict[str, Any],
     *,
     empty_message: str,
+    show_coh3_recency: bool = False,
     max_chars: int = 2650,
     coh3_cap: int = 16,
     free_cap: int = 20,
@@ -209,7 +232,8 @@ def _format_category_vertical_description(
         for pl in free_online[:free_cap]:
             nm = sanitize_discord_text(pl.get("alias"), 24)
             surl = build_safe_steam_profile_url(pl.get("steam_id"))
-            on_lines.append(f"• [**{nm}** ↗]({surl})" if surl else f"• **{nm}**")
+            rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
+            on_lines.append((f"• [**{nm}** ↗]({surl})" if surl else f"• **{nm}**") + rec_tag)
         if len(free_online) > free_cap:
             on_lines.append(f"• _...e mais {len(free_online) - free_cap} online livres_")
         rem = _append_vertical_section(
@@ -266,19 +290,22 @@ def build_lobby_radar_links_payload(
     """
     Monta a mensagem dedicada exclusivamente às listas verticais com links diretos da Steam (sem imagem anexa):
     1. Embed superior (sempre acima): Categoria `Veteranos` (monitorados no tracker de partidas).
-    2. Embed inferior (sempre abaixo): Categoria `Outros Brasileiros` (demais jogadores BR de CoH3).
+    2. Embed inferior (sempre abaixo): Categoria `Outros Brasileiros` (ativos no CoH3 nos últimos 30 dias).
     """
     vet = _extract_snapshot_category(snapshot, "veteranos")
     oth = _extract_snapshot_category(snapshot, "outros_brasileiros")
+    oth_days = int(oth.get("active_window_days") or 30)
 
     vet_desc = _format_category_vertical_description(
         vet,
         empty_message="_Nenhum veterano monitorado com status público online ou partida recente neste instante._",
+        show_coh3_recency=False,
         max_chars=2650,
     )
     oth_desc = _format_category_vertical_description(
         oth,
-        empty_message="_Nenhum outro jogador brasileiro online na Steam, no CoH3 ou ativo na Relic neste instante._",
+        empty_message=f"_Nenhum outro brasileiro ativo no CoH3 (≤{oth_days}d) online ou jogando neste instante._",
+        show_coh3_recency=True,
         max_chars=2650,
     )
 
@@ -299,13 +326,13 @@ def build_lobby_radar_links_payload(
         "color": vet_color,
     }
     oth_embed = {
-        "title": "🇧🇷 OUTROS BRASILEIROS — LINKS RÁPIDOS DA STEAM",
+        "title": f"🇧🇷 OUTROS BRASILEIROS (ATIVOS COH3 ≤{oth_days}D) — LINKS DA STEAM",
         "description": oth_desc,
         "color": oth_color,
         "footer": {
             "text": (
                 f"Veteranos: {len(vet['in_coh3'])} CoH3 / {len(vet['online_steam'])} Steam • "
-                f"Outros BR: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam • "
+                f"Outros BR ≤{oth_days}d: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam • "
                 "Atualizado automaticamente a cada 5 min"
             )
         },

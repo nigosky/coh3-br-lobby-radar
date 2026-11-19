@@ -292,6 +292,7 @@ def _extract_category_bucket(snapshot: dict[str, Any], key: str) -> dict[str, An
         return {
             "total_monitored": int(raw.get("total_monitored") or 0),
             "checked_count": int(raw.get("checked_count") or 0),
+            "active_window_days": int(raw.get("active_window_days") or 30),
             "in_coh3": list(raw.get("in_coh3") or []),
             "online_steam": list(raw.get("online_steam") or []),
             "recent_relic": list(raw.get("recent_relic") or []),
@@ -300,11 +301,33 @@ def _extract_category_bucket(snapshot: dict[str, Any], key: str) -> dict[str, An
         return {
             "total_monitored": int(snapshot.get("total_monitored_unique") or 43),
             "checked_count": int(snapshot.get("total_monitored_unique") or 43),
+            "active_window_days": 0,
             "in_coh3": list(snapshot.get("in_coh3") or []),
             "online_steam": list(snapshot.get("online_steam") or []),
             "recent_relic": list(snapshot.get("recent_relic") or []),
         }
-    return {"total_monitored": 0, "checked_count": 0, "in_coh3": [], "online_steam": [], "recent_relic": []}
+    return {
+        "total_monitored": 0,
+        "checked_count": 0,
+        "active_window_days": 30,
+        "in_coh3": [],
+        "online_steam": [],
+        "recent_relic": [],
+    }
+
+
+def _format_coh3_recency_short(pl: dict[str, Any]) -> str:
+    hrs = pl.get("last_coh3_age_hours")
+    days = pl.get("last_coh3_age_days")
+    if hrs is None:
+        return ""
+    h_int = max(0, int(hrs))
+    if h_int < 1:
+        return "CoH3 há <1h"
+    if h_int < 24:
+        return f"CoH3 há {h_int}h"
+    d_int = max(1, int(days if days is not None else (h_int // 24)))
+    return f"CoH3 há {d_int}d"
 
 
 def _measure_category_height(
@@ -385,6 +408,7 @@ def _draw_category_block(
     online = bucket["online_steam"]
     recent = bucket["recent_relic"]
     total_cat = int(bucket.get("total_monitored") or 0)
+    active_days = int(bucket.get("active_window_days") or 30)
 
     flag_br = get_br_flag(w=26, h=18)
     flag_xs = get_br_flag(w=22, h=15)
@@ -403,9 +427,9 @@ def _draw_category_block(
         cat_bg = (16, 33, 35, 255)
         cat_border = (45, 212, 191, 195)
         cat_title = (
-            f"OUTROS BRASILEIROS  •  COMUNIDADE COH3 BR ({total_cat})"
+            f"OUTROS BRASILEIROS  •  ATIVOS NO COH3 ≤{active_days}D ({total_cat})"
             if total_cat > 0
-            else "OUTROS BRASILEIROS  •  COMUNIDADE COH3 BR"
+            else f"OUTROS BRASILEIROS  •  ATIVOS NO COH3 ≤{active_days}D"
         )
         cat_title_col = (94, 234, 212, 255)
         cat_icon = get_br_flag(w=28, h=19)
@@ -430,7 +454,7 @@ def _draw_category_block(
 
     if not is_veteranos and not in_coh3 and not online and not recent:
         draw.rectangle((rail_w, y, width, y + empty_row_h), fill=(18, 22, 28, 255))
-        e_txt = "Nenhum outro jogador brasileiro online na Steam, no CoH3 ou ativo na Relic neste instante."
+        e_txt = f"Nenhum outro brasileiro ativo no CoH3 (≤{active_days}d) online ou jogando neste instante."
         e_fnt = pick_font(e_txt, size=17, bold=False)
         draw.text((30, y + 14), e_txt, font=e_fnt, fill=(148, 163, 184, 255))
         return y + empty_row_h
@@ -564,15 +588,19 @@ def _draw_category_block(
                 if is_veteranos:
                     img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 8), vet_xs)
 
+                rec_tag = _format_coh3_recency_short(pl) if not is_veteranos else ""
                 if has_other:
                     sub_st = f"Em outro jogo: {pl['other_game']}"
                     sub_col = (148, 163, 184, 255)
                 elif is_away:
-                    sub_st = "Online (Ausente na Steam)"
+                    sub_st = f"Ausente • {rec_tag}" if rec_tag else "Online (Ausente na Steam)"
                     sub_col = (148, 163, 184, 255)
                 elif pl.get("last_age_min") is not None and int(pl["last_age_min"]) <= 35:
                     sub_st = f"Livre • jogou CoH3 há {max(1, int(pl['last_age_min']))} min"
                     sub_col = (134, 239, 172, 255)
+                elif rec_tag:
+                    sub_st = f"Livre na Steam • {rec_tag}"
+                    sub_col = (125, 211, 252, 255)
                 else:
                     sub_st = "Livre na Steam para chamar"
                     sub_col = (125, 211, 252, 255)
@@ -803,10 +831,11 @@ def render_lobby_radar_card_png(
     draw.line([(rail_w, y), (width, y)], fill=(42, 48, 60, 255), width=1)
     vet_tot = int(vet_bucket.get("total_monitored") or 43)
     oth_tot = int(oth_bucket.get("total_monitored") or 0)
+    oth_days = int(oth_bucket.get("active_window_days") or 30)
     foot_txt = (
         f"Monitorando {vet_tot} Veteranos"
-        + (f" + {oth_tot} Outros Brasileiros" if oth_tot > 0 else "")
-        + " (Steam XML + Relic API)  •  Use a lista vertical de links Steam abaixo!"
+        + (f" + {oth_tot} Outros BR ativos no CoH3 (≤{oth_days}d)" if oth_tot > 0 else "")
+        + "  •  Use a lista vertical de links Steam abaixo!"
     )
     f_fnt = pick_font(foot_txt, size=15, bold=False)
     draw.text((28, y + 10), foot_txt, font=f_fnt, fill=(148, 163, 184, 255))
