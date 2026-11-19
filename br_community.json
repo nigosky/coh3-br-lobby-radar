@@ -459,7 +459,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794789287,
       "last_seen_ingame_ts": 1795118554,
-      "last_seen_online_ts": 1795118554,
+      "last_seen_online_ts": 1795120480,
       "max_elo": 1155,
       "profile_id": 1066445,
       "steam_id": "76561199016996635",
@@ -1196,12 +1196,12 @@
     "1178218": {
       "alias": "joauleonardo",
       "br_source": "open_data_lb",
-      "last_match_date": 1795117221,
+      "last_match_date": 1795120242,
       "last_seen_online_ts": 1795120179,
       "max_elo": 1739,
       "profile_id": 1178218,
       "steam_id": "76561199219878733",
-      "total_matches": 2562
+      "total_matches": 2563
     },
     "1178281": {
       "alias": "EliasBS",
@@ -2055,7 +2055,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795059613,
       "last_seen_ingame_ts": 1795111093,
-      "last_seen_online_ts": 1795117655,
+      "last_seen_online_ts": 1795120480,
       "max_elo": 1252,
       "profile_id": 1274951,
       "steam_id": "76561198275024539",
@@ -2114,12 +2114,12 @@
     "128231": {
       "alias": "E5p4rTaN0",
       "br_source": "open_data_lb",
-      "last_match_date": 1795118743,
+      "last_match_date": 1795120497,
       "last_seen_online_ts": 1795120179,
       "max_elo": 1045,
       "profile_id": 128231,
       "steam_id": "76561198022850599",
-      "total_matches": 2728
+      "total_matches": 2729
     },
     "1282829": {
       "alias": "Dr Christian Troy",
@@ -5503,7 +5503,7 @@
       "alias": "CONQUISTADOR",
       "br_source": "open_data_matches",
       "last_match_date": 1794951871,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795120480,
       "max_elo": 964,
       "profile_id": 1474100,
       "steam_id": "76561199882956390",
@@ -9962,7 +9962,7 @@
       "alias": "Venom snake",
       "br_source": "open_data_lb",
       "last_match_date": 1794517486,
-      "last_seen_online_ts": 1795118554,
+      "last_seen_online_ts": 1795120480,
       "max_elo": 1194,
       "profile_id": 96038,
       "steam_id": "76561198038473331",
