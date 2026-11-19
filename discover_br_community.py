@@ -53,9 +53,11 @@ from steam_presence import (
 configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("coh3_br.lobby.discovery")
 
-DEFAULT_MATCH_DAYS = 14
-DEFAULT_MAX_STEAM_VERIFY = 400
-DEFAULT_RELIC_SA_PAGES = 12
+DEFAULT_MATCH_DAYS = 30
+DEFAULT_MAX_STEAM_VERIFY = 750
+DEFAULT_RELIC_SA_PAGES = 14
+
+_HISPANIC_SA_COUNTRIES: frozenset[str] = frozenset({"ar", "cl", "pe", "uy", "py", "co", "ve", "ec", "bo"})
 
 
 def _verify_candidate_is_brazilian(
@@ -75,27 +77,40 @@ def _verify_candidate_is_brazilian(
     if ctry == "br":
         return "relic_country_br"
 
-    # Se a Relic já indica explicitamente outro país (ar, cl, us, pt, etc.) e a Steam não confirmou Brasil, rejeita!
-    if ctry:
-        return ""
-
     # Se a Steam declara explicitamente outra localização que não contém Brasil, rejeita!
     if location and not is_brazil_steam_location(location):
         return ""
 
     reg = int(cand.get("region_id", 0) or 0)
+    # Grupo Steam explicitamente brasileiro no XML público do perfil (exceto países hispânicos SA)
+    if bool(pres.get("has_brazil_steam_group")) and (
+        not ctry or (reg == SOUTH_AMERICA_REGION_ID and ctry not in _HISPANIC_SA_COUNTRIES)
+    ):
+        return "steam_br_group_xml"
+
+    # Se a Relic já indica explicitamente outro país (ar, cl, us, pt, etc.) sem confirmação Steam Brasil, rejeita!
+    if ctry:
+        return ""
+
     alias = str(cand.get("alias") or "")
     tm_cnt = int(cand.get("br_teammate_count", 0) or 0)
 
     if reg == SOUTH_AMERICA_REGION_ID and has_explicit_br_alias_tag(alias):
         return "sa_br_tag"
-    if reg == SOUTH_AMERICA_REGION_ID and tm_cnt >= 5:
+    if reg == SOUTH_AMERICA_REGION_ID and tm_cnt >= 3:
         return "sa_br_squad"
     return ""
 
 
 def _candidate_verify_priority(cand: dict[str, Any], *, now: int) -> tuple[int, int, int, int, int]:
-    """Ordena candidatos não-`br` para verificação Steam priorizando ELO alto + região SA + co-play BR + tag BR."""
+    """
+    Ordena candidatos não-`br` para verificação Steam maximizando a taxa de descoberta real de brasileiros:
+    - Bucket 0: País EM BRANCO na Relic (`country == ""`) na América do Sul, com tag BR ou co-play >= 2 (prioridade máxima!).
+    - Bucket 1: Tag explícita `[BR]` ou squad muito frequente com BRs (`>= 5` jogos na mesma equipe).
+    - Bucket 2: América do Sul com bandeira não-hispânica / meme (`us`, `de`, `pt`, `aq`, `va`...) e ELO >= 1150.
+    - Bucket 3: América do Sul com bandeira hispânica (`ar`, `cl`, etc.) somente com co-play >= 3 ou ELO >= 1450.
+    - Bucket 4: Demais candidatos residuais.
+    """
     elo = int(cand.get("max_elo", 0) or 0)
     reg = int(cand.get("region_id", 0) or 0)
     ctry = str(cand.get("country") or "").strip().lower()
@@ -103,17 +118,16 @@ def _candidate_verify_priority(cand: dict[str, Any], *, now: int) -> tuple[int, 
     has_tag = has_explicit_br_alias_tag(cand.get("alias"))
     lmd = int(cand.get("last_match_date", 0) or 0)
 
-    # Tier 0: ELO alto (>=1200) em SA, ou tag BR explícita, ou squad frequente (>=3) com brasileiros
-    if (reg == SOUTH_AMERICA_REGION_ID and elo >= 1200) or has_tag or tm_cnt >= 3:
+    if not ctry and (reg == SOUTH_AMERICA_REGION_ID or has_tag or tm_cnt >= 2):
         bucket = 0
-    # Tier 1: Região SA com país em branco na Relic (altíssima probabilidade de brasileiro sem país no Steam)
-    elif reg == SOUTH_AMERICA_REGION_ID and not ctry:
+    elif has_tag or tm_cnt >= 5:
         bucket = 1
-    # Tier 2: Demais jogadores ativos em SA (ou co-play >= 2)
-    elif reg == SOUTH_AMERICA_REGION_ID or tm_cnt >= 2:
+    elif reg == SOUTH_AMERICA_REGION_ID and ctry not in _HISPANIC_SA_COUNTRIES and elo >= 1150:
         bucket = 2
-    else:
+    elif reg == SOUTH_AMERICA_REGION_ID and (tm_cnt >= 3 or elo >= 1450):
         bucket = 3
+    else:
+        bucket = 4
 
     return (bucket, -elo, -tm_cnt, -(lmd if lmd <= now else now), int(cand.get("profile_id", 0) or 0))
 
@@ -274,7 +288,7 @@ def run_deep_br_discovery(
                 logger.warning("[STAGE 4a] Falha ao ler grupo Steam %s: %s", slug, redact_secrets(exc))
 
         if group_sids:
-            group_stats = r_client.fetch_profile_stats_by_steam_ids(group_sids[:600], pace_delay_sec=0.22)
+            group_stats = r_client.fetch_profile_stats_by_steam_ids(group_sids[:1200], pace_delay_sec=0.22)
             verify_foreign_group: list[dict[str, Any]] = []
             for pid, st in group_stats.items():
                 if pid in vet_pids or pid in br_pool:
@@ -325,22 +339,31 @@ def run_deep_br_discovery(
                 sources_used.append("steam_groups")
             logger.info(
                 "[STAGE 4a — CONVERGÊNCIA GRUPOS STEAM] %d novos SteamIDs consultados -> %d jogadores ativos no CoH3 (<=%dd) confirmados BR.",
-                min(len(group_sids), 600),
+                min(len(group_sids), 1200),
                 steam_group_confirmed,
                 OTHER_BR_ACTIVE_COH3_DAYS,
             )
 
-    # 4b. Steam Community — Verificação de `<location>Brazil</location>` para candidatos ativos não-`br`
+    # 4b. Steam Community — Verificação de `<location>Brazil</location>` e `<groups>` BR para candidatos ativos não-`br`
     steam_verified_count = 0
     for pid in list(cand_pool.keys()):
-        if pid in br_pool or pid in vet_pids or str(cand_pool[pid].get("steam_id") or "") in vet_sids:
+        c = cand_pool[pid]
+        ctry = str(c.get("country") or "").strip().lower()
+        reg = int(c.get("region_id", 0) or 0)
+        tm_cnt = int(c.get("br_teammate_count", 0) or 0)
+        has_tag = has_explicit_br_alias_tag(c.get("alias"))
+        if pid in br_pool or pid in vet_pids or str(c.get("steam_id") or "") in vet_sids:
             del cand_pool[pid]
-        elif int(cand_pool[pid].get("last_match_date", 0) or 0) < active_cutoff:
+        elif int(c.get("last_match_date", 0) or 0) < active_cutoff:
+            del cand_pool[pid]
+        # Descarta ruído óbvio (país estrangeiro confirmado fora da SA sem tag BR e com pouco co-play)
+        elif ctry and reg != SOUTH_AMERICA_REGION_ID and not has_tag and tm_cnt < 5:
             del cand_pool[pid]
 
     active_candidates = sorted(cand_pool.values(), key=lambda c: _candidate_verify_priority(c, now=now))
     verify_slice = active_candidates[: max(0, int(max_steam_verify))]
     if verify_slice and hasattr(p_client, "fetch_batch_presence"):
+        bucket_counts = Counter(_candidate_verify_priority(c, now=now)[0] for c in verify_slice)
         verify_sids = [str(c["steam_id"]) for c in verify_slice if c.get("steam_id")]
         steam_pres_map = p_client.fetch_batch_presence(
             verify_sids,
@@ -369,13 +392,14 @@ def run_deep_br_discovery(
         if steam_verified_count:
             sources_used.append("steam_location")
         logger.info(
-            "[STAGE 4b — VERIFICAÇÃO STEAM <location>] %d/%d candidatos ativos verificados -> +%d brasileiros confirmados (sem bandeira BR na Relic!).",
+            "[STAGE 4b — VERIFICAÇÃO STEAM <location>/<groups>] %d/%d verificados (buckets=%s) -> +%d brasileiros confirmados (sem bandeira BR na Relic!).",
             len(steam_pres_map),
             len(verify_slice),
+            dict(sorted(bucket_counts.items())),
             steam_verified_count,
         )
 
-    # 5. Filtra apenas ativos no CoH3 (<= 30d) e enriquece ELO máximo / total_matches na Relic API
+    # 5. Filtra apenas ativos no CoH3 (<= 30d) e enriquece TODOS com ELO máximo real / total_matches na Relic API
     active_br_pids = [
         pid
         for pid, item in br_pool.items()
@@ -383,25 +407,16 @@ def run_deep_br_discovery(
         and str(item.get("steam_id") or "") not in vet_sids
         and int(item.get("last_match_date", 0) or 0) >= active_cutoff
     ]
-    need_enrich_pids = [
-        pid
-        for pid in active_br_pids
-        if (
-            pid not in before_pids
-            or int(br_pool[pid].get("max_elo", 0) or 0) <= 0
-            or int(br_pool[pid].get("total_matches", 0) or 0) <= 0
-            or str(br_pool[pid].get("br_source") or "") in ("open_data_matches", "steam_location", "sa_br_tag", "sa_br_squad")
-        )
-    ]
+    need_enrich_pids = list(active_br_pids)
     if need_enrich_pids and hasattr(r_client, "fetch_profile_stats_batch"):
         need_enrich_pids.sort(
             key=lambda p: (
-                0 if int(br_pool[p].get("max_elo", 0) or 0) <= 0 else 1,
+                0 if int(br_pool[p].get("max_elo", 0) or 0) <= 0 else (1 if p not in before_pids else 2),
                 -int(br_pool[p].get("max_elo", 0) or 0),
                 -int(br_pool[p].get("last_match_date", 0) or 0),
             )
         )
-        enrich_slice = need_enrich_pids[:450]
+        enrich_slice = need_enrich_pids[:1500]
         enriched = r_client.fetch_profile_stats_batch(enrich_slice, pace_delay_sec=0.22)
         for pid, st in enriched.items():
             if pid not in br_pool:
@@ -416,7 +431,11 @@ def run_deep_br_discovery(
                 total_matches=int(st.get("total_matches", 0) or 0),
                 accumulate_matches=False,
             )
-        logger.info("[STAGE 5 — ENRIQUECIMENTO RELIC] %d perfis enriquecidos com ELO máximo real e total de partidas.", len(enriched))
+        logger.info(
+            "[STAGE 5 — ENRIQUECIMENTO RELIC] %d/%d perfis ativos enriquecidos com ELO máximo real (inclusive modos decaídos) e total de partidas.",
+            len(enriched),
+            len(active_br_pids),
+        )
 
     # 6. Convergência final em `br_community.json` (somente ativos <= 30d, preservando timestamps online/ingame)
     final_players: dict[str, dict[str, Any]] = {}

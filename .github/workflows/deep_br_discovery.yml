@@ -9,12 +9,12 @@ on:
       match_days:
         description: "Dias de dumps Open Data Matches (1 a 30)"
         required: false
-        default: "14"
+        default: "30"
         type: string
       max_steam_verify:
-        description: "Maximo de candidatos SA/squad verificados no XML Steam (0 a 800)"
+        description: "Maximo de candidatos SA/squad verificados no XML Steam (0 a 1200)"
         required: false
-        default: "450"
+        default: "750"
         type: string
 
 permissions: {}
@@ -63,19 +63,19 @@ jobs:
       - name: Executar varredura profunda (COH3 Stats Open Data + Relic SA + Steam)
         env:
           PYTHONDONTWRITEBYTECODE: "1"
-          INPUT_MATCH_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.match_days || '14' }}
-          INPUT_MAX_STEAM_VERIFY: ${{ github.event_name == 'workflow_dispatch' && inputs.max_steam_verify || '450' }}
+          INPUT_MATCH_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.match_days || '30' }}
+          INPUT_MAX_STEAM_VERIFY: ${{ github.event_name == 'workflow_dispatch' && inputs.max_steam_verify || '750' }}
         run: |
           set -euo pipefail
 
           # Validacao numerica estrita contra injecao
-          MATCH_DAYS=14
+          MATCH_DAYS=30
           if [[ "${INPUT_MATCH_DAYS:-}" =~ ^[0-9]+$ ]] && [ "${INPUT_MATCH_DAYS}" -ge 1 ] && [ "${INPUT_MATCH_DAYS}" -le 30 ]; then
             MATCH_DAYS="${INPUT_MATCH_DAYS}"
           fi
 
-          MAX_STEAM_VERIFY=450
-          if [[ "${INPUT_MAX_STEAM_VERIFY:-}" =~ ^[0-9]+$ ]] && [ "${INPUT_MAX_STEAM_VERIFY}" -ge 0 ] && [ "${INPUT_MAX_STEAM_VERIFY}" -le 800 ]; then
+          MAX_STEAM_VERIFY=750
+          if [[ "${INPUT_MAX_STEAM_VERIFY:-}" =~ ^[0-9]+$ ]] && [ "${INPUT_MAX_STEAM_VERIFY}" -ge 0 ] && [ "${INPUT_MAX_STEAM_VERIFY}" -le 1200 ]; then
             MAX_STEAM_VERIFY="${INPUT_MAX_STEAM_VERIFY}"
           fi
 
