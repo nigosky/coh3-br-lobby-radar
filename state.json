@@ -52,23 +52,21 @@
     "99722": 1000
   },
   "elo_cache_ts": 1795103941,
-  "last_alert_coh3_pids": [
-    1022333
-  ],
+  "last_alert_coh3_pids": [],
   "last_alert_ts": 1795110381,
-  "last_digest": "(([(1022333, False), (559962, False)], [(79327, '', False), (639157, '', False), (1005730, '', False), (19747, '', False), (28937, '', False), (1226910, '', False), (337051, '', False), (5768, '', False), (84821, '', False), (58737, 'The King is Watching', False)], []), ([(1295138, False), (401275, False), (351821, False), (952169, True), (309253, False), (1385115, False), (1231212, False), (976559, False), (925764, True), (1092009, True), (1285769, False), (1318025, False), (1158074, False), (1438656, False), (1096289, False), (1035227, False), (1095498, False)], [(1178218, '', False), (649535, '', False), (383796, '', False), (6880, '', False), (739693, '', False), (206875, '', False), (6696, '', False), (739986, '', False), (22246, '', False), (970468, '', False), (1218872, '', False), (956645, '', False), (8764, '', False), (593274, '', False), (1200197, '', False), (122829, '', False), (105384, '', False), (20262, '', False), (29436, '', False), (1086495, '', False), (428227, '', False), (108410, '', False), (3414, '', False), (1429760, '', False), (1042204, '', False), (71299, 'WorldBox - God Simulator', False), (40833, 'Umamusume: Pretty Derby', False), (1162890, 'Epic Seven', False), (1274951, 'Dragon Age: Origins - Ultimate Editi', False), (965932, 'Warhammer 40,000: Gladius - Relics o', False), (1177151, 'ROB RUN', False), (957597, '', False), (951280, '', False), (131786, '', False), (900421, '', False), (1180172, '', False), (1213751, '', False), (1242273, '', False), (1304125, '', False), (744908, '', False), (1004214, '', False), (1257087, '', False), (1290028, '', False), (34770, '', False), (128231, '', False), (135141, '', False), (1060169, '', False), (2290, '', False), (1373102, '', False), (1428997, '', False), (742802, '', False), (1297284, '', False), (11376, '', False), (202388, '', False), (15063, '', False), (13516, '', False), (738999, '', False), (533746, '', False), (31992, '', False), (1020192, '', False), (790373, '', False), (1279100, '', False), (1022387, '', False), (1064661, '', False), (173761, '', False), (1020290, '', False), (56354, 'War Thunder', False), (1306623, 'Dota 2', False), (1257730, 'Warhammer Survivors', False), (137848, 'Divinity: Original Sin 2', False), (413433, 'Marvel Rivals', False), (24999, 'Kingdom Come: Deliverance II', False), (1123905, 'Cyberpunk 2077', False), (26003, 'Sea of Thieves', False)], [1707, 765837, 1369003, 1383062, 1411117]))",
+  "last_digest": "(([(559962, False)], [(79327, '', False), (639157, '', False), (1005730, '', False), (19747, '', False), (1022333, '', False), (28937, '', False), (1226910, '', False), (337051, '', False), (5768, '', False), (84821, '', False), (58737, 'The King is Watching', False)], []), ([(1295138, False), (401275, False), (351821, True), (952169, True), (309253, False), (1231212, False), (976559, False), (925764, True), (1092009, False), (1285769, False), (1318025, False), (1158074, False), (1438656, False), (1096289, False), (1035227, False), (1095498, False)], [(1178218, '', False), (649535, '', False), (383796, '', False), (6880, '', False), (739693, '', False), (206875, '', False), (739986, '', False), (22246, '', False), (970468, '', False), (1218872, '', False), (956645, '', False), (8764, '', False), (593274, '', False), (1200197, '', False), (122829, '', False), (1385115, '', False), (105384, '', False), (20262, '', False), (29436, '', False), (1086495, '', False), (428227, '', False), (108410, '', False), (3414, '', False), (1429760, '', False), (1042204, '', False), (71299, 'WorldBox - God Simulator', False), (40833, 'Umamusume: Pretty Derby', False), (1162890, 'Epic Seven', False), (6696, 'SMITE 2', False), (1274951, 'Dragon Age: Origins - Ultimate Editi', False), (965932, 'Warhammer 40,000: Gladius - Relics o', False), (1177151, 'ROB RUN', False), (957597, '', False), (951280, '', False), (131786, '', False), (900421, '', False), (1180172, '', False), (1213751, '', False), (1242273, '', False), (1304125, '', False), (744908, '', False), (1004214, '', False), (1257087, '', False), (1290028, '', False), (34770, '', False), (128231, '', False), (135141, '', False), (1060169, '', False), (2290, '', False), (1373102, '', False), (1428997, '', False), (742802, '', False), (1297284, '', False), (11376, '', False), (202388, '', False), (15063, '', False), (13516, '', False), (738999, '', False), (533746, '', False), (31992, '', False), (1020192, '', False), (790373, '', False), (1279100, '', False), (1022387, '', False), (1064661, '', False), (173761, '', False), (1020290, '', False), (56354, 'War Thunder', False), (1306623, 'Dota 2', False), (1257730, 'Warhammer Survivors', False), (137848, 'Divinity: Original Sin 2', False), (413433, 'Marvel Rivals', False), (24999, 'Kingdom Come: Deliverance II', False), (1123905, 'Cyberpunk 2077', False), (26003, 'Sea of Thieves', False)], [1707, 765837, 1369003, 1383062, 1042107, 1411117]))",
   "last_steam_fast_sig": "(['76561198062871244'], [('76561197963172584', '', False), ('76561197979883434', '', False), ('76561197981615184', '', False), ('76561197993922195', 'The King is Watching', False), ('76561198058548575', '', False), ('76561198076576055', '', False), ('76561198089948995', '', False), ('76561198140782132', '', False), ('76561198205052385', '', False), ('76561198264285149', '', False), ('76561199791811246', '', False)])",
-  "last_sync_ts": 1795112501,
+  "last_sync_ts": 1795112800,
   "layout_version": 5,
-  "other_br_rotation_offset": 32,
-  "panel_links_message_id": "1573040704547061783",
-  "panel_message_id": "1573040701195812995",
+  "other_br_rotation_offset": 96,
+  "panel_links_message_id": "1573041944320549056",
+  "panel_message_id": "1573041938448519311",
   "panel_message_ids": [
-    "1573040701195812995",
-    "1573040703100162139",
-    "1573040704547061783"
+    "1573041938448519311",
+    "1573041941329739918",
+    "1573041944320549056"
   ],
-  "panel_outros_message_id": "1573040703100162139",
+  "panel_outros_message_id": "1573041941329739918",
   "steam_ingame_visible_ts": {
     "76561197993922195": 1795111093,
     "76561198062871244": 1795111093

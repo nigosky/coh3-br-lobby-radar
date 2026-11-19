@@ -102,12 +102,12 @@
     },
     "1042107": {
       "alias": "Hy",
-      "last_match_date": 1795100495,
+      "last_match_date": 1795112593,
       "last_seen_online_ts": 0,
       "max_elo": 1094,
       "profile_id": 1042107,
       "steam_id": "76561198199845271",
-      "total_matches": 155
+      "total_matches": 156
     },
     "1042204": {
       "alias": "Saker",
@@ -1367,13 +1367,13 @@
     },
     "1385115": {
       "alias": "Lvas",
-      "last_match_date": 1795035107,
+      "last_match_date": 1795112433,
       "last_seen_ingame_ts": 1795111093,
       "last_seen_online_ts": 1795111692,
-      "max_elo": 1083,
+      "max_elo": 1098,
       "profile_id": 1385115,
       "steam_id": "76561199192255224",
-      "total_matches": 610
+      "total_matches": 627
     },
     "1389097": {
       "alias": "Doc. Holliday",
@@ -2109,12 +2109,12 @@
     },
     "351821": {
       "alias": "aldivx",
-      "last_match_date": 1795110423,
+      "last_match_date": 1795112676,
       "last_seen_online_ts": 1795111692,
       "max_elo": 1142,
       "profile_id": 351821,
       "steam_id": "76561198102059312",
-      "total_matches": 4338
+      "total_matches": 4339
     },
     "356392": {
       "alias": "CoyotePlaysom",
@@ -2644,6 +2644,7 @@
     "6696": {
       "alias": "Roda",
       "last_match_date": 1794972495,
+      "last_seen_ingame_ts": 1795112800,
       "last_seen_online_ts": 1795111093,
       "max_elo": 1255,
       "profile_id": 6696,
