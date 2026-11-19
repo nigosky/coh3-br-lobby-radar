@@ -4,11 +4,11 @@ Motor principal do projeto independente `nigosky/coh3-br-lobby-radar`.
 
 Opera 100% autônomo (repositório próprio, estado JSON leve, zero chave da Steam):
 1. Limpa automaticamente avisos curtos (`active_alerts`) com mais de `alert_cleanup_hours` (padrão 2h),
-   protegendo sempre o Painel Vivo Fixo (`panel_message_id`).
+   protegendo sempre as duas mensagens do Painel Vivo Fixo (`panel_message_ids`).
 2. Consulta presença pública XML da Steam das 33 contas monitoradas (~1,3s em paralelo).
 3. Se a presença mudou (ou se passaram >= 15 min para renovar o carimbo de horário):
    - Consulta na Relic API a última partida concluída e o pico de ELO (cacheado por 6h em `state.json`).
-   - Gera nova imagem PNG do card, publica uma nova mensagem no Discord (`POST`) e apaga o card anterior (`DELETE`).
+   - Gera nova imagem PNG grande (1100px) do card e publica DUAS mensagens distintas no Discord (`POST` da imagem dedicada + `POST` dos links da Steam), apagando em seguida as mensagens anteriores do painel (`DELETE`).
 4. Envia aviso curto com auto-limpeza quando `>= 2` veteranos estão com o CoH3 aberto (cooldown de 60 min).
 """
 
@@ -64,6 +64,21 @@ def load_state(state_path: Path = DEFAULT_STATE_PATH) -> dict[str, Any]:
 def save_state(state_path: Path, state: dict[str, Any]) -> None:
     serialized = json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     atomic_write_text(state_path, serialized)
+
+
+def _extract_panel_message_ids(state: dict[str, Any]) -> list[str]:
+    raw_candidates: list[Any] = []
+    stored_list = state.get("panel_message_ids")
+    if isinstance(stored_list, list):
+        raw_candidates.extend(stored_list)
+    raw_candidates.append(state.get("panel_message_id"))
+    raw_candidates.append(state.get("panel_links_message_id"))
+    deduped: list[str] = []
+    for item in raw_candidates:
+        cid = str(item or "").strip()
+        if cid and cid not in deduped:
+            deduped.append(cid)
+    return deduped
 
 
 def resolve_lobby_webhook_url(base_dir: Path = BASE_DIR) -> str:
@@ -132,9 +147,10 @@ def run_lobby_radar_sync(
             info.get("channel_id") or "N/D",
         )
 
-    panel_id = str(state.get("panel_message_id") or "").strip() or None
+    panel_ids = _extract_panel_message_ids(state)
+    has_complete_panel_pair = len(panel_ids) >= 2 and bool(str(state.get("panel_links_message_id") or "").strip())
 
-    # 1. Limpeza automática de avisos curtos expirados (> 2h), protegendo sempre o Painel Vivo Fixo
+    # 1. Limpeza automática de avisos curtos expirados (> 2h), protegendo sempre as mensagens do Painel Vivo Fixo
     active_alerts: list[dict[str, Any]] = list(state.get("active_alerts") or [])
     remaining_alerts: list[dict[str, Any]] = []
     max_age_sec = max(1, int(alert_cleanup_hours)) * 3600
@@ -147,7 +163,7 @@ def run_lobby_radar_sync(
             continue
         if (now - sent_at) >= max_age_sec:
             try:
-                if discord.delete_message(mid, protected_message_id=panel_id):
+                if discord.delete_message(mid, protected_message_ids=frozenset(panel_ids)):
                     summary["alerts_pruned"] += 1
                     state_dirty = True
                 else:
@@ -183,16 +199,16 @@ def run_lobby_radar_sync(
     prev_fast_sig = str(state.get("last_steam_fast_sig") or "")
     last_sync_ts = int(state.get("last_sync_ts", 0) or 0)
 
-    # Atalho econômico: se ninguém entrou/saiu da Steam/CoH3 e o painel foi sincronizado há < 15 min, não gasta chamadas extras
+    # Atalho econômico: se ninguém entrou/saiu da Steam/CoH3, as 2 mensagens existem e foram sincronizadas há < 15 min, não gasta chamadas extras
     if (
         not force
-        and panel_id is not None
+        and has_complete_panel_pair
         and fast_sig == prev_fast_sig
         and (now - last_sync_ts) < PANEL_HEARTBEAT_REFRESH_SEC
     ):
         logger.info(
             "[RADAR LOBBY] Sem mudanças de presença Steam (Painel Vivo %s em dia).",
-            panel_id,
+            ", ".join(panel_ids),
         )
         if state_dirty:
             save_state(state_path, state)
@@ -232,26 +248,29 @@ def run_lobby_radar_sync(
 
     should_patch_panel = (
         force
-        or panel_id is None
+        or not has_complete_panel_pair
         or digest != prev_digest
         or (now - last_sync_ts) >= PANEL_HEARTBEAT_REFRESH_SEC
     )
 
     if should_patch_panel:
-        prev_panel_id = panel_id
-        new_panel_id = discord.upsert_lobby_radar_message(snapshot, existing_message_id=prev_panel_id)
-        if new_panel_id:
-            panel_id = new_panel_id
-            state["panel_message_id"] = new_panel_id
+        prev_panel_ids = list(panel_ids)
+        new_panel_ids = discord.upsert_lobby_radar_messages(snapshot, existing_message_ids=prev_panel_ids)
+        if len(new_panel_ids) >= 2:
+            panel_ids = list(new_panel_ids)
+            state["panel_message_ids"] = panel_ids
+            state["panel_message_id"] = panel_ids[0]
+            state["panel_links_message_id"] = panel_ids[1]
             state["last_digest"] = digest
             state["last_steam_fast_sig"] = fast_sig
             state["last_sync_ts"] = now
             state_dirty = True
             summary["panel_updated"] = True
             logger.info(
-                "[RADAR LOBBY] Novo card publicado (ID %s, anterior removido: %s | No CoH3: %d | Online Steam: %d | Recentes Relic: %d).",
-                new_panel_id,
-                prev_panel_id or "nenhum",
+                "[RADAR LOBBY] Painel em 2 mensagens publicado (Imagem ID %s + Links ID %s | anteriores removidos: %s | No CoH3: %d | Online Steam: %d | Recentes Relic: %d).",
+                panel_ids[0],
+                panel_ids[1],
+                ", ".join(prev_panel_ids) if prev_panel_ids else "nenhum",
                 summary["in_coh3"],
                 summary["online_steam"],
                 summary["recent_relic"],

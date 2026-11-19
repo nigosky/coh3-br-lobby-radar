@@ -230,7 +230,7 @@ class SteamAvatarProvider:
                 raw = read_bounded_http_body(resp, MAX_STEAM_AVATAR_BYTES)
             with Image.open(io.BytesIO(raw), formats=list(ALLOWED_DECODER_FORMATS)) as im:
                 im.load()
-                norm = im.convert("RGB").resize((64, 64), Image.Resampling.LANCZOS)
+                norm = im.convert("RGB").resize((96, 96), Image.Resampling.LANCZOS)
                 buf = io.BytesIO()
                 norm.save(buf, format="PNG")
                 png_bytes = buf.getvalue()
@@ -264,7 +264,7 @@ class SteamAvatarProvider:
             d = ImageDraw.Draw(base_sq)
             clean_a = strip_unsafe_chars(alias)
             letter = (clean_a[:1] or "?").upper()
-            fnt = pick_font(letter, size=max(11, int(size * 0.48)), bold=True)
+            fnt = pick_font(letter, size=max(13, int(size * 0.48)), bold=True)
             bb = d.textbbox((0, 0), letter, font=fnt)
             d.text(((size - (bb[2] - bb[0])) / 2, (size - (bb[3] - bb[1])) / 2 - 2), letter, font=fnt, fill=(241, 245, 249, 255))
 
@@ -277,7 +277,7 @@ class SteamAvatarProvider:
         out.paste(base_sq, (0, 0), mask_sm)
 
         ring_ss = Image.new("RGBA", (ss, ss), (0, 0, 0, 0))
-        ImageDraw.Draw(ring_ss).ellipse((2, 2, ss - 3, ss - 3), outline=ring_color, width=5)
+        ImageDraw.Draw(ring_ss).ellipse((2, 2, ss - 3, ss - 3), outline=ring_color, width=6)
         out = Image.alpha_composite(out, ring_ss.resize((size, size), Image.Resampling.LANCZOS))
 
         if len(self._circle_cache) >= 128:
@@ -290,27 +290,28 @@ def render_lobby_radar_card_png(
     snapshot: dict[str, Any],
     avatar_provider: SteamAvatarProvider,
 ) -> bytes:
-    """Renderiza o Painel Vivo Fixo do canal de Lobby (Jogando CoH3 Agora + Online na Steam + Recentes na Relic)."""
-    width = 860
+    """Renderiza o Painel Vivo Fixo em alta resolução (1100px) para exibição grande como imagem dedicada no Discord."""
+    width = 1100
     in_coh3: list[dict[str, Any]] = list(snapshot.get("in_coh3") or [])[:16]
     online_steam: list[dict[str, Any]] = list(snapshot.get("online_steam") or [])[:24]
     recent_relic: list[dict[str, Any]] = list(snapshot.get("recent_relic") or [])[:8]
     now_ts = int(snapshot.get("timestamp") or time.time())
     total_monitored = int(snapshot.get("total_monitored_unique") or 32)
 
-    header_h = 74
-    sec_hdr_h = 34
-    coh3_row_h = 46
-    empty_coh3_h = 42
-    online_row_h = 42
-    empty_online_h = 38
-    recent_row_h = 40
-    footer_h = 30
+    header_h = 96
+    sec_hdr_h = 44
+    coh3_row_h = 60
+    empty_coh3_h = 54
+    online_row_h = 56
+    empty_online_h = 50
+    recent_row_h = 52
+    footer_h = 38
+    rail_w = 10
 
     coh3_body_h = (len(in_coh3) * coh3_row_h) if in_coh3 else empty_coh3_h
     online_grid_rows = ((len(online_steam) + 1) // 2) if online_steam else 0
-    online_body_h = (online_grid_rows * online_row_h + 6) if online_grid_rows > 0 else empty_online_h
-    recent_total_h = (sec_hdr_h + len(recent_relic) * recent_row_h + 6) if recent_relic else 0
+    online_body_h = (online_grid_rows * online_row_h + 8) if online_grid_rows > 0 else empty_online_h
+    recent_total_h = (sec_hdr_h + len(recent_relic) * recent_row_h + 8) if recent_relic else 0
 
     total_h = header_h + (sec_hdr_h + coh3_body_h) + (sec_hdr_h + online_body_h) + recent_total_h + footer_h
     img = Image.new("RGBA", (width, total_h), (16, 19, 25, 255))
@@ -325,14 +326,14 @@ def render_lobby_radar_card_png(
 
     draw.rectangle((0, 0, width, header_h), fill=(21, 25, 32, 255))
     draw.line([(0, header_h - 1), (width, header_h - 1)], fill=(64, 74, 92, 255), width=2)
-    draw.rectangle((0, 0, 8, total_h), fill=rail_col)
+    draw.rectangle((0, 0, rail_w, total_h), fill=rail_col)
 
-    vet_hdr = get_veteranos_badge_icon(size=34)
-    img.paste(vet_hdr, (22, 19), vet_hdr)
+    vet_hdr = get_veteranos_badge_icon(size=46)
+    img.paste(vet_hdr, (28, 25), vet_hdr)
 
     title_txt = "RADAR DE LOBBY AO VIVO  •  VETERANOS COH3 BRASIL"
-    t_fnt = pick_font(title_txt, size=19, bold=True, condensed=True)
-    draw.text((66, 14), title_txt, font=t_fnt, fill=(253, 224, 71, 255))
+    t_fnt = pick_font(title_txt, size=25, bold=True, condensed=True)
+    draw.text((86, 18), title_txt, font=t_fnt, fill=(253, 224, 71, 255))
 
     brt_str = datetime.fromtimestamp(now_ts, tz=BRT_TZ).strftime("%d/%m às %H:%M BRT")
     sub_txt = (
@@ -340,8 +341,8 @@ def render_lobby_radar_card_png(
         + (f"   •   Ativos há pouco: {len(recent_relic)}" if recent_relic else "")
         + f"   •   Atualizado {brt_str}"
     )
-    sub_fnt = pick_font(sub_txt, size=13, bold=True)
-    draw.text((66, 43), sub_txt, font=sub_fnt, fill=(195, 204, 218, 255))
+    sub_fnt = pick_font(sub_txt, size=17, bold=True)
+    draw.text((86, 56), sub_txt, font=sub_fnt, fill=(195, 204, 218, 255))
 
     if in_coh3:
         pill_txt = f"EM JOGO ({len(in_coh3)})"
@@ -352,132 +353,132 @@ def render_lobby_radar_card_png(
     else:
         pill_txt = "LOBBY CALMO"
         pill_bg = (75, 85, 99, 255)
-    pill_w, pill_h = 138, 30
-    pill_x, pill_y = width - pill_w - 18, 14
-    draw.rounded_rectangle((pill_x, pill_y, pill_x + pill_w, pill_y + pill_h), radius=15, fill=pill_bg)
-    p_fnt = pick_font(pill_txt, size=14, bold=True, condensed=True)
+    pill_w, pill_h = 178, 38
+    pill_x, pill_y = width - pill_w - 24, 18
+    draw.rounded_rectangle((pill_x, pill_y, pill_x + pill_w, pill_y + pill_h), radius=19, fill=pill_bg)
+    p_fnt = pick_font(pill_txt, size=18, bold=True, condensed=True)
     ptw = text_width(draw, pill_txt, p_fnt)
-    draw.text((pill_x + (pill_w - ptw) / 2, pill_y + 6), pill_txt, font=p_fnt, fill=(255, 255, 255, 255))
+    draw.text((pill_x + (pill_w - ptw) / 2, pill_y + 8), pill_txt, font=p_fnt, fill=(255, 255, 255, 255))
 
-    flag_br = get_br_flag(w=20, h=14)
-    vet_sm = get_veteranos_badge_icon(size=18)
+    flag_br = get_br_flag(w=26, h=18)
+    vet_sm = get_veteranos_badge_icon(size=22)
     y = header_h
 
     # SEÇÃO 1: JOGANDO COMPANY OF HEROES 3 AGORA
-    draw.rectangle((8, y, width, y + sec_hdr_h), fill=(18, 36, 26, 255))
-    draw.line([(8, y + sec_hdr_h - 1), (width, y + sec_hdr_h - 1)], fill=(34, 197, 94, 180), width=1)
-    draw.ellipse((22, y + 11, 34, y + 23), fill=(74, 222, 128, 255))
+    draw.rectangle((rail_w, y, width, y + sec_hdr_h), fill=(18, 36, 26, 255))
+    draw.line([(rail_w, y + sec_hdr_h - 1), (width, y + sec_hdr_h - 1)], fill=(34, 197, 94, 180), width=1)
+    draw.ellipse((28, y + 14, 44, y + 30), fill=(74, 222, 128, 255))
     s1_txt = f"JOGANDO COMPANY OF HEROES 3 AGORA ({len(in_coh3)})"
-    s1_fnt = pick_font(s1_txt, size=15, bold=True, condensed=True)
-    draw.text((42, y + 8), s1_txt, font=s1_fnt, fill=(134, 239, 172, 255))
+    s1_fnt = pick_font(s1_txt, size=19, bold=True, condensed=True)
+    draw.text((54, y + 10), s1_txt, font=s1_fnt, fill=(134, 239, 172, 255))
     y += sec_hdr_h
 
     if not in_coh3:
-        draw.rectangle((8, y, width, y + empty_coh3_h), fill=(18, 22, 28, 255))
+        draw.rectangle((rail_w, y, width, y + empty_coh3_h), fill=(18, 22, 28, 255))
         e_txt = "Nenhum veterano com o Company of Heroes 3 aberto neste exato instante."
-        e_fnt = pick_font(e_txt, size=14, bold=False)
-        draw.text((26, y + 12), e_txt, font=e_fnt, fill=(148, 163, 184, 255))
+        e_fnt = pick_font(e_txt, size=18, bold=False)
+        draw.text((32, y + 16), e_txt, font=e_fnt, fill=(148, 163, 184, 255))
         y += empty_coh3_h
     else:
         for idx, pl in enumerate(in_coh3):
             r_bg = (20, 31, 25, 255) if idx % 2 == 0 else (17, 26, 22, 255)
-            draw.rectangle((8, y, width, y + coh3_row_h), fill=r_bg)
-            draw.line([(16, y + coh3_row_h - 1), (width - 14, y + coh3_row_h - 1)], fill=(32, 48, 39, 255), width=1)
+            draw.rectangle((rail_w, y, width, y + coh3_row_h), fill=r_bg)
+            draw.line([(20, y + coh3_row_h - 1), (width - 18, y + coh3_row_h - 1)], fill=(32, 48, 39, 255), width=1)
 
             av_im = avatar_provider.get_circular_avatar(
-                size=34,
+                size=46,
                 alias=str(pl.get("alias") or "BR"),
                 avatar_url=str(pl.get("avatar_url") or ""),
                 ring_color=(74, 222, 128, 255),
             )
-            img.paste(av_im, (22, y + 6), av_im)
-            img.paste(flag_br, (64, y + 16), flag_br)
+            img.paste(av_im, (28, y + 7), av_im)
+            img.paste(flag_br, (84, y + 21), flag_br)
 
             elo_val = int(pl.get("max_elo", 0) or 0)
             elo_str = f"{elo_val} ELO" if elo_val > 0 else "S/R"
-            elo_fnt = pick_font(elo_str, size=14, bold=True, condensed=True)
+            elo_fnt = pick_font(elo_str, size=18, bold=True, condensed=True)
 
             note_raw = str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora")
-            note_disp, n_fnt = truncate_to_px(draw, note_raw, max_px=360, size=14, bold=True)
+            note_disp, n_fnt = truncate_to_px(draw, note_raw, max_px=470, size=18, bold=True)
             nw = text_width(draw, note_disp, n_fnt)
-            note_x = width - 20 - nw
+            note_x = width - 26 - nw
             note_col = (253, 224, 71, 255) if "menu/fila" in note_raw else (134, 239, 172, 255)
-            draw.text((note_x, y + 14), note_disp, font=n_fnt, fill=note_col)
+            draw.text((note_x, y + 19), note_disp, font=n_fnt, fill=note_col)
 
             ew = text_width(draw, elo_str, elo_fnt)
-            elo_x = note_x - 22 - ew
-            draw.text((elo_x, y + 14), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
+            elo_x = note_x - 28 - ew
+            draw.text((elo_x, y + 19), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
 
-            max_alias_px = max(90, int(elo_x - 92 - 28))
-            disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_alias_px, size=17, bold=True)
-            draw.text((92, y + 12), disp_alias, font=a_fnt, fill=(240, 253, 244, 255))
-            bx = int(92 + text_width(draw, disp_alias, a_fnt) + 6)
-            img.paste(vet_sm, (bx, y + 14), vet_sm)
+            max_alias_px = max(120, int(elo_x - 120 - 34))
+            disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_alias_px, size=22, bold=True)
+            draw.text((120, y + 16), disp_alias, font=a_fnt, fill=(240, 253, 244, 255))
+            bx = int(120 + text_width(draw, disp_alias, a_fnt) + 8)
+            img.paste(vet_sm, (bx, y + 19), vet_sm)
 
             y += coh3_row_h
 
     # SEÇÃO 2: ONLINE NA STEAM — DISPONÍVEIS PARA CONVITE (GRADE 2 COLUNAS)
-    draw.rectangle((8, y, width, y + sec_hdr_h), fill=(17, 29, 42, 255))
-    draw.line([(8, y), (width, y)], fill=(45, 55, 72, 255), width=1)
-    draw.line([(8, y + sec_hdr_h - 1), (width, y + sec_hdr_h - 1)], fill=(56, 189, 248, 175), width=1)
-    draw.ellipse((22, y + 11, 34, y + 23), fill=(56, 189, 248, 255))
+    draw.rectangle((rail_w, y, width, y + sec_hdr_h), fill=(17, 29, 42, 255))
+    draw.line([(rail_w, y), (width, y)], fill=(45, 55, 72, 255), width=1)
+    draw.line([(rail_w, y + sec_hdr_h - 1), (width, y + sec_hdr_h - 1)], fill=(56, 189, 248, 175), width=1)
+    draw.ellipse((28, y + 14, 44, y + 30), fill=(56, 189, 248, 255))
     s2_txt = f"ONLINE NA STEAM  •  DISPONÍVEIS PARA CHAMAR ({len(online_steam)})"
-    s2_fnt = pick_font(s2_txt, size=15, bold=True, condensed=True)
-    draw.text((42, y + 8), s2_txt, font=s2_fnt, fill=(125, 211, 252, 255))
+    s2_fnt = pick_font(s2_txt, size=19, bold=True, condensed=True)
+    draw.text((54, y + 10), s2_txt, font=s2_fnt, fill=(125, 211, 252, 255))
     y += sec_hdr_h
 
     if not online_steam:
-        draw.rectangle((8, y, width, y + empty_online_h), fill=(18, 22, 28, 255))
+        draw.rectangle((rail_w, y, width, y + empty_online_h), fill=(18, 22, 28, 255))
         e2_txt = "Nenhum outro jogador com status Online público na Steam agora."
-        e2_fnt = pick_font(e2_txt, size=14, bold=False)
-        draw.text((26, y + 10), e2_txt, font=e2_fnt, fill=(148, 163, 184, 255))
+        e2_fnt = pick_font(e2_txt, size=18, bold=False)
+        draw.text((32, y + 14), e2_txt, font=e2_fnt, fill=(148, 163, 184, 255))
         y += empty_online_h
     else:
-        mid_x = 8 + (width - 8) // 2
-        grid_h = online_grid_rows * online_row_h + 6
-        draw.rectangle((8, y, width, y + grid_h), fill=(18, 22, 29, 255))
-        draw.line([(mid_x, y + 4), (mid_x, y + grid_h - 4)], fill=(36, 44, 58, 255), width=1)
+        mid_x = rail_w + (width - rail_w) // 2
+        grid_h = online_grid_rows * online_row_h + 8
+        draw.rectangle((rail_w, y, width, y + grid_h), fill=(18, 22, 29, 255))
+        draw.line([(mid_x, y + 6), (mid_x, y + grid_h - 6)], fill=(36, 44, 58, 255), width=1)
 
-        vet_xs = get_veteranos_badge_icon(size=15)
-        flag_xs = get_br_flag(w=18, h=12)
+        vet_xs = get_veteranos_badge_icon(size=19)
+        flag_xs = get_br_flag(w=22, h=15)
 
         for idx, pl in enumerate(online_steam):
             row_i = idx // 2
             col_i = idx % 2
-            cx0 = 18 if col_i == 0 else (mid_x + 12)
-            cx_limit = (mid_x - 10) if col_i == 0 else (width - 14)
-            ry = y + 3 + row_i * online_row_h
+            cx0 = 24 if col_i == 0 else (mid_x + 16)
+            cx_limit = (mid_x - 14) if col_i == 0 else (width - 18)
+            ry = y + 4 + row_i * online_row_h
 
             if col_i == 0 and row_i > 0:
-                draw.line([(16, ry), (width - 14, ry)], fill=(29, 35, 46, 255), width=1)
+                draw.line([(20, ry), (width - 18, ry)], fill=(29, 35, 46, 255), width=1)
 
             has_other = bool(pl.get("other_game"))
             is_away = bool(pl.get("is_away"))
             ring_c = (148, 163, 184, 235) if (has_other or is_away) else (56, 189, 248, 245)
 
             av_im = avatar_provider.get_circular_avatar(
-                size=30,
+                size=40,
                 alias=str(pl.get("alias") or "BR"),
                 avatar_url=str(pl.get("avatar_url") or ""),
                 ring_color=ring_c,
             )
-            img.paste(av_im, (cx0, ry + 6), av_im)
-            img.paste(flag_xs, (cx0 + 35, ry + 9), flag_xs)
+            img.paste(av_im, (cx0, ry + 8), av_im)
+            img.paste(flag_xs, (cx0 + 48, ry + 11), flag_xs)
 
             elo_val = int(pl.get("max_elo", 0) or 0)
             elo_tag = f"{elo_val}" if elo_val > 0 else ""
             elo_w = 0
             if elo_tag:
-                ef = pick_font(elo_tag, size=13, bold=True, condensed=True)
+                ef = pick_font(elo_tag, size=17, bold=True, condensed=True)
                 elo_w = int(text_width(draw, elo_tag, ef))
-                draw.text((cx_limit - elo_w, ry + 7), elo_tag, font=ef, fill=(203, 213, 225, 255))
+                draw.text((cx_limit - elo_w, ry + 9), elo_tag, font=ef, fill=(203, 213, 225, 255))
 
-            name_x = cx0 + 58
-            max_nm_px = max(72, (cx_limit - elo_w - 8) - name_x - 20)
-            disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_nm_px, size=15, bold=True)
+            name_x = cx0 + 76
+            max_nm_px = max(90, (cx_limit - elo_w - 10) - name_x - 26)
+            disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_nm_px, size=19, bold=True)
             nm_col = (226, 232, 240, 255) if (has_other or is_away) else (186, 230, 253, 255)
-            draw.text((name_x, ry + 5), disp_alias, font=a_fnt, fill=nm_col)
-            img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 4), ry + 7), vet_xs)
+            draw.text((name_x, ry + 6), disp_alias, font=a_fnt, fill=nm_col)
+            img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 9), vet_xs)
 
             if has_other:
                 sub_st = f"Em outro jogo: {pl['other_game']}"
@@ -492,55 +493,55 @@ def render_lobby_radar_card_png(
                 sub_st = "Livre na Steam para chamar"
                 sub_col = (125, 211, 252, 255)
 
-            st_disp, st_fnt = truncate_to_px(draw, sub_st, max_px=max(80, cx_limit - (cx0 + 35)), size=12, bold=False)
-            draw.text((cx0 + 35, ry + 24), st_disp, font=st_fnt, fill=sub_col)
+            st_disp, st_fnt = truncate_to_px(draw, sub_st, max_px=max(100, cx_limit - (cx0 + 48)), size=15, bold=False)
+            draw.text((cx0 + 48, ry + 32), st_disp, font=st_fnt, fill=sub_col)
 
         y += grid_h
 
     # SEÇÃO 3 (OPCIONAL): ATIVOS HÁ POUCO NA RELIC (STEAM PRIVADA / INVISÍVEL)
     if recent_relic:
-        draw.rectangle((8, y, width, y + sec_hdr_h), fill=(36, 28, 16, 255))
-        draw.line([(8, y), (width, y)], fill=(72, 58, 28, 255), width=1)
-        draw.line([(8, y + sec_hdr_h - 1), (width, y + sec_hdr_h - 1)], fill=(245, 184, 46, 170), width=1)
-        draw.ellipse((22, y + 11, 34, y + 23), fill=(245, 184, 46, 255))
+        draw.rectangle((rail_w, y, width, y + sec_hdr_h), fill=(36, 28, 16, 255))
+        draw.line([(rail_w, y), (width, y)], fill=(72, 58, 28, 255), width=1)
+        draw.line([(rail_w, y + sec_hdr_h - 1), (width, y + sec_hdr_h - 1)], fill=(245, 184, 46, 170), width=1)
+        draw.ellipse((28, y + 14, 44, y + 30), fill=(245, 184, 46, 255))
         s3_txt = f"ATIVOS AGORA HÁ POUCO NA RELIC  •  STEAM PRIVADA / INVISÍVEL ({len(recent_relic)})"
-        s3_fnt = pick_font(s3_txt, size=15, bold=True, condensed=True)
-        draw.text((42, y + 8), s3_txt, font=s3_fnt, fill=(253, 224, 71, 255))
+        s3_fnt = pick_font(s3_txt, size=19, bold=True, condensed=True)
+        draw.text((54, y + 10), s3_txt, font=s3_fnt, fill=(253, 224, 71, 255))
         y += sec_hdr_h
 
         for idx, pl in enumerate(recent_relic):
             r_bg = (26, 23, 18, 255) if idx % 2 == 0 else (22, 20, 16, 255)
-            draw.rectangle((8, y, width, y + recent_row_h), fill=r_bg)
+            draw.rectangle((rail_w, y, width, y + recent_row_h), fill=r_bg)
             av_im = avatar_provider.get_circular_avatar(
-                size=28,
+                size=38,
                 alias=str(pl.get("alias") or "BR"),
                 avatar_url=str(pl.get("avatar_url") or ""),
                 ring_color=(245, 184, 46, 235),
             )
-            img.paste(av_im, (22, y + 6), av_im)
-            img.paste(flag_br, (58, y + 13), flag_br)
+            img.paste(av_im, (28, y + 7), av_im)
+            img.paste(flag_br, (76, y + 17), flag_br)
 
             note_r = str(pl.get("status_note") or "Partida recente na Relic")
-            nd, nf = truncate_to_px(draw, note_r, max_px=420, size=13, bold=True)
+            nd, nf = truncate_to_px(draw, note_r, max_px=540, size=17, bold=True)
             nw = text_width(draw, nd, nf)
-            nx = width - 20 - nw
-            draw.text((nx, y + 12), nd, font=nf, fill=(253, 230, 138, 255))
+            nx = width - 26 - nw
+            draw.text((nx, y + 16), nd, font=nf, fill=(253, 230, 138, 255))
 
-            disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max(80, int(nx - 118)), size=15, bold=True)
-            draw.text((86, y + 10), disp_alias, font=a_fnt, fill=(254, 243, 199, 255))
-            img.paste(vet_sm, (int(86 + text_width(draw, disp_alias, a_fnt) + 5), y + 11), vet_sm)
+            disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max(100, int(nx - 150)), size=19, bold=True)
+            draw.text((112, y + 14), disp_alias, font=a_fnt, fill=(254, 243, 199, 255))
+            img.paste(vet_sm, (int(112 + text_width(draw, disp_alias, a_fnt) + 7), y + 15), vet_sm)
             y += recent_row_h
-        draw.rectangle((8, y, width, y + 6), fill=(22, 20, 16, 255))
-        y += 6
+        draw.rectangle((rail_w, y, width, y + 8), fill=(22, 20, 16, 255))
+        y += 8
 
-    draw.rectangle((8, y, width, total_h), fill=(15, 18, 24, 255))
-    draw.line([(8, y), (width, y)], fill=(42, 48, 60, 255), width=1)
+    draw.rectangle((rail_w, y, width, total_h), fill=(15, 18, 24, 255))
+    draw.line([(rail_w, y), (width, y)], fill=(42, 48, 60, 255), width=1)
     foot_txt = (
         f"Monitorando {total_monitored} Veteranos BR (Steam XML público + Histórico Relic)  •  "
-        f"Use os links abaixo do painel para abrir o perfil Steam e convidar!"
+        f"Veja a mensagem de links Steam para abrir o perfil e convidar!"
     )
-    f_fnt = pick_font(foot_txt, size=12, bold=False)
-    draw.text((22, y + 8), foot_txt, font=f_fnt, fill=(148, 163, 184, 255))
+    f_fnt = pick_font(foot_txt, size=15, bold=False)
+    draw.text((28, y + 10), foot_txt, font=f_fnt, fill=(148, 163, 184, 255))
 
     draw.rectangle((0, 0, width - 1, total_h - 1), outline=(56, 65, 82, 255), width=1)
 
