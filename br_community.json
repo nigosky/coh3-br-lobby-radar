@@ -273,7 +273,8 @@
     "1096289": {
       "alias": "[OMJ] Lore",
       "last_match_date": 1795036111,
-      "last_seen_online_ts": 1795108448,
+      "last_seen_ingame_ts": 1795111392,
+      "last_seen_online_ts": 1795111392,
       "max_elo": 941,
       "profile_id": 1096289,
       "steam_id": "76561198083566819",
@@ -363,7 +364,7 @@
     "11376": {
       "alias": "Fantasma2000",
       "last_match_date": 1794618087,
-      "last_seen_online_ts": 1795109152,
+      "last_seen_online_ts": 1795111392,
       "max_elo": 1083,
       "profile_id": 11376,
       "steam_id": "76561198076447423",
@@ -582,7 +583,7 @@
     "1200197": {
       "alias": "Spotlight",
       "last_match_date": 1795051623,
-      "last_seen_online_ts": 1795109452,
+      "last_seen_online_ts": 1795111392,
       "max_elo": 1120,
       "profile_id": 1200197,
       "steam_id": "76561198132799158",
@@ -963,7 +964,7 @@
       "alias": "Ouvido Albino",
       "last_match_date": 1795023213,
       "last_seen_ingame_ts": 1795111093,
-      "last_seen_online_ts": 1795109452,
+      "last_seen_online_ts": 1795111392,
       "max_elo": 1002,
       "profile_id": 1285769,
       "steam_id": "76561198803826426",
@@ -1099,11 +1100,11 @@
     "1304125": {
       "alias": "LordBaconBR",
       "last_match_date": 1795034644,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795111392,
       "max_elo": 1000,
       "profile_id": 1304125,
       "steam_id": "76561199482244877",
-      "total_matches": 54
+      "total_matches": 795
     },
     "1305454": {
       "alias": "Nimesulida",
@@ -1153,7 +1154,7 @@
     "131786": {
       "alias": "LadyVolk",
       "last_match_date": 1794483536,
-      "last_seen_online_ts": 1795109452,
+      "last_seen_online_ts": 1795111392,
       "max_elo": 1128,
       "profile_id": 131786,
       "steam_id": "76561198005462292",
@@ -1256,7 +1257,7 @@
       "max_elo": 1041,
       "profile_id": 135141,
       "steam_id": "76561198039466768",
-      "total_matches": 109
+      "total_matches": 209
     },
     "13516": {
       "alias": "Pax Xavier youtube",
@@ -1423,12 +1424,12 @@
     },
     "1411117": {
       "alias": "Riddler",
-      "last_match_date": 1795109428,
+      "last_match_date": 1795111280,
       "last_seen_online_ts": 0,
       "max_elo": 1022,
       "profile_id": 1411117,
       "steam_id": "76561197979719612",
-      "total_matches": 219
+      "total_matches": 220
     },
     "1413456": {
       "alias": "Fuga",
@@ -1460,7 +1461,7 @@
     "1426084": {
       "alias": "Salah Frario",
       "last_match_date": 1794952371,
-      "last_seen_online_ts": 1795105752,
+      "last_seen_online_ts": 1795111392,
       "max_elo": 1006,
       "profile_id": 1426084,
       "steam_id": "76561198413106918",
@@ -1495,12 +1496,12 @@
     },
     "1438656": {
       "alias": "guridocafe",
-      "last_match_date": 1795061438,
+      "last_match_date": 1795110914,
       "last_seen_online_ts": 1795109752,
       "max_elo": 1000,
       "profile_id": 1438656,
       "steam_id": "76561198870731987",
-      "total_matches": 40
+      "total_matches": 73
     },
     "1450743": {
       "alias": "DANGER",
@@ -1838,7 +1839,7 @@
     "2290": {
       "alias": "luissaster",
       "last_match_date": 1794891702,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795111392,
       "max_elo": 1009,
       "profile_id": 2290,
       "steam_id": "76561198329413012",
@@ -2074,10 +2075,10 @@
       "alias": "[SE:VH] Queiroz",
       "last_match_date": 1794896149,
       "last_seen_online_ts": 1795109752,
-      "max_elo": 985,
+      "max_elo": 1073,
       "profile_id": 3414,
       "steam_id": "76561198111168811",
-      "total_matches": 2916
+      "total_matches": 3090
     },
     "34770": {
       "alias": "TheAllmeida",
@@ -2226,7 +2227,7 @@
     "401275": {
       "alias": "asado de perro",
       "last_match_date": 1795110934,
-      "last_seen_online_ts": 1795109452,
+      "last_seen_online_ts": 1795111392,
       "max_elo": 1195,
       "profile_id": 401275,
       "steam_id": "76561198008634992",
@@ -2245,7 +2246,7 @@
       "alias": "Tokai Teio",
       "last_match_date": 1793979920,
       "last_seen_ingame_ts": 1795111093,
-      "last_seen_online_ts": 1795109452,
+      "last_seen_online_ts": 1795111392,
       "max_elo": 1532,
       "profile_id": 40833,
       "steam_id": "76561198216174113",
