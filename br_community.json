@@ -1,0 +1,3518 @@
+{
+  "players": {
+    "1002810": {
+      "alias": "Isilmer",
+      "last_match_date": 1795066378,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1002810,
+      "steam_id": "76561198051691390"
+    },
+    "1004214": {
+      "alias": "SHYK - Rafirus",
+      "last_match_date": 1795033204,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 919,
+      "profile_id": 1004214,
+      "steam_id": "76561198344087472"
+    },
+    "1010793": {
+      "alias": "拉斐爾",
+      "last_match_date": 1794747223,
+      "last_seen_online_ts": 0,
+      "max_elo": 897,
+      "profile_id": 1010793,
+      "steam_id": "76561199641123845"
+    },
+    "1020192": {
+      "alias": "j0r3L",
+      "last_match_date": 1794532429,
+      "last_seen_online_ts": 0,
+      "max_elo": 817,
+      "profile_id": 1020192,
+      "steam_id": "76561198974641753"
+    },
+    "1020290": {
+      "alias": "tom",
+      "last_match_date": 1793232422,
+      "last_seen_online_ts": 0,
+      "max_elo": 774,
+      "profile_id": 1020290,
+      "steam_id": "76561198042565144"
+    },
+    "1020544": {
+      "alias": "little kiss",
+      "last_match_date": 1793934759,
+      "last_seen_online_ts": 0,
+      "max_elo": 710,
+      "profile_id": 1020544,
+      "steam_id": "76561198026250715"
+    },
+    "1021783": {
+      "alias": "Bruno Moll",
+      "last_match_date": 1795053674,
+      "last_seen_online_ts": 0,
+      "max_elo": 988,
+      "profile_id": 1021783,
+      "steam_id": "76561198250905896"
+    },
+    "1022387": {
+      "alias": "Anuldelare",
+      "last_match_date": 1793065727,
+      "last_seen_online_ts": 0,
+      "max_elo": 874,
+      "profile_id": 1022387,
+      "steam_id": "76561198068722886"
+    },
+    "1024022": {
+      "alias": "BravuBR Zeh CoCudo",
+      "last_match_date": 1794799195,
+      "last_seen_online_ts": 0,
+      "max_elo": 1049,
+      "profile_id": 1024022,
+      "steam_id": "76561198427370047"
+    },
+    "1031213": {
+      "alias": "Abnadiel",
+      "last_match_date": 1792945546,
+      "last_seen_online_ts": 0,
+      "max_elo": 865,
+      "profile_id": 1031213,
+      "steam_id": "76561199028055547"
+    },
+    "1035227": {
+      "alias": "raskolhnikov",
+      "last_match_date": 1795054616,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 918,
+      "profile_id": 1035227,
+      "steam_id": "76561198097431966"
+    },
+    "1042107": {
+      "alias": "Hy",
+      "last_match_date": 1795100495,
+      "last_seen_online_ts": 0,
+      "max_elo": 1094,
+      "profile_id": 1042107,
+      "steam_id": "76561198199845271"
+    },
+    "1042204": {
+      "alias": "Saker",
+      "last_match_date": 1794873341,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 806,
+      "profile_id": 1042204,
+      "steam_id": "76561198252921023"
+    },
+    "105384": {
+      "alias": "gabrielprado921",
+      "last_match_date": 1795055428,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 699,
+      "profile_id": 105384,
+      "steam_id": "76561198961247689"
+    },
+    "1060169": {
+      "alias": "Eros",
+      "last_match_date": 1793998261,
+      "last_seen_online_ts": 0,
+      "max_elo": 1080,
+      "profile_id": 1060169,
+      "steam_id": "76561199070942784"
+    },
+    "106195": {
+      "alias": "tioed2015",
+      "last_match_date": 1794881561,
+      "last_seen_online_ts": 0,
+      "max_elo": 1087,
+      "profile_id": 106195,
+      "steam_id": "76561198287210732"
+    },
+    "1062103": {
+      "alias": "t.t",
+      "last_match_date": 1794102604,
+      "last_seen_online_ts": 0,
+      "max_elo": 858,
+      "profile_id": 1062103,
+      "steam_id": "76561198445319849"
+    },
+    "1064661": {
+      "alias": "HeronLsL",
+      "last_match_date": 1793065727,
+      "last_seen_online_ts": 0,
+      "max_elo": 874,
+      "profile_id": 1064661,
+      "steam_id": "76561198384837934"
+    },
+    "106497": {
+      "alias": "-CP-BlackWolf",
+      "last_match_date": 1794951694,
+      "last_seen_online_ts": 0,
+      "max_elo": 1139,
+      "profile_id": 106497,
+      "steam_id": "76561198059586895"
+    },
+    "1067293": {
+      "alias": "ISYPatch",
+      "last_match_date": 1795057533,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1067293,
+      "steam_id": "76561198241238722"
+    },
+    "1073970": {
+      "alias": "GianJack",
+      "last_match_date": 1794959188,
+      "last_seen_online_ts": 0,
+      "max_elo": 1254,
+      "profile_id": 1073970,
+      "steam_id": "76561199439739714"
+    },
+    "1074099": {
+      "alias": "GbSLI",
+      "last_match_date": 1794868241,
+      "last_seen_online_ts": 0,
+      "max_elo": 1017,
+      "profile_id": 1074099,
+      "steam_id": "76561198027925280"
+    },
+    "1075661": {
+      "alias": "Accorsi",
+      "last_match_date": 0,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 1075661,
+      "steam_id": "76561198017964693"
+    },
+    "1079855": {
+      "alias": "brutyrex",
+      "last_match_date": 1794663188,
+      "last_seen_online_ts": 0,
+      "max_elo": 891,
+      "profile_id": 1079855,
+      "steam_id": "76561198137109327"
+    },
+    "1080806": {
+      "alias": "LuKAs",
+      "last_match_date": 1786931211,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 1080806,
+      "steam_id": "76561198027505732"
+    },
+    "108392": {
+      "alias": "Sav XIII",
+      "last_match_date": 1795059491,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 108392,
+      "steam_id": "76561198018184412"
+    },
+    "108410": {
+      "alias": "Vetinho",
+      "last_match_date": 1794972387,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 616,
+      "profile_id": 108410,
+      "steam_id": "76561198162205715"
+    },
+    "1086495": {
+      "alias": "kamirk",
+      "last_match_date": 1795027598,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 979,
+      "profile_id": 1086495,
+      "steam_id": "76561199582322486"
+    },
+    "109098": {
+      "alias": "Z4sL0n",
+      "last_match_date": 1794167387,
+      "last_seen_online_ts": 0,
+      "max_elo": 918,
+      "profile_id": 109098,
+      "steam_id": "76561198022125119"
+    },
+    "1092009": {
+      "alias": "Cabal4LXK",
+      "last_match_date": 1794760300,
+      "last_seen_online_ts": 0,
+      "max_elo": 774,
+      "profile_id": 1092009,
+      "steam_id": "76561199544333080"
+    },
+    "1095143": {
+      "alias": "Sniper-777",
+      "last_match_date": 1794990658,
+      "last_seen_online_ts": 0,
+      "max_elo": 1059,
+      "profile_id": 1095143,
+      "steam_id": "76561198233679192"
+    },
+    "1095498": {
+      "alias": "gallyver",
+      "last_match_date": 1794760300,
+      "last_seen_online_ts": 0,
+      "max_elo": 768,
+      "profile_id": 1095498,
+      "steam_id": "76561198340499602"
+    },
+    "1096289": {
+      "alias": "[OMJ] Lore",
+      "last_match_date": 1795036111,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 941,
+      "profile_id": 1096289,
+      "steam_id": "76561198083566819"
+    },
+    "110317": {
+      "alias": "Bearzerk",
+      "last_match_date": 1795057545,
+      "last_seen_online_ts": 0,
+      "max_elo": 1110,
+      "profile_id": 110317,
+      "steam_id": "76561198402942105"
+    },
+    "1104040": {
+      "alias": "SuBVeRSiVo",
+      "last_match_date": 1795022128,
+      "last_seen_online_ts": 0,
+      "max_elo": 861,
+      "profile_id": 1104040,
+      "steam_id": "76561198110257191"
+    },
+    "11112": {
+      "alias": "RazumAzul",
+      "last_match_date": 1795034571,
+      "last_seen_online_ts": 0,
+      "max_elo": 1040,
+      "profile_id": 11112,
+      "steam_id": "76561198024371602"
+    },
+    "1117144": {
+      "alias": "Moondog",
+      "last_match_date": 1794157560,
+      "last_seen_online_ts": 0,
+      "max_elo": 903,
+      "profile_id": 1117144,
+      "steam_id": "76561198010016139"
+    },
+    "11180": {
+      "alias": "Brujoga",
+      "last_match_date": 1794965252,
+      "last_seen_online_ts": 0,
+      "max_elo": 1400,
+      "profile_id": 11180,
+      "steam_id": "76561197982280686"
+    },
+    "1120507": {
+      "alias": "✬✬✬ VBelotto",
+      "last_match_date": 1795053750,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1120507,
+      "steam_id": "76561198369341765"
+    },
+    "1123905": {
+      "alias": "Wintermute",
+      "last_match_date": 1795034644,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 838,
+      "profile_id": 1123905,
+      "steam_id": "76561198020133377"
+    },
+    "1134857": {
+      "alias": "guilhermemariano20",
+      "last_match_date": 1795101081,
+      "last_seen_online_ts": 0,
+      "max_elo": 1131,
+      "profile_id": 1134857,
+      "steam_id": "76561198818470958"
+    },
+    "1136396": {
+      "alias": "LFSK8",
+      "last_match_date": 1793151508,
+      "last_seen_online_ts": 0,
+      "max_elo": 608,
+      "profile_id": 1136396,
+      "steam_id": "76561199056086587"
+    },
+    "11376": {
+      "alias": "Fantasma2000",
+      "last_match_date": 1794618087,
+      "last_seen_online_ts": 0,
+      "max_elo": 847,
+      "profile_id": 11376,
+      "steam_id": "76561198076447423"
+    },
+    "1138542": {
+      "alias": "PreD",
+      "last_match_date": 1794960172,
+      "last_seen_online_ts": 0,
+      "max_elo": 1231,
+      "profile_id": 1138542,
+      "steam_id": "76561198114351417"
+    },
+    "1148751": {
+      "alias": "matarasso",
+      "last_match_date": 1794526047,
+      "last_seen_online_ts": 0,
+      "max_elo": 776,
+      "profile_id": 1148751,
+      "steam_id": "76561198015025401"
+    },
+    "1151311": {
+      "alias": "Farmer",
+      "last_match_date": 1795038569,
+      "last_seen_online_ts": 0,
+      "max_elo": 1058,
+      "profile_id": 1151311,
+      "steam_id": "76561199061360237"
+    },
+    "1151802": {
+      "alias": "[SUP]OverPower",
+      "last_match_date": 1794504696,
+      "last_seen_online_ts": 0,
+      "max_elo": 692,
+      "profile_id": 1151802,
+      "steam_id": "76561199245832001"
+    },
+    "1154028": {
+      "alias": "T-3000 John Connor",
+      "last_match_date": 1793538005,
+      "last_seen_online_ts": 0,
+      "max_elo": 435,
+      "profile_id": 1154028,
+      "steam_id": "76561199496627100"
+    },
+    "1156071": {
+      "alias": "EL_BRAKAMAN",
+      "last_match_date": 1795006551,
+      "last_seen_online_ts": 0,
+      "max_elo": 1043,
+      "profile_id": 1156071,
+      "steam_id": "76561199232495648"
+    },
+    "1156831": {
+      "alias": "DAk120",
+      "last_match_date": 1794775485,
+      "last_seen_online_ts": 0,
+      "max_elo": 1212,
+      "profile_id": 1156831,
+      "steam_id": "76561198135522044"
+    },
+    "1156846": {
+      "alias": "gabrielps38",
+      "last_match_date": 1794094331,
+      "last_seen_online_ts": 0,
+      "max_elo": 888,
+      "profile_id": 1156846,
+      "steam_id": "76561198067279772"
+    },
+    "1157338": {
+      "alias": "Amo meu Chevette",
+      "last_match_date": 1780364651,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 1157338,
+      "steam_id": "76561198264967553"
+    },
+    "1157401": {
+      "alias": "F.E.B_BRASIL_COH",
+      "last_match_date": 1795063039,
+      "last_seen_online_ts": 0,
+      "max_elo": 1048,
+      "profile_id": 1157401,
+      "steam_id": "76561198096999667"
+    },
+    "1158074": {
+      "alias": "Noriaki",
+      "last_match_date": 1795028111,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1158074,
+      "steam_id": "76561198262693646"
+    },
+    "1159891": {
+      "alias": "GDI",
+      "last_match_date": 1794414262,
+      "last_seen_online_ts": 0,
+      "max_elo": 1333,
+      "profile_id": 1159891,
+      "steam_id": "76561199473666246"
+    },
+    "1162890": {
+      "alias": "Fauzix",
+      "last_match_date": 1795046915,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1358,
+      "profile_id": 1162890,
+      "steam_id": "76561198117168962"
+    },
+    "1169231": {
+      "alias": "Baby Shark",
+      "last_match_date": 1794715259,
+      "last_seen_online_ts": 0,
+      "max_elo": 1165,
+      "profile_id": 1169231,
+      "steam_id": "76561198795081572"
+    },
+    "1173389": {
+      "alias": "Arbringer",
+      "last_match_date": 1793980783,
+      "last_seen_online_ts": 0,
+      "max_elo": 1109,
+      "profile_id": 1173389,
+      "steam_id": "76561198104064243"
+    },
+    "1177151": {
+      "alias": "sina MH",
+      "last_match_date": 1795021946,
+      "last_seen_online_ts": 0,
+      "max_elo": 1077,
+      "profile_id": 1177151,
+      "steam_id": "76561199498924314"
+    },
+    "1178218": {
+      "alias": "joauleonardo",
+      "last_match_date": 1795042387,
+      "last_seen_online_ts": 0,
+      "max_elo": 1682,
+      "profile_id": 1178218,
+      "steam_id": "76561199219878733"
+    },
+    "1180172": {
+      "alias": "Micaelzudo",
+      "last_match_date": 1794849561,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 851,
+      "profile_id": 1180172,
+      "steam_id": "76561198430566960"
+    },
+    "1181845": {
+      "alias": "Felarush",
+      "last_match_date": 1794359351,
+      "last_seen_online_ts": 0,
+      "max_elo": 985,
+      "profile_id": 1181845,
+      "steam_id": "76561199658355007"
+    },
+    "1184495": {
+      "alias": "Sonderkraftfarzheug",
+      "last_match_date": 1793988816,
+      "last_seen_online_ts": 0,
+      "max_elo": 991,
+      "profile_id": 1184495,
+      "steam_id": "76561198959118341"
+    },
+    "1186789": {
+      "alias": "Gueribos",
+      "last_match_date": 1794779318,
+      "last_seen_online_ts": 0,
+      "max_elo": 701,
+      "profile_id": 1186789,
+      "steam_id": "76561199125461647"
+    },
+    "1191187": {
+      "alias": "rodrigobrosla",
+      "last_match_date": 1795056730,
+      "last_seen_online_ts": 0,
+      "max_elo": 1042,
+      "profile_id": 1191187,
+      "steam_id": "76561198795034882"
+    },
+    "1194945": {
+      "alias": "Kenny",
+      "last_match_date": 1795057570,
+      "last_seen_online_ts": 0,
+      "max_elo": 878,
+      "profile_id": 1194945,
+      "steam_id": "76561198250061522"
+    },
+    "119576": {
+      "alias": "ROOGERS",
+      "last_match_date": 1794008565,
+      "last_seen_online_ts": 0,
+      "max_elo": 717,
+      "profile_id": 119576,
+      "steam_id": "76561198183140523"
+    },
+    "1200197": {
+      "alias": "Spotlight",
+      "last_match_date": 1795051623,
+      "last_seen_online_ts": 0,
+      "max_elo": 1120,
+      "profile_id": 1200197,
+      "steam_id": "76561198132799158"
+    },
+    "1201954": {
+      "alias": "Corvo",
+      "last_match_date": 1767559069,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 1201954,
+      "steam_id": "76561198124850127"
+    },
+    "1203490": {
+      "alias": "KANDEAS",
+      "last_match_date": 1795101897,
+      "last_seen_online_ts": 0,
+      "max_elo": 946,
+      "profile_id": 1203490,
+      "steam_id": "76561198048730251"
+    },
+    "1206374": {
+      "alias": "Tokarev",
+      "last_match_date": 1793816033,
+      "last_seen_online_ts": 0,
+      "max_elo": 826,
+      "profile_id": 1206374,
+      "steam_id": "76561198115721712"
+    },
+    "1209303": {
+      "alias": "Fífinerr",
+      "last_match_date": 1794878813,
+      "last_seen_online_ts": 0,
+      "max_elo": 1071,
+      "profile_id": 1209303,
+      "steam_id": "76561199099040533"
+    },
+    "1209405": {
+      "alias": "$HaXi$",
+      "last_match_date": 1794766213,
+      "last_seen_online_ts": 0,
+      "max_elo": 796,
+      "profile_id": 1209405,
+      "steam_id": "76561199316326582"
+    },
+    "1209494": {
+      "alias": "Meequi",
+      "last_match_date": 1794776466,
+      "last_seen_online_ts": 0,
+      "max_elo": 1138,
+      "profile_id": 1209494,
+      "steam_id": "76561198069393613"
+    },
+    "1213403": {
+      "alias": "KV1",
+      "last_match_date": 1795044329,
+      "last_seen_online_ts": 0,
+      "max_elo": 1107,
+      "profile_id": 1213403,
+      "steam_id": "76561199827505463"
+    },
+    "1213751": {
+      "alias": "Zera",
+      "last_match_date": 1795063265,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1213751,
+      "steam_id": "76561198163510110"
+    },
+    "1213971": {
+      "alias": "VFzada",
+      "last_match_date": 1794958046,
+      "last_seen_online_ts": 0,
+      "max_elo": 971,
+      "profile_id": 1213971,
+      "steam_id": "76561198352389639"
+    },
+    "1214004": {
+      "alias": "Major Caveira",
+      "last_match_date": 1794546963,
+      "last_seen_online_ts": 0,
+      "max_elo": 790,
+      "profile_id": 1214004,
+      "steam_id": "76561198854581943"
+    },
+    "1215326": {
+      "alias": "Buzungo",
+      "last_match_date": 1794360608,
+      "last_seen_online_ts": 0,
+      "max_elo": 1116,
+      "profile_id": 1215326,
+      "steam_id": "76561198107222409"
+    },
+    "1216477": {
+      "alias": "FinalGATE-2",
+      "last_match_date": 1795040489,
+      "last_seen_online_ts": 0,
+      "max_elo": 1388,
+      "profile_id": 1216477,
+      "steam_id": "76561199105792679"
+    },
+    "1216912": {
+      "alias": "[KoFu] Might_lloll",
+      "last_match_date": 1794966863,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1379,
+      "profile_id": 1216912,
+      "steam_id": "76561198269605156"
+    },
+    "1218872": {
+      "alias": "gdgarte",
+      "last_match_date": 1794927819,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1018,
+      "profile_id": 1218872,
+      "steam_id": "76561198262550192"
+    },
+    "1225496": {
+      "alias": "Karl.Marcos",
+      "last_match_date": 1767325285,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 1225496,
+      "steam_id": "76561198008223471"
+    },
+    "122829": {
+      "alias": "Guardiola de Peruca",
+      "last_match_date": 1795038266,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1101,
+      "profile_id": 122829,
+      "steam_id": "76561198061075119"
+    },
+    "1228682": {
+      "alias": "bieldivinex",
+      "last_match_date": 1794969382,
+      "last_seen_online_ts": 0,
+      "max_elo": 1170,
+      "profile_id": 1228682,
+      "steam_id": "76561198077573287"
+    },
+    "1231212": {
+      "alias": "NOGG",
+      "last_match_date": 1795033755,
+      "last_seen_online_ts": 0,
+      "max_elo": 1075,
+      "profile_id": 1231212,
+      "steam_id": "76561199554817843"
+    },
+    "1231517": {
+      "alias": "Mustang7412",
+      "last_match_date": 1795051592,
+      "last_seen_online_ts": 0,
+      "max_elo": 1108,
+      "profile_id": 1231517,
+      "steam_id": "76561198132222485"
+    },
+    "12326": {
+      "alias": "HEROI",
+      "last_match_date": 1794770412,
+      "last_seen_online_ts": 0,
+      "max_elo": 988,
+      "profile_id": 12326,
+      "steam_id": "76561199046113981"
+    },
+    "1242273": {
+      "alias": "LeoCoSi",
+      "last_match_date": 1795058657,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1242273,
+      "steam_id": "76561198798609076"
+    },
+    "1242418": {
+      "alias": "faveri.filho",
+      "last_match_date": 1795055440,
+      "last_seen_online_ts": 0,
+      "max_elo": 1005,
+      "profile_id": 1242418,
+      "steam_id": "76561198103034149"
+    },
+    "1243183": {
+      "alias": "O diabo necessário",
+      "last_match_date": 1795058657,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1243183,
+      "steam_id": "76561198209279719"
+    },
+    "1244989": {
+      "alias": "Bigode de Pato",
+      "last_match_date": 1793939739,
+      "last_seen_online_ts": 0,
+      "max_elo": 923,
+      "profile_id": 1244989,
+      "steam_id": "76561198448690147"
+    },
+    "1246226": {
+      "alias": "menofpain",
+      "last_match_date": 1793576438,
+      "last_seen_online_ts": 0,
+      "max_elo": 785,
+      "profile_id": 1246226,
+      "steam_id": "76561198347119125"
+    },
+    "124729": {
+      "alias": "Mawll",
+      "last_match_date": 1794771216,
+      "last_seen_online_ts": 0,
+      "max_elo": 661,
+      "profile_id": 124729,
+      "steam_id": "76561198015179885"
+    },
+    "12522": {
+      "alias": "Caramez",
+      "last_match_date": 1795046543,
+      "last_seen_online_ts": 0,
+      "max_elo": 1349,
+      "profile_id": 12522,
+      "steam_id": "76561198108513961"
+    },
+    "1252534": {
+      "alias": "Baldi",
+      "last_match_date": 1795095180,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1252534,
+      "steam_id": "76561197986354381"
+    },
+    "1253271": {
+      "alias": "Iguana Atomica",
+      "last_match_date": 1787010601,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 1253271,
+      "steam_id": "76561198126091832"
+    },
+    "1254791": {
+      "alias": "NetoBR20",
+      "last_match_date": 1795101190,
+      "last_seen_online_ts": 0,
+      "max_elo": 1048,
+      "profile_id": 1254791,
+      "steam_id": "76561198155408304"
+    },
+    "125626": {
+      "alias": "Zurkov",
+      "last_match_date": 1794966761,
+      "last_seen_online_ts": 0,
+      "max_elo": 1050,
+      "profile_id": 125626,
+      "steam_id": "76561198231881080"
+    },
+    "1257087": {
+      "alias": "SPessDz9",
+      "last_match_date": 1795033204,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1257087,
+      "steam_id": "76561198452502623"
+    },
+    "1257730": {
+      "alias": "Ennkas",
+      "last_match_date": 1794257021,
+      "last_seen_online_ts": 0,
+      "max_elo": 855,
+      "profile_id": 1257730,
+      "steam_id": "76561199436234201"
+    },
+    "1259156": {
+      "alias": "Jogando e relaxando",
+      "last_match_date": 1779674751,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 1259156,
+      "steam_id": "76561198076616432"
+    },
+    "1260191": {
+      "alias": "oliveiraalvesadm",
+      "last_match_date": 1795045878,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1260191,
+      "steam_id": "76561198760966441"
+    },
+    "126239": {
+      "alias": "Moura216 Cabaré ao quadrado",
+      "last_match_date": 1792878436,
+      "last_seen_online_ts": 0,
+      "max_elo": 539,
+      "profile_id": 126239,
+      "steam_id": "76561198012935280"
+    },
+    "1263713": {
+      "alias": "Ayumu",
+      "last_match_date": 1794406532,
+      "last_seen_online_ts": 0,
+      "max_elo": 975,
+      "profile_id": 1263713,
+      "steam_id": "76561198079732807"
+    },
+    "1266802": {
+      "alias": "Panzer Ace",
+      "last_match_date": 1794467442,
+      "last_seen_online_ts": 0,
+      "max_elo": 966,
+      "profile_id": 1266802,
+      "steam_id": "76561198747758845"
+    },
+    "1274951": {
+      "alias": "Anglel",
+      "last_match_date": 1795056601,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1242,
+      "profile_id": 1274951,
+      "steam_id": "76561198275024539"
+    },
+    "1276975": {
+      "alias": "Rozin",
+      "last_match_date": 1793136161,
+      "last_seen_online_ts": 0,
+      "max_elo": 1272,
+      "profile_id": 1276975,
+      "steam_id": "76561198062002353"
+    },
+    "1279100": {
+      "alias": "Tiagod",
+      "last_match_date": 1792803639,
+      "last_seen_online_ts": 0,
+      "max_elo": 878,
+      "profile_id": 1279100,
+      "steam_id": "76561198117204290"
+    },
+    "128231": {
+      "alias": "E5p4rTaN0",
+      "last_match_date": 1794773010,
+      "last_seen_online_ts": 0,
+      "max_elo": 951,
+      "profile_id": 128231,
+      "steam_id": "76561198022850599"
+    },
+    "128365": {
+      "alias": "Gui Eitz",
+      "last_match_date": 1794872223,
+      "last_seen_online_ts": 0,
+      "max_elo": 1046,
+      "profile_id": 128365,
+      "steam_id": "76561198064045915"
+    },
+    "1285189": {
+      "alias": "Albe.sks",
+      "last_match_date": 1795098386,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1285189,
+      "steam_id": "76561198026862041"
+    },
+    "1285669": {
+      "alias": "MAKAROV",
+      "last_match_date": 1795025147,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1285669,
+      "steam_id": "76561198985390934"
+    },
+    "1285769": {
+      "alias": "Ouvido Albino",
+      "last_match_date": 1795023213,
+      "last_seen_online_ts": 0,
+      "max_elo": 1002,
+      "profile_id": 1285769,
+      "steam_id": "76561198803826426"
+    },
+    "1285871": {
+      "alias": "Dreamed",
+      "last_match_date": 1795055368,
+      "last_seen_online_ts": 0,
+      "max_elo": 1028,
+      "profile_id": 1285871,
+      "steam_id": "76561199057516321"
+    },
+    "1286585": {
+      "alias": "rossoceza",
+      "last_match_date": 1794869870,
+      "last_seen_online_ts": 0,
+      "max_elo": 670,
+      "profile_id": 1286585,
+      "steam_id": "76561198077348115"
+    },
+    "128801": {
+      "alias": "ShadowWolf",
+      "last_match_date": 1794191513,
+      "last_seen_online_ts": 0,
+      "max_elo": 998,
+      "profile_id": 128801,
+      "steam_id": "76561198195708854"
+    },
+    "128969": {
+      "alias": "juan34391",
+      "last_match_date": 1794075411,
+      "last_seen_online_ts": 0,
+      "max_elo": 989,
+      "profile_id": 128969,
+      "steam_id": "76561198400462392"
+    },
+    "1289707": {
+      "alias": "H4ck3r",
+      "last_match_date": 1794797222,
+      "last_seen_online_ts": 0,
+      "max_elo": 1048,
+      "profile_id": 1289707,
+      "steam_id": "76561198021257353"
+    },
+    "1290028": {
+      "alias": "Sonneiko",
+      "last_match_date": 1794783686,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1027,
+      "profile_id": 1290028,
+      "steam_id": "76561198051541320"
+    },
+    "1292313": {
+      "alias": "Cagarão em sua laje",
+      "last_match_date": 1793594347,
+      "last_seen_online_ts": 0,
+      "max_elo": 952,
+      "profile_id": 1292313,
+      "steam_id": "76561198332636270"
+    },
+    "1295138": {
+      "alias": "Salïty",
+      "last_match_date": 1795052240,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1269,
+      "profile_id": 1295138,
+      "steam_id": "76561198959730121"
+    },
+    "1297284": {
+      "alias": "NSG_S2",
+      "last_match_date": 1794790208,
+      "last_seen_online_ts": 0,
+      "max_elo": 998,
+      "profile_id": 1297284,
+      "steam_id": "76561199749514265"
+    },
+    "1297804": {
+      "alias": "Leite Moço",
+      "last_match_date": 1784315013,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 1297804,
+      "steam_id": "76561198723667226"
+    },
+    "1297821": {
+      "alias": "General Winter",
+      "last_match_date": 1795034037,
+      "last_seen_online_ts": 0,
+      "max_elo": 1792,
+      "profile_id": 1297821,
+      "steam_id": "76561198722284920"
+    },
+    "1297853": {
+      "alias": "Shadow",
+      "last_match_date": 1794009820,
+      "last_seen_online_ts": 0,
+      "max_elo": 1340,
+      "profile_id": 1297853,
+      "steam_id": "76561198721980631"
+    },
+    "1297870": {
+      "alias": "AVESTRUZ TE SEDUZ",
+      "last_match_date": 1794967101,
+      "last_seen_online_ts": 0,
+      "max_elo": 1239,
+      "profile_id": 1297870,
+      "steam_id": "76561198047131936"
+    },
+    "130044": {
+      "alias": "sf9912",
+      "last_match_date": 1794782865,
+      "last_seen_online_ts": 0,
+      "max_elo": 1235,
+      "profile_id": 130044,
+      "steam_id": "76561198035976610"
+    },
+    "1302538": {
+      "alias": "Eddieeeeeeeeee",
+      "last_match_date": 1794777957,
+      "last_seen_online_ts": 0,
+      "max_elo": 772,
+      "profile_id": 1302538,
+      "steam_id": "76561198039171470"
+    },
+    "1304125": {
+      "alias": "LordBaconBR",
+      "last_match_date": 1795034644,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1304125,
+      "steam_id": "76561199482244877"
+    },
+    "1305454": {
+      "alias": "Nimesulida",
+      "last_match_date": 1794518405,
+      "last_seen_online_ts": 0,
+      "max_elo": 1172,
+      "profile_id": 1305454,
+      "steam_id": "76561198144712670"
+    },
+    "1305475": {
+      "alias": "PBR",
+      "last_match_date": 1795047476,
+      "last_seen_online_ts": 0,
+      "max_elo": 1022,
+      "profile_id": 1305475,
+      "steam_id": "76561198432104483"
+    },
+    "1306623": {
+      "alias": "Flash.Point -Mariatti- Panda",
+      "last_match_date": 1795044425,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 880,
+      "profile_id": 1306623,
+      "steam_id": "76561198009899628"
+    },
+    "1306936": {
+      "alias": "MOTORISTA CHOFER",
+      "last_match_date": 1794319335,
+      "last_seen_online_ts": 0,
+      "max_elo": 840,
+      "profile_id": 1306936,
+      "steam_id": "76561198843062239"
+    },
+    "1315870": {
+      "alias": "Mrocha",
+      "last_match_date": 1794788961,
+      "last_seen_online_ts": 0,
+      "max_elo": 1028,
+      "profile_id": 1315870,
+      "steam_id": "76561199023535991"
+    },
+    "131786": {
+      "alias": "LadyVolk",
+      "last_match_date": 1794483536,
+      "last_seen_online_ts": 0,
+      "max_elo": 1128,
+      "profile_id": 131786,
+      "steam_id": "76561198005462292"
+    },
+    "1318025": {
+      "alias": "matheus_rockkkk",
+      "last_match_date": 1795061101,
+      "last_seen_online_ts": 0,
+      "max_elo": 983,
+      "profile_id": 1318025,
+      "steam_id": "76561198187613078"
+    },
+    "1318162": {
+      "alias": "General Winter",
+      "last_match_date": 1794944937,
+      "last_seen_online_ts": 0,
+      "max_elo": 1808,
+      "profile_id": 1318162,
+      "steam_id": "76561198708550887"
+    },
+    "1326632": {
+      "alias": "Cleiton Rasta CS2-CASES.COM",
+      "last_match_date": 1793755338,
+      "last_seen_online_ts": 0,
+      "max_elo": 816,
+      "profile_id": 1326632,
+      "steam_id": "76561198829418839"
+    },
+    "1328703": {
+      "alias": "luan007ttv",
+      "last_match_date": 1779742217,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 1328703,
+      "steam_id": "76561198118782735"
+    },
+    "1330031": {
+      "alias": "Thinkker",
+      "last_match_date": 1795046915,
+      "last_seen_online_ts": 0,
+      "max_elo": 1236,
+      "profile_id": 1330031,
+      "steam_id": "76561198076583881"
+    },
+    "1332786": {
+      "alias": "Katana Man",
+      "last_match_date": 1794619911,
+      "last_seen_online_ts": 0,
+      "max_elo": 918,
+      "profile_id": 1332786,
+      "steam_id": "76561198093892211"
+    },
+    "1333418": {
+      "alias": "Charles Bronson",
+      "last_match_date": 1795095125,
+      "last_seen_online_ts": 0,
+      "max_elo": 1595,
+      "profile_id": 1333418,
+      "steam_id": "76561198698969876"
+    },
+    "1338781": {
+      "alias": "Lynx",
+      "last_match_date": 1795045283,
+      "last_seen_online_ts": 0,
+      "max_elo": 965,
+      "profile_id": 1338781,
+      "steam_id": "76561198379259689"
+    },
+    "1346169": {
+      "alias": "TheMonkBR",
+      "last_match_date": 1794956316,
+      "last_seen_online_ts": 0,
+      "max_elo": 1065,
+      "profile_id": 1346169,
+      "steam_id": "76561199212918452"
+    },
+    "1348602": {
+      "alias": "ViniTessaro",
+      "last_match_date": 1794773919,
+      "last_seen_online_ts": 0,
+      "max_elo": 1009,
+      "profile_id": 1348602,
+      "steam_id": "76561198844194204"
+    },
+    "135138": {
+      "alias": "WeliWest",
+      "last_match_date": 1794339766,
+      "last_seen_online_ts": 0,
+      "max_elo": 708,
+      "profile_id": 135138,
+      "steam_id": "76561198028166152"
+    },
+    "135141": {
+      "alias": "[PWA]-ForceMaster",
+      "last_match_date": 1794613776,
+      "last_seen_online_ts": 0,
+      "max_elo": 798,
+      "profile_id": 135141,
+      "steam_id": "76561198039466768"
+    },
+    "13516": {
+      "alias": "Pax Xavier youtube",
+      "last_match_date": 1795031352,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 908,
+      "profile_id": 13516,
+      "steam_id": "76561198000943380"
+    },
+    "1356223": {
+      "alias": "Manu-chan",
+      "last_match_date": 1794611292,
+      "last_seen_online_ts": 0,
+      "max_elo": 1300,
+      "profile_id": 1356223,
+      "steam_id": "76561198188738303"
+    },
+    "1359516": {
+      "alias": "DetonaitorV1",
+      "last_match_date": 1795040254,
+      "last_seen_online_ts": 0,
+      "max_elo": 996,
+      "profile_id": 1359516,
+      "steam_id": "76561198159105241"
+    },
+    "1369003": {
+      "alias": "KyronCrane",
+      "last_match_date": 1795098715,
+      "last_seen_online_ts": 0,
+      "max_elo": 1150,
+      "profile_id": 1369003,
+      "steam_id": "76561198155713664"
+    },
+    "1369418": {
+      "alias": "xandaoro",
+      "last_match_date": 1794952790,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1369418,
+      "steam_id": "76561199549557845"
+    },
+    "1372417": {
+      "alias": "n00bmobile",
+      "last_match_date": 1794794713,
+      "last_seen_online_ts": 0,
+      "max_elo": 1053,
+      "profile_id": 1372417,
+      "steam_id": "76561198099211069"
+    },
+    "1373102": {
+      "alias": "frodoeric",
+      "last_match_date": 1795027579,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 880,
+      "profile_id": 1373102,
+      "steam_id": "76561198008464996"
+    },
+    "1374662": {
+      "alias": "[COHBR] King Jong-Un",
+      "last_match_date": 1795052690,
+      "last_seen_online_ts": 0,
+      "max_elo": 1036,
+      "profile_id": 1374662,
+      "steam_id": "76561198187162605"
+    },
+    "137848": {
+      "alias": "Elvenking",
+      "last_match_date": 1795036123,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 876,
+      "profile_id": 137848,
+      "steam_id": "76561198083666457"
+    },
+    "1381510": {
+      "alias": "CadRenan",
+      "last_match_date": 1795039051,
+      "last_seen_online_ts": 0,
+      "max_elo": 707,
+      "profile_id": 1381510,
+      "steam_id": "76561199179039266"
+    },
+    "1383062": {
+      "alias": "Freak2805",
+      "last_match_date": 1795056220,
+      "last_seen_online_ts": 0,
+      "max_elo": 1150,
+      "profile_id": 1383062,
+      "steam_id": "76561198029447360"
+    },
+    "1385115": {
+      "alias": "Lvas",
+      "last_match_date": 1795035107,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1083,
+      "profile_id": 1385115,
+      "steam_id": "76561199192255224"
+    },
+    "1388444": {
+      "alias": "Sargento Pincel",
+      "last_match_date": 1786331540,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 1388444,
+      "steam_id": "76561198220461759"
+    },
+    "1389097": {
+      "alias": "Doc. Holliday",
+      "last_match_date": 1794763090,
+      "last_seen_online_ts": 0,
+      "max_elo": 891,
+      "profile_id": 1389097,
+      "steam_id": "76561198282856281"
+    },
+    "1390350": {
+      "alias": "TearsInTheRain",
+      "last_match_date": 1795021060,
+      "last_seen_online_ts": 0,
+      "max_elo": 1549,
+      "profile_id": 1390350,
+      "steam_id": "76561198089278659"
+    },
+    "13934": {
+      "alias": "Duro de Mamar",
+      "last_match_date": 1794682332,
+      "last_seen_online_ts": 0,
+      "max_elo": 1008,
+      "profile_id": 13934,
+      "steam_id": "76561198340401196"
+    },
+    "1400788": {
+      "alias": "Lost Fontes",
+      "last_match_date": 1795038887,
+      "last_seen_online_ts": 0,
+      "max_elo": 959,
+      "profile_id": 1400788,
+      "steam_id": "76561198013876150"
+    },
+    "1402500": {
+      "alias": "MiiNu <3",
+      "last_match_date": 1795047216,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1285,
+      "profile_id": 1402500,
+      "steam_id": "76561198274006807"
+    },
+    "1405568": {
+      "alias": "o.padd11",
+      "last_match_date": 1792984225,
+      "last_seen_online_ts": 0,
+      "max_elo": 593,
+      "profile_id": 1405568,
+      "steam_id": "76561198859650591"
+    },
+    "1411117": {
+      "alias": "Riddler",
+      "last_match_date": 1795096970,
+      "last_seen_online_ts": 0,
+      "max_elo": 1022,
+      "profile_id": 1411117,
+      "steam_id": "76561197979719612"
+    },
+    "1413456": {
+      "alias": "Fuga",
+      "last_match_date": 1793478837,
+      "last_seen_online_ts": 0,
+      "max_elo": 605,
+      "profile_id": 1413456,
+      "steam_id": "76561198117971693"
+    },
+    "1422841": {
+      "alias": "josenetoferrer2020",
+      "last_match_date": 1795019247,
+      "last_seen_online_ts": 0,
+      "max_elo": 1047,
+      "profile_id": 1422841,
+      "steam_id": "76561198618672224"
+    },
+    "1423426": {
+      "alias": "geladeira velha",
+      "last_match_date": 1794080435,
+      "last_seen_online_ts": 0,
+      "max_elo": 1308,
+      "profile_id": 1423426,
+      "steam_id": "76561199482388323"
+    },
+    "1426084": {
+      "alias": "Salah Frario",
+      "last_match_date": 1794952371,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 995,
+      "profile_id": 1426084,
+      "steam_id": "76561198413106918"
+    },
+    "1428997": {
+      "alias": "Salada",
+      "last_match_date": 1795048186,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 528,
+      "profile_id": 1428997,
+      "steam_id": "76561198068996283"
+    },
+    "1429760": {
+      "alias": "marcellusx11",
+      "last_match_date": 1794875249,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1103,
+      "profile_id": 1429760,
+      "steam_id": "76561199187357743"
+    },
+    "1436158": {
+      "alias": "luannmarcel",
+      "last_match_date": 1795049813,
+      "last_seen_online_ts": 0,
+      "max_elo": 1048,
+      "profile_id": 1436158,
+      "steam_id": "76561198068195832"
+    },
+    "1438656": {
+      "alias": "guridocafe",
+      "last_match_date": 1795061438,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 1438656,
+      "steam_id": "76561198870731987"
+    },
+    "1450743": {
+      "alias": "DANGER",
+      "last_match_date": 1795054715,
+      "last_seen_online_ts": 0,
+      "max_elo": 997,
+      "profile_id": 1450743,
+      "steam_id": "76561198043359498"
+    },
+    "145390": {
+      "alias": "Dr. House",
+      "last_match_date": 1794771333,
+      "last_seen_online_ts": 0,
+      "max_elo": 1041,
+      "profile_id": 145390,
+      "steam_id": "76561198012596175"
+    },
+    "145428": {
+      "alias": "reactx78",
+      "last_match_date": 1795047852,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 145428,
+      "steam_id": "76561198020874210"
+    },
+    "1456842": {
+      "alias": "[BGD] Panella",
+      "last_match_date": 1795064223,
+      "last_seen_online_ts": 0,
+      "max_elo": 1033,
+      "profile_id": 1456842,
+      "steam_id": "76561198272287621"
+    },
+    "1459233": {
+      "alias": "Quebra_SOM!",
+      "last_match_date": 1795014107,
+      "last_seen_online_ts": 0,
+      "max_elo": 1079,
+      "profile_id": 1459233,
+      "steam_id": "76561197994757819"
+    },
+    "1461766": {
+      "alias": "Hugola",
+      "last_match_date": 1795057306,
+      "last_seen_online_ts": 0,
+      "max_elo": 1005,
+      "profile_id": 1461766,
+      "steam_id": "76561198067634756"
+    },
+    "1463306": {
+      "alias": "JornLande",
+      "last_match_date": 1794974289,
+      "last_seen_online_ts": 0,
+      "max_elo": 893,
+      "profile_id": 1463306,
+      "steam_id": "76561198055216479"
+    },
+    "1467829": {
+      "alias": "XAMPUZINHO",
+      "last_match_date": 1794889899,
+      "last_seen_online_ts": 0,
+      "max_elo": 899,
+      "profile_id": 1467829,
+      "steam_id": "76561198650067332"
+    },
+    "1490": {
+      "alias": "CH1CK3NW1NGZ",
+      "last_match_date": 1794961170,
+      "last_seen_online_ts": 0,
+      "max_elo": 1163,
+      "profile_id": 1490,
+      "steam_id": "76561198043130948"
+    },
+    "15063": {
+      "alias": "WaffeR",
+      "last_match_date": 1794361525,
+      "last_seen_online_ts": 0,
+      "max_elo": 667,
+      "profile_id": 15063,
+      "steam_id": "76561198017157095"
+    },
+    "15129": {
+      "alias": "Smiloudont",
+      "last_match_date": 1795057545,
+      "last_seen_online_ts": 0,
+      "max_elo": 1004,
+      "profile_id": 15129,
+      "steam_id": "76561198448198622"
+    },
+    "151495": {
+      "alias": "✝sTG44-K4b4LzO!kINGtiGER!",
+      "last_match_date": 1792948135,
+      "last_seen_online_ts": 0,
+      "max_elo": 373,
+      "profile_id": 151495,
+      "steam_id": "76561198113151249"
+    },
+    "153485": {
+      "alias": "Juninho",
+      "last_match_date": 1794675940,
+      "last_seen_online_ts": 0,
+      "max_elo": 1138,
+      "profile_id": 153485,
+      "steam_id": "76561198060873557"
+    },
+    "154301": {
+      "alias": "Palmarx",
+      "last_match_date": 1793719422,
+      "last_seen_online_ts": 0,
+      "max_elo": 1112,
+      "profile_id": 154301,
+      "steam_id": "76561198063857337"
+    },
+    "16028": {
+      "alias": "galoManco",
+      "last_match_date": 1795094030,
+      "last_seen_online_ts": 0,
+      "max_elo": 977,
+      "profile_id": 16028,
+      "steam_id": "76561197992460081"
+    },
+    "16507": {
+      "alias": "Honest Copper Dealer",
+      "last_match_date": 1794597094,
+      "last_seen_online_ts": 0,
+      "max_elo": 1497,
+      "profile_id": 16507,
+      "steam_id": "76561198064299508"
+    },
+    "167270": {
+      "alias": "CPU - Wrong one to garden with",
+      "last_match_date": 1794445107,
+      "last_seen_online_ts": 0,
+      "max_elo": 1098,
+      "profile_id": 167270,
+      "steam_id": "76561198149193970"
+    },
+    "16867": {
+      "alias": "COHBRAMACHINE",
+      "last_match_date": 1795037331,
+      "last_seen_online_ts": 0,
+      "max_elo": 1580,
+      "profile_id": 16867,
+      "steam_id": "76561198874381986"
+    },
+    "1707": {
+      "alias": "Anhangá",
+      "last_match_date": 1795100151,
+      "last_seen_online_ts": 0,
+      "max_elo": 1362,
+      "profile_id": 1707,
+      "steam_id": "76561197998487466"
+    },
+    "17169": {
+      "alias": "Guh",
+      "last_match_date": 1795052956,
+      "last_seen_online_ts": 0,
+      "max_elo": 1843,
+      "profile_id": 17169,
+      "steam_id": "76561198066101827"
+    },
+    "173761": {
+      "alias": "EUSOU",
+      "last_match_date": 1793150941,
+      "last_seen_online_ts": 0,
+      "max_elo": 344,
+      "profile_id": 173761,
+      "steam_id": "76561198873253024"
+    },
+    "17906": {
+      "alias": "Leo",
+      "last_match_date": 1795086923,
+      "last_seen_online_ts": 0,
+      "max_elo": 1132,
+      "profile_id": 17906,
+      "steam_id": "76561198312734088"
+    },
+    "183505": {
+      "alias": "War Daddy",
+      "last_match_date": 1794959987,
+      "last_seen_online_ts": 0,
+      "max_elo": 1039,
+      "profile_id": 183505,
+      "steam_id": "76561198033504614"
+    },
+    "196016": {
+      "alias": "Rafael_BR",
+      "last_match_date": 1793365215,
+      "last_seen_online_ts": 0,
+      "max_elo": 1069,
+      "profile_id": 196016,
+      "steam_id": "76561198388667815"
+    },
+    "197937": {
+      "alias": "Armaddin",
+      "last_match_date": 1794145044,
+      "last_seen_online_ts": 0,
+      "max_elo": 1235,
+      "profile_id": 197937,
+      "steam_id": "76561198066944603"
+    },
+    "198711": {
+      "alias": "Товарищ Mérlin",
+      "last_match_date": 1794182985,
+      "last_seen_online_ts": 0,
+      "max_elo": 1038,
+      "profile_id": 198711,
+      "steam_id": "76561198013841424"
+    },
+    "202388": {
+      "alias": "fetwotangeant",
+      "last_match_date": 1794584224,
+      "last_seen_online_ts": 0,
+      "max_elo": 604,
+      "profile_id": 202388,
+      "steam_id": "76561198832513054"
+    },
+    "20262": {
+      "alias": "MADRUGA",
+      "last_match_date": 1794686806,
+      "last_seen_online_ts": 0,
+      "max_elo": 1100,
+      "profile_id": 20262,
+      "steam_id": "76561198010663263"
+    },
+    "206875": {
+      "alias": "Fellschirm",
+      "last_match_date": 1795033071,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 999,
+      "profile_id": 206875,
+      "steam_id": "76561199060773915"
+    },
+    "207342": {
+      "alias": "AkvaBr",
+      "last_match_date": 1794830408,
+      "last_seen_online_ts": 0,
+      "max_elo": 1421,
+      "profile_id": 207342,
+      "steam_id": "76561197961608539"
+    },
+    "209811": {
+      "alias": "Suby",
+      "last_match_date": 1795048239,
+      "last_seen_online_ts": 0,
+      "max_elo": 1127,
+      "profile_id": 209811,
+      "steam_id": "76561198007078149"
+    },
+    "217817": {
+      "alias": "GIOVANNA96_ADV",
+      "last_match_date": 1794682621,
+      "last_seen_online_ts": 0,
+      "max_elo": 818,
+      "profile_id": 217817,
+      "steam_id": "76561198238671536"
+    },
+    "217935": {
+      "alias": "sakul",
+      "last_match_date": 1795058977,
+      "last_seen_online_ts": 0,
+      "max_elo": 1222,
+      "profile_id": 217935,
+      "steam_id": "76561197981477167"
+    },
+    "2185": {
+      "alias": "Hunter",
+      "last_match_date": 1721607001,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 2185,
+      "steam_id": "76561197999712702"
+    },
+    "220378": {
+      "alias": "Edimar.",
+      "last_match_date": 1794188513,
+      "last_seen_online_ts": 0,
+      "max_elo": 1088,
+      "profile_id": 220378,
+      "steam_id": "76561198074392592"
+    },
+    "22246": {
+      "alias": "Açucar Macabro",
+      "last_match_date": 1794884301,
+      "last_seen_online_ts": 0,
+      "max_elo": 1257,
+      "profile_id": 22246,
+      "steam_id": "76561197971282128"
+    },
+    "22391": {
+      "alias": "Ramme",
+      "last_match_date": 0,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 22391,
+      "steam_id": "76561198097033661"
+    },
+    "227157": {
+      "alias": "pedrosaddy1",
+      "last_match_date": 1794772580,
+      "last_seen_online_ts": 0,
+      "max_elo": 1036,
+      "profile_id": 227157,
+      "steam_id": "76561198028978400"
+    },
+    "228926": {
+      "alias": "Pablofrf",
+      "last_match_date": 1795050743,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 228926,
+      "steam_id": "76561197966144779"
+    },
+    "2290": {
+      "alias": "luissaster",
+      "last_match_date": 1794891702,
+      "last_seen_online_ts": 0,
+      "max_elo": 1009,
+      "profile_id": 2290,
+      "steam_id": "76561198329413012"
+    },
+    "232075": {
+      "alias": "Oberleutnant Otto Carius",
+      "last_match_date": 1795044078,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 232075,
+      "steam_id": "76561198106929445"
+    },
+    "24354": {
+      "alias": "HoFFeT",
+      "last_match_date": 1780772491,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 24354,
+      "steam_id": "76561198014288723"
+    },
+    "24539": {
+      "alias": "VONPESTER",
+      "last_match_date": 1794804210,
+      "last_seen_online_ts": 0,
+      "max_elo": 1064,
+      "profile_id": 24539,
+      "steam_id": "76561198020353566"
+    },
+    "24999": {
+      "alias": "joao tanan",
+      "last_match_date": 1793584695,
+      "last_seen_online_ts": 0,
+      "max_elo": 966,
+      "profile_id": 24999,
+      "steam_id": "76561198975314948"
+    },
+    "2583": {
+      "alias": "Manupktd",
+      "last_match_date": 1794877718,
+      "last_seen_online_ts": 0,
+      "max_elo": 1459,
+      "profile_id": 2583,
+      "steam_id": "76561198142536814"
+    },
+    "26003": {
+      "alias": "PampeBR",
+      "last_match_date": 1794182617,
+      "last_seen_online_ts": 0,
+      "max_elo": 867,
+      "profile_id": 26003,
+      "steam_id": "76561198011817643"
+    },
+    "26373": {
+      "alias": "Caesar Octavianus",
+      "last_match_date": 1794957221,
+      "last_seen_online_ts": 0,
+      "max_elo": 1112,
+      "profile_id": 26373,
+      "steam_id": "76561198941629351"
+    },
+    "26736": {
+      "alias": "Arkymendes",
+      "last_match_date": 1795051114,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 26736,
+      "steam_id": "76561198002634846"
+    },
+    "27052": {
+      "alias": "gleison-luan",
+      "last_match_date": 1795051950,
+      "last_seen_online_ts": 0,
+      "max_elo": 1120,
+      "profile_id": 27052,
+      "steam_id": "76561199055548856"
+    },
+    "27181": {
+      "alias": "Herdeiro Sincero",
+      "last_match_date": 1794164770,
+      "last_seen_online_ts": 0,
+      "max_elo": 1088,
+      "profile_id": 27181,
+      "steam_id": "76561198063789360"
+    },
+    "27356": {
+      "alias": "drytron",
+      "last_match_date": 1795053885,
+      "last_seen_online_ts": 0,
+      "max_elo": 1169,
+      "profile_id": 27356,
+      "steam_id": "76561198202237409"
+    },
+    "2821": {
+      "alias": "Shark",
+      "last_match_date": 1794368504,
+      "last_seen_online_ts": 0,
+      "max_elo": 1221,
+      "profile_id": 2821,
+      "steam_id": "76561198051332729"
+    },
+    "2834": {
+      "alias": "Xampoo - ☭",
+      "last_match_date": 1794889944,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 2834,
+      "steam_id": "76561198091708083"
+    },
+    "28773": {
+      "alias": "vhpbrasil",
+      "last_match_date": 1795101048,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 28773,
+      "steam_id": "76561198031348976"
+    },
+    "29251": {
+      "alias": "Galdi",
+      "last_match_date": 1794967658,
+      "last_seen_online_ts": 0,
+      "max_elo": 1019,
+      "profile_id": 29251,
+      "steam_id": "76561198101905418"
+    },
+    "29436": {
+      "alias": "edergabriel",
+      "last_match_date": 1795042333,
+      "last_seen_online_ts": 0,
+      "max_elo": 1046,
+      "profile_id": 29436,
+      "steam_id": "76561198048274930"
+    },
+    "298286": {
+      "alias": "MDBDestruidorBR",
+      "last_match_date": 1794010780,
+      "last_seen_online_ts": 0,
+      "max_elo": 1127,
+      "profile_id": 298286,
+      "steam_id": "76561198142598226"
+    },
+    "309253": {
+      "alias": "[OMJ] Odinpower",
+      "last_match_date": 1795036111,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1110,
+      "profile_id": 309253,
+      "steam_id": "76561197990094756"
+    },
+    "31504": {
+      "alias": "Fioti",
+      "last_match_date": 1794878813,
+      "last_seen_online_ts": 0,
+      "max_elo": 1028,
+      "profile_id": 31504,
+      "steam_id": "76561198095301909"
+    },
+    "31992": {
+      "alias": ".:PacMan:.",
+      "last_match_date": 1793859117,
+      "last_seen_online_ts": 0,
+      "max_elo": 756,
+      "profile_id": 31992,
+      "steam_id": "76561198060948936"
+    },
+    "32423": {
+      "alias": "Mucura",
+      "last_match_date": 1795033655,
+      "last_seen_online_ts": 0,
+      "max_elo": 1137,
+      "profile_id": 32423,
+      "steam_id": "76561198021045102"
+    },
+    "326061": {
+      "alias": "xVELHOBARREIROx",
+      "last_match_date": 1795056002,
+      "last_seen_online_ts": 0,
+      "max_elo": 1183,
+      "profile_id": 326061,
+      "steam_id": "76561197982839318"
+    },
+    "326841": {
+      "alias": "snipe86br",
+      "last_match_date": 1792884528,
+      "last_seen_online_ts": 0,
+      "max_elo": 815,
+      "profile_id": 326841,
+      "steam_id": "76561197974692415"
+    },
+    "32956": {
+      "alias": "AnonymousBR",
+      "last_match_date": 1794446988,
+      "last_seen_online_ts": 0,
+      "max_elo": 1063,
+      "profile_id": 32956,
+      "steam_id": "76561198085037926"
+    },
+    "33457": {
+      "alias": "Coriolanus",
+      "last_match_date": 1795050660,
+      "last_seen_online_ts": 0,
+      "max_elo": 1054,
+      "profile_id": 33457,
+      "steam_id": "76561198103341293"
+    },
+    "337135": {
+      "alias": "Kubinha Mussarelinha",
+      "last_match_date": 1794690992,
+      "last_seen_online_ts": 0,
+      "max_elo": 898,
+      "profile_id": 337135,
+      "steam_id": "76561197980210861"
+    },
+    "3414": {
+      "alias": "[SE:VH] Queiroz",
+      "last_match_date": 1794896149,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 985,
+      "profile_id": 3414,
+      "steam_id": "76561198111168811"
+    },
+    "34770": {
+      "alias": "TheAllmeida",
+      "last_match_date": 1794545648,
+      "last_seen_online_ts": 0,
+      "max_elo": 1068,
+      "profile_id": 34770,
+      "steam_id": "76561198067008010"
+    },
+    "34932": {
+      "alias": "Bersagliere Parodi",
+      "last_match_date": 1795054715,
+      "last_seen_online_ts": 0,
+      "max_elo": 1082,
+      "profile_id": 34932,
+      "steam_id": "76561198031829436"
+    },
+    "351821": {
+      "alias": "aldivx",
+      "last_match_date": 1795048041,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1076,
+      "profile_id": 351821,
+      "steam_id": "76561198102059312"
+    },
+    "356392": {
+      "alias": "CoyotePlaysom",
+      "last_match_date": 1794068667,
+      "last_seen_online_ts": 0,
+      "max_elo": 840,
+      "profile_id": 356392,
+      "steam_id": "76561198257098572"
+    },
+    "357310": {
+      "alias": "Sleeping Sheep",
+      "last_match_date": 1795083827,
+      "last_seen_online_ts": 0,
+      "max_elo": 1517,
+      "profile_id": 357310,
+      "steam_id": "76561197994129168"
+    },
+    "36473": {
+      "alias": "ironknee89",
+      "last_match_date": 1795070721,
+      "last_seen_online_ts": 0,
+      "max_elo": 1067,
+      "profile_id": 36473,
+      "steam_id": "76561199216452802"
+    },
+    "373127": {
+      "alias": "Monstro",
+      "last_match_date": 1793660420,
+      "last_seen_online_ts": 0,
+      "max_elo": 1005,
+      "profile_id": 373127,
+      "steam_id": "76561197988257395"
+    },
+    "378174": {
+      "alias": "Ymir",
+      "last_match_date": 1794952216,
+      "last_seen_online_ts": 0,
+      "max_elo": 1197,
+      "profile_id": 378174,
+      "steam_id": "76561198085057278"
+    },
+    "38270": {
+      "alias": "[CoBrA] Shadow*",
+      "last_match_date": 1794885336,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 870,
+      "profile_id": 38270,
+      "steam_id": "76561197984468206"
+    },
+    "383796": {
+      "alias": "Vanghoul",
+      "last_match_date": 1795037493,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1443,
+      "profile_id": 383796,
+      "steam_id": "76561197982976352"
+    },
+    "3888": {
+      "alias": "Pepe Popo",
+      "last_match_date": 1794972214,
+      "last_seen_online_ts": 0,
+      "max_elo": 1222,
+      "profile_id": 3888,
+      "steam_id": "76561198854785478"
+    },
+    "389673": {
+      "alias": "zeruela",
+      "last_match_date": 1794939177,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 389673,
+      "steam_id": "76561198101471201"
+    },
+    "396850": {
+      "alias": "Thiklitsa",
+      "last_match_date": 1794965651,
+      "last_seen_online_ts": 0,
+      "max_elo": 1401,
+      "profile_id": 396850,
+      "steam_id": "76561198148238879"
+    },
+    "39939": {
+      "alias": "Romioul",
+      "last_match_date": 1794878813,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 39939,
+      "steam_id": "76561198008329858"
+    },
+    "4005": {
+      "alias": "JuniorLimaa",
+      "last_match_date": 1795059696,
+      "last_seen_online_ts": 0,
+      "max_elo": 1199,
+      "profile_id": 4005,
+      "steam_id": "76561197999564490"
+    },
+    "40060": {
+      "alias": "Soli Invictvs",
+      "last_match_date": 1795056220,
+      "last_seen_online_ts": 0,
+      "max_elo": 1138,
+      "profile_id": 40060,
+      "steam_id": "76561198133838878"
+    },
+    "401275": {
+      "alias": "asado de perro",
+      "last_match_date": 1795032790,
+      "last_seen_online_ts": 0,
+      "max_elo": 1195,
+      "profile_id": 401275,
+      "steam_id": "76561198008634992"
+    },
+    "401816": {
+      "alias": "MENGO456",
+      "last_match_date": 1794686806,
+      "last_seen_online_ts": 0,
+      "max_elo": 1214,
+      "profile_id": 401816,
+      "steam_id": "76561198027013841"
+    },
+    "40833": {
+      "alias": "Tokai Teio",
+      "last_match_date": 1793979920,
+      "last_seen_online_ts": 0,
+      "max_elo": 1532,
+      "profile_id": 40833,
+      "steam_id": "76561198216174113"
+    },
+    "409715": {
+      "alias": "Rapo",
+      "last_match_date": 1795054284,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1343,
+      "profile_id": 409715,
+      "steam_id": "76561198083043687"
+    },
+    "413433": {
+      "alias": "Horkar",
+      "last_match_date": 1795033129,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 856,
+      "profile_id": 413433,
+      "steam_id": "76561198041801545"
+    },
+    "4138": {
+      "alias": "pdf1234300",
+      "last_match_date": 1794976789,
+      "last_seen_online_ts": 0,
+      "max_elo": 1079,
+      "profile_id": 4138,
+      "steam_id": "76561198047913620"
+    },
+    "424813": {
+      "alias": "peace",
+      "last_match_date": 1742761934,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 424813,
+      "steam_id": "76561198163017219"
+    },
+    "428227": {
+      "alias": "COSMONAUTA",
+      "last_match_date": 1795055246,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 989,
+      "profile_id": 428227,
+      "steam_id": "76561198008039971"
+    },
+    "431386": {
+      "alias": "lambda x: x",
+      "last_match_date": 1794881307,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 431386,
+      "steam_id": "76561198040299448"
+    },
+    "439673": {
+      "alias": "Macario",
+      "last_match_date": 1795092485,
+      "last_seen_online_ts": 0,
+      "max_elo": 1127,
+      "profile_id": 439673,
+      "steam_id": "76561198077718620"
+    },
+    "44245": {
+      "alias": "Weiß Kopf",
+      "last_match_date": 1795045942,
+      "last_seen_online_ts": 0,
+      "max_elo": 1130,
+      "profile_id": 44245,
+      "steam_id": "76561197990000736"
+    },
+    "443756": {
+      "alias": "Cafefonseca",
+      "last_match_date": 1794778242,
+      "last_seen_online_ts": 0,
+      "max_elo": 772,
+      "profile_id": 443756,
+      "steam_id": "76561199077194399"
+    },
+    "4517": {
+      "alias": "The Collector",
+      "last_match_date": 1794971665,
+      "last_seen_online_ts": 0,
+      "max_elo": 1213,
+      "profile_id": 4517,
+      "steam_id": "76561198033317439"
+    },
+    "455713": {
+      "alias": "Biliko",
+      "last_match_date": 1795050940,
+      "last_seen_online_ts": 0,
+      "max_elo": 1047,
+      "profile_id": 455713,
+      "steam_id": "76561197987972857"
+    },
+    "456318": {
+      "alias": "felipemoritz",
+      "last_match_date": 0,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 456318,
+      "steam_id": "76561198075169083"
+    },
+    "462597": {
+      "alias": "General Winter",
+      "last_match_date": 1794533769,
+      "last_seen_online_ts": 0,
+      "max_elo": 1876,
+      "profile_id": 462597,
+      "steam_id": "76561198133760614"
+    },
+    "501160": {
+      "alias": "IMPLACÁVEL",
+      "last_match_date": 1782052523,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 501160,
+      "steam_id": "76561198020914276"
+    },
+    "502544": {
+      "alias": "Arthoumadbro",
+      "last_match_date": 1794145044,
+      "last_seen_online_ts": 0,
+      "max_elo": 1293,
+      "profile_id": 502544,
+      "steam_id": "76561198049822246"
+    },
+    "508115": {
+      "alias": "Geladeira eletrolux",
+      "last_match_date": 1795103161,
+      "last_seen_online_ts": 0,
+      "max_elo": 1140,
+      "profile_id": 508115,
+      "steam_id": "76561198203397500"
+    },
+    "51059": {
+      "alias": "S3np41",
+      "last_match_date": 1795048186,
+      "last_seen_online_ts": 0,
+      "max_elo": 1041,
+      "profile_id": 51059,
+      "steam_id": "76561198218888943"
+    },
+    "5128": {
+      "alias": "rafaeldjx",
+      "last_match_date": 1794874029,
+      "last_seen_online_ts": 0,
+      "max_elo": 1183,
+      "profile_id": 5128,
+      "steam_id": "76561198047280225"
+    },
+    "5296": {
+      "alias": "vasointupido",
+      "last_match_date": 1794956036,
+      "last_seen_online_ts": 0,
+      "max_elo": 1358,
+      "profile_id": 5296,
+      "steam_id": "76561198154353245"
+    },
+    "533746": {
+      "alias": "Soulblighter",
+      "last_match_date": 1793648745,
+      "last_seen_online_ts": 0,
+      "max_elo": 854,
+      "profile_id": 533746,
+      "steam_id": "76561198107677326"
+    },
+    "552724": {
+      "alias": "kianoosh1313",
+      "last_match_date": 1795100172,
+      "last_seen_online_ts": 0,
+      "max_elo": 1217,
+      "profile_id": 552724,
+      "steam_id": "76561198118666317"
+    },
+    "55399": {
+      "alias": "Maximunsmamacos",
+      "last_match_date": 1794763972,
+      "last_seen_online_ts": 0,
+      "max_elo": 1060,
+      "profile_id": 55399,
+      "steam_id": "76561198136458979"
+    },
+    "555887": {
+      "alias": "Vretiel Barman",
+      "last_match_date": 1794362774,
+      "last_seen_online_ts": 0,
+      "max_elo": 809,
+      "profile_id": 555887,
+      "steam_id": "76561198329286532"
+    },
+    "56354": {
+      "alias": "Neves Brasil",
+      "last_match_date": 1794663885,
+      "last_seen_online_ts": 0,
+      "max_elo": 1024,
+      "profile_id": 56354,
+      "steam_id": "76561198188074241"
+    },
+    "5664": {
+      "alias": "MOGFN",
+      "last_match_date": 1793818933,
+      "last_seen_online_ts": 0,
+      "max_elo": 967,
+      "profile_id": 5664,
+      "steam_id": "76561198272563681"
+    },
+    "581733": {
+      "alias": "Infa_PQDT",
+      "last_match_date": 1794604440,
+      "last_seen_online_ts": 0,
+      "max_elo": 819,
+      "profile_id": 581733,
+      "steam_id": "76561197986900912"
+    },
+    "5882": {
+      "alias": "Ʊ ElektroStomper ☭",
+      "last_match_date": 1721607001,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 5882,
+      "steam_id": "76561198034364786"
+    },
+    "593274": {
+      "alias": "Andrews [Hk]",
+      "last_match_date": 1795042206,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1133,
+      "profile_id": 593274,
+      "steam_id": "76561198006484037"
+    },
+    "605555": {
+      "alias": "GustavoGFB51",
+      "last_match_date": 1794771895,
+      "last_seen_online_ts": 0,
+      "max_elo": 1046,
+      "profile_id": 605555,
+      "steam_id": "76561199442174466"
+    },
+    "624278": {
+      "alias": "La Hire",
+      "last_match_date": 0,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 624278,
+      "steam_id": "76561198422999527"
+    },
+    "6245": {
+      "alias": "ratoskkk",
+      "last_match_date": 1794154795,
+      "last_seen_online_ts": 0,
+      "max_elo": 890,
+      "profile_id": 6245,
+      "steam_id": "76561198090510508"
+    },
+    "624624": {
+      "alias": "Filho Brasil",
+      "last_match_date": 1794971665,
+      "last_seen_online_ts": 0,
+      "max_elo": 1351,
+      "profile_id": 624624,
+      "steam_id": "76561198072467801"
+    },
+    "634351": {
+      "alias": "Igor",
+      "last_match_date": 1794022956,
+      "last_seen_online_ts": 0,
+      "max_elo": 1098,
+      "profile_id": 634351,
+      "steam_id": "76561198067970755"
+    },
+    "637981": {
+      "alias": "gabrielpd_s",
+      "last_match_date": 1794091561,
+      "last_seen_online_ts": 0,
+      "max_elo": 882,
+      "profile_id": 637981,
+      "steam_id": "76561198139243332"
+    },
+    "64100": {
+      "alias": "pietro.z",
+      "last_match_date": 1795051267,
+      "last_seen_online_ts": 0,
+      "max_elo": 1010,
+      "profile_id": 64100,
+      "steam_id": "76561197978680324"
+    },
+    "64634": {
+      "alias": "Gr1ma.",
+      "last_match_date": 1794959736,
+      "last_seen_online_ts": 0,
+      "max_elo": 1006,
+      "profile_id": 64634,
+      "steam_id": "76561198169911985"
+    },
+    "649522": {
+      "alias": "Marciowalltowall",
+      "last_match_date": 1795031264,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 605,
+      "profile_id": 649522,
+      "steam_id": "76561198058948819"
+    },
+    "649535": {
+      "alias": "pensss",
+      "last_match_date": 1795027987,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1516,
+      "profile_id": 649535,
+      "steam_id": "76561197974916464"
+    },
+    "650140": {
+      "alias": "maxkakoi",
+      "last_match_date": 1794632220,
+      "last_seen_online_ts": 0,
+      "max_elo": 998,
+      "profile_id": 650140,
+      "steam_id": "76561198064571408"
+    },
+    "653415": {
+      "alias": "igor_dsp",
+      "last_match_date": 1794632220,
+      "last_seen_online_ts": 0,
+      "max_elo": 1141,
+      "profile_id": 653415,
+      "steam_id": "76561198038827404"
+    },
+    "653919": {
+      "alias": "serggon [BR]",
+      "last_match_date": 1794799219,
+      "last_seen_online_ts": 0,
+      "max_elo": 973,
+      "profile_id": 653919,
+      "steam_id": "76561198379837783"
+    },
+    "653986": {
+      "alias": "brkr1p7on",
+      "last_match_date": 1794715787,
+      "last_seen_online_ts": 0,
+      "max_elo": 1191,
+      "profile_id": 653986,
+      "steam_id": "76561198026689157"
+    },
+    "656815": {
+      "alias": "Botson",
+      "last_match_date": 1742761934,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 656815,
+      "steam_id": "76561199366015251"
+    },
+    "657172": {
+      "alias": "meu piru",
+      "last_match_date": 1794203739,
+      "last_seen_online_ts": 0,
+      "max_elo": 1053,
+      "profile_id": 657172,
+      "steam_id": "76561198373970544"
+    },
+    "657675": {
+      "alias": "Rfenich",
+      "last_match_date": 0,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 657675,
+      "steam_id": "76561198083067364"
+    },
+    "660389": {
+      "alias": "Thanatos",
+      "last_match_date": 1794095214,
+      "last_seen_online_ts": 0,
+      "max_elo": 1237,
+      "profile_id": 660389,
+      "steam_id": "76561198117060719"
+    },
+    "661598": {
+      "alias": "Lord Tywin",
+      "last_match_date": 1792713486,
+      "last_seen_online_ts": 0,
+      "max_elo": 944,
+      "profile_id": 661598,
+      "steam_id": "76561198066255117"
+    },
+    "663787": {
+      "alias": "FellipeSL",
+      "last_match_date": 1795034713,
+      "last_seen_online_ts": 0,
+      "max_elo": 1130,
+      "profile_id": 663787,
+      "steam_id": "76561198122818165"
+    },
+    "667564": {
+      "alias": "Friedhelm Winter",
+      "last_match_date": 1794533769,
+      "last_seen_online_ts": 0,
+      "max_elo": 1296,
+      "profile_id": 667564,
+      "steam_id": "76561198258429491"
+    },
+    "6696": {
+      "alias": "Roda",
+      "last_match_date": 1794119724,
+      "last_seen_online_ts": 0,
+      "max_elo": 949,
+      "profile_id": 6696,
+      "steam_id": "76561198182964383"
+    },
+    "67161": {
+      "alias": "Mandalorian",
+      "last_match_date": 1794065861,
+      "last_seen_online_ts": 0,
+      "max_elo": 865,
+      "profile_id": 67161,
+      "steam_id": "76561198857721715"
+    },
+    "677039": {
+      "alias": "Batman",
+      "last_match_date": 1795093911,
+      "last_seen_online_ts": 0,
+      "max_elo": 978,
+      "profile_id": 677039,
+      "steam_id": "76561198116456200"
+    },
+    "677441": {
+      "alias": "Resilient",
+      "last_match_date": 1795051950,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 677441,
+      "steam_id": "76561198013484803"
+    },
+    "678874": {
+      "alias": "lucio valadares",
+      "last_match_date": 1795041568,
+      "last_seen_online_ts": 0,
+      "max_elo": 961,
+      "profile_id": 678874,
+      "steam_id": "76561198091573568"
+    },
+    "6880": {
+      "alias": "ArguS",
+      "last_match_date": 1794688906,
+      "last_seen_online_ts": 0,
+      "max_elo": 1401,
+      "profile_id": 6880,
+      "steam_id": "76561198078150897"
+    },
+    "69491": {
+      "alias": "Kaiser Wilhelm II",
+      "last_match_date": 1794798117,
+      "last_seen_online_ts": 0,
+      "max_elo": 1108,
+      "profile_id": 69491,
+      "steam_id": "76561198125798560"
+    },
+    "702745": {
+      "alias": "KSxWOS",
+      "last_match_date": 1782174123,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 702745,
+      "steam_id": "76561199239019193"
+    },
+    "702986": {
+      "alias": "Catatau",
+      "last_match_date": 1793464160,
+      "last_seen_online_ts": 0,
+      "max_elo": 928,
+      "profile_id": 702986,
+      "steam_id": "76561198371650036"
+    },
+    "703133": {
+      "alias": "Turles",
+      "last_match_date": 1794868329,
+      "last_seen_online_ts": 0,
+      "max_elo": 1044,
+      "profile_id": 703133,
+      "steam_id": "76561199036457538"
+    },
+    "703146": {
+      "alias": "viperking",
+      "last_match_date": 1795039763,
+      "last_seen_online_ts": 0,
+      "max_elo": 1203,
+      "profile_id": 703146,
+      "steam_id": "76561198217753836"
+    },
+    "7098": {
+      "alias": "Greijal",
+      "last_match_date": 1793659440,
+      "last_seen_online_ts": 0,
+      "max_elo": 452,
+      "profile_id": 7098,
+      "steam_id": "76561197989333526"
+    },
+    "71299": {
+      "alias": "Bruno.s",
+      "last_match_date": 1795056020,
+      "last_seen_online_ts": 0,
+      "max_elo": 1583,
+      "profile_id": 71299,
+      "steam_id": "76561198089205644"
+    },
+    "716376": {
+      "alias": "TrueLothar",
+      "last_match_date": 1794752444,
+      "last_seen_online_ts": 0,
+      "max_elo": 1347,
+      "profile_id": 716376,
+      "steam_id": "76561198099054871"
+    },
+    "717201": {
+      "alias": "yagokary1716",
+      "last_match_date": 1794697491,
+      "last_seen_online_ts": 0,
+      "max_elo": 632,
+      "profile_id": 717201,
+      "steam_id": "76561199226723294"
+    },
+    "71782": {
+      "alias": "Chadolf Rizzler",
+      "last_match_date": 1795056368,
+      "last_seen_online_ts": 0,
+      "max_elo": 1158,
+      "profile_id": 71782,
+      "steam_id": "76561198032351340"
+    },
+    "7255": {
+      "alias": "NoLives",
+      "last_match_date": 1794901971,
+      "last_seen_online_ts": 0,
+      "max_elo": 1050,
+      "profile_id": 7255,
+      "steam_id": "76561198000943624"
+    },
+    "7375": {
+      "alias": "pigote",
+      "last_match_date": 1795022945,
+      "last_seen_online_ts": 0,
+      "max_elo": 1417,
+      "profile_id": 7375,
+      "steam_id": "76561198047826077"
+    },
+    "738632": {
+      "alias": "Radagast",
+      "last_match_date": 1793237751,
+      "last_seen_online_ts": 0,
+      "max_elo": 984,
+      "profile_id": 738632,
+      "steam_id": "76561198177074265"
+    },
+    "738999": {
+      "alias": "T34110487",
+      "last_match_date": 1794770782,
+      "last_seen_online_ts": 0,
+      "max_elo": 686,
+      "profile_id": 738999,
+      "steam_id": "76561198040446558"
+    },
+    "739286": {
+      "alias": "Maximus",
+      "last_match_date": 1794961347,
+      "last_seen_online_ts": 0,
+      "max_elo": 1004,
+      "profile_id": 739286,
+      "steam_id": "76561198167127970"
+    },
+    "739693": {
+      "alias": "×Dollyinh0÷",
+      "last_match_date": 1794960577,
+      "last_seen_online_ts": 0,
+      "max_elo": 1281,
+      "profile_id": 739693,
+      "steam_id": "76561199126624327"
+    },
+    "739759": {
+      "alias": "FelPz1",
+      "last_match_date": 1794788204,
+      "last_seen_online_ts": 0,
+      "max_elo": 666,
+      "profile_id": 739759,
+      "steam_id": "76561198145550782"
+    },
+    "739954": {
+      "alias": "Jango_BR",
+      "last_match_date": 1795045452,
+      "last_seen_online_ts": 0,
+      "max_elo": 1040,
+      "profile_id": 739954,
+      "steam_id": "76561198246453166"
+    },
+    "739986": {
+      "alias": "Rudel",
+      "last_match_date": 1795057666,
+      "last_seen_online_ts": 0,
+      "max_elo": 1232,
+      "profile_id": 739986,
+      "steam_id": "76561197991945409"
+    },
+    "740888": {
+      "alias": "Pedrohht",
+      "last_match_date": 1795049203,
+      "last_seen_online_ts": 0,
+      "max_elo": 1165,
+      "profile_id": 740888,
+      "steam_id": "76561198039352192"
+    },
+    "740891": {
+      "alias": "Jumbo Cat",
+      "last_match_date": 1794613877,
+      "last_seen_online_ts": 0,
+      "max_elo": 1006,
+      "profile_id": 740891,
+      "steam_id": "76561198372146037"
+    },
+    "740991": {
+      "alias": "Repugnnaz",
+      "last_match_date": 1793764637,
+      "last_seen_online_ts": 0,
+      "max_elo": 1130,
+      "profile_id": 740991,
+      "steam_id": "76561198054734205"
+    },
+    "741304": {
+      "alias": "Sayouri ｡◕‿‿◕｡",
+      "last_match_date": 1794000716,
+      "last_seen_online_ts": 0,
+      "max_elo": 808,
+      "profile_id": 741304,
+      "steam_id": "76561198162318801"
+    },
+    "742802": {
+      "alias": "Sara ♥‿♥",
+      "last_match_date": 1794000716,
+      "last_seen_online_ts": 0,
+      "max_elo": 981,
+      "profile_id": 742802,
+      "steam_id": "76561198246216930"
+    },
+    "742956": {
+      "alias": "Charleaux",
+      "last_match_date": 1794974270,
+      "last_seen_online_ts": 0,
+      "max_elo": 1032,
+      "profile_id": 742956,
+      "steam_id": "76561198101839104"
+    },
+    "744908": {
+      "alias": "Monarca",
+      "last_match_date": 1795022924,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 889,
+      "profile_id": 744908,
+      "steam_id": "76561198169931641"
+    },
+    "756894": {
+      "alias": "Folha",
+      "last_match_date": 1794163506,
+      "last_seen_online_ts": 0,
+      "max_elo": 995,
+      "profile_id": 756894,
+      "steam_id": "76561198357132490"
+    },
+    "761551": {
+      "alias": "Django_livre",
+      "last_match_date": 1794786578,
+      "last_seen_online_ts": 0,
+      "max_elo": 854,
+      "profile_id": 761551,
+      "steam_id": "76561197996803760"
+    },
+    "761678": {
+      "alias": "[BGD] Rangaz",
+      "last_match_date": 1795054158,
+      "last_seen_online_ts": 0,
+      "max_elo": 1081,
+      "profile_id": 761678,
+      "steam_id": "76561198083893153"
+    },
+    "763806": {
+      "alias": "[BGD] kcinsmadA",
+      "last_match_date": 1795054158,
+      "last_seen_online_ts": 0,
+      "max_elo": 1117,
+      "profile_id": 763806,
+      "steam_id": "76561198049655610"
+    },
+    "765837": {
+      "alias": "Southland",
+      "last_match_date": 1795066884,
+      "last_seen_online_ts": 0,
+      "max_elo": 1369,
+      "profile_id": 765837,
+      "steam_id": "76561197990946349"
+    },
+    "766969": {
+      "alias": "Neto333",
+      "last_match_date": 1792745326,
+      "last_seen_online_ts": 0,
+      "max_elo": 735,
+      "profile_id": 766969,
+      "steam_id": "76561198059854564"
+    },
+    "767618": {
+      "alias": "Infinity141",
+      "last_match_date": 1794022939,
+      "last_seen_online_ts": 0,
+      "max_elo": 1062,
+      "profile_id": 767618,
+      "steam_id": "76561199036167121"
+    },
+    "767932": {
+      "alias": "Ritalino",
+      "last_match_date": 1795034713,
+      "last_seen_online_ts": 0,
+      "max_elo": 1018,
+      "profile_id": 767932,
+      "steam_id": "76561198166203065"
+    },
+    "768410": {
+      "alias": "ᵛᵘˡᵍᵒ Nunes",
+      "last_match_date": 1795095378,
+      "last_seen_online_ts": 0,
+      "max_elo": 1121,
+      "profile_id": 768410,
+      "steam_id": "76561198066105144"
+    },
+    "771400": {
+      "alias": "Fwanti",
+      "last_match_date": 1794788961,
+      "last_seen_online_ts": 0,
+      "max_elo": 836,
+      "profile_id": 771400,
+      "steam_id": "76561198109369403"
+    },
+    "77393": {
+      "alias": "ELITE",
+      "last_match_date": 1794956816,
+      "last_seen_online_ts": 0,
+      "max_elo": 949,
+      "profile_id": 77393,
+      "steam_id": "76561198844643569"
+    },
+    "77985": {
+      "alias": "Felpotan",
+      "last_match_date": 1793998272,
+      "last_seen_online_ts": 0,
+      "max_elo": 949,
+      "profile_id": 77985,
+      "steam_id": "76561197995643110"
+    },
+    "780382": {
+      "alias": "yanmagnus",
+      "last_match_date": 1795085107,
+      "last_seen_online_ts": 0,
+      "max_elo": 1139,
+      "profile_id": 780382,
+      "steam_id": "76561198019799182"
+    },
+    "783315": {
+      "alias": "Boi Quietinho",
+      "last_match_date": 1795049203,
+      "last_seen_online_ts": 0,
+      "max_elo": 1050,
+      "profile_id": 783315,
+      "steam_id": "76561198065030898"
+    },
+    "790339": {
+      "alias": "Cap.Nikolay",
+      "last_match_date": 1793594347,
+      "last_seen_online_ts": 0,
+      "max_elo": 1114,
+      "profile_id": 790339,
+      "steam_id": "76561198095591217"
+    },
+    "790373": {
+      "alias": "Amo Esquisitinhas",
+      "last_match_date": 1793594347,
+      "last_seen_online_ts": 0,
+      "max_elo": 903,
+      "profile_id": 790373,
+      "steam_id": "76561198202733092"
+    },
+    "802058": {
+      "alias": "Ricardo",
+      "last_match_date": 1794859862,
+      "last_seen_online_ts": 0,
+      "max_elo": 1028,
+      "profile_id": 802058,
+      "steam_id": "76561198036525285"
+    },
+    "804058": {
+      "alias": "Buguee",
+      "last_match_date": 1792954736,
+      "last_seen_online_ts": 0,
+      "max_elo": 860,
+      "profile_id": 804058,
+      "steam_id": "76561198283318478"
+    },
+    "811294": {
+      "alias": "你说是，那便是吧",
+      "last_match_date": 1794930548,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1128,
+      "profile_id": 811294,
+      "steam_id": "76561198108427703"
+    },
+    "815314": {
+      "alias": "TheShadow318",
+      "last_match_date": 1794788262,
+      "last_seen_online_ts": 0,
+      "max_elo": 733,
+      "profile_id": 815314,
+      "steam_id": "76561198866747591"
+    },
+    "81650": {
+      "alias": "IK1909",
+      "last_match_date": 1793914728,
+      "last_seen_online_ts": 0,
+      "max_elo": 788,
+      "profile_id": 81650,
+      "steam_id": "76561198093774238"
+    },
+    "820419": {
+      "alias": "Mithrandir",
+      "last_match_date": 1793239878,
+      "last_seen_online_ts": 0,
+      "max_elo": 1112,
+      "profile_id": 820419,
+      "steam_id": "76561198019059444"
+    },
+    "821542": {
+      "alias": "belfort",
+      "last_match_date": 1794804210,
+      "last_seen_online_ts": 0,
+      "max_elo": 1243,
+      "profile_id": 821542,
+      "steam_id": "76561198028624206"
+    },
+    "83244": {
+      "alias": "PROMETHEUS",
+      "last_match_date": 1795065818,
+      "last_seen_online_ts": 0,
+      "max_elo": 1137,
+      "profile_id": 83244,
+      "steam_id": "76561198064709981"
+    },
+    "83351": {
+      "alias": "Opressor",
+      "last_match_date": 1794771216,
+      "last_seen_online_ts": 0,
+      "max_elo": 952,
+      "profile_id": 83351,
+      "steam_id": "76561197990261056"
+    },
+    "838813": {
+      "alias": "heitorcorrea",
+      "last_match_date": 1794879892,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 838813,
+      "steam_id": "76561198022258604"
+    },
+    "839": {
+      "alias": "ligerinho(BR)",
+      "last_match_date": 1794401266,
+      "last_seen_online_ts": 0,
+      "max_elo": 808,
+      "profile_id": 839,
+      "steam_id": "76561198062979258"
+    },
+    "840769": {
+      "alias": "Ricardin_ihuull",
+      "last_match_date": 1794954263,
+      "last_seen_online_ts": 0,
+      "max_elo": 1110,
+      "profile_id": 840769,
+      "steam_id": "76561198082125321"
+    },
+    "842311": {
+      "alias": "Caldeira",
+      "last_match_date": 1794176979,
+      "last_seen_online_ts": 0,
+      "max_elo": 845,
+      "profile_id": 842311,
+      "steam_id": "76561198066009874"
+    },
+    "84328": {
+      "alias": "Lone Ranger",
+      "last_match_date": 1794786102,
+      "last_seen_online_ts": 0,
+      "max_elo": 1145,
+      "profile_id": 84328,
+      "steam_id": "76561198074595261"
+    },
+    "844225": {
+      "alias": "『V』SKOBADARK",
+      "last_match_date": 1794678239,
+      "last_seen_online_ts": 0,
+      "max_elo": 1493,
+      "profile_id": 844225,
+      "steam_id": "76561198009000654"
+    },
+    "844464": {
+      "alias": "richardwnunes",
+      "last_match_date": 1794959344,
+      "last_seen_online_ts": 0,
+      "max_elo": 1042,
+      "profile_id": 844464,
+      "steam_id": "76561198346938570"
+    },
+    "845669": {
+      "alias": "PH0BB05",
+      "last_match_date": 1795034037,
+      "last_seen_online_ts": 0,
+      "max_elo": 1765,
+      "profile_id": 845669,
+      "steam_id": "76561199696199477"
+    },
+    "84816": {
+      "alias": "ChadVader",
+      "last_match_date": 1795011727,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1233,
+      "profile_id": 84816,
+      "steam_id": "76561198159203637"
+    },
+    "849019": {
+      "alias": "♠ Flokinho ♠",
+      "last_match_date": 1795047519,
+      "last_seen_online_ts": 0,
+      "max_elo": 991,
+      "profile_id": 849019,
+      "steam_id": "76561199192887223"
+    },
+    "85670": {
+      "alias": "Stig",
+      "last_match_date": 1795050729,
+      "last_seen_online_ts": 0,
+      "max_elo": 1100,
+      "profile_id": 85670,
+      "steam_id": "76561198025162176"
+    },
+    "85746": {
+      "alias": "[IRON] Kabal-PE",
+      "last_match_date": 0,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 85746,
+      "steam_id": "76561198045288427"
+    },
+    "861175": {
+      "alias": "PapagaioLouco",
+      "last_match_date": 1793300169,
+      "last_seen_online_ts": 0,
+      "max_elo": 892,
+      "profile_id": 861175,
+      "steam_id": "76561198143133643"
+    },
+    "86675": {
+      "alias": "Fred",
+      "last_match_date": 0,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 86675,
+      "steam_id": "76561198079508454"
+    },
+    "869772": {
+      "alias": "Tazi",
+      "last_match_date": 1794790999,
+      "last_seen_online_ts": 0,
+      "max_elo": 1243,
+      "profile_id": 869772,
+      "steam_id": "76561198874552921"
+    },
+    "87314": {
+      "alias": "Pedro Jedi",
+      "last_match_date": 1795061629,
+      "last_seen_online_ts": 0,
+      "max_elo": 1407,
+      "profile_id": 87314,
+      "steam_id": "76561197986521921"
+    },
+    "875194": {
+      "alias": "☠︎Destroyer-Tu-Culo☠",
+      "last_match_date": 1794965439,
+      "last_seen_online_ts": 0,
+      "max_elo": 1171,
+      "profile_id": 875194,
+      "steam_id": "76561199257565094"
+    },
+    "8764": {
+      "alias": "Maverick",
+      "last_match_date": 1794927819,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 990,
+      "profile_id": 8764,
+      "steam_id": "76561198155662761"
+    },
+    "890394": {
+      "alias": "TheKat",
+      "last_match_date": 1795050822,
+      "last_seen_online_ts": 0,
+      "max_elo": 1423,
+      "profile_id": 890394,
+      "steam_id": "76561198049023794"
+    },
+    "892597": {
+      "alias": "Martins",
+      "last_match_date": 1794799042,
+      "last_seen_online_ts": 0,
+      "max_elo": 1039,
+      "profile_id": 892597,
+      "steam_id": "76561198145405162"
+    },
+    "892947": {
+      "alias": "Macfly2001",
+      "last_match_date": 1795055378,
+      "last_seen_online_ts": 0,
+      "max_elo": 1292,
+      "profile_id": 892947,
+      "steam_id": "76561198121504561"
+    },
+    "895134": {
+      "alias": "moisespferrer123",
+      "last_match_date": 1795044567,
+      "last_seen_online_ts": 0,
+      "max_elo": 1048,
+      "profile_id": 895134,
+      "steam_id": "76561199418077121"
+    },
+    "898722": {
+      "alias": "Faz o L.",
+      "last_match_date": 1794693862,
+      "last_seen_online_ts": 0,
+      "max_elo": 829,
+      "profile_id": 898722,
+      "steam_id": "76561198194913474"
+    },
+    "900280": {
+      "alias": "Whitworte",
+      "last_match_date": 1795095310,
+      "last_seen_online_ts": 0,
+      "max_elo": 1112,
+      "profile_id": 900280,
+      "steam_id": "76561198057259039"
+    },
+    "900415": {
+      "alias": "NEUMANN BR",
+      "last_match_date": 1794184762,
+      "last_seen_online_ts": 0,
+      "max_elo": 814,
+      "profile_id": 900415,
+      "steam_id": "76561198440332656"
+    },
+    "900421": {
+      "alias": "tzimypepp",
+      "last_match_date": 1795095217,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 900421,
+      "steam_id": "76561198988058062"
+    },
+    "906994": {
+      "alias": "Jjlouco",
+      "last_match_date": 1795055214,
+      "last_seen_online_ts": 0,
+      "max_elo": 1192,
+      "profile_id": 906994,
+      "steam_id": "76561198105043316"
+    },
+    "911313": {
+      "alias": "El Pollo Diablo",
+      "last_match_date": 1793561939,
+      "last_seen_online_ts": 0,
+      "max_elo": 1217,
+      "profile_id": 911313,
+      "steam_id": "76561198010387961"
+    },
+    "918684": {
+      "alias": "Forg",
+      "last_match_date": 1795047476,
+      "last_seen_online_ts": 0,
+      "max_elo": 1047,
+      "profile_id": 918684,
+      "steam_id": "76561198064233552"
+    },
+    "919478": {
+      "alias": "lilinho",
+      "last_match_date": 1794702776,
+      "last_seen_online_ts": 0,
+      "max_elo": 560,
+      "profile_id": 919478,
+      "steam_id": "76561198319384249"
+    },
+    "925764": {
+      "alias": "charles_BRA",
+      "last_match_date": 1794974528,
+      "last_seen_online_ts": 0,
+      "max_elo": 1007,
+      "profile_id": 925764,
+      "steam_id": "76561198086888156"
+    },
+    "928301": {
+      "alias": "IGORZINN",
+      "last_match_date": 1795043051,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 928301,
+      "steam_id": "76561199164940732"
+    },
+    "928429": {
+      "alias": "Morfino",
+      "last_match_date": 1794969822,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1031,
+      "profile_id": 928429,
+      "steam_id": "76561198045709417"
+    },
+    "928857": {
+      "alias": "Clysmor",
+      "last_match_date": 1794969822,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 986,
+      "profile_id": 928857,
+      "steam_id": "76561198061646446"
+    },
+    "929569": {
+      "alias": "theleet",
+      "last_match_date": 1795046403,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 929569,
+      "steam_id": "76561197962733680"
+    },
+    "942083": {
+      "alias": "MAVERICK",
+      "last_match_date": 1794866862,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 443,
+      "profile_id": 942083,
+      "steam_id": "76561197990382740"
+    },
+    "942928": {
+      "alias": "Niott",
+      "last_match_date": 1794080595,
+      "last_seen_online_ts": 0,
+      "max_elo": 1035,
+      "profile_id": 942928,
+      "steam_id": "76561198099257611"
+    },
+    "942935": {
+      "alias": "SrLmo",
+      "last_match_date": 1795047387,
+      "last_seen_online_ts": 0,
+      "max_elo": 1130,
+      "profile_id": 942935,
+      "steam_id": "76561198066317871"
+    },
+    "944737": {
+      "alias": "Red Hot Chilly Pepper",
+      "last_match_date": 1794877442,
+      "last_seen_online_ts": 0,
+      "max_elo": 1055,
+      "profile_id": 944737,
+      "steam_id": "76561198117984620"
+    },
+    "946312": {
+      "alias": "colgatti",
+      "last_match_date": 1794775485,
+      "last_seen_online_ts": 0,
+      "max_elo": 1290,
+      "profile_id": 946312,
+      "steam_id": "76561198259733766"
+    },
+    "946322": {
+      "alias": "phconzatti",
+      "last_match_date": 1794775485,
+      "last_seen_online_ts": 0,
+      "max_elo": 1227,
+      "profile_id": 946322,
+      "steam_id": "76561198135260753"
+    },
+    "947114": {
+      "alias": "Sleepy",
+      "last_match_date": 1794975752,
+      "last_seen_online_ts": 0,
+      "max_elo": 1257,
+      "profile_id": 947114,
+      "steam_id": "76561199005516405"
+    },
+    "951280": {
+      "alias": "Cap. Virgulino Ferreira da Silva",
+      "last_match_date": 1795054715,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 903,
+      "profile_id": 951280,
+      "steam_id": "76561198098608981"
+    },
+    "952167": {
+      "alias": "≫Tiagu",
+      "last_match_date": 1794710912,
+      "last_seen_online_ts": 0,
+      "max_elo": 1006,
+      "profile_id": 952167,
+      "steam_id": "76561198091193918"
+    },
+    "952169": {
+      "alias": "Brazilian deltarune enjoyer",
+      "last_match_date": 1795093926,
+      "last_seen_online_ts": 0,
+      "max_elo": 1123,
+      "profile_id": 952169,
+      "steam_id": "76561199150201581"
+    },
+    "956645": {
+      "alias": "Magraiver",
+      "last_match_date": 1795033661,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1065,
+      "profile_id": 956645,
+      "steam_id": "76561198119663404"
+    },
+    "957597": {
+      "alias": "Tavinho",
+      "last_match_date": 1795053400,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 981,
+      "profile_id": 957597,
+      "steam_id": "76561199570467525"
+    },
+    "959282": {
+      "alias": "xxxgunner",
+      "last_match_date": 1792983062,
+      "last_seen_online_ts": 0,
+      "max_elo": 1204,
+      "profile_id": 959282,
+      "steam_id": "76561198109632039"
+    },
+    "96038": {
+      "alias": "Venom snake",
+      "last_match_date": 1794517485,
+      "last_seen_online_ts": 0,
+      "max_elo": 1052,
+      "profile_id": 96038,
+      "steam_id": "76561198038473331"
+    },
+    "961602": {
+      "alias": "São Leopoldo",
+      "last_match_date": 1794779524,
+      "last_seen_online_ts": 0,
+      "max_elo": 1182,
+      "profile_id": 961602,
+      "steam_id": "76561198120093374"
+    },
+    "964593": {
+      "alias": "Daulon",
+      "last_match_date": 1795102772,
+      "last_seen_online_ts": 0,
+      "max_elo": 1008,
+      "profile_id": 964593,
+      "steam_id": "76561198049743790"
+    },
+    "965932": {
+      "alias": "Benja",
+      "last_match_date": 1795056002,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1028,
+      "profile_id": 965932,
+      "steam_id": "76561198012101010"
+    },
+    "966123": {
+      "alias": "SuperTexugo",
+      "last_match_date": 1794972495,
+      "last_seen_online_ts": 0,
+      "max_elo": 1040,
+      "profile_id": 966123,
+      "steam_id": "76561198093711916"
+    },
+    "9669": {
+      "alias": "¿Hans",
+      "last_match_date": 1795045978,
+      "last_seen_online_ts": 0,
+      "max_elo": 1020,
+      "profile_id": 9669,
+      "steam_id": "76561197992883276"
+    },
+    "967658": {
+      "alias": "TiMC",
+      "last_match_date": 1795050149,
+      "last_seen_online_ts": 0,
+      "max_elo": 1297,
+      "profile_id": 967658,
+      "steam_id": "76561198023693363"
+    },
+    "970468": {
+      "alias": "Московский метро",
+      "last_match_date": 1795055998,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1017,
+      "profile_id": 970468,
+      "steam_id": "76561198937445340"
+    },
+    "970976": {
+      "alias": "SlugxTBR",
+      "last_match_date": 1742761934,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 970976,
+      "steam_id": "76561198000567856"
+    },
+    "972551": {
+      "alias": "eme",
+      "last_match_date": 1794154132,
+      "last_seen_online_ts": 0,
+      "max_elo": 896,
+      "profile_id": 972551,
+      "steam_id": "76561198027442295"
+    },
+    "974544": {
+      "alias": "Niow Niow",
+      "last_match_date": 1792894294,
+      "last_seen_online_ts": 0,
+      "max_elo": 913,
+      "profile_id": 974544,
+      "steam_id": "76561199045425326"
+    },
+    "975688": {
+      "alias": "Kefbr",
+      "last_match_date": 1750373406,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 975688,
+      "steam_id": "76561197994245218"
+    },
+    "975900": {
+      "alias": "[COHBR/RJ]Roney",
+      "last_match_date": 1795039543,
+      "last_seen_online_ts": 0,
+      "max_elo": 1434,
+      "profile_id": 975900,
+      "steam_id": "76561198326055603"
+    },
+    "976377": {
+      "alias": "henrike*",
+      "last_match_date": 1736028227,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 976377,
+      "steam_id": "76561197965670704"
+    },
+    "976559": {
+      "alias": "[OMJ] Guiflick",
+      "last_match_date": 1795036111,
+      "last_seen_online_ts": 1795103941,
+      "max_elo": 1013,
+      "profile_id": 976559,
+      "steam_id": "76561198009892017"
+    },
+    "9799": {
+      "alias": "Ironfox ©",
+      "last_match_date": 1792980365,
+      "last_seen_online_ts": 0,
+      "max_elo": 1001,
+      "profile_id": 9799,
+      "steam_id": "76561198097076285"
+    },
+    "985599": {
+      "alias": "Yulit",
+      "last_match_date": 1795053145,
+      "last_seen_online_ts": 0,
+      "max_elo": 1009,
+      "profile_id": 985599,
+      "steam_id": "76561199803489658"
+    },
+    "988": {
+      "alias": "Lucas Azevedo",
+      "last_match_date": 1794618087,
+      "last_seen_online_ts": 0,
+      "max_elo": 870,
+      "profile_id": 988,
+      "steam_id": "76561198066733146"
+    },
+    "992789": {
+      "alias": "Daniel",
+      "last_match_date": 0,
+      "last_seen_online_ts": 0,
+      "max_elo": 0,
+      "profile_id": 992789,
+      "steam_id": "76561198016289295"
+    },
+    "992835": {
+      "alias": "Lula",
+      "last_match_date": 1794793417,
+      "last_seen_online_ts": 0,
+      "max_elo": 971,
+      "profile_id": 992835,
+      "steam_id": "76561198065715457"
+    },
+    "993209": {
+      "alias": "BobGon",
+      "last_match_date": 1795028120,
+      "last_seen_online_ts": 0,
+      "max_elo": 953,
+      "profile_id": 993209,
+      "steam_id": "76561198053754717"
+    },
+    "996918": {
+      "alias": "Bueno",
+      "last_match_date": 1793667577,
+      "last_seen_online_ts": 0,
+      "max_elo": 909,
+      "profile_id": 996918,
+      "steam_id": "76561198074506208"
+    },
+    "998836": {
+      "alias": "SAMBANDIDO",
+      "last_match_date": 1795093553,
+      "last_seen_online_ts": 0,
+      "max_elo": 1000,
+      "profile_id": 998836,
+      "steam_id": "76561198160207277"
+    }
+  },
+  "source": "open_data",
+  "updated_at": 1795103941
+}
