@@ -107,7 +107,8 @@ def _verify_candidate_is_brazilian(
 def _candidate_verify_priority(cand: dict[str, Any], *, now: int) -> tuple[int, int, int, int, int]:
     """
     Ordena candidatos não-`br` para verificação Steam maximizando a descoberta real de brasileiros sem bandeira BR:
-    - Bucket 0: Tag explícita `[BR]`/`COHBR`/`Brasil` (global) OU América do Sul com país vazio/não-hispânico (bandeiras meme `de`/`us`/`pt`/`aq`...).
+    - Bucket 0: Parceiro de Arranged Team BR (COH3 Stats >=3 jogos/dia), tag explícita `[BR]`/`COHBR`/`Brasil` (global)
+      OU América do Sul com país vazio/não-hispânico (bandeiras meme `de`/`us`/`pt`/`aq`...).
     - Bucket 1: América do Sul com país hispânico (`ar`/`cl`...) e ELO >= 1200 ou co-play >= 3 com BRs.
     - Bucket 2: Demais jogadores ativos da América do Sul (`region_id == 2074438`).
     - Bucket 3: Demais candidatos com país em branco fora da SA.
@@ -117,9 +118,10 @@ def _candidate_verify_priority(cand: dict[str, Any], *, now: int) -> tuple[int, 
     ctry = str(cand.get("country") or "").strip().lower()
     tm_cnt = int(cand.get("br_teammate_count", 0) or 0)
     has_tag = has_explicit_br_alias_tag(cand.get("alias"))
+    in_arranged = bool(cand.get("in_br_arranged_team"))
     lmd = int(cand.get("last_match_date", 0) or 0)
 
-    if has_tag or (reg == SOUTH_AMERICA_REGION_ID and (not ctry or ctry not in _HISPANIC_SA_COUNTRIES)):
+    if in_arranged or has_tag or (reg == SOUTH_AMERICA_REGION_ID and (not ctry or ctry not in _HISPANIC_SA_COUNTRIES)):
         bucket = 0
     elif reg == SOUTH_AMERICA_REGION_ID and (elo >= 1200 or tm_cnt >= 3):
         bucket = 1
@@ -161,6 +163,7 @@ def run_deep_br_discovery(
         for r in vet_roster
         if str(r.get("steam_id") or "").strip()
     }
+    manual_pids = {int(r["profile_id"]) for r in MANUAL_OTHER_BR_PLAYERS if int(r.get("profile_id", 0) or 0) > 0}
 
     community_cache = load_community_cache(community_cache_path)
     existing_players: dict[str, dict[str, Any]] = dict(community_cache.get("players") or {})
@@ -215,16 +218,18 @@ def run_deep_br_discovery(
         except Exception as exc:
             logger.warning("[STAGE 1] Falha em Open Data Leaderboards: %s", redact_secrets(exc))
 
-    # 2. COH3 Stats Open Data — Matches (últimos N dias: placements, smurfs, Custom, vs IA, co-play BR)
+    # 2. COH3 Stats Open Data — Matches (últimos N dias: placements, smurfs, Custom, vs IA, Arranged Teams BR)
     matches_diag: dict[str, Any] = {}
+    arranged_teams: list[dict[str, Any]] = []
     if match_days > 0 and hasattr(r_client, "discover_br_and_candidates_from_open_data_matches"):
-        seed_br_pids = set(vet_pids) | set(br_pool.keys())
+        seed_br_pids = set(vet_pids) | set(manual_pids) | set(br_pool.keys())
         try:
             m_br, m_cand, matches_diag = r_client.discover_br_and_candidates_from_open_data_matches(
                 now_ts=now,
                 days=match_days,
                 seed_br_pids=seed_br_pids,
             )
+            arranged_teams = list(matches_diag.get("arranged_teams") or [])
             new_from_matches = sum(1 for pid in m_br if pid not in br_pool and pid not in vet_pids)
             for item in m_br.values():
                 _merge_discovered_br_player(br_pool, accumulate_matches=False, **item)
@@ -233,12 +238,13 @@ def run_deep_br_discovery(
             if m_br:
                 sources_used.append("open_data_matches")
             logger.info(
-                "[STAGE 2 — OPEN DATA MATCHES] %d/%d dias OK (%d partidas) | BRs ativos encontrados: %d (+%d inéditos fora de leaderboards) | Candidatos SA/squad: %d",
+                "[STAGE 2 — OPEN DATA MATCHES] %d/%d dias OK (%d partidas) | BRs ativos: %d (+%d inéditos) | Arranged Teams BR (>=3/dia): %d | Candidatos: %d",
                 matches_diag.get("days_ok", 0),
                 matches_diag.get("days_requested", match_days),
                 matches_diag.get("matches_scanned", 0),
                 len(m_br),
                 new_from_matches,
+                len(arranged_teams),
                 len(m_cand),
             )
         except Exception as exc:
@@ -345,18 +351,19 @@ def run_deep_br_discovery(
 
     # 4b. Steam Community — Verificação de `<location>Brazil</location>` e `<groups>` BR para candidatos ativos não-`br`
     steam_verified_count = 0
+    steam_pres_map: dict[str, dict[str, Any]] = {}
     for pid in list(cand_pool.keys()):
         c = cand_pool[pid]
         ctry = str(c.get("country") or "").strip().lower()
         reg = int(c.get("region_id", 0) or 0)
-        tm_cnt = int(c.get("br_teammate_count", 0) or 0)
         has_tag = has_explicit_br_alias_tag(c.get("alias"))
+        in_arranged = bool(c.get("in_br_arranged_team"))
         if pid in br_pool or pid in vet_pids or str(c.get("steam_id") or "") in vet_sids:
             del cand_pool[pid]
         elif int(c.get("last_match_date", 0) or 0) < active_cutoff:
             del cand_pool[pid]
-        # Descarta estrangeiros confirmados fora da América do Sul sem tag explícita BR (evita gastar cota em aleatórios 4v4)
-        elif ctry and reg != SOUTH_AMERICA_REGION_ID and not has_tag:
+        # Descarta estrangeiros confirmados fora da América do Sul sem tag BR e fora de Arranged Team BR
+        elif ctry and reg != SOUTH_AMERICA_REGION_ID and not has_tag and not in_arranged:
             del cand_pool[pid]
 
     active_candidates = sorted(cand_pool.values(), key=lambda c: _candidate_verify_priority(c, now=now))
@@ -526,6 +533,127 @@ def run_deep_br_discovery(
                 str(r.get("alias") or ""),
             )
 
+    # Auditoria de cobertura dos Arranged Teams BR (regra oficial COH3 Stats: >=3 jogos juntos no mesmo dia UTC)
+    arranged_audit: dict[str, Any] = {
+        "teams_total": len(arranged_teams),
+        "by_mode": {},
+        "unique_br_in_radar": 0,
+        "unique_br_missing": 0,
+        "non_br_partners_outside_radar": [],
+    }
+    if arranged_teams:
+        mode_counts = Counter(str(t.get("mode") or "") for t in arranged_teams)
+        in_radar_all = vet_pids | after_pids
+        unique_br_pids: set[int] = set()
+        unique_br_vet: set[int] = set()
+        unique_br_obr: set[int] = set()
+        unique_br_missing: set[int] = set()
+        partners_outside: dict[int, dict[str, Any]] = {}
+
+        for team in arranged_teams:
+            members_dict = team.get("members") or {}
+            br_names_in_team = [
+                str(m.get("alias") or mpid)
+                for mpid, m in members_dict.items()
+                if mpid in in_radar_all or str(m.get("country") or "").lower() == "br"
+            ]
+            for mpid_raw, minfo in members_dict.items():
+                mpid = int(mpid_raw)
+                ctry = str(minfo.get("country") or "").lower()
+                if mpid in vet_pids:
+                    unique_br_pids.add(mpid)
+                    unique_br_vet.add(mpid)
+                elif mpid in after_pids:
+                    unique_br_pids.add(mpid)
+                    unique_br_obr.add(mpid)
+                elif ctry == "br":
+                    unique_br_pids.add(mpid)
+                    unique_br_missing.add(mpid)
+                else:
+                    rec = partners_outside.get(mpid)
+                    tg = int(team.get("total_games", 0) or 0)
+                    if rec is None:
+                        sid = str(minfo.get("steam_id") or "")
+                        sp = steam_pres_map.get(sid) or {}
+                        partners_outside[mpid] = {
+                            "profile_id": mpid,
+                            "steam_id": sid,
+                            "alias": str(minfo.get("alias") or mpid),
+                            "country": ctry or "??",
+                            "max_elo": int(minfo.get("max_elo", 0) or 0),
+                            "arranged_games": tg,
+                            "teams_count": 1,
+                            "br_teammates": list(dict.fromkeys(br_names_in_team))[:4],
+                            "steam_location": str(sp.get("location") or ""),
+                            "steam_br_group": bool(sp.get("has_brazil_steam_group")),
+                        }
+                    else:
+                        rec["arranged_games"] += tg
+                        rec["teams_count"] += 1
+                        if int(minfo.get("max_elo", 0) or 0) > rec["max_elo"]:
+                            rec["max_elo"] = int(minfo["max_elo"])
+                        for bn in br_names_in_team:
+                            if bn not in rec["br_teammates"] and len(rec["br_teammates"]) < 4:
+                                rec["br_teammates"].append(bn)
+
+        partners_sorted = sorted(
+            partners_outside.values(),
+            key=lambda p: (-int(p["max_elo"]), -int(p["arranged_games"]), str(p["alias"]).lower()),
+        )
+        arranged_audit = {
+            "teams_total": len(arranged_teams),
+            "by_mode": dict(sorted(mode_counts.items())),
+            "unique_br_total": len(unique_br_pids),
+            "unique_br_veteranos": len(unique_br_vet),
+            "unique_br_outros": len(unique_br_obr),
+            "unique_br_in_radar": len(unique_br_vet) + len(unique_br_obr),
+            "unique_br_missing": len(unique_br_missing),
+            "non_br_partners_outside_radar": partners_sorted,
+        }
+        logger.info(
+            "[AUDITORIA ARRANGED TEAMS BR] Equipes (>=3 jogos/dia): %d (%s) | BRs únicos: %d (Veteranos=%d, Outros BR=%d, Fora=%d) | Parceiros não-BR fora do radar: %d",
+            len(arranged_teams),
+            dict(sorted(mode_counts.items())),
+            len(unique_br_pids),
+            len(unique_br_vet),
+            len(unique_br_obr),
+            len(unique_br_missing),
+            len(partners_sorted),
+        )
+        for idx, team in enumerate(arranged_teams[:20], 1):
+            m_labels: list[str] = []
+            for mpid_raw, minfo in sorted(
+                (team.get("members") or {}).items(),
+                key=lambda kv: -int(kv[1].get("max_elo", 0) or 0),
+            ):
+                mpid = int(mpid_raw)
+                tag = "VET" if mpid in vet_pids else ("OBR" if mpid in after_pids else f"FORA:{minfo.get('country') or '??'}")
+                m_labels.append(f"{minfo.get('alias')}({minfo.get('max_elo', 0)}|{tag})")
+            logger.info(
+                "  [TEAM #%02d] %s %-6s | ELO med %4d | %3d jogos (pico %d/dia) | %s",
+                idx,
+                team.get("mode"),
+                team.get("side"),
+                int(team.get("max_avg_elo", 0) or 0),
+                int(team.get("total_games", 0) or 0),
+                int(team.get("peak_day_games", 0) or 0),
+                " + ".join(m_labels),
+            )
+        if partners_sorted:
+            logger.info("[PARCEIROS NÃO-BR EM ARRANGED TEAMS BR FORA DO RADAR (%d)]:", len(partners_sorted))
+            for idx, p in enumerate(partners_sorted[:35], 1):
+                logger.info(
+                    "  [PARCEIRO #%02d] ELO %4d | pais=%-2s | %3d jogos AT | pid=%-8d | steam_loc=%-24s | %s | com BRs: %s",
+                    idx,
+                    int(p["max_elo"]),
+                    str(p["country"]),
+                    int(p["arranged_games"]),
+                    int(p["profile_id"]),
+                    str(p["steam_location"] or "-")[:24],
+                    str(p["alias"]),
+                    ", ".join(p["br_teammates"]),
+                )
+
     return {
         "before_count": len(before_pids),
         "after_count": len(after_pids),
@@ -539,6 +667,7 @@ def run_deep_br_discovery(
         "steam_group_confirmed": steam_group_confirmed,
         "steam_verified_count": steam_verified_count,
         "top_new_players": newly_added_rows[:30],
+        "arranged_teams_audit": arranged_audit,
     }
 
 

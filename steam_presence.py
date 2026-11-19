@@ -500,6 +500,7 @@ def _merge_discovered_br_player(
     region_id: int = 0,
     br_source: str = "",
     br_teammate_count: int = 0,
+    in_br_arranged_team: bool = False,
 ) -> None:
     if profile_id <= 0 or not STEAM_ID64_VALID_RE.fullmatch(steam_id):
         return
@@ -527,6 +528,8 @@ def _merge_discovered_br_player(
             item["br_source"] = src
         if tm_cnt > 0:
             item["br_teammate_count"] = tm_cnt
+        if in_br_arranged_team:
+            item["in_br_arranged_team"] = True
         catalog[profile_id] = item
         return
     if clean_alias and not clean_alias.startswith("Jogador "):
@@ -548,6 +551,8 @@ def _merge_discovered_br_player(
         existing["br_source"] = src
     if tm_cnt > 0:
         existing["br_teammate_count"] = int(existing.get("br_teammate_count", 0) or 0) + tm_cnt
+    if in_br_arranged_team:
+        existing["in_br_arranged_team"] = True
 
 
 def extract_br_and_candidates_from_opendata_payload(
@@ -707,6 +712,137 @@ def extract_br_and_candidates_from_matches_payload(
                     )
 
     return br_found, candidates
+
+
+ARRANGED_TEAM_MATCHTYPES: dict[int, tuple[str, int]] = {
+    2: ("2v2", 2),
+    3: ("3v3", 3),
+    4: ("4v4", 4),
+    21: ("2v2", 2),
+    22: ("3v3", 3),
+    23: ("4v4", 4),
+}
+_ALLIES_RACE_IDS: frozenset[int] = frozenset({129494, 197345})
+_AXIS_RACE_IDS: frozenset[int] = frozenset({137123, 198437})
+
+
+def extract_br_arranged_teams_from_matches_payload(
+    data: dict[str, Any],
+    *,
+    seed_br_pids: set[int] | frozenset[int] | None = None,
+) -> dict[tuple[str, str, tuple[int, ...]], dict[str, Any]]:
+    """
+    Reconstrói equipes fechadas (Arranged Teams 2v2/3v3/4v4 — Axis/Allies) com >= 1 brasileiro
+    a partir de um dump diário oficial `matches-{day}.json` do COH3 Stats Open Data, seguindo a
+    mesma regra documentada pelo COH3 Stats (>= 3 jogos automatch juntos no mesmo dia UTC).
+    """
+    teams_day: dict[tuple[str, str, tuple[int, ...]], dict[str, Any]] = {}
+    if not isinstance(data, dict):
+        return teams_day
+
+    known_br = set(seed_br_pids or ())
+    for match in data.get("matches") or []:
+        if not isinstance(match, dict):
+            continue
+        mt_id = int(match.get("matchtype_id", -1))
+        mt_info = ARRANGED_TEAM_MATCHTYPES.get(mt_id)
+        if mt_info is None:
+            continue
+        mode_lbl, expected_size = mt_info
+        ct = int(match.get("completiontime", 0) or match.get("startgametime", 0) or 0)
+        if ct <= 0:
+            continue
+
+        by_team: dict[int, list[dict[str, Any]]] = {}
+        for rep in match.get("matchhistoryreportresults") or []:
+            if not isinstance(rep, dict):
+                continue
+            prof = rep.get("profile")
+            if not isinstance(prof, dict):
+                continue
+            pid = int(rep.get("profile_id", 0) or prof.get("profile_id", 0) or 0)
+            sid = extract_steam_id_from_relic_name(prof.get("name"))
+            team_id = int(rep.get("teamid", -1) if rep.get("teamid") is not None else -1)
+            if pid <= 0 or not sid or team_id < 0:
+                continue
+            ctry = str(prof.get("country") or "").strip().lower()
+            reg = int(prof.get("leaderboardregion_id", 0) or 0)
+            alias = strip_unsafe_chars(prof.get("alias") or "")[:40] or f"Jogador {pid}"
+            race_id = int(rep.get("race_id", 0) or 0)
+            mhm = rep.get("matchhistorymember") if isinstance(rep.get("matchhistorymember"), dict) else {}
+            elo = max(int(float(mhm.get("newrating", 0) or 0)), int(float(mhm.get("oldrating", 0) or 0)), 0)
+            wins = max(0, int(mhm.get("wins", 0) or 0))
+            losses = max(0, int(mhm.get("losses", 0) or 0))
+            by_team.setdefault(team_id, []).append(
+                {
+                    "profile_id": pid,
+                    "steam_id": sid,
+                    "alias": alias,
+                    "country": ctry,
+                    "region_id": reg,
+                    "race_id": race_id,
+                    "max_elo": elo,
+                    "total_matches": wins + losses,
+                }
+            )
+
+        for members in by_team.values():
+            if len(members) != expected_size:
+                continue
+            if not any(m["country"] == "br" or m["profile_id"] in known_br for m in members):
+                continue
+            race_ids = {m["race_id"] for m in members if m["race_id"] > 0}
+            if race_ids and race_ids.issubset(_ALLIES_RACE_IDS):
+                side = "Allies"
+            elif race_ids and race_ids.issubset(_AXIS_RACE_IDS):
+                side = "Axis"
+            else:
+                side = "Team"
+            pids_key = tuple(sorted(m["profile_id"] for m in members))
+            tkey = (mode_lbl, side, pids_key)
+            rec = teams_day.get(tkey)
+            avg_elo = int(round(sum(m["max_elo"] for m in members) / len(members)))
+            if rec is None:
+                rec = {
+                    "mode": mode_lbl,
+                    "side": side,
+                    "member_pids": list(pids_key),
+                    "games": 0,
+                    "max_avg_elo": 0,
+                    "last_match_date": 0,
+                    "members": {},
+                }
+                teams_day[tkey] = rec
+            rec["games"] += 1
+            if avg_elo > rec["max_avg_elo"]:
+                rec["max_avg_elo"] = avg_elo
+            if ct > rec["last_match_date"]:
+                rec["last_match_date"] = ct
+            for m in members:
+                mpid = m["profile_id"]
+                prev_m = rec["members"].get(mpid)
+                if prev_m is None:
+                    rec["members"][mpid] = {
+                        "profile_id": mpid,
+                        "steam_id": m["steam_id"],
+                        "alias": m["alias"],
+                        "country": m["country"],
+                        "region_id": m["region_id"],
+                        "max_elo": m["max_elo"],
+                        "total_matches": m["total_matches"],
+                        "last_match_date": ct,
+                    }
+                else:
+                    if m["max_elo"] > prev_m["max_elo"]:
+                        prev_m["max_elo"] = m["max_elo"]
+                    if m["total_matches"] > prev_m["total_matches"]:
+                        prev_m["total_matches"] = m["total_matches"]
+                    if ct > prev_m["last_match_date"]:
+                        prev_m["last_match_date"] = ct
+                    if m["alias"] and not m["alias"].startswith("Jogador "):
+                        prev_m["alias"] = m["alias"]
+
+    return teams_day
 
 
 def extract_br_and_candidates_from_relic_leaderboard_payload(
@@ -1428,6 +1564,7 @@ class RelicActivityClient:
         }
         br_catalog: dict[int, dict[str, Any]] = {}
         cand_catalog: dict[int, dict[str, Any]] = {}
+        arranged_agg: dict[tuple[str, str, tuple[int, ...]], dict[str, Any]] = {}
         known_br: set[int] = set(seed_br_pids or ())
         days_ok = 0
         days_failed = 0
@@ -1462,12 +1599,70 @@ class RelicActivityClient:
             days_ok += 1
             total_matches_scanned += len(data.get("matches") or [])
             br_part, cand_part = extract_br_and_candidates_from_matches_payload(data, seed_br_pids=known_br)
-            del data
             for pid, item in br_part.items():
                 known_br.add(pid)
                 _merge_discovered_br_player(br_catalog, accumulate_matches=False, **item)
+            day_teams = extract_br_arranged_teams_from_matches_payload(data, seed_br_pids=known_br)
+            del data
             for item in cand_part.values():
                 _merge_discovered_br_player(cand_catalog, accumulate_matches=False, **item)
+            for tkey, trec in day_teams.items():
+                agg = arranged_agg.get(tkey)
+                if agg is None:
+                    arranged_agg[tkey] = {
+                        "mode": trec["mode"],
+                        "side": trec["side"],
+                        "member_pids": list(trec["member_pids"]),
+                        "total_games": int(trec["games"]),
+                        "peak_day_games": int(trec["games"]),
+                        "days_played": 1,
+                        "max_avg_elo": int(trec["max_avg_elo"]),
+                        "last_match_date": int(trec["last_match_date"]),
+                        "members": {mpid: dict(minfo) for mpid, minfo in trec["members"].items()},
+                    }
+                else:
+                    agg["total_games"] += int(trec["games"])
+                    agg["days_played"] += 1
+                    if int(trec["games"]) > agg["peak_day_games"]:
+                        agg["peak_day_games"] = int(trec["games"])
+                    if int(trec["max_avg_elo"]) > agg["max_avg_elo"]:
+                        agg["max_avg_elo"] = int(trec["max_avg_elo"])
+                    if int(trec["last_match_date"]) > agg["last_match_date"]:
+                        agg["last_match_date"] = int(trec["last_match_date"])
+                    for mpid, minfo in trec["members"].items():
+                        pm = agg["members"].get(mpid)
+                        if pm is None:
+                            agg["members"][mpid] = dict(minfo)
+                        else:
+                            if minfo["max_elo"] > pm["max_elo"]:
+                                pm["max_elo"] = minfo["max_elo"]
+                            if minfo["total_matches"] > pm["total_matches"]:
+                                pm["total_matches"] = minfo["total_matches"]
+                            if minfo["last_match_date"] > pm["last_match_date"]:
+                                pm["last_match_date"] = minfo["last_match_date"]
+                            if minfo["alias"] and not minfo["alias"].startswith("Jogador "):
+                                pm["alias"] = minfo["alias"]
+
+        # Regra oficial COH3 Stats Arranged Teams: >= 3 jogos juntos no mesmo dia UTC (mesmo modo e lado)
+        official_arranged_teams = sorted(
+            (t for t in arranged_agg.values() if int(t["peak_day_games"]) >= 3),
+            key=lambda t: (-int(t["max_avg_elo"]), -int(t["total_games"]), t["mode"]),
+        )
+        for team in official_arranged_teams:
+            for mpid, minfo in team["members"].items():
+                if mpid not in br_catalog and minfo.get("country") != "br":
+                    _merge_discovered_br_player(
+                        cand_catalog,
+                        profile_id=mpid,
+                        steam_id=str(minfo.get("steam_id") or ""),
+                        alias=str(minfo.get("alias") or ""),
+                        max_elo=int(minfo.get("max_elo", 0) or 0),
+                        last_match_date=int(minfo.get("last_match_date", 0) or 0),
+                        total_matches=int(minfo.get("total_matches", 0) or 0),
+                        country=str(minfo.get("country") or ""),
+                        region_id=int(minfo.get("region_id", 0) or 0),
+                        in_br_arranged_team=True,
+                    )
 
         for pid in list(cand_catalog.keys()):
             if pid in br_catalog:
@@ -1478,6 +1673,7 @@ class RelicActivityClient:
             "days_ok": days_ok,
             "days_failed": days_failed,
             "matches_scanned": total_matches_scanned,
+            "arranged_teams": official_arranged_teams,
         }
         return br_catalog, cand_catalog, diag
 
