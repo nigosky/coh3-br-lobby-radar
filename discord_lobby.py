@@ -95,12 +95,24 @@ def _encode_multipart_formdata(
     return b"".join(chunks), f"multipart/form-data; boundary={boundary}"
 
 
-def build_lobby_radar_payload(
+def build_lobby_radar_image_payload(
+    bot_username: str = "CoH3 Brasil Radar",
+) -> dict[str, Any]:
+    """Monta a mensagem dedicada exclusivamente à imagem grande do Card PNG (sem Embed para largura máxima no Discord)."""
+    return {
+        "username": sanitize_discord_text(bot_username, max_len=80),
+        "avatar_url": BOT_AVATAR_URL,
+        "allowed_mentions": SAFE_ALLOWED_MENTIONS,
+        "content": "",
+        "embeds": [],
+    }
+
+
+def build_lobby_radar_links_payload(
     snapshot: dict[str, Any],
     bot_username: str = "CoH3 Brasil Radar",
-    attachment_filename: str = "lobby_radar.png",
 ) -> dict[str, Any]:
-    """Monta o Painel Vivo Fixo: Card PNG + links diretos da Steam para convidar com 1 clique."""
+    """Monta a mensagem dedicada exclusivamente ao texto com links diretos da Steam (sem imagem anexa)."""
     in_coh3: list[dict[str, Any]] = list(snapshot.get("in_coh3") or [])
     online_steam: list[dict[str, Any]] = list(snapshot.get("online_steam") or [])
     recent_relic: list[dict[str, Any]] = list(snapshot.get("recent_relic") or [])
@@ -134,9 +146,9 @@ def build_lobby_radar_payload(
     if busy_online:
         bz_links: list[str] = []
         for pl in busy_online[:8]:
-            nm = sanitize_discord_text(pl.get("alias"), 18)
+            nm = sanitize_discord_text(pl.get("alias"), 20)
             surl = build_safe_steam_profile_url(pl.get("steam_id"))
-            og = sanitize_discord_text(pl.get("other_game"), 18) if pl.get("other_game") else "Ausente"
+            og = sanitize_discord_text(pl.get("other_game"), 36) if pl.get("other_game") else "Ausente"
             bz_links.append((f"[{nm} ↗]({surl})" if surl else nm) + f" *({og})*")
         desc_blocks.append("🕹️ **Em outro jogo / ausentes:** " + "  •  ".join(bz_links))
 
@@ -152,10 +164,9 @@ def build_lobby_radar_payload(
 
     color = COLOR_LOBBY_GAME if in_coh3 else (COLOR_LOBBY_ONLINE if online_steam else COLOR_LOBBY_IDLE)
     embed = {
-        "title": "📡 RADAR DE LOBBY AO VIVO — VETERANOS COH3 BRASIL",
+        "title": "🔗 LINKS RÁPIDOS DA STEAM — CONVIDAR VETERANOS",
         "description": "\n\n".join(desc_blocks)[:4000],
         "color": color,
-        "image": {"url": f"attachment://{attachment_filename}"},
         "footer": {
             "text": (
                 f"No CoH3: {len(in_coh3)} • Online Steam: {len(online_steam)} • "
@@ -172,6 +183,16 @@ def build_lobby_radar_payload(
         "content": "",
         "embeds": [embed],
     }
+
+
+def build_lobby_radar_payload(
+    snapshot: dict[str, Any],
+    bot_username: str = "CoH3 Brasil Radar",
+    attachment_filename: str = "lobby_radar.png",
+) -> dict[str, Any]:
+    """Alias de compatibilidade retroativa para `build_lobby_radar_links_payload`."""
+    _ = attachment_filename
+    return build_lobby_radar_links_payload(snapshot, bot_username=bot_username)
 
 
 def build_lobby_alert_payload(
@@ -298,13 +319,23 @@ class DiscordLobbyWebhookClient:
             "name": strip_unsafe_chars(data.get("name", ""))[:60],
         }
 
-    def delete_message(self, message_id: str, protected_message_id: str | None = None) -> bool:
+    def delete_message(
+        self,
+        message_id: str,
+        protected_message_id: str | None = None,
+        protected_message_ids: set[str] | frozenset[str] | None = None,
+    ) -> bool:
         if not self.is_configured:
             return False
         clean_id = (message_id or "").strip()
         if not clean_id or not SNOWFLAKE_ID_RE.fullmatch(clean_id):
             return False
-        if protected_message_id and clean_id == protected_message_id.strip():
+        protected_set: set[str] = set()
+        if protected_message_id and protected_message_id.strip():
+            protected_set.add(protected_message_id.strip())
+        if protected_message_ids:
+            protected_set.update(x.strip() for x in protected_message_ids if x and x.strip())
+        if clean_id in protected_set:
             logger.warning("Bloqueio de segurança: tentativa de remover o Painel Vivo Fixo (%s) ignorada.", clean_id)
             return False
         parsed = urllib.parse.urlparse(self._webhook_url)
@@ -324,39 +355,88 @@ class DiscordLobbyWebhookClient:
         msg_id = str(data["id"]) if data and "id" in data else None
         return msg_id if msg_id and SNOWFLAKE_ID_RE.fullmatch(msg_id) else None
 
-    def upsert_lobby_radar_message(self, snapshot: dict[str, Any], existing_message_id: str | None) -> str | None:
+    def upsert_lobby_radar_messages(
+        self,
+        snapshot: dict[str, Any],
+        existing_message_ids: list[str] | tuple[str, ...] | None = None,
+    ) -> list[str]:
+        """
+        Publica o Painel Vivo em DUAS mensagens separadas no Discord:
+        1. Mensagem 1 (Imagem Grande): anexo PNG em alta resolução (1100px) SEM embed para largura máxima.
+        2. Mensagem 2 (Links Steam): embed limpo apenas com o texto e links diretos da Steam (sem imagem).
+        Após confirmar ambas, apaga todas as mensagens anteriores do painel (incluindo migração de 1 -> 2 mensagens).
+        """
         if not self.is_configured:
-            return None
+            return []
 
         now_ts = int(snapshot.get("timestamp") or time.time())
         unique_filename = f"lobby_radar_{now_ts}.png"
         png_bytes = render_lobby_radar_card_png(snapshot, avatar_provider=self._avatar_provider)
         files = [(unique_filename, png_bytes, "image/png")]
-        payload = build_lobby_radar_payload(
-            snapshot,
-            bot_username=self.bot_username,
-            attachment_filename=unique_filename,
-        )
 
-        # 1. Publica primeiro o novo Painel Vivo com imagem inédita (evita cache da CDN do Discord e mantém no fim do canal)
-        _, data = self._request("POST", self._append_wait_param(self._webhook_url), payload, files=files)
-        new_msg_id = self._extract_snowflake(data)
-        if not new_msg_id:
-            return None
+        wait_url = self._append_wait_param(self._webhook_url)
 
-        # 2. Só após confirmar o envio do novo card, apaga a mensagem antiga do painel
-        clean_old_id = (existing_message_id or "").strip()
-        if clean_old_id and SNOWFLAKE_ID_RE.fullmatch(clean_old_id) and clean_old_id != new_msg_id:
+        # 1. Publica Mensagem 1: Imagem Grande dedicada (sem Embed)
+        image_payload = build_lobby_radar_image_payload(bot_username=self.bot_username)
+        _, img_data = self._request("POST", wait_url, image_payload, files=files)
+        image_msg_id = self._extract_snowflake(img_data)
+        if not image_msg_id:
+            return []
+
+        # 2. Publica Mensagem 2: Links Steam dedicados (sem Imagem)
+        links_payload = build_lobby_radar_links_payload(snapshot, bot_username=self.bot_username)
+        try:
+            _, links_data = self._request("POST", wait_url, links_payload)
+            links_msg_id = self._extract_snowflake(links_data)
+        except Exception as exc:
+            logger.warning(
+                "Falha ao enviar mensagem de links após imagem (%s); revertendo imagem parcial: %s",
+                image_msg_id,
+                redact_secrets(exc),
+            )
             try:
-                self.delete_message(clean_old_id, protected_message_id=new_msg_id)
+                self.delete_message(image_msg_id)
+            except Exception:
+                pass
+            raise
+
+        if not links_msg_id:
+            try:
+                self.delete_message(image_msg_id)
+            except Exception:
+                pass
+            return []
+
+        new_pair = [image_msg_id, links_msg_id]
+        new_protected = frozenset(new_pair)
+
+        # 3. Só após confirmar ambas as novas mensagens, apaga todas as mensagens antigas do painel
+        seen_old: set[str] = set()
+        for raw_old in (existing_message_ids or []):
+            clean_old = str(raw_old or "").strip()
+            if (
+                not clean_old
+                or clean_old in seen_old
+                or clean_old in new_protected
+                or not SNOWFLAKE_ID_RE.fullmatch(clean_old)
+            ):
+                continue
+            seen_old.add(clean_old)
+            try:
+                self.delete_message(clean_old, protected_message_ids=new_protected)
             except Exception as exc:
                 logger.warning(
-                    "Falha transitória ao apagar painel anterior (%s): %s",
-                    clean_old_id,
+                    "Falha transitória ao apagar mensagem anterior do painel (%s): %s",
+                    clean_old,
                     redact_secrets(exc),
                 )
 
-        return new_msg_id
+        return new_pair
+
+    def upsert_lobby_radar_message(self, snapshot: dict[str, Any], existing_message_id: str | None) -> str | None:
+        old_ids = [existing_message_id] if existing_message_id else []
+        created = self.upsert_lobby_radar_messages(snapshot, existing_message_ids=old_ids)
+        return created[0] if created else None
 
     def send_lobby_alert_message(self, snapshot: dict[str, Any], retention_hours: int = 2) -> str | None:
         if not self.is_configured or not snapshot.get("in_coh3"):
