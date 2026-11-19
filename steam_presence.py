@@ -908,6 +908,9 @@ class RelicActivityClient:
         return catalog
 
 
+OTHER_BR_ACTIVE_COH3_DAYS = 30  # Máximo de 30 dias (1 mês) sem jogar CoH3 para constar em "Outros Brasileiros"
+
+
 def _build_category_lists(
     roster: list[dict[str, Any]],
     presence_by_steam: dict[str, dict[str, Any]],
@@ -917,6 +920,7 @@ def _build_category_lists(
     now: int,
     recent_cutoff_sec: int,
     category: str,
+    max_coh3_inactivity_sec: int | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], int]:
     canonical_entries: dict[int, dict[str, Any]] = {}
     secondary_rows: list[dict[str, Any]] = []
@@ -938,6 +942,7 @@ def _build_category_lists(
             "steam_ids_all": [sid] if sid else [],
             "profile_ids_all": [pid],
             "fallback_elo": int(row.get("max_elo", 0) or 0),
+            "catalog_last_match_date": int(row.get("last_match_date", 0) or 0),
         }
 
     for sec in secondary_rows:
@@ -988,6 +993,8 @@ def _build_category_lists(
         age_sec = max(0, now - last_ct) if last_ct > 0 else 999_999
         age_min = age_sec // 60
         last_mode = str(best_match.get("mode") or "") if best_match else ""
+        effective_coh3_ts = max(last_ct, int(meta.get("catalog_last_match_date", 0) or 0))
+        coh3_age_sec = max(0, now - effective_coh3_ts) if effective_coh3_ts > 0 else None
         max_elo = max(
             [int(meta.get("fallback_elo", 0) or 0)]
             + [int(best_elo_map.get(cpid, 0) or 0) for cpid in meta["profile_ids_all"]]
@@ -1002,6 +1009,9 @@ def _build_category_lists(
             "last_completion_time": last_ct,
             "last_age_min": int(age_min) if last_ct > 0 else None,
             "last_mode": last_mode,
+            "last_coh3_match_date": effective_coh3_ts,
+            "last_coh3_age_hours": int(coh3_age_sec // 3600) if coh3_age_sec is not None else None,
+            "last_coh3_age_days": int(coh3_age_sec // 86400) if coh3_age_sec is not None else None,
             "other_game": other_game,
             "is_away": is_away,
             "category": category,
@@ -1017,6 +1027,10 @@ def _build_category_lists(
             player_card["status_note"] = status_note
             in_coh3_list.append(player_card)
         elif is_online:
+            # Para "Outros Brasileiros", descarta quem está inativo no CoH3 há mais de `max_coh3_inactivity_sec` (30 dias)
+            if max_coh3_inactivity_sec is not None:
+                if coh3_age_sec is None or coh3_age_sec > max_coh3_inactivity_sec:
+                    continue
             if other_game:
                 status_note = f"Online na Steam • jogando {other_game}"
             elif is_away:
@@ -1052,17 +1066,20 @@ def build_lobby_radar_snapshot(
     other_latest_matches_by_pid: dict[int, dict[str, Any]] | None = None,
     other_elo_by_pid: dict[int, int] | None = None,
     other_br_total_catalog: int | None = None,
+    other_br_active_days: int = OTHER_BR_ACTIVE_COH3_DAYS,
 ) -> dict[str, Any]:
     """
     Consolida as duas categorias do Radar de Lobby:
     1. `veteranos` (sempre acima): jogadores monitorados no tracker de partidas.
-    2. `outros_brasileiros` (sempre abaixo): demais jogadores brasileiros com CoH3 (online no jogo, Steam ou invisíveis).
+    2. `outros_brasileiros` (sempre abaixo): demais brasileiros ATIVOS no CoH3 (partida nos últimos `other_br_active_days` dias, padrão 30d).
     """
     now = int(now_ts) if now_ts is not None else int(time.time())
     vet_roster = list(custom_players) if custom_players else list(CORE_BR_ROSTER)
     latest_by_pid = latest_matches_by_pid or {}
     best_elo_map = elo_by_pid or {}
     recent_cutoff_sec = max(10, int(recent_relic_minutes)) * 60
+    active_days = max(1, int(other_br_active_days))
+    other_inactivity_sec = active_days * 86400
 
     vet_in_coh3, vet_online, vet_recent, vet_total = _build_category_lists(
         vet_roster,
@@ -1113,6 +1130,7 @@ def build_lobby_radar_snapshot(
         now=now,
         recent_cutoff_sec=recent_cutoff_sec,
         category="outros_brasileiros",
+        max_coh3_inactivity_sec=other_inactivity_sec,
     )
 
     xml_ok_accounts = sum(1 for v in merged_other_pres.values() if v.get("ok"))
@@ -1137,6 +1155,7 @@ def build_lobby_radar_snapshot(
         "outros_brasileiros": {
             "total_monitored": catalog_total,
             "checked_count": oth_checked,
+            "active_window_days": active_days,
             "in_coh3": oth_in_coh3,
             "online_steam": oth_online,
             "recent_relic": oth_recent,

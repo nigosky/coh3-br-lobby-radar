@@ -38,6 +38,7 @@ from security import (
 )
 from steam_presence import (
     CORE_BR_ROSTER,
+    OTHER_BR_ACTIVE_COH3_DAYS,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
     SteamPresenceClient,
@@ -58,12 +59,11 @@ DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
 # 4m30s garante que o ciclo de 5 min (300s) nunca pule a atualização por 1-2s de jitter do relógio
 PANEL_HEARTBEAT_REFRESH_SEC = 270
-PANEL_LAYOUT_VERSION = 2
+PANEL_LAYOUT_VERSION = 3
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
-OTHER_BR_ACTIVE_MATCH_WINDOW_SEC = 90 * 86400
-OTHER_BR_SEEN_ONLINE_WINDOW_SEC = 14 * 86400
-OTHER_BR_INVISIBLE_MATCH_WINDOW_SEC = 60 * 86400
+OTHER_BR_ACTIVE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400  # 30 dias (1 mês)
+OTHER_BR_INVISIBLE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400
 MAX_OTHER_BR_ACTIVE_PER_CYCLE = 220
 OTHER_BR_ROTATION_SLICE = 40
 MAX_OTHER_BR_RELIC_INVISIBLE_CHECK = 200
@@ -190,6 +190,7 @@ def _merge_player_into_community(
     *,
     vet_pids: set[int],
     vet_sids: set[str],
+    min_last_match_date: int = 0,
 ) -> bool:
     pid = int(entry.get("profile_id", 0) or 0)
     sid = str(entry.get("steam_id") or "").replace("/steam/", "").strip()
@@ -201,6 +202,10 @@ def _merge_player_into_community(
     max_elo = max(0, int(entry.get("max_elo", 0) or 0))
     last_md = max(0, int(entry.get("last_match_date", 0) or 0))
     prev = players_dict.get(key)
+    effective_lmd = max(last_md, int(prev.get("last_match_date", 0) or 0)) if prev is not None else last_md
+    if min_last_match_date > 0 and effective_lmd < min_last_match_date:
+        return False
+
     if prev is None:
         players_dict[key] = {
             "profile_id": pid,
@@ -235,60 +240,42 @@ def _select_other_br_candidates(
     rotation_offset: int,
 ) -> tuple[list[dict[str, Any]], int]:
     """
-    Seleciona os 'Outros Brasileiros' para checagem no ciclo atual:
-    1. Tier Ativo (todo ciclo de 5 min): jogou CoH3 nos últimos 90 dias OU visto online na Steam nos últimos 14 dias.
-    2. Tier Rotativo (fatia de 40 contas por ciclo): varre progressivamente os demais brasileiros antigos;
-       se algum voltar a ficar online/no CoH3, sobe automaticamente para o Tier Ativo!
+    Seleciona EXCLUSIVAMENTE 'Outros Brasileiros' ATIVOS no CoH3 (partida nos últimos 30 dias):
+    - Inativos (> 30 dias sem partida no CoH3 ou sem histórico) jamais são checados ou exibidos.
+    - Os 220 mais recentemente ativos no CoH3 são verificados a cada ciclo de 5 min; o excedente ativo (<= 30d)
+      é rotacionado em fatias de 40 contas por ciclo.
     """
-    all_rows = [
+    active_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
+    active_rows = [
         row
         for row in community_players.values()
         if isinstance(row, dict)
         and int(row.get("profile_id", 0) or 0) > 0
         and STEAM_ID64_VALID_RE.fullmatch(str(row.get("steam_id") or "").strip())
+        and int(row.get("last_match_date", 0) or 0) >= active_cutoff
     ]
-    if not all_rows:
+    if not active_rows:
         return [], 0
-
-    active_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
-    seen_cutoff = now - OTHER_BR_SEEN_ONLINE_WINDOW_SEC
-
-    active_rows: list[dict[str, Any]] = []
-    dormant_rows: list[dict[str, Any]] = []
-
-    for row in all_rows:
-        seen_ts = int(row.get("last_seen_online_ts", 0) or 0)
-        lmd = int(row.get("last_match_date", 0) or 0)
-        if seen_ts >= seen_cutoff or lmd >= active_cutoff:
-            active_rows.append(row)
-        else:
-            dormant_rows.append(row)
 
     active_rows.sort(
         key=lambda r: (
-            1 if int(r.get("last_seen_online_ts", 0) or 0) >= seen_cutoff else 0,
             int(r.get("last_match_date", 0) or 0),
             int(r.get("max_elo", 0) or 0),
+            int(r["profile_id"]),
         ),
         reverse=True,
     )
     selected = active_rows[:MAX_OTHER_BR_ACTIVE_PER_CYCLE]
     overflow_active = active_rows[MAX_OTHER_BR_ACTIVE_PER_CYCLE:]
 
-    dormant_pool = overflow_active + sorted(
-        dormant_rows,
-        key=lambda r: (int(r.get("last_match_date", 0) or 0), int(r.get("max_elo", 0) or 0), int(r["profile_id"])),
-        reverse=True,
-    )
-
     next_offset = 0
-    if dormant_pool:
-        n_dorm = len(dormant_pool)
-        start = max(0, int(rotation_offset)) % n_dorm
-        slice_size = min(OTHER_BR_ROTATION_SLICE, n_dorm)
+    if overflow_active:
+        n_over = len(overflow_active)
+        start = max(0, int(rotation_offset)) % n_over
+        slice_size = min(OTHER_BR_ROTATION_SLICE, n_over)
         for i in range(slice_size):
-            selected.append(dormant_pool[(start + i) % n_dorm])
-        next_offset = (start + slice_size) % n_dorm
+            selected.append(overflow_active[(start + i) % n_over])
+        next_offset = (start + slice_size) % n_over
 
     return selected, next_offset
 
@@ -475,16 +462,28 @@ def run_lobby_radar_sync(
     community_updated_at = int(community_cache.get("updated_at", 0) or 0)
     community_dirty = False
 
-    # Garante que nenhum Veterano permaneça no catálogo de "Outros Brasileiros"
+    active_coh3_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
+
+    # Remove Veteranos e qualquer brasileiro INATIVO no CoH3 (> 30 dias sem partida) do catálogo
+    pruned_inactive = 0
     for k in list(community_players.keys()):
         row = community_players[k]
         rpid = int(row.get("profile_id", 0) or 0) if isinstance(row, dict) else 0
         rsid = str(row.get("steam_id") or "").strip() if isinstance(row, dict) else ""
-        if rpid in vet_pids_set or rsid in vet_sids_set or rpid <= 0:
+        rlmd = int(row.get("last_match_date", 0) or 0) if isinstance(row, dict) else 0
+        if rpid in vet_pids_set or rsid in vet_sids_set or rpid <= 0 or rlmd < active_coh3_cutoff:
             del community_players[k]
             community_dirty = True
+            if rlmd < active_coh3_cutoff and rpid not in vet_pids_set:
+                pruned_inactive += 1
+    if pruned_inactive:
+        logger.info(
+            "[RADAR COMUNIDADE BR] %d jogador(es) inativo(s) no CoH3 (>%dd) removido(s) de Outros Brasileiros.",
+            pruned_inactive,
+            OTHER_BR_ACTIVE_COH3_DAYS,
+        )
 
-    # Atualização periódica (12h) do catálogo global de brasileiros de CoH3
+    # Atualização periódica (12h) do catálogo global de brasileiros ativos no CoH3 (<= 30 dias)
     need_discovery = (not community_players) or ((now - community_updated_at) >= COMMUNITY_DISCOVERY_TTL_SEC)
     if need_discovery and hasattr(r_client, "discover_br_players_from_open_data"):
         discovered: dict[int, dict[str, Any]] = {}
@@ -514,24 +513,27 @@ def run_lobby_radar_sync(
                     item,
                     vet_pids=vet_pids_set,
                     vet_sids=vet_sids_set,
+                    min_last_match_date=active_coh3_cutoff,
                 ):
                     community_dirty = True
             community_cache["updated_at"] = now
             community_cache["source"] = source_lbl
             community_dirty = True
             logger.info(
-                "[RADAR COMUNIDADE BR] Catálogo atualizado (%s): %d Outros Brasileiros descobertos.",
+                "[RADAR COMUNIDADE BR] Catálogo atualizado (%s): %d Outros Brasileiros ativos no CoH3 (<=%dd).",
                 source_lbl or "cache",
                 len(community_players),
+                OTHER_BR_ACTIVE_COH3_DAYS,
             )
 
-    # Descoberta passiva (zero chamadas extras) a partir das partidas dos Veteranos
+    # Descoberta passiva (zero chamadas extras) apenas de participantes brasileiros ativos no CoH3 (<= 30d)
     for item in discovered_br_from_matches.values():
         if _merge_player_into_community(
             community_players,
             item,
             vet_pids=vet_pids_set,
             vet_sids=vet_sids_set,
+            min_last_match_date=active_coh3_cutoff,
         ):
             community_dirty = True
 
@@ -629,6 +631,7 @@ def run_lobby_radar_sync(
         other_latest_matches_by_pid=other_latest_matches,
         other_elo_by_pid=other_elo_by_pid,
         other_br_total_catalog=len(community_players),
+        other_br_active_days=OTHER_BR_ACTIVE_COH3_DAYS,
     )
     vet_bucket = snapshot["veteranos"]
     oth_bucket = snapshot["outros_brasileiros"]
