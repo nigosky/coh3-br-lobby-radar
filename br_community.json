@@ -7430,7 +7430,7 @@
     "401275": {
       "alias": "asado de perro",
       "br_source": "open_data_lb",
-      "last_match_date": 1795146848,
+      "last_match_date": 1795146849,
       "last_seen_online_ts": 1795147284,
       "max_elo": 1195,
       "profile_id": 401275,
@@ -9348,7 +9348,7 @@
       "alias": "Stig",
       "br_source": "open_data_lb",
       "last_match_date": 1795050729,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795149083,
       "max_elo": 1123,
       "profile_id": 85670,
       "steam_id": "76561198025162176",
