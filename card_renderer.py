@@ -1066,8 +1066,7 @@ def _draw_category_block(
                     tier = _resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
                     is_high = (not is_veteranos) and (tier == "high")
                     has_other = bool(pl.get("other_game"))
-                    is_away = bool(pl.get("is_away"))
-                    is_snooze = bool(pl.get("is_snooze"))
+                    is_away = bool(pl.get("is_away") or pl.get("is_snooze"))
                     is_busy = bool(pl.get("is_busy"))
 
                     if is_high:
@@ -1154,8 +1153,7 @@ def _draw_category_block(
                         sub_st = f"Ocupado • {rec_tag}" if rec_tag else "Ocupado na Steam"
                         sub_col = (252, 165, 165, 255)
                     elif is_away:
-                        away_lbl = "Ausente (zZz)" if is_snooze else "Ausente na Steam"
-                        sub_st = f"Ausente • {rec_tag}" if rec_tag else away_lbl
+                        sub_st = f"Ausente na Steam (zZz) • {rec_tag}" if rec_tag else "Ausente na Steam (zZz)"
                         sub_col = (125, 175, 224, 255)
                     elif pl.get("last_age_min") is not None and int(pl["last_age_min"]) <= 35:
                         sub_st = f"Livre • jogou CoH3 há {max(1, int(pl['last_age_min']))} min"

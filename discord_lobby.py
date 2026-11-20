@@ -271,9 +271,7 @@ def _format_presence_status_label(player: dict[str, Any]) -> str:
         return sanitize_discord_text(player.get("other_game"), 36)
     if player.get("is_busy"):
         return "⛔ Ocupado"
-    if player.get("is_snooze"):
-        return "💤 Ausente zZz"
-    return "💤 Ausente"
+    return "💤 Ausente na Steam (zZz)"
 
 
 def _format_category_vertical_description(
@@ -316,8 +314,8 @@ def _format_category_vertical_description(
                 status_extra = ""
                 if pl.get("is_busy"):
                     status_extra = " *(⛔ Ocupado)*"
-                elif pl.get("is_away"):
-                    status_extra = " *(💤 Ausente zZz)*" if pl.get("is_snooze") else " *(💤 Ausente)*"
+                elif pl.get("is_away") or pl.get("is_snooze"):
+                    status_extra = " *(💤 Ausente na Steam (zZz))*"
                 if not is_veteranos:
                     star = "⭐ " if tier == "high" else ""
                     elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
@@ -348,14 +346,14 @@ def _format_category_vertical_description(
     free_online: list[dict[str, Any]] = []
     busy_online: list[dict[str, Any]] = []
     for p in online_steam:
-        is_busy_entry = bool(p.get("other_game") or p.get("is_away") or p.get("is_busy"))
+        is_busy_entry = bool(p.get("other_game") or p.get("is_away") or p.get("is_snooze") or p.get("is_busy"))
         if not is_veteranos and _resolve_discord_prominence_tier(p, is_veteranos=False, is_in_coh3=False) == "low":
             if p.get("other_game"):
                 low_entries.append((p, sanitize_discord_text(p.get("other_game"), 20)))
             elif p.get("is_busy"):
                 low_entries.append((p, "ocupado"))
-            elif p.get("is_away"):
-                low_entries.append((p, "ausente zZz" if p.get("is_snooze") else "ausente"))
+            elif p.get("is_away") or p.get("is_snooze"):
+                low_entries.append((p, "Ausente na Steam (zZz)"))
             else:
                 low_entries.append((p, _format_coh3_recency_compact(p) or "Steam"))
             continue

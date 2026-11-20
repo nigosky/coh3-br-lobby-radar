@@ -2584,8 +2584,8 @@ def _build_category_lists(
                 status_note = "Com Company of Heroes 3 aberto agora"
             if is_busy:
                 status_note += " • Ocupado"
-            elif is_away:
-                status_note += " • Ausente zZz" if is_snooze else " • Ausente"
+            elif is_away or is_snooze:
+                status_note += " • Ausente na Steam (zZz)"
             player_card["status_kind"] = "in_coh3"
             player_card["status_note"] = status_note
             in_coh3_list.append(player_card)
@@ -2598,10 +2598,8 @@ def _build_category_lists(
                 status_note = f"Online na Steam • jogando {other_game}"
             elif is_busy:
                 status_note = "Online na Steam (Ocupado)"
-            elif is_snooze:
-                status_note = "Online na Steam (Ausente zZz)"
-            elif is_away:
-                status_note = "Online na Steam (Ausente)"
+            elif is_away or is_snooze:
+                status_note = "Ausente na Steam (zZz)"
             elif last_ct > 0 and age_sec <= 1800:
                 status_note = f"Online na Steam • jogou CoH3 há {max(1, age_min)} min"
             else:
