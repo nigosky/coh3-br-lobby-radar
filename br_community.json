@@ -1284,9 +1284,11 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794785120,
       "last_seen_ingame_ts": 1795184990,
-      "last_seen_online_ts": 1795200263,
+      "last_seen_online_ts": 1795214034,
       "max_elo": 1000,
       "profile_id": 1057422,
+      "steam_games_hidden": true,
+      "steam_gd_checked_ts": 1795214034,
       "steam_id": "76561198139134567",
       "total_matches": 7
     },
@@ -2133,9 +2135,11 @@
       "alias": "Der Professor",
       "br_source": "open_data_matches",
       "last_match_date": 1794693671,
-      "last_seen_online_ts": 1795138870,
+      "last_seen_online_ts": 1795214034,
       "max_elo": 1000,
       "profile_id": 1180699,
+      "steam_games_hidden": true,
+      "steam_gd_checked_ts": 1795214034,
       "steam_id": "76561198065725979",
       "total_matches": 310
     },
@@ -3650,7 +3654,7 @@
       "alias": "[PWA]-ForceMaster",
       "br_source": "open_data_lb",
       "last_match_date": 1794613777,
-      "last_seen_online_ts": 1795208224,
+      "last_seen_online_ts": 1795214034,
       "max_elo": 1041,
       "profile_id": 135141,
       "steam_games_hidden": true,
@@ -4652,6 +4656,8 @@
       "last_seen_online_ts": 1795213080,
       "max_elo": 1063,
       "profile_id": 1436129,
+      "steam_games_hidden": false,
+      "steam_gd_checked_ts": 1795214034,
       "steam_id": "76561198062616796",
       "total_matches": 16
     },
@@ -6011,7 +6017,7 @@
     "146203": {
       "alias": "Galactic_Dragoon",
       "br_source": "open_data_matches",
-      "last_match_date": 1795060267,
+      "last_match_date": 1795213965,
       "last_seen_ingame_ts": 1795145992,
       "last_seen_ingame_webapi_ts": 1795212180,
       "last_seen_online_ts": 1795212781,
@@ -6020,7 +6026,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795209124,
       "steam_id": "76561198011660899",
-      "total_matches": 382
+      "total_matches": 383
     },
     "1462054": {
       "alias": "Quárak",
@@ -11043,14 +11049,14 @@
     "961602": {
       "alias": "São Leopoldo",
       "br_source": "open_data_lb",
-      "last_match_date": 1795202601,
+      "last_match_date": 1795214008,
       "last_seen_ingame_ts": 1795130294,
       "last_seen_ingame_webapi_ts": 1795200263,
       "last_seen_online_ts": 1795213080,
       "max_elo": 1218,
       "profile_id": 961602,
       "steam_id": "76561198120093374",
-      "total_matches": 259
+      "total_matches": 260
     },
     "963782": {
       "alias": "Destruidor_BRZ",
