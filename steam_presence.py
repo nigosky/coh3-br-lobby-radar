@@ -1,15 +1,15 @@
 """
-Presença Pública XML da Steam + Descoberta da Comunidade Brasileira + API Oficial da Relic (`coh3-br-lobby-radar`).
+Presença Steam (Web API oficial + fallback XML público) + Descoberta da Comunidade Brasileira + API da Relic (`coh3-br-lobby-radar`).
 
-Zero chaves da Steam (`STEAM_WEB_API_KEY`):
-1. Consulta `https://steamcommunity.com/profiles/<SteamID64>/?xml=1` (TLS 1.2+, allowlist estrita, max 64 KB)
-   com prioridade absoluta para os **Veteranos** (44 contas / 43 jogadores do tracker de partidas) e, em seguida,
-   para **Outros Brasileiros** ativos (com circuit-breaker anti-429 para nunca afetar os Veteranos).
+1. Consulta presença Steam via `ISteamUser/GetPlayerSummaries/v2` (quando `STEAM_WEB_API_KEY` está configurada)
+   com fallback transparente para `https://steamcommunity.com/profiles/<SteamID64>/?xml=1` (TLS 1.2+, allowlist estrita),
+   dando prioridade absoluta para os **Veteranos** (`players_roster.json`) e, em seguida, para **Outros Brasileiros**
+   ativos nos últimos 15 dias (com vigília silenciosa de reativação para inativos de 16–90 dias).
 2. Descobre automaticamente todos os demais jogadores brasileiros de CoH3 (`country == "br"`) via:
-   - COH3 Stats Open Data (`storage.coh3stats.com/leaderboards/...`, 16 arquivos diários, zero cota da Relic);
-   - Fallback na API oficial da Relic (`getLeaderboard2`, região América do Sul `2074438`);
+   - COH3 Stats Open Data (`storage.coh3stats.com/leaderboards/...` e `matches/...`);
+   - API oficial da Relic (`getLeaderboard2`, região América do Sul `2074438`);
    - Descoberta passiva em tempo real nos participantes `country == "br"` das partidas dos Veteranos.
-3. Detecta jogadores **invisíveis / Steam privada** ativos no CoH3 nos últimos 35 min cruzando
+3. Detecta jogadores **invisíveis / Steam privada / jogos ocultos** ativos no CoH3 nos últimos 35 min cruzando
    `getRecentMatchHistoryByProfileId` (Veteranos + customizadas) e `getPersonalStat` em lote (`lastmatchdate`).
 """
 
@@ -1293,6 +1293,9 @@ class SteamPresenceClient:
         clean_key = raw_key.strip()
         self._api_key = clean_key if STEAM_API_KEY_VALID_RE.fullmatch(clean_key) else ""
 
+    def __repr__(self) -> str:
+        return f"SteamPresenceClient(uses_web_api={self.uses_web_api})"
+
     @property
     def uses_web_api(self) -> bool:
         return bool(self._api_key)
@@ -1629,10 +1632,6 @@ class RelicActivityClient:
             "completion_time": ct,
             "mode": mode_lbl,
         }
-
-    def fetch_one_latest_match(self, profile_id: int) -> tuple[int, dict[str, Any] | None]:
-        pid, data = self._fetch_one_match_history_raw(profile_id)
-        return pid, self._parse_latest_match_for_pid(pid, data)
 
     def fetch_latest_matches_and_br_participants(
         self,
@@ -2624,7 +2623,7 @@ def _build_category_lists(
         )
         online_steam_list.sort(
             key=lambda x: (
-                1 if ((x["is_away"] or x["is_busy"]) and not str(x.get("other_game") or "").strip()) else 0,
+                1 if ((x.get("is_away") or x.get("is_snooze") or x.get("is_busy")) and not str(x.get("other_game") or "").strip()) else 0,
                 1 if x.get("prominence_tier") == "low" else 0,
                 _online_availability_rank(x),
                 PROMINENCE_TIER_ORDER.get(str(x.get("prominence_tier") or "medium"), 1),
@@ -2826,3 +2825,60 @@ def compute_lobby_state_digest(snapshot: dict[str, Any]) -> str:
     }
     oth_bucket = snapshot.get("outros_brasileiros") or {"in_coh3": [], "online_steam": [], "recent_relic": []}
     return repr((_category_digest(vet_bucket), _category_digest(oth_bucket)))
+
+
+def get_unique_veteranos_count() -> int:
+    """Retorna o total dinâmico de Veteranos únicos cadastrados em `CORE_BR_ROSTER`."""
+    return sum(1 for row in CORE_BR_ROSTER if not int(row.get("merged_into_profile_id", 0) or 0))
+
+
+def extract_snapshot_category(snapshot: dict[str, Any], key: str) -> dict[str, Any]:
+    """Extrai de forma padronizada o bucket `veteranos` ou `outros_brasileiros` de um snapshot do Radar."""
+    raw = snapshot.get(key)
+    if isinstance(raw, dict):
+        return {
+            "total_monitored": int(raw.get("total_monitored") or 0),
+            "checked_count": int(raw.get("checked_count") or 0),
+            "active_window_days": int(raw.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS),
+            "in_coh3": list(raw.get("in_coh3") or []),
+            "online_steam": list(raw.get("online_steam") or []),
+            "recent_relic": list(raw.get("recent_relic") or []),
+        }
+    if key == "veteranos":
+        vet_default = int(snapshot.get("total_monitored_unique") or get_unique_veteranos_count())
+        return {
+            "total_monitored": vet_default,
+            "checked_count": vet_default,
+            "active_window_days": 0,
+            "in_coh3": list(snapshot.get("in_coh3") or []),
+            "online_steam": list(snapshot.get("online_steam") or []),
+            "recent_relic": list(snapshot.get("recent_relic") or []),
+        }
+    return {
+        "total_monitored": 0,
+        "checked_count": 0,
+        "active_window_days": OTHER_BR_ACTIVE_COH3_DAYS,
+        "in_coh3": [],
+        "online_steam": [],
+        "recent_relic": [],
+    }
+
+
+def resolve_prominence_tier(pl: dict[str, Any], *, is_veteranos: bool, is_in_coh3: bool = False) -> str:
+    """Resolve o nível de evidência visual (`veterano`, `high`, `medium`, `low`) de um jogador no snapshot."""
+    if is_veteranos:
+        return "veterano"
+    raw = str(pl.get("prominence_tier") or "").strip().lower()
+    if raw in ("high", "medium", "low"):
+        return raw
+    elo = int(pl.get("max_elo", 0) or 0)
+    hrs = pl.get("last_coh3_age_hours")
+    if hrs is None and elo > 0:
+        hrs = 0
+    tier, _ = classify_other_br_prominence(
+        max_elo=elo,
+        coh3_age_hours=hrs,
+        total_matches=int(pl.get("total_matches", 0) or 0),
+        is_in_coh3=is_in_coh3,
+    )
+    return tier

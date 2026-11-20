@@ -79,26 +79,28 @@ jobs:
               python3 manage_roster.py validate
               ;;
             add-veterano)
-              ARGS=(add-veterano "${INPUT_TARGET}")
+              ARGS=(add-veterano)
               if [ -n "${INPUT_ALIAS}" ]; then ARGS+=(--alias "${INPUT_ALIAS}"); fi
               if [ -n "${INPUT_COUNTRY}" ]; then ARGS+=(--country "${INPUT_COUNTRY}"); fi
               if [ "${INPUT_EXCLUDE_RANKING}" = "true" ]; then ARGS+=(--exclude-from-ranking); fi
+              ARGS+=(-- "${INPUT_TARGET}")
               python3 manage_roster.py "${ARGS[@]}"
               ;;
             remove-veterano)
-              python3 manage_roster.py remove-veterano "${INPUT_TARGET}"
+              python3 manage_roster.py remove-veterano -- "${INPUT_TARGET}"
               ;;
             add-other-br)
-              ARGS=(add-other-br "${INPUT_TARGET}")
+              ARGS=(add-other-br)
               if [ -n "${INPUT_ALIAS}" ]; then ARGS+=(--alias "${INPUT_ALIAS}"); fi
               if [ -n "${INPUT_COUNTRY}" ]; then ARGS+=(--country "${INPUT_COUNTRY}"); fi
+              ARGS+=(-- "${INPUT_TARGET}")
               python3 manage_roster.py "${ARGS[@]}"
               ;;
             remove-other-br)
-              python3 manage_roster.py remove-other-br "${INPUT_TARGET}"
+              python3 manage_roster.py remove-other-br -- "${INPUT_TARGET}"
               ;;
             set-country)
-              python3 manage_roster.py set-country "${INPUT_TARGET}" "${INPUT_COUNTRY}"
+              python3 manage_roster.py set-country -- "${INPUT_TARGET}" "${INPUT_COUNTRY}"
               ;;
             *)
               echo "::error::Acao nao suportada: ${INPUT_ACTION}"
@@ -114,9 +116,14 @@ jobs:
           python3 manage_roster.py validate
           python3 -m unittest discover -s . -p "test_*.py" -v
 
-      - name: Persistir players_roster.json em main
+      - name: Auditoria anti-vazamento e persistencia de players_roster.json em main
         run: |
           set -euo pipefail
+          SECRET_PATTERN="(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+|STEAM_WEB_API_KEY=[A-Za-z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+          if git ls-files -z | xargs -0 grep -InE "${SECRET_PATTERN}" 2>/dev/null; then
+            echo "::error::Bloqueio de seguranca acionado: padrao de segredo/Webhook detectado em arquivo rastreado!"
+            exit 1
+          fi
           git add -- players_roster.json
           if git diff --cached --quiet; then
             echo "Nenhuma alteracao em players_roster.json."

@@ -2,18 +2,17 @@
 """
 Motor principal do projeto independente `nigosky/coh3-br-lobby-radar`.
 
-Opera 100% autônomo (repositório próprio, estado JSON leve, zero chave da Steam):
-1. Limpa automaticamente avisos curtos (`active_alerts`) com mais de `alert_cleanup_hours` (padrão 2h),
-   protegendo sempre as duas mensagens do Painel Vivo Fixo (`panel_message_ids`).
+Opera 100% autônomo (repositório próprio, estado JSON leve, Steam Web API com fallback XML público):
+1. Limpa automaticamente avisos curtos (`active_alerts`) expirados (> `alert_cleanup_hours`, padrão 2h) ou
+   duplicados, protegendo sempre as mensagens do Painel Vivo Fixo (`panel_message_ids`).
 2. Monitora duas categorias separadas no Radar de Lobby:
-   - **Veteranos (sempre acima)**: todas as 44 contas (43 jogadores únicos) monitoradas no tracker de partidas.
-   - **Outros Brasileiros (sempre abaixo)**: catálogo automático de todos os demais brasileiros com CoH3
-     (`br_community.json`, descobertos via COH3 Stats Open Data, Relic API América do Sul e participantes de partidas),
-     detectando quem está jogando CoH3, online na Steam ou invisível/Steam privada (ativo há pouco na Relic).
+   - **Veteranos (sempre acima)**: todas as contas da base compartilhada `players_roster.json` (sem filtro).
+   - **Outros Brasileiros (sempre abaixo)**: catálogo automático de brasileiros ativos no CoH3 (≤15 dias)
+     com vigília silenciosa de inativos (16–90 dias) em `br_community.json` para reativação automática.
 3. A cada ciclo de 5 minutos (com proteção anti-429 e limite de taxa):
-   - Gera nova imagem PNG grande (1100px) e publica DUAS mensagens distintas no Discord (`POST` da imagem dedicada +
-     `POST` das listas verticais de links da Steam), apagando em seguida as mensagens anteriores do painel (`DELETE`).
-4. Envia aviso curto com auto-limpeza quando `>= 2` Veteranos estão com o CoH3 aberto (cooldown de 60 min).
+   - Gera cards PNG horizontais grandes (1100px) e publica TRÊS mensagens distintas no Discord (Card Veteranos +
+     Card Outros Brasileiros + listas verticais de links da Steam), apagando em seguida as mensagens anteriores.
+4. Mantém no máximo 1 aviso curto vivo (atualizado via PATCH silencioso e removido ao encerrar movimento).
 """
 
 from __future__ import annotations
@@ -812,6 +811,12 @@ def run_lobby_radar_sync(
         skip_xml_enrich_sids=vet_skip_xml_sids,
     )
 
+    def _apply_cached_steam_game_details(pres: dict[str, Any], is_hidden: bool) -> None:
+        pres["has_public_game_details"] = not is_hidden
+        pres["has_coh3_in_recent_games"] = not is_hidden
+        pres["most_played_count"] = 0 if is_hidden else 3
+        pres["game_details_checked"] = True
+
     # Aplica cache 24h de privacidade de jogos e grava novas checagens XML dos Veteranos
     for sid, pres in vet_presence_map.items():
         if not isinstance(pres, dict) or not pres.get("ok") or not STEAM_ID64_VALID_RE.fullmatch(sid):
@@ -821,11 +826,7 @@ def run_lobby_radar_sync(
             if pres.get("game_details_checked") is False:
                 cached_gd = gd_cache.get(sid)
                 if cached_gd is not None:
-                    is_hidden = bool(cached_gd["hidden"])
-                    pres["has_public_game_details"] = not is_hidden
-                    pres["has_coh3_in_recent_games"] = not is_hidden
-                    pres["most_played_count"] = 0 if is_hidden else 3
-                    pres["game_details_checked"] = True
+                    _apply_cached_steam_game_details(pres, bool(cached_gd["hidden"]))
             elif not pres.get("is_in_coh3") and not str(pres.get("other_game") or "").strip():
                 is_hidden = not bool(pres.get("has_public_game_details", True))
                 prev_gd = gd_cache.get(sid)
@@ -1344,11 +1345,7 @@ def run_lobby_radar_sync(
             if pres.get("game_details_checked") is False:
                 gd_ts = int(row.get("steam_gd_checked_ts", 0) or 0)
                 if gd_ts > 0 and (now - gd_ts) <= STEAM_GD_CACHE_TTL_SEC and "steam_games_hidden" in row:
-                    is_hidden = bool(row.get("steam_games_hidden"))
-                    pres["has_public_game_details"] = not is_hidden
-                    pres["has_coh3_in_recent_games"] = not is_hidden
-                    pres["most_played_count"] = 0 if is_hidden else 3
-                    pres["game_details_checked"] = True
+                    _apply_cached_steam_game_details(pres, bool(row.get("steam_games_hidden")))
             elif not pres.get("is_in_coh3") and not str(pres.get("other_game") or "").strip():
                 is_hidden = not bool(pres.get("has_public_game_details", True))
                 prev_gd_ts = int(row.get("steam_gd_checked_ts", 0) or 0)
@@ -1405,7 +1402,7 @@ def run_lobby_radar_sync(
         if pres.get("is_in_coh3"):
             continue
         if pres.get("is_online_steam"):
-            if pres.get("other_game") or pres.get("is_away") or pres.get("is_busy"):
+            if pres.get("other_game") or pres.get("is_away") or pres.get("is_snooze") or pres.get("is_busy"):
                 continue
             if (
                 steam_presence_hides_coh3_game(
@@ -1459,11 +1456,7 @@ def run_lobby_radar_sync(
                         if dpres.get("game_details_checked") is False:
                             gd_ts = int(drow.get("steam_gd_checked_ts", 0) or 0)
                             if gd_ts > 0 and (now - gd_ts) <= STEAM_GD_CACHE_TTL_SEC and "steam_games_hidden" in drow:
-                                is_hidden = bool(drow.get("steam_games_hidden"))
-                                dpres["has_public_game_details"] = not is_hidden
-                                dpres["has_coh3_in_recent_games"] = not is_hidden
-                                dpres["most_played_count"] = 0 if is_hidden else 3
-                                dpres["game_details_checked"] = True
+                                _apply_cached_steam_game_details(dpres, bool(drow.get("steam_games_hidden")))
                     prev_ig_webapi = int(drow.get("last_seen_ingame_webapi_ts", 0) or 0)
                     if dsid and prev_ig_webapi > 0 and (now - prev_ig_webapi) <= STEAM_INGAME_VISIBLE_TTL_SEC:
                         known_ingame_visible_webapi_sids.add(dsid)

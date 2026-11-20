@@ -11,7 +11,7 @@ from typing import Any
 
 from PIL import Image
 
-from card_renderer import SteamAvatarProvider, render_lobby_radar_card_png, render_lobby_radar_cards_png
+from card_renderer import SteamAvatarProvider, render_lobby_radar_cards_png
 from discord_lobby import (
     DiscordLobbyWebhookClient,
     build_lobby_radar_image_payload,
@@ -309,18 +309,20 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
 
     def test_large_card_renders_at_1100px_width_for_normal_and_max_capacity(self) -> None:
         snap = self._sample_snapshot()
-        png = render_lobby_radar_card_png(snap, SteamAvatarProvider(allow_network=False))
-        self.assertTrue(png.startswith(b"\x89PNG\r\n\x1a\n"))
-        with Image.open(io.BytesIO(png)) as im:
-            self.assertEqual(im.width, 1100)
-            self.assertGreater(im.height, 600)
-            self.assertLess(im.width * im.height, Image.MAX_IMAGE_PIXELS)
+        vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for card_bytes in (vet_png, oth_png):
+            self.assertTrue(card_bytes.startswith(b"\x89PNG\r\n\x1a\n"))
+            with Image.open(io.BytesIO(card_bytes)) as cim:
+                self.assertEqual(cim.width, 1100)
+                # Proporção horizontal (altura bem abaixo da largura) para atingir ~550px de largura real no Discord!
+                self.assertLessEqual(cim.height, 760)
+                self.assertLess(cim.width * cim.height, Image.MAX_IMAGE_PIXELS)
 
         # Teste extremo (todos os limites saturados simultaneamente): nunca pode ultrapassar Image.MAX_IMAGE_PIXELS!
         heavy = {
             "timestamp": 1_800_000_000,
             "veteranos": {
-                "total_monitored": 43,
+                "total_monitored": 44,
                 "in_coh3": [{"alias": f"VetC{i}", "max_elo": 1500, "status_note": "No CoH3"} for i in range(25)],
                 "online_steam": [{"alias": f"VetO{i}", "max_elo": 1400, "other_game": "", "is_away": False} for i in range(30)],
                 "recent_relic": [{"alias": f"VetR{i}", "max_elo": 1300, "status_note": "Há 10 min"} for i in range(15)],
@@ -332,20 +334,6 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                 "recent_relic": [{"alias": f"OthR{i}", "max_elo": 1250, "status_note": "Há 12 min"} for i in range(15)],
             },
         }
-        heavy_png = render_lobby_radar_card_png(heavy, SteamAvatarProvider(allow_network=False))
-        with Image.open(io.BytesIO(heavy_png)) as him:
-            self.assertEqual(him.width, 1100)
-            self.assertLess(him.width * him.height, Image.MAX_IMAGE_PIXELS)
-
-        vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
-        for card_bytes in (vet_png, oth_png):
-            self.assertTrue(card_bytes.startswith(b"\x89PNG\r\n\x1a\n"))
-            with Image.open(io.BytesIO(card_bytes)) as cim:
-                self.assertEqual(cim.width, 1100)
-                # Proporção horizontal (altura bem abaixo da largura) para atingir ~550px de largura real no Discord!
-                self.assertLessEqual(cim.height, 760)
-                self.assertLess(cim.width * cim.height, Image.MAX_IMAGE_PIXELS)
-
         heavy_vet, heavy_oth = render_lobby_radar_cards_png(heavy, SteamAvatarProvider(allow_network=False))
         for hbytes in (heavy_vet, heavy_oth):
             with Image.open(io.BytesIO(hbytes)) as him:
@@ -614,10 +602,11 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         )
         self.assertLess(total_chars, 5900)
 
-        png = render_lobby_radar_card_png(snap, SteamAvatarProvider(allow_network=False))
-        with Image.open(io.BytesIO(png)) as im:
-            self.assertEqual(im.width, 1100)
-            self.assertLess(im.width * im.height, Image.MAX_IMAGE_PIXELS)
+        vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for png in (vet_png, oth_png):
+            with Image.open(io.BytesIO(png)) as im:
+                self.assertEqual(im.width, 1100)
+                self.assertLess(im.width * im.height, Image.MAX_IMAGE_PIXELS)
 
     def test_sync_promotes_online_hidden_game_details_for_veterano_and_outro_br_and_flags_privacy(self) -> None:
         now = 1_800_000_000
