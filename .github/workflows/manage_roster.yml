@@ -1,0 +1,135 @@
+name: CoH3 Brasil — Gerenciar Base Compartilhada de Jogadores
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Ação na base única (reflete no Radar, Scheduler, Tracker e Ranking)"
+        required: true
+        type: choice
+        options:
+          - add-veterano
+          - remove-veterano
+          - set-country
+          - add-other-br
+          - remove-other-br
+          - validate
+      target:
+        description: "SteamID64, profile_id ou link do coh3stats.com (deixe vazio apenas para validate)"
+        required: false
+        default: ""
+        type: string
+      alias:
+        description: "Apelido preferencial opcional (apenas para add-veterano / add-other-br)"
+        required: false
+        default: ""
+        type: string
+      country:
+        description: "Bandeira ISO-2 opcional (ex.: br, us, pt, ca — obrigatório para set-country)"
+        required: false
+        default: ""
+        type: string
+      exclude_from_ranking:
+        description: "Excluir este jogador do Ranking Unificado? (somente add-veterano)"
+        required: false
+        default: false
+        type: boolean
+
+permissions: {}
+
+concurrency:
+  group: coh3-br-lobby-radar-state
+  cancel-in-progress: false
+
+jobs:
+  manage-shared-roster:
+    if: github.repository == 'nigosky/coh3-br-lobby-radar' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout seguro (SHA imutavel)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Garantir renderizador grafico (apt oficial assinado GPG, zero pip)
+        run: |
+          set -euo pipefail
+          if ! python3 -c "from PIL import Image" >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends python3-pil fonts-dejavu-core
+          fi
+
+      - name: Aplicar alteracao segura em players_roster.json
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+          INPUT_ACTION: ${{ inputs.action }}
+          INPUT_TARGET: ${{ inputs.target }}
+          INPUT_ALIAS: ${{ inputs.alias }}
+          INPUT_COUNTRY: ${{ inputs.country }}
+          INPUT_EXCLUDE_RANKING: ${{ inputs.exclude_from_ranking }}
+        run: |
+          set -euo pipefail
+          case "${INPUT_ACTION}" in
+            validate)
+              python3 manage_roster.py validate
+              ;;
+            add-veterano)
+              ARGS=(add-veterano "${INPUT_TARGET}")
+              if [ -n "${INPUT_ALIAS}" ]; then ARGS+=(--alias "${INPUT_ALIAS}"); fi
+              if [ -n "${INPUT_COUNTRY}" ]; then ARGS+=(--country "${INPUT_COUNTRY}"); fi
+              if [ "${INPUT_EXCLUDE_RANKING}" = "true" ]; then ARGS+=(--exclude-from-ranking); fi
+              python3 manage_roster.py "${ARGS[@]}"
+              ;;
+            remove-veterano)
+              python3 manage_roster.py remove-veterano "${INPUT_TARGET}"
+              ;;
+            add-other-br)
+              ARGS=(add-other-br "${INPUT_TARGET}")
+              if [ -n "${INPUT_ALIAS}" ]; then ARGS+=(--alias "${INPUT_ALIAS}"); fi
+              if [ -n "${INPUT_COUNTRY}" ]; then ARGS+=(--country "${INPUT_COUNTRY}"); fi
+              python3 manage_roster.py "${ARGS[@]}"
+              ;;
+            remove-other-br)
+              python3 manage_roster.py remove-other-br "${INPUT_TARGET}"
+              ;;
+            set-country)
+              python3 manage_roster.py set-country "${INPUT_TARGET}" "${INPUT_COUNTRY}"
+              ;;
+            *)
+              echo "::error::Acao nao suportada: ${INPUT_ACTION}"
+              exit 1
+              ;;
+          esac
+
+      - name: Validar integridade e suite completa de testes
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -euo pipefail
+          python3 manage_roster.py validate
+          python3 -m unittest discover -s . -p "test_*.py" -v
+
+      - name: Persistir players_roster.json em main
+        run: |
+          set -euo pipefail
+          git add -- players_roster.json
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteracao em players_roster.json."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore(roster): atualizar base compartilhada de jogadores"
+            for attempt in 1 2 3; do
+              if git push origin "HEAD:main"; then
+                echo "players_roster.json publicado com sucesso em main!"
+                break
+              fi
+              git pull --rebase origin main || true
+              sleep 2
+            done
+          fi

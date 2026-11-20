@@ -27,6 +27,7 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 from security import (
@@ -109,8 +110,11 @@ FALLBACK_MATCH_TYPES: dict[int, str] = {
     23: "4v4",
 }
 
-# Elenco dos 43 jogadores brasileiros únicos (44 contas vinculadas) monitorados no tracker de partidas ("Veteranos")
-CORE_BR_ROSTER: list[dict[str, Any]] = [
+PLAYERS_ROSTER_PATH = Path(__file__).resolve().parent / "players_roster.json"
+_VALID_FLAG_COUNTRY_RE = re.compile(r"^[a-z]{2}$")
+
+# Fallback embutido caso players_roster.json esteja ausente (45 contas Steam / 44 Veteranos únicos, incluindo Kefbr)
+_FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 79327, "steam_id": "76561197963172584", "original_alias": "Chacineiro"},
     {"profile_id": 991764, "steam_id": "76561198115923932", "original_alias": "SaNgar [BR]"},
     {"profile_id": 1088455, "steam_id": "76561198108568598", "original_alias": "luiz_fmh"},
@@ -132,7 +136,7 @@ CORE_BR_ROSTER: list[dict[str, Any]] = [
         "known_aliases": ["Minhoca de ferro!", "Minhoca de ferro", "Alekel"],
     },
     {"profile_id": 1114404, "steam_id": "76561198024118058", "original_alias": "Vikitor"},
-    {"profile_id": 366826, "steam_id": "76561198014985380", "original_alias": "Lem22", "flag_country": "us"},
+    {"profile_id": 366826, "steam_id": "76561198014985380", "original_alias": "Lem22", "country": "us", "flag_country": "us"},
     {"profile_id": 1282592, "steam_id": "76561198028644178", "original_alias": "SapoBoi_BR"},
     {"profile_id": 639157, "steam_id": "76561197979883434", "original_alias": "Itaperuna"},
     {"profile_id": 110078, "steam_id": "76561198024839791", "original_alias": "Bineto"},
@@ -156,27 +160,33 @@ CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 3895, "steam_id": "76561198054318813", "original_alias": "Liquid"},
     {"profile_id": 1005730, "steam_id": "76561199791811246", "original_alias": "arc"},
     {"profile_id": 31145, "steam_id": "76561197985268629", "original_alias": "vonMises"},
-    # Veteranos adicionais monitorados no tracker de partidas (SteamID64 resolvido automaticamente via Relic API)
-    {"profile_id": 58737, "steam_id": "", "original_alias": "INFIEL"},
-    {"profile_id": 431802, "steam_id": "", "original_alias": "Conflict.BR"},
-    {"profile_id": 59864, "steam_id": "", "original_alias": "Lion Heart"},
-    {"profile_id": 84821, "steam_id": "", "original_alias": "TJBR"},
-    {"profile_id": 99722, "steam_id": "", "original_alias": "MonteiroBR"},
-    {"profile_id": 31061, "steam_id": "", "original_alias": "ACB"},
-    {"profile_id": 81751, "steam_id": "", "original_alias": "Razi"},
-    {"profile_id": 28937, "steam_id": "", "original_alias": "Mjr Bruno"},
-    {"profile_id": 737235, "steam_id": "", "original_alias": "meuqsaco"},
-    {"profile_id": 23250, "steam_id": "", "original_alias": "Nargoth"},
-    {"profile_id": 1097608, "steam_id": "", "original_alias": "Winter Animal"},
+    {"profile_id": 58737, "steam_id": "76561197993922195", "original_alias": "INFIEL"},
+    {"profile_id": 431802, "steam_id": "76561198000099422", "original_alias": "Conflict.BR"},
+    {"profile_id": 59864, "steam_id": "76561198123446420", "original_alias": "Lion Heart"},
+    {"profile_id": 84821, "steam_id": "76561198076576055", "original_alias": "TJBR"},
+    {"profile_id": 99722, "steam_id": "76561198021071716", "original_alias": "MonteiroBR"},
+    {"profile_id": 31061, "steam_id": "76561198009056438", "original_alias": "ACB"},
+    {"profile_id": 81751, "steam_id": "76561198080023560", "original_alias": "Razi"},
+    {"profile_id": 28937, "steam_id": "76561198089948995", "original_alias": "Mjr Bruno"},
+    {"profile_id": 737235, "steam_id": "76561198026394732", "original_alias": "meuqsaco"},
+    {
+        "profile_id": 23250,
+        "steam_id": "76561198028378060",
+        "original_alias": "Nargoth",
+        "known_aliases": ["Nargoth de Bebbanburg", "Nargoth"],
+    },
+    {
+        "profile_id": 1097608,
+        "steam_id": "76561199498421192",
+        "original_alias": "Winter Animal",
+        "known_aliases": ["Superior Culture", "Winter Animal"],
+    },
+    {"profile_id": 975688, "steam_id": "76561197994245218", "original_alias": "Kefbr"},
 ]
 
-# Brasileiros confirmados residentes no exterior (EUA/Europa/bandeira diferente na Steam/Relic)
-# monitorados permanentemente na categoria "Outros Brasileiros" (SteamID64, ELO e atividade resolvidos via Relic API)
-MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
-    {"profile_id": 33487, "steam_id": "", "original_alias": "Generick", "flag_country": "us"},
+_FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
+    {"profile_id": 33487, "steam_id": "76561197995712470", "original_alias": "Generick", "country": "us", "flag_country": "us"},
 ]
-
-_VALID_FLAG_COUNTRY_RE = re.compile(r"^[a-z]{2}$")
 
 
 def normalize_flag_country(value: Any, *, default: str = "") -> str:
@@ -191,6 +201,93 @@ def normalize_flag_country(value: Any, *, default: str = "") -> str:
     return default
 
 
+def _normalize_shared_roster_entry(raw: Any, *, default_in_ranking: bool = True) -> dict[str, Any] | None:
+    if not isinstance(raw, dict):
+        return None
+    try:
+        pid = int(raw.get("profile_id", 0) or 0)
+    except (TypeError, ValueError):
+        return None
+    if pid <= 0:
+        return None
+    sid_raw = str(raw.get("steam_id") or "").replace("/steam/", "").strip()
+    sid = sid_raw if STEAM_ID64_VALID_RE.fullmatch(sid_raw) else ""
+    alias = strip_unsafe_chars(raw.get("original_alias") or raw.get("alias") or "")[:40] or f"Jogador {pid}"
+    country = normalize_flag_country(raw.get("flag_country") or raw.get("country"))
+    entry: dict[str, Any] = {
+        "profile_id": pid,
+        "steam_id": sid,
+        "original_alias": alias,
+    }
+    if country and country != "br":
+        entry["country"] = country
+        entry["flag_country"] = country
+    if "in_ranking" in raw:
+        entry["in_ranking"] = bool(raw.get("in_ranking"))
+    elif default_in_ranking:
+        entry["in_ranking"] = True
+    known = [strip_unsafe_chars(k)[:40] for k in (raw.get("known_aliases") or []) if strip_unsafe_chars(k)]
+    if known:
+        entry["known_aliases"] = known
+    try:
+        mpid = int(raw.get("merged_into_profile_id", 0) or 0)
+    except (TypeError, ValueError):
+        mpid = 0
+    if mpid > 0 and mpid != pid:
+        entry["merged_into_profile_id"] = mpid
+        msid = str(raw.get("merged_into_steam_id") or "").replace("/steam/", "").strip()
+        if STEAM_ID64_VALID_RE.fullmatch(msid):
+            entry["merged_into_steam_id"] = msid
+    return entry
+
+
+def load_shared_players_roster(
+    roster_path: Path = PLAYERS_ROSTER_PATH,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """
+    Carrega a base canônica compartilhada (`players_roster.json`) entre Radar, Scheduler, Tracker e Ranking.
+    Retorna `(veteranos, manual_other_br)`, fazendo fallback seguro em caso de ausência/erro de leitura.
+    """
+    try:
+        if roster_path.is_file() and not roster_path.is_symlink() and roster_path.stat().st_size <= 262_144:
+            parsed = json.loads(roster_path.read_text(encoding="utf-8"))
+            if isinstance(parsed, dict) and isinstance(parsed.get("veteranos"), list):
+                vets: list[dict[str, Any]] = []
+                seen_pids: set[int] = set()
+                for row in parsed["veteranos"]:
+                    norm = _normalize_shared_roster_entry(row, default_in_ranking=True)
+                    if norm and norm["profile_id"] not in seen_pids:
+                        seen_pids.add(norm["profile_id"])
+                        vets.append(norm)
+                others: list[dict[str, Any]] = []
+                for row in (parsed.get("manual_other_br") or []):
+                    norm = _normalize_shared_roster_entry(row, default_in_ranking=False)
+                    if norm and norm["profile_id"] not in seen_pids:
+                        seen_pids.add(norm["profile_id"])
+                        others.append(norm)
+                if vets:
+                    return vets, others
+    except Exception as exc:
+        logger.warning("Falha ao carregar %s; usando fallback embutido: %s", roster_path.name, redact_secrets(exc))
+    return [dict(r) for r in _FALLBACK_CORE_BR_ROSTER], [dict(r) for r in _FALLBACK_MANUAL_OTHER_BR_PLAYERS]
+
+
+# Elenco compartilhado carregado de `players_roster.json` (Veteranos + Brasileiros manuais no exterior)
+CORE_BR_ROSTER: list[dict[str, Any]] = []
+MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = []
+
+
+def reload_shared_players_roster(roster_path: Path = PLAYERS_ROSTER_PATH) -> tuple[int, int]:
+    """Recarrega `CORE_BR_ROSTER` e `MANUAL_OTHER_BR_PLAYERS` in-place a partir de `players_roster.json`."""
+    vets, others = load_shared_players_roster(roster_path)
+    CORE_BR_ROSTER[:] = vets
+    MANUAL_OTHER_BR_PLAYERS[:] = others
+    return len(vets), len(others)
+
+
+reload_shared_players_roster()
+
+
 def get_configured_flag_country(profile_id: int) -> str:
     """Retorna a bandeira explícita configurada em CORE_BR_ROSTER/MANUAL_OTHER_BR_PLAYERS (ex.: 'us' para Lem22 e Generick)."""
     pid = int(profile_id or 0)
@@ -199,7 +296,7 @@ def get_configured_flag_country(profile_id: int) -> str:
     for roster in (CORE_BR_ROSTER, MANUAL_OTHER_BR_PLAYERS):
         for row in roster:
             if int(row.get("profile_id", 0) or 0) == pid:
-                return normalize_flag_country(row.get("flag_country"))
+                return normalize_flag_country(row.get("flag_country") or row.get("country"))
     return ""
 
 _HTML_TAG_STRIP_RE = re.compile(r"<[^>]+>")
