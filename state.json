@@ -49,23 +49,23 @@
   "elo_cache_ts": 1795169015,
   "last_alert_coh3_pids": [],
   "last_alert_ts": 1795146384,
-  "last_digest": "(([], [(32922, '', False), (153969, '', False), (19747, '', False), (1097608, '', False), (58737, 'The King is Watching', False)], [509690]), ([(17906, False)], [(206875, '', False), (8764, '', False), (464954, '', False), (1218872, '', False), (970468, '', False), (131786, '', False), (1346169, '', False), (660389, '', False), (115658, '', False), (1213751, '', False), (128231, '', False), (990226, '', False), (1295461, '', False), (1246988, '', False), (742572, 'eFootball™', False), (137848, 'Divinity: Original Sin 2', False), (1086495, 'Dota 2', False), (96038, '', False), (64100, '', False), (1180172, '', False), (1219258, '', False), (1247254, '', False), (944737, '', False), (1290028, '', False), (31504, '', False), (929569, '', False), (1060169, '', False), (1373102, '', False), (1153245, '', False), (1428997, '', False), (741277, '', False), (1476268, '', False), (1352185, '', False), (23369, '', False), (1478181, '', False), (1326703, '', False), (1481993, '', False), (1476126, '', False), (653919, '', False), (1442048, '', False), (1305193, '', False), (1448957, '', False), (1478243, '', False), (1477361, '', False), (1302538, '', False), (692092, '', False), (1186182, '', False), (31992, '', False), (1476048, '', False), (1080320, '', False), (1286453, '', False), (1468010, '', False), (1429654, '', False), (1463821, '', False), (1229124, '', False), (1466838, '', False), (1461583, '', False), (23221, '', False), (1451832, '', False), (1022387, '', False), (1475303, '', False), (1029401, '', False), (1441231, '', False), (1474035, '', False), (1472632, '', False), (28119, '', False), (1117558, '', False), (1454276, '', False), (1448005, '', False), (1449348, '', False), (1413456, '', False), (1178281, '', False), (739625, '', False), (1442984, '', False), (1428172, '', False), (466594, '', False), (802058, 'DayZ', False), (958542, 'Manor Lords', False), (790339, 'DayZ', False), (1135750, 'eFootball™', False), (112224, 'Where Winds Meet', False), (1450538, 'Age of Wonders 4', False)], [357310]))",
+  "last_digest": "(([], [(32922, '', False), (153969, '', False), (19747, '', False), (1097608, '', False), (58737, 'The King is Watching', False)], [509690]), ([(17906, False), (929569, True)], [(206875, '', False), (8764, '', False), (464954, '', False), (1218872, '', False), (970468, '', False), (131786, '', False), (1346169, '', False), (660389, '', False), (115658, '', False), (1213751, '', False), (128231, '', False), (990226, '', False), (1295461, '', False), (1246988, '', False), (742572, 'eFootball™', False), (137848, 'Divinity: Original Sin 2', False), (1086495, 'Dota 2', False), (96038, '', False), (64100, '', False), (1180172, '', False), (1219258, '', False), (1247254, '', False), (944737, '', False), (1290028, '', False), (31504, '', False), (1060169, '', False), (1373102, '', False), (1153245, '', False), (741277, '', False), (1428997, '', False), (1476268, '', False), (1352185, '', False), (23369, '', False), (1478181, '', False), (1326703, '', False), (1481993, '', False), (1476126, '', False), (653919, '', False), (1442048, '', False), (1305193, '', False), (1448957, '', False), (1478243, '', False), (1477361, '', False), (1302538, '', False), (692092, '', False), (1186182, '', False), (31992, '', False), (1476048, '', False), (1080320, '', False), (1286453, '', False), (1468010, '', False), (1429654, '', False), (1463821, '', False), (1229124, '', False), (1466838, '', False), (1461583, '', False), (23221, '', False), (1451832, '', False), (1022387, '', False), (658891, '', False), (1475303, '', False), (1029401, '', False), (1441231, '', False), (1474035, '', False), (1472632, '', False), (28119, '', False), (1117558, '', False), (1454276, '', False), (1448005, '', False), (1449348, '', False), (1413456, '', False), (1178281, '', False), (739625, '', False), (1442984, '', False), (1428172, '', False), (466594, '', False), (802058, 'DayZ', False), (958542, 'Manor Lords', False), (790339, 'DayZ', False), (1135750, 'eFootball™', False), (112224, 'Where Winds Meet', False), (1450538, 'Age of Wonders 4', False)], [357310]))",
   "last_steam_fast_sig": "([], [('76561197986271242', '', False), ('76561197993922195', 'The King is Watching', False), ('76561198005412401', '', False), ('76561198058548575', '', False), ('76561199498421192', '', False)])",
-  "last_sync_ts": 1795170295,
+  "last_sync_ts": 1795170594,
   "layout_version": 5,
   "manual_other_br_checked_pids": [
     33487
   ],
   "manual_other_br_checked_ts": 1795164742,
-  "other_br_rotation_offset": 600,
-  "panel_links_message_id": "1573283154515595388",
-  "panel_message_id": "1573283149654270014",
+  "other_br_rotation_offset": 664,
+  "panel_links_message_id": "1573284411334467637",
+  "panel_message_id": "1573284405844381780",
   "panel_message_ids": [
-    "1573283149654270014",
-    "1573283152669970523",
-    "1573283154515595388"
+    "1573284405844381780",
+    "1573284408717217869",
+    "1573284411334467637"
   ],
-  "panel_outros_message_id": "1573283152669970523",
+  "panel_outros_message_id": "1573284408717217869",
   "steam_ingame_visible_ts": {
     "76561197963172584": 1795116755,
     "76561197981615184": 1795116755,

@@ -4484,7 +4484,7 @@
       "alias": "Falcon_BR",
       "br_source": "open_data_matches",
       "last_match_date": 1794601927,
-      "last_seen_ingame_ts": 1795148783,
+      "last_seen_ingame_ts": 1795170594,
       "last_seen_online_ts": 1795170295,
       "max_elo": 950,
       "profile_id": 1450538,
@@ -7068,7 +7068,7 @@
       "alias": "Fioti",
       "br_source": "open_data_lb",
       "last_match_date": 1794878813,
-      "last_seen_online_ts": 1795168715,
+      "last_seen_online_ts": 1795170594,
       "max_elo": 1028,
       "profile_id": 31504,
       "steam_id": "76561198095301909",
@@ -7269,12 +7269,12 @@
     "357310": {
       "alias": "Sleeping Sheep",
       "br_source": "open_data_lb",
-      "last_match_date": 1795169934,
+      "last_match_date": 1795170471,
       "last_seen_online_ts": 0,
       "max_elo": 1531,
       "profile_id": 357310,
       "steam_id": "76561197994129168",
-      "total_matches": 5329
+      "total_matches": 5330
     },
     "35925": {
       "alias": "GUIA",
@@ -8076,7 +8076,7 @@
       "alias": "Foco.SKINS",
       "br_source": "open_data_matches",
       "last_match_date": 1794094181,
-      "last_seen_online_ts": 1795119280,
+      "last_seen_online_ts": 1795170594,
       "max_elo": 1000,
       "profile_id": 658891,
       "steam_id": "76561199021796941",
@@ -9837,12 +9837,12 @@
     "929569": {
       "alias": "theleet",
       "br_source": "open_data_lb",
-      "last_match_date": 1795046403,
+      "last_match_date": 1795170552,
       "last_seen_online_ts": 1795169015,
       "max_elo": 1000,
       "profile_id": 929569,
       "steam_id": "76561197962733680",
-      "total_matches": 136
+      "total_matches": 137
     },
     "936632": {
       "alias": "1VARGAS",
