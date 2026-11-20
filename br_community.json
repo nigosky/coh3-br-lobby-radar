@@ -229,7 +229,7 @@
       "alias": "Tristeza marota",
       "br_source": "open_data_matches",
       "last_match_date": 1794758865,
-      "last_seen_online_ts": 1795162871,
+      "last_seen_online_ts": 1795164742,
       "max_elo": 954,
       "profile_id": 1029401,
       "steam_id": "76561198122242920",
@@ -472,7 +472,7 @@
     "1067293": {
       "alias": "ISYPatch",
       "br_source": "open_data_lb",
-      "last_match_date": 1795057533,
+      "last_match_date": 1795151827,
       "last_seen_online_ts": 0,
       "max_elo": 1000,
       "profile_id": 1067293,
@@ -759,12 +759,12 @@
     "1117144": {
       "alias": "Moondog",
       "br_source": "open_data_lb",
-      "last_match_date": 1795048951,
+      "last_match_date": 1795158637,
       "last_seen_online_ts": 0,
       "max_elo": 1000,
       "profile_id": 1117144,
       "steam_id": "76561198010016139",
-      "total_matches": 123
+      "total_matches": 127
     },
     "1117558": {
       "alias": "PaPaJon",
@@ -910,6 +910,16 @@
       "steam_id": "76561198114351417",
       "total_matches": 891
     },
+    "1142621": {
+      "alias": "Nocturne",
+      "br_source": "relic_sa_lb",
+      "last_match_date": 1795164748,
+      "last_seen_online_ts": 1795164742,
+      "max_elo": 1558,
+      "profile_id": 1142621,
+      "steam_id": "76561199152224993",
+      "total_matches": 402
+    },
     "1144332": {
       "alias": "aManfrs",
       "br_source": "open_data_matches",
@@ -964,7 +974,7 @@
       "alias": "StormArrives",
       "br_source": "open_data_matches",
       "last_match_date": 1794144947,
-      "last_seen_online_ts": 1795162871,
+      "last_seen_online_ts": 1795164742,
       "max_elo": 1084,
       "profile_id": 1153245,
       "steam_id": "76561198203916097",
@@ -1594,7 +1604,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795133879,
       "last_seen_ingame_ts": 1795133357,
-      "last_seen_online_ts": 1795162871,
+      "last_seen_online_ts": 1795164742,
       "max_elo": 1175,
       "profile_id": 1218872,
       "steam_id": "76561198262550192",
@@ -2005,7 +2015,7 @@
     "1260191": {
       "alias": "oliveiraalvesadm",
       "br_source": "open_data_lb",
-      "last_match_date": 1795045878,
+      "last_match_date": 1795137115,
       "last_seen_online_ts": 0,
       "max_elo": 1000,
       "profile_id": 1260191,
@@ -2239,7 +2249,7 @@
     "1286585": {
       "alias": "rossoceza",
       "br_source": "open_data_lb",
-      "last_match_date": 1794869870,
+      "last_match_date": 1795131168,
       "last_seen_online_ts": 0,
       "max_elo": 670,
       "profile_id": 1286585,
@@ -5474,7 +5484,7 @@
       "alias": "bmbreno67",
       "br_source": "open_data_matches",
       "last_match_date": 1794752531,
-      "last_seen_online_ts": 1795162871,
+      "last_seen_online_ts": 1795164742,
       "max_elo": 950,
       "profile_id": 1472632,
       "steam_id": "76561198742610014",
@@ -6289,7 +6299,7 @@
     "17906": {
       "alias": "Leo",
       "br_source": "open_data_lb",
-      "last_match_date": 1795086923,
+      "last_match_date": 1795163071,
       "last_seen_ingame_ts": 1795152161,
       "last_seen_online_ts": 1795164442,
       "max_elo": 1238,
@@ -6591,7 +6601,7 @@
     "228926": {
       "alias": "Pablofrf",
       "br_source": "open_data_lb",
-      "last_match_date": 1795050743,
+      "last_match_date": 1795141152,
       "last_seen_online_ts": 0,
       "max_elo": 1000,
       "profile_id": 228926,
@@ -9866,7 +9876,7 @@
     "942928": {
       "alias": "Niott",
       "br_source": "open_data_lb",
-      "last_match_date": 1794080595,
+      "last_match_date": 1795138127,
       "last_seen_online_ts": 0,
       "max_elo": 1100,
       "profile_id": 942928,
@@ -10355,6 +10365,6 @@
     }
   },
   "schema_version": 3,
-  "source": "open_data_lb+open_data_matches+relic_sa+manual_other_br",
-  "updated_at": 1795121497
+  "source": "open_data+relic_sa",
+  "updated_at": 1795164742
 }
