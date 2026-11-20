@@ -823,7 +823,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795034644,
       "last_seen_ingame_ts": 1795134258,
-      "last_seen_online_ts": 1795163241,
+      "last_seen_online_ts": 1795179436,
       "max_elo": 1049,
       "profile_id": 1123905,
       "steam_id": "76561198020133377",
@@ -1962,13 +1962,13 @@
     "1254791": {
       "alias": "NetoBR20",
       "br_source": "open_data_lb",
-      "last_match_date": 1795131005,
+      "last_match_date": 1795176703,
       "last_seen_ingame_ts": 1795175768,
       "last_seen_online_ts": 1795177637,
       "max_elo": 1048,
       "profile_id": 1254791,
       "steam_id": "76561198155408304",
-      "total_matches": 38
+      "total_matches": 41
     },
     "125626": {
       "alias": "Zurkov",
@@ -2160,7 +2160,7 @@
       "alias": "Dr Christian Troy",
       "br_source": "open_data_matches",
       "last_match_date": 1794871710,
-      "last_seen_online_ts": 1795175768,
+      "last_seen_online_ts": 1795179436,
       "max_elo": 1000,
       "profile_id": 1282829,
       "steam_id": "76561198174921845",
@@ -3448,8 +3448,8 @@
       "alias": "Maciota",
       "br_source": "open_data_matches",
       "last_match_date": 1795142555,
-      "last_seen_ingame_ts": 1795132394,
-      "last_seen_online_ts": 1795146384,
+      "last_seen_ingame_ts": 1795179436,
+      "last_seen_online_ts": 1795179436,
       "max_elo": 1097,
       "profile_id": 1428123,
       "steam_id": "76561198077286828",
@@ -9522,12 +9522,12 @@
     "895162": {
       "alias": "sua_mãe",
       "br_source": "open_data_matches",
-      "last_match_date": 1795176266,
+      "last_match_date": 1795179219,
       "last_seen_online_ts": 1795179136,
       "max_elo": 1042,
       "profile_id": 895162,
       "steam_id": "76561198088016556",
-      "total_matches": 245
+      "total_matches": 246
     },
     "895171": {
       "alias": "Pontes",
@@ -10356,12 +10356,12 @@
     "998836": {
       "alias": "SAMBANDIDO",
       "br_source": "open_data_lb",
-      "last_match_date": 1795178134,
+      "last_match_date": 1795179278,
       "last_seen_online_ts": 1795178837,
       "max_elo": 1000,
       "profile_id": 998836,
       "steam_id": "76561198160207277",
-      "total_matches": 624
+      "total_matches": 625
     },
     "998942": {
       "alias": "Roberto-WAR-BR",
