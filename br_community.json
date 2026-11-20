@@ -351,12 +351,12 @@
     "105384": {
       "alias": "gabrielprado921",
       "br_source": "open_data_lb",
-      "last_match_date": 1795185984,
+      "last_match_date": 1795187616,
       "last_seen_online_ts": 1795186790,
       "max_elo": 1072,
       "profile_id": 105384,
       "steam_id": "76561198961247689",
-      "total_matches": 518
+      "total_matches": 519
     },
     "1056763": {
       "alias": "FeralZ",
@@ -703,12 +703,12 @@
     "1104858": {
       "alias": "RGSO",
       "br_source": "open_data_matches",
-      "last_match_date": 1795184879,
+      "last_match_date": 1795187751,
       "last_seen_online_ts": 0,
       "max_elo": 1000,
       "profile_id": 1104858,
       "steam_id": "76561198330141326",
-      "total_matches": 1006
+      "total_matches": 1007
     },
     "1107913": {
       "alias": "LordClaus",
@@ -3353,12 +3353,12 @@
     "1422841": {
       "alias": "josenetoferrer2020",
       "br_source": "open_data_lb",
-      "last_match_date": 1795186303,
+      "last_match_date": 1795187744,
       "last_seen_online_ts": 1795186790,
       "max_elo": 1173,
       "profile_id": 1422841,
       "steam_id": "76561198618672224",
-      "total_matches": 52
+      "total_matches": 53
     },
     "1423426": {
       "alias": "geladeira velha",
@@ -4273,7 +4273,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794843213,
       "last_seen_ingame_ts": 1795135157,
-      "last_seen_online_ts": 1795185890,
+      "last_seen_online_ts": 1795187755,
       "max_elo": 1051,
       "profile_id": 1442048,
       "steam_id": "76561198078061644",
@@ -7086,7 +7086,7 @@
       "alias": "Fioti",
       "br_source": "open_data_lb",
       "last_match_date": 1794878813,
-      "last_seen_online_ts": 1795172394,
+      "last_seen_online_ts": 1795187755,
       "max_elo": 1028,
       "profile_id": 31504,
       "steam_id": "76561198095301909",
@@ -9532,12 +9532,12 @@
     "895134": {
       "alias": "moisespferrer123",
       "br_source": "open_data_lb",
-      "last_match_date": 1795186303,
+      "last_match_date": 1795187744,
       "last_seen_online_ts": 1795187090,
       "max_elo": 1048,
       "profile_id": 895134,
       "steam_id": "76561199418077121",
-      "total_matches": 553
+      "total_matches": 554
     },
     "895162": {
       "alias": "sua_mãe",
