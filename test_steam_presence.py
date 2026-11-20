@@ -873,6 +873,7 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         vet_roster = [
             {"profile_id": 1, "steam_id": "76561198000000001", "original_alias": "LivreBaixo"},
             {"profile_id": 2, "steam_id": "76561198000000002", "original_alias": "OutroJogo"},
+            {"profile_id": 6, "steam_id": "76561198000000006", "original_alias": "LupusOutroJogoAusente"},
             {"profile_id": 3, "steam_id": "76561198000000003", "original_alias": "RaziAusente"},
             {"profile_id": 4, "steam_id": "76561198000000004", "original_alias": "KefbrSnooze"},
             {"profile_id": 5, "steam_id": "76561198000000005", "original_alias": "OcupadoAlto"},
@@ -897,7 +898,8 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
 
         pres = {
             "76561198000000001": _mk("76561198000000001"),
-            "76561198000000002": _mk("76561198000000002", other_game="Tabletop Simulator"),
+            "76561198000000002": _mk("76561198000000002", other_game="MARVEL SNAP"),
+            "76561198000000006": _mk("76561198000000006", other_game="Tabletop Simulator", away=True),
             "76561198000000003": _mk("76561198000000003", away=True),
             "76561198000000004": _mk("76561198000000004", away=True, snooze=True),
             "76561198000000005": _mk("76561198000000005", busy=True),
@@ -908,15 +910,15 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         snap = build_lobby_radar_snapshot(
             vet_roster,
             pres,
-            elo_by_pid={1: 1100, 2: 1150, 3: 1500, 4: 1600, 5: 1700},
+            elo_by_pid={1: 1100, 2: 1150, 6: 1275, 3: 1500, 4: 1600, 5: 1700},
             now_ts=now,
             other_br_players=other_roster,
             other_presence_by_steam=pres,
         )
-        # Veteranos: Livre -> Outro Jogo -> Ocupado -> Ausente -> Ausente zZz (independente de ELO!)
+        # Veteranos: Livre -> Outro Jogo -> Outro Jogo (Ausente) -> Ocupado -> Ausente -> Ausente zZz
         self.assertEqual(
             [p["alias"] for p in snap["veteranos"]["online_steam"]],
-            ["LivreBaixo", "OutroJogo", "OcupadoAlto", "RaziAusente", "KefbrSnooze"],
+            ["LivreBaixo", "OutroJogo", "LupusOutroJogoAusente", "OcupadoAlto", "RaziAusente", "KefbrSnooze"],
         )
         # Outros BR: todos os ativos online (mesmo ELO baixo) ficam ACIMA de Ausente zZz (mesmo 1650 ELO!)
         self.assertEqual(

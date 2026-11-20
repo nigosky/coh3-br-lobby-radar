@@ -1072,19 +1072,23 @@ def _draw_category_block(
                     if is_high:
                         draw.rectangle((cell_x0, ry + 2, cell_x1, ry + online_row_h - 2), fill=(24, 33, 45, 255))
                         draw.rectangle((cell_x0, ry + 3, cell_x0 + 3, ry + online_row_h - 3), fill=(250, 204, 21, 235))
-                        if is_busy:
+                        if has_other:
+                            ring_c = (217, 170, 56, 225)
+                        elif is_busy:
                             ring_c = (248, 113, 113, 240)
                         elif is_away:
                             ring_c = (96, 165, 250, 215)
                         else:
-                            ring_c = (217, 170, 56, 225) if has_other else (250, 204, 21, 255)
+                            ring_c = (250, 204, 21, 255)
                     else:
-                        if is_busy:
+                        if has_other:
+                            ring_c = (148, 163, 184, 235)
+                        elif is_busy:
                             ring_c = (248, 113, 113, 240)
                         elif is_away:
                             ring_c = (96, 165, 250, 215)
                         else:
-                            ring_c = (148, 163, 184, 235) if has_other else (56, 189, 248, 245)
+                            ring_c = (56, 189, 248, 245)
 
                     av_im = avatar_provider.get_circular_avatar(
                         size=40,
@@ -1120,14 +1124,16 @@ def _draw_category_block(
                     badge_pad = (26 if is_veteranos else 8) + pill_reserve
                     max_nm_px = max(80, (cx_limit - elo_w - 10) - name_x - badge_pad)
                     disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_nm_px, size=name_2col_size, bold=True)
-                    if is_busy:
+                    if has_other:
+                        nm_col = (248, 240, 198, 255) if is_high else (226, 232, 240, 255)
+                    elif is_busy:
                         nm_col = (254, 202, 202, 255)
                     elif is_away:
                         nm_col = (147, 197, 253, 235)
                     elif is_high:
-                        nm_col = (248, 240, 198, 255) if has_other else (254, 249, 195, 255)
+                        nm_col = (254, 249, 195, 255)
                     else:
-                        nm_col = (226, 232, 240, 255) if has_other else (186, 230, 253, 255)
+                        nm_col = (186, 230, 253, 255)
                     draw.text((name_x, ry + 6), disp_alias, font=a_fnt, fill=nm_col)
                     next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
                     if is_veteranos:
