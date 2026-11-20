@@ -2968,7 +2968,7 @@
       "alias": "Elvenking",
       "br_source": "open_data_lb",
       "last_match_date": 1795148372,
-      "last_seen_ingame_ts": 1795145393,
+      "last_seen_ingame_ts": 1795167216,
       "last_seen_online_ts": 1795166615,
       "max_elo": 1041,
       "profile_id": 137848,
@@ -3456,7 +3456,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794518165,
       "last_seen_ingame_ts": 1795125352,
-      "last_seen_online_ts": 1795165342,
+      "last_seen_online_ts": 1795167216,
       "max_elo": 941,
       "profile_id": 1428172,
       "steam_id": "76561198347679527",
@@ -7269,12 +7269,12 @@
     "357310": {
       "alias": "Sleeping Sheep",
       "br_source": "open_data_lb",
-      "last_match_date": 1795165553,
+      "last_match_date": 1795166984,
       "last_seen_online_ts": 0,
       "max_elo": 1531,
       "profile_id": 357310,
       "steam_id": "76561197994129168",
-      "total_matches": 5326
+      "total_matches": 5327
     },
     "35925": {
       "alias": "GUIA",
@@ -8547,7 +8547,7 @@
       "alias": "SoyoSid",
       "br_source": "open_data_matches",
       "last_match_date": 1794794101,
-      "last_seen_online_ts": 1795161971,
+      "last_seen_online_ts": 1795167216,
       "max_elo": 1000,
       "profile_id": 741277,
       "steam_id": "76561198145060833",
