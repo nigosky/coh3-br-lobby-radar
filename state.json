@@ -49,23 +49,23 @@
   "elo_cache_ts": 1795147284,
   "last_alert_coh3_pids": [],
   "last_alert_ts": 1795146384,
-  "last_digest": "(([(1282592, True)], [(32922, '', False), (153969, '', False), (19747, '', False), (1022333, '', False), (1097608, '', False), (58737, 'The King is Watching', False)], [509690]), ([(17906, False), (1213751, False), (1456842, False)], [(206875, '', False), (8764, '', False), (970468, '', False), (18050, '', False), (1346169, '', False), (660389, '', False), (115658, '', False), (128231, '', False), (1123905, '', False), (990226, '', False), (1295461, '', False), (1246988, '', False), (1326703, '', False), (137848, 'Divinity: Original Sin 2', False), (96038, '', False), (1180172, '', False), (1247254, '', False), (944737, '', False), (1290028, '', False), (929569, '', False), (1060169, '', False), (958542, '', False), (1373102, '', False), (1153245, '', False), (741277, '', False), (1428997, '', False), (1476268, '', False), (1352185, '', False), (23369, '', False), (1478181, '', False), (1481993, '', False), (1476126, '', False), (653919, '', False), (1442048, '', False), (1305193, '', False), (1478243, '', False), (1477361, '', False), (900961, '', False), (1302538, '', False), (692092, '', False), (31992, '', False), (1476048, '', False), (1080320, '', False), (1468010, '', False), (1429654, '', False), (1463821, '', False), (1477724, '', False), (1229124, '', False), (1466838, '', False), (1461583, '', False), (1440897, '', False), (1451832, '', False), (1445924, '', False), (1022387, '', False), (1475303, '', False), (1029401, '', False), (1474035, '', False), (1472632, '', False), (28119, '', False), (1117558, '', False), (1448005, '', False), (1454276, '', False), (1442984, '', False), (1178281, '', False), (739625, '', False), (1433493, '', False), (466594, '', False), (802058, 'DayZ', False), (1264329, 'ROB RUN', False), (1135750, 'Counter-Strike 2', False), (1453550, 'ROB RUN', False), (1312267, 'Transport Fever 3', False), (1476767, 'Microsoft Flight Simulator (2020)', False), (1292044, 'FINAL FANTASY XIV Online', False), (1448432, 'Hearts of Iron IV', False), (112224, 'Cyberpunk 2077', False), (1475704, 'Schedule I', False), (1450538, 'Age of Wonders 4', False)], [1453723]))",
+  "last_digest": "(([(1282592, True)], [(32922, '', False), (153969, '', False), (19747, '', False), (1022333, '', False), (1097608, '', False), (58737, 'The King is Watching', False)], [509690]), ([(17906, False), (1456842, False)], [(206875, '', False), (8764, '', False), (970468, '', False), (18050, '', False), (1346169, '', False), (660389, '', False), (115658, '', False), (1213751, '', False), (128231, '', False), (1123905, '', False), (990226, '', False), (1295461, '', False), (1246988, '', False), (1326703, '', False), (137848, 'Divinity: Original Sin 2', False), (96038, '', False), (1180172, '', False), (1247254, '', False), (944737, '', False), (1290028, '', False), (929569, '', False), (1060169, '', False), (958542, '', False), (1373102, '', False), (1153245, '', False), (741277, '', False), (1428997, '', False), (1476268, '', False), (1352185, '', False), (23369, '', False), (1478181, '', False), (1481993, '', False), (1476126, '', False), (653919, '', False), (1442048, '', False), (1305193, '', False), (1478243, '', False), (1477361, '', False), (900961, '', False), (1302538, '', False), (692092, '', False), (31992, '', False), (1476048, '', False), (1080320, '', False), (1468010, '', False), (1429654, '', False), (1463821, '', False), (1477724, '', False), (1229124, '', False), (1466838, '', False), (1461583, '', False), (1440897, '', False), (1451832, '', False), (1445924, '', False), (1022387, '', False), (112224, '', False), (1475303, '', False), (1029401, '', False), (1474035, '', False), (1472632, '', False), (28119, '', False), (1117558, '', False), (1448005, '', False), (1454276, '', False), (1442984, '', False), (1178281, '', False), (739625, '', False), (1433493, '', False), (466594, '', False), (802058, 'DayZ', False), (1264329, 'ROB RUN', False), (1135750, 'Counter-Strike 2', False), (1453550, 'ROB RUN', False), (1312267, 'Transport Fever 3', False), (1476767, 'Microsoft Flight Simulator (2020)', False), (1292044, 'FINAL FANTASY XIV Online', False), (1448432, 'Hearts of Iron IV', False), (1475704, 'Schedule I', False), (1450538, 'Age of Wonders 4', False)], [1453723]))",
   "last_steam_fast_sig": "([], [('76561197986271242', '', False), ('76561197993922195', 'The King is Watching', False), ('76561198005412401', '', False), ('76561198028644178', '', False), ('76561198058548575', '', False), ('76561198264285149', '', False), ('76561199498421192', '', False)])",
-  "last_sync_ts": 1795161371,
+  "last_sync_ts": 1795161670,
   "layout_version": 5,
   "manual_other_br_checked_pids": [
     33487
   ],
   "manual_other_br_checked_ts": 1795119280,
-  "other_br_rotation_offset": 335,
-  "panel_links_message_id": "1573245725402333217",
-  "panel_message_id": "1573245719626649660",
+  "other_br_rotation_offset": 399,
+  "panel_links_message_id": "1573246983664181300",
+  "panel_message_id": "1573246977242824777",
   "panel_message_ids": [
-    "1573245719626649660",
-    "1573245723389202494",
-    "1573245725402333217"
+    "1573246977242824777",
+    "1573246980904329257",
+    "1573246983664181300"
   ],
-  "panel_outros_message_id": "1573245723389202494",
+  "panel_outros_message_id": "1573246980904329257",
   "steam_ingame_visible_ts": {
     "76561197963172584": 1795116755,
     "76561197981615184": 1795116755,
