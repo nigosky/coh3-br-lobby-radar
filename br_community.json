@@ -464,8 +464,8 @@
       "alias": "Tenshi",
       "br_source": "open_data_matches",
       "last_match_date": 1794789287,
-      "last_seen_ingame_ts": 1795140487,
-      "last_seen_online_ts": 1795153124,
+      "last_seen_ingame_ts": 1795182844,
+      "last_seen_online_ts": 1795182844,
       "max_elo": 1155,
       "profile_id": 1066445,
       "steam_id": "76561199016996635",
@@ -1232,7 +1232,7 @@
       "alias": "EliasBS",
       "br_source": "open_data_matches",
       "last_match_date": 1794107941,
-      "last_seen_online_ts": 1795179737,
+      "last_seen_online_ts": 1795182844,
       "max_elo": 1000,
       "profile_id": 1178281,
       "steam_id": "76561198082097003",
@@ -1625,12 +1625,12 @@
     "1219258": {
       "alias": "Gustavo",
       "br_source": "open_data_matches",
-      "last_match_date": 1795182298,
+      "last_match_date": 1795182799,
       "last_seen_online_ts": 1795181045,
       "max_elo": 1000,
       "profile_id": 1219258,
       "steam_id": "76561199039874097",
-      "total_matches": 205
+      "total_matches": 206
     },
     "1221687": {
       "alias": "BColombo",
@@ -1718,8 +1718,8 @@
       "alias": "NOGG",
       "br_source": "open_data_lb",
       "last_match_date": 1795147302,
-      "last_seen_ingame_ts": 1795137971,
-      "last_seen_online_ts": 1795147284,
+      "last_seen_ingame_ts": 1795182844,
+      "last_seen_online_ts": 1795182844,
       "max_elo": 1091,
       "profile_id": 1231212,
       "steam_id": "76561199554817843",
@@ -6641,12 +6641,12 @@
     "23221": {
       "alias": "Thyrael_RJ",
       "br_source": "open_data_matches",
-      "last_match_date": 1793495057,
+      "last_match_date": 1795182688,
       "last_seen_online_ts": 1795181645,
       "max_elo": 1031,
       "profile_id": 23221,
       "steam_id": "76561198452584679",
-      "total_matches": 188
+      "total_matches": 189
     },
     "23278": {
       "alias": "Colidio",
@@ -7058,8 +7058,8 @@
       "alias": "[OMJ] Odinpower",
       "br_source": "open_data_lb",
       "last_match_date": 1795115318,
-      "last_seen_ingame_ts": 1795132757,
-      "last_seen_online_ts": 1795149384,
+      "last_seen_ingame_ts": 1795182844,
+      "last_seen_online_ts": 1795182844,
       "max_elo": 1110,
       "profile_id": 309253,
       "steam_id": "76561197990094756",
@@ -7769,13 +7769,13 @@
     "555887": {
       "alias": "Vretiel Barman",
       "br_source": "open_data_lb",
-      "last_match_date": 1794362774,
+      "last_match_date": 1795182416,
       "last_seen_ingame_ts": 1795180745,
       "last_seen_online_ts": 1795182545,
       "max_elo": 1000,
       "profile_id": 555887,
       "steam_id": "76561198329286532",
-      "total_matches": 206
+      "total_matches": 208
     },
     "56354": {
       "alias": "Neves Brasil",
@@ -8089,13 +8089,13 @@
     "658891": {
       "alias": "Foco.SKINS",
       "br_source": "open_data_matches",
-      "last_match_date": 1794094181,
+      "last_match_date": 1795182688,
       "last_seen_ingame_ts": 1795174267,
       "last_seen_online_ts": 1795181645,
       "max_elo": 1000,
       "profile_id": 658891,
       "steam_id": "76561199021796941",
-      "total_matches": 140
+      "total_matches": 141
     },
     "660389": {
       "alias": "Thanatos",
@@ -8161,7 +8161,7 @@
       "alias": "Friedhelm Winter",
       "br_source": "open_data_lb",
       "last_match_date": 1794533769,
-      "last_seen_online_ts": 1795146983,
+      "last_seen_online_ts": 1795182844,
       "max_elo": 1296,
       "profile_id": 667564,
       "steam_id": "76561198258429491",
@@ -9206,8 +9206,8 @@
       "alias": "Ricardin_ihuull",
       "br_source": "open_data_lb",
       "last_match_date": 1795133749,
-      "last_seen_ingame_ts": 1795122652,
-      "last_seen_online_ts": 1795142991,
+      "last_seen_ingame_ts": 1795182844,
+      "last_seen_online_ts": 1795182844,
       "max_elo": 1129,
       "profile_id": 840769,
       "steam_id": "76561198082125321",
@@ -9958,7 +9958,7 @@
       "alias": "phconzatti",
       "br_source": "open_data_lb",
       "last_match_date": 1794775485,
-      "last_seen_online_ts": 1795148783,
+      "last_seen_online_ts": 1795182844,
       "max_elo": 1253,
       "profile_id": 946322,
       "steam_id": "76561198135260753",
