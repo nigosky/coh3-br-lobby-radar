@@ -100,7 +100,7 @@ _EXPLICIT_BR_TAG_RE = re.compile(
 MAX_STEAM_PRESENCE_XML_BYTES = 131_072  # 128 KB (cobre <groups> completos com folga segura)
 MAX_STEAM_API_RESPONSE_BYTES = 524_288  # 512 KB (100 perfis GetPlayerSummaries ~ 40 KB)
 MAX_STEAM_GROUP_XML_BYTES = 2 * 1024 * 1024  # 2 MB
-MAX_RELIC_RESPONSE_BYTES = 2 * 1024 * 1024  # 2 MB
+MAX_RELIC_RESPONSE_BYTES = 8 * 1024 * 1024  # 8 MB (cobre históricos Relic > 2 MB de jogadores ativos com proteção anti-Gzip-bomb)
 MAX_OPENDATA_RESPONSE_BYTES = 128 * 1024 * 1024  # 128 MB limite seguro anti-bomb para leaderboards Open Data
 MAX_OPENDATA_MATCHES_BYTES = 256 * 1024 * 1024   # 256 MB limite seguro anti-bomb para dumps diários de partidas Open Data
 
@@ -675,6 +675,7 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
         "has_public_game_details": has_public_game_details,
         "has_coh3_in_recent_games": bool(has_coh3_in_recent_games),
         "most_played_count": len(most_played_items),
+        "game_details_checked": True,
         "location": location,
         "is_steam_brazil": steam_br,
         "has_brazil_steam_group": has_brazil_steam_group,
@@ -727,6 +728,7 @@ def parse_steam_web_api_player(player_obj: dict[str, Any]) -> dict[str, Any] | N
             "has_public_game_details": False,
             "has_coh3_in_recent_games": False,
             "most_played_count": 0,
+            "game_details_checked": True,
             "location": location,
             "is_steam_brazil": is_steam_br,
             "has_brazil_steam_group": False,
@@ -782,6 +784,7 @@ def parse_steam_web_api_player(player_obj: dict[str, Any]) -> dict[str, Any] | N
         "has_public_game_details": True,
         "has_coh3_in_recent_games": True,
         "most_played_count": 3,
+        "game_details_checked": bool(is_in_coh3 or other_game),
         "location": location,
         "is_steam_brazil": is_steam_br,
         "has_brazil_steam_group": False,
@@ -1280,7 +1283,8 @@ class SteamPresenceClient:
         steam_ids: list[str],
         *,
         enrich_free_online_xml: bool = True,
-        max_xml_enrich: int = 35,
+        max_xml_enrich: int = 45,
+        skip_xml_enrich_sids: set[str] | frozenset[str] | None = None,
     ) -> dict[str, dict[str, Any]] | None:
         """
         Consulta até 100 perfis por requisição em `api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/`
@@ -1357,13 +1361,15 @@ class SteamPresenceClient:
             if not chunk_ok:
                 return None
 
-        # Para perfis públicos "Online livres" (sem jogo visível e não ausentes/ocupados), consulta XML
+        # Para perfis públicos "Online livres" ainda sem cache recente de privacidade de jogos, consulta XML
         # somente para saber se "Detalhes dos jogos" está oculto (preservando `personastate`/nick da Web API!)
+        skip_set = skip_xml_enrich_sids or frozenset()
         if enrich_free_online_xml and max_xml_enrich > 0:
             free_online_sids = [
                 sid
                 for sid, pres in result.items()
-                if pres.get("ok")
+                if sid not in skip_set
+                and pres.get("ok")
                 and pres.get("privacy_state") == "public"
                 and pres.get("is_online_steam")
                 and not pres.get("is_in_coh3")
@@ -1384,6 +1390,7 @@ class SteamPresenceClient:
                         target["has_public_game_details"] = bool(xml_p.get("has_public_game_details"))
                         target["has_coh3_in_recent_games"] = bool(xml_p.get("has_coh3_in_recent_games"))
                         target["most_played_count"] = int(xml_p.get("most_played_count", 0) or 0)
+                        target["game_details_checked"] = True
 
         return result
 
@@ -1447,6 +1454,7 @@ class SteamPresenceClient:
         stop_on_rate_limit: bool = False,
         rate_limit_threshold: int = 3,
         require_xml_details: bool = False,
+        skip_xml_enrich_sids: set[str] | frozenset[str] | None = None,
     ) -> dict[str, dict[str, Any]]:
         unique_sids = list(dict.fromkeys(str(s).replace("/steam/", "").strip() for s in steam_ids if s))
         valid_sids = [s for s in unique_sids if STEAM_ID64_VALID_RE.fullmatch(s)]
@@ -1454,7 +1462,10 @@ class SteamPresenceClient:
             return {}
 
         if self._api_key and not require_xml_details:
-            api_result = self.fetch_web_api_presence_batch(valid_sids)
+            api_result = self.fetch_web_api_presence_batch(
+                valid_sids,
+                skip_xml_enrich_sids=skip_xml_enrich_sids,
+            )
             if api_result:
                 return api_result
 
@@ -1566,12 +1577,18 @@ class RelicActivityClient:
         for attempt in range(2):
             req = urllib.request.Request(url, headers=headers, method="GET")
             try:
-                with _get_relic_opener().open(req, timeout=12) as resp:
+                with _get_relic_opener().open(req, timeout=15) as resp:
                     data = json.loads(read_bounded_http_body(resp, MAX_RELIC_RESPONSE_BYTES).decode("utf-8"))
                 return pid, data if isinstance(data, dict) else None
-            except Exception:
+            except Exception as exc:
                 if attempt == 0:
                     time.sleep(0.5)
+                else:
+                    logger.warning(
+                        "Falha ao ler getRecentMatchHistoryByProfileId (pid=%d): %s",
+                        pid,
+                        redact_secrets(exc),
+                    )
         return pid, None
 
     @staticmethod
@@ -2237,20 +2254,31 @@ def steam_presence_hides_coh3_game(
     pres: dict[str, Any] | None,
     *,
     known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
+    known_ingame_visible_webapi_sids: set[str] | frozenset[str] | None = None,
 ) -> bool:
     """
-    Indica se o XML público da Steam oculta o status de jogo CoH3 deste perfil:
-    - Retorna False se o perfil já exibe `<inGameInfo>` (`is_in_coh3` ou `other_game`) OU foi observado
-      recentemente com `<inGameInfo>` (`known_ingame_visible_sids`, diferenciando contas que apenas ocultam
-      horas jogadas/<mostPlayedGames> mas expõem o jogo atual!).
+    Indica se a presença Steam oculta o status de jogo CoH3 deste perfil:
+    - Retorna False se o perfil já exibe jogo (`is_in_coh3` ou `other_game`) OU foi observado
+      recentemente exibindo jogo na MESMA fonte (`known_ingame_visible_webapi_sids` para Web API,
+      `known_ingame_visible_sids` para XML — evitando que visibilidade de amigo na Web API
+      mascare jogos ocultos em fallback XML!).
+    - Para Web API cuja checagem XML de 'Detalhes dos jogos' ainda não rodou (`game_details_checked=False`),
+      retorna True por segurança para nunca perder promoção Relic de jogadores além do lote XML.
     - Caso contrário, retorna True se 'Detalhes dos jogos' está em Amigos/Privado (`has_public_game_details == False`)
       ou se CoH3 está marcado individualmente como privado (ausente em `<mostPlayedGames>` com < 3 jogos).
     """
     if not isinstance(pres, dict) or pres.get("is_in_coh3") or str(pres.get("other_game") or "").strip():
         return False
     sid = str(pres.get("steam_id") or "").strip()
-    if sid and known_ingame_visible_sids and sid in known_ingame_visible_sids:
-        return False
+    source = str(pres.get("source") or "xml").strip().lower()
+    if source == "web_api":
+        if sid and known_ingame_visible_webapi_sids and sid in known_ingame_visible_webapi_sids:
+            return False
+        if pres.get("game_details_checked") is False:
+            return True
+    else:
+        if sid and known_ingame_visible_sids and sid in known_ingame_visible_sids:
+            return False
     has_gd = bool(pres.get("has_public_game_details", True))
     if not has_gd:
         return True
@@ -2316,6 +2344,7 @@ def _build_category_lists(
     category: str,
     max_coh3_inactivity_sec: int | None = None,
     known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
+    known_ingame_visible_webapi_sids: set[str] | frozenset[str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], int]:
     canonical_entries: dict[int, dict[str, Any]] = {}
     secondary_rows: list[dict[str, Any]] = []
@@ -2455,7 +2484,11 @@ def _build_category_lists(
         #   para manter o jogador em "Jogando CoH3" durante partidas consecutivas e fila/menu.
         # - Se os detalhes são públicos (ou `<inGameInfo>` já foi observado): janela curta de 5 min (300s).
         steam_hides_coh3_game = bool(online_pres_candidates) and all(
-            steam_presence_hides_coh3_game(p, known_ingame_visible_sids=known_ingame_visible_sids)
+            steam_presence_hides_coh3_game(
+                p,
+                known_ingame_visible_sids=known_ingame_visible_sids,
+                known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
+            )
             for p in online_pres_candidates
         )
         steam_in_unknown_game = any(
@@ -2612,6 +2645,7 @@ def build_lobby_radar_snapshot(
     other_br_total_catalog: int | None = None,
     other_br_active_days: int = OTHER_BR_ACTIVE_COH3_DAYS,
     known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
+    known_ingame_visible_webapi_sids: set[str] | frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """
     Consolida as duas categorias do Radar de Lobby:
@@ -2635,6 +2669,7 @@ def build_lobby_radar_snapshot(
         recent_cutoff_sec=recent_cutoff_sec,
         category="veteranos",
         known_ingame_visible_sids=known_ingame_visible_sids,
+        known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
     )
 
     # Garante separação estrita: nenhum Veterano (nem conta secundária) pode aparecer em "Outros Brasileiros"
@@ -2678,6 +2713,7 @@ def build_lobby_radar_snapshot(
         category="outros_brasileiros",
         max_coh3_inactivity_sec=other_inactivity_sec,
         known_ingame_visible_sids=known_ingame_visible_sids,
+        known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
     )
 
     xml_ok_accounts = sum(1 for v in merged_other_pres.values() if v.get("ok"))

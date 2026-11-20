@@ -822,6 +822,52 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         self.assertTrue(oth_on[0]["nick_changed"])
         self.assertEqual(oth_on[0]["current_alias"], "NovoNickBR")
 
+    def test_relic_byte_cap_and_web_api_vs_xml_hidden_game_isolation(self) -> None:
+        from steam_presence import MAX_RELIC_RESPONSE_BYTES, parse_steam_web_api_player
+
+        # Regressão Bineto/Gabe/The Dog/Maiti/nigo_BR/INFIEL: históricos Relic > 2 MB não podem ser descartados
+        self.assertGreaterEqual(MAX_RELIC_RESPONSE_BYTES, 8 * 1024 * 1024)
+
+        # Web API sem jogo visível nasce com game_details_checked=False -> steam_presence_hides_coh3_game retorna True
+        # (garantindo que jogadores além do lote XML não percam promoção Relic de 35 min)
+        bineto_sid = "76561198024839791"
+        web_online = parse_steam_web_api_player(
+            {
+                "steamid": bineto_sid,
+                "communityvisibilitystate": 3,
+                "personaname": "Bineto",
+                "personastate": 1,
+            }
+        )
+        assert web_online is not None
+        self.assertFalse(web_online["game_details_checked"])
+        self.assertTrue(steam_presence_hides_coh3_game(web_online))
+        # Se Web API já observou o jogador em jogo (ex.: amigo do dono da chave), Web API confia no gameid
+        self.assertFalse(
+            steam_presence_hides_coh3_game(
+                web_online,
+                known_ingame_visible_webapi_sids={bineto_sid},
+            )
+        )
+        # MAS visibilidade de amigo na Web API JAMAIS pode mascarar jogos ocultos em eventual fallback XML!
+        xml_hidden = {
+            "steam_id": bineto_sid,
+            "source": "xml",
+            "has_public_game_details": False,
+            "has_coh3_in_recent_games": False,
+            "most_played_count": 0,
+            "game_details_checked": True,
+            "is_in_coh3": False,
+            "other_game": "",
+        }
+        self.assertTrue(
+            steam_presence_hides_coh3_game(
+                xml_hidden,
+                known_ingame_visible_sids=set(),
+                known_ingame_visible_webapi_sids={bineto_sid},
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

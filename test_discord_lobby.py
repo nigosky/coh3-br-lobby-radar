@@ -1337,6 +1337,143 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             with Image.open(io.BytesIO(png_b)) as im:
                 self.assertEqual(im.width, 1100)
 
+    def test_bineto_regression_veterano_personal_stat_fallback_and_24h_gd_cache(self) -> None:
+        """
+        Regressão Bineto (`pid=110078`):
+        1) Se `fetch_latest_matches_and_br_participants` não retornar um Veterano (ex.: erro transitório),
+           o fallback leve via `fetch_profile_stats_batch` (`getPersonalStat`) recupera a partida recente
+           e promove corretamente o jogador online com jogos ocultos para `in_coh3`.
+        2) Cache 24h (`steam_gd_cache`) evita rechecagem XML repetida no ciclo seguinte e mantém
+           `has_public_game_details=False` mesmo quando a Steam Web API retorna `game_details_checked=False`.
+        """
+        now1 = 1_800_050_000
+        now2 = now1 + 600
+        bineto_pid = 110078
+        bineto_sid = "76561198024839791"
+
+        class _WebApiWithGdCacheClient:
+            uses_web_api = True
+
+            def __init__(self) -> None:
+                self.seen_skips: list[set[str]] = []
+
+            def fetch_batch_presence(
+                self,
+                steam_ids: list[str],
+                *,
+                skip_xml_enrich_sids: set[str] | frozenset[str] | None = None,
+                **_kw: Any,
+            ) -> dict[str, dict[str, Any]]:
+                skip_s = set(skip_xml_enrich_sids or ())
+                self.seen_skips.append(skip_s)
+                out: dict[str, dict[str, Any]] = {}
+                for sid in steam_ids:
+                    if sid == bineto_sid:
+                        checked = sid not in skip_s
+                        out[sid] = {
+                            "steam_id": sid,
+                            "steam_alias": "Bineto",
+                            "privacy_state": "public",
+                            "visibility_state": "3",
+                            "has_public_game_details": False if checked else True,
+                            "has_coh3_in_recent_games": False if checked else True,
+                            "most_played_count": 0 if checked else 3,
+                            "game_details_checked": checked,
+                            "online_state": "online",
+                            "is_in_coh3": False,
+                            "is_online_steam": True,
+                            "is_away": False,
+                            "is_snooze": False,
+                            "is_busy": False,
+                            "other_game": "",
+                            "source": "web_api",
+                            "ok": True,
+                        }
+                    else:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "privacy_state": "public",
+                            "visibility_state": "3",
+                            "online_state": "offline",
+                            "is_in_coh3": False,
+                            "is_online_steam": False,
+                            "other_game": "",
+                            "source": "web_api",
+                            "ok": True,
+                        }
+                return out
+
+        class _FallbackRelicClient:
+            def __init__(self) -> None:
+                self.current_now = now1
+
+            def fetch_latest_matches_and_br_participants(
+                self,
+                profile_ids: list[int],
+            ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+                _ = profile_ids
+                # Simula falha no histórico completo de Bineto -> precisa do fallback `fetch_profile_stats_batch`!
+                return {}, {}, {}
+
+            def fetch_profile_stats_batch(
+                self,
+                profile_ids: list[int],
+                pace_delay_sec: float = 0.15,
+            ) -> dict[int, dict[str, Any]]:
+                _ = pace_delay_sec
+                if bineto_pid in profile_ids:
+                    return {
+                        bineto_pid: {
+                            "profile_id": bineto_pid,
+                            "max_elo": 1262,
+                            "last_match_date": self.current_now - 12 * 60,  # 12 min atrás!
+                            "last_match_mode": "1v1",
+                            "total_matches": 900,
+                        }
+                    }
+                return {}
+
+            def fetch_peak_elo_by_profile_ids(self, profile_ids: list[int]) -> dict[int, int]:
+                return {pid: 1262 for pid in profile_ids}
+
+            def discover_br_players_from_open_data(self, now_ts: int | None = None) -> dict[int, dict[str, Any]]:
+                _ = now_ts
+                return {}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            comm_path = Path(tmp) / "br_community.json"
+            p_client = _WebApiWithGdCacheClient()
+            r_client = _FallbackRelicClient()
+
+            # Ciclo 1: XML detecta jogos ocultos, fallback getPersonalStat detecta 1v1 há 12 min -> Bineto em in_coh3!
+            s1 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=_FakeDiscordClient(),
+                presence_client=p_client,  # type: ignore[arg-type]
+                relic_client=r_client,  # type: ignore[arg-type]
+                now_ts=now1,
+            )
+            self.assertEqual(s1["in_coh3"], 1)
+            self.assertEqual(s1["online_steam"], 0)
+            saved1 = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertTrue(saved1["steam_gd_cache"][bineto_sid]["hidden"])
+
+            # Ciclo 2 (10 min depois): Bineto já está em `skip_xml_enrich_sids`, mas o cache 24h preserva hidden=True!
+            r_client.current_now = now2
+            s2 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=_FakeDiscordClient(),
+                presence_client=p_client,  # type: ignore[arg-type]
+                relic_client=r_client,  # type: ignore[arg-type]
+                now_ts=now2,
+            )
+            self.assertIn(bineto_sid, p_client.seen_skips[-1])
+            self.assertEqual(s2["in_coh3"], 1)
+            self.assertEqual(s2["online_steam"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
