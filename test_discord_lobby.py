@@ -1323,12 +1323,12 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
 
         self.assertIn("[**Chacineiro**\\* ↗]", vet_desc)
         self.assertIn("*(agora: Chacineiro2)*", vet_desc)
-        self.assertIn("*(💤 Ausente zZz)*", vet_desc)
+        self.assertIn("*(💤 Ausente na Steam (zZz))*", vet_desc)
         self.assertIn("*(⛔ Ocupado)*", vet_desc)
         self.assertIn("Golden Cobra", oth_desc)
         self.assertIn("[SoldadoBR\\* ↗]", oth_desc)
         self.assertIn("*(agora: SoldadoTrocado)*", oth_desc)
-        self.assertIn("*(💤 Ausente)*", oth_desc)
+        self.assertIn("*(💤 Ausente na Steam (zZz))*", oth_desc)
         self.assertIn("* = mudou de nick", footer_txt)
 
         vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
