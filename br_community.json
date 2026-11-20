@@ -312,7 +312,7 @@
       "alias": "Saker",
       "br_source": "open_data_lb",
       "last_match_date": 1794873342,
-      "last_seen_online_ts": 1795186491,
+      "last_seen_online_ts": 1795189556,
       "max_elo": 1050,
       "profile_id": 1042204,
       "steam_id": "76561198252921023",
@@ -826,7 +826,7 @@
       "alias": "Wintermute",
       "br_source": "open_data_lb",
       "last_match_date": 1795034644,
-      "last_seen_ingame_ts": 1795134258,
+      "last_seen_ingame_ts": 1795189556,
       "last_seen_online_ts": 1795189256,
       "max_elo": 1049,
       "profile_id": 1123905,
@@ -2459,12 +2459,12 @@
     "1304125": {
       "alias": "LordBaconBR",
       "br_source": "open_data_lb",
-      "last_match_date": 1795187053,
+      "last_match_date": 1795189445,
       "last_seen_online_ts": 1795189256,
       "max_elo": 1012,
       "profile_id": 1304125,
       "steam_id": "76561199482244877",
-      "total_matches": 799
+      "total_matches": 800
     },
     "1304518": {
       "alias": "B4NDEIRA",
@@ -2873,12 +2873,12 @@
     "1368987": {
       "alias": "V1705",
       "br_source": "open_data_matches",
-      "last_match_date": 1794973808,
+      "last_match_date": 1795148341,
       "last_seen_online_ts": 0,
       "max_elo": 876,
       "profile_id": 1368987,
       "steam_id": "76561198834759764",
-      "total_matches": 149
+      "total_matches": 150
     },
     "1369": {
       "alias": "Coffii",
@@ -3354,12 +3354,12 @@
     "1422841": {
       "alias": "josenetoferrer2020",
       "br_source": "open_data_lb",
-      "last_match_date": 1795187744,
+      "last_match_date": 1795189321,
       "last_seen_online_ts": 1795188656,
       "max_elo": 1173,
       "profile_id": 1422841,
       "steam_id": "76561198618672224",
-      "total_matches": 53
+      "total_matches": 54
     },
     "1423426": {
       "alias": "geladeira velha",
@@ -4274,7 +4274,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794843213,
       "last_seen_ingame_ts": 1795135157,
-      "last_seen_online_ts": 1795187755,
+      "last_seen_online_ts": 1795189556,
       "max_elo": 1051,
       "profile_id": 1442048,
       "steam_id": "76561198078061644",
@@ -4804,7 +4804,7 @@
       "alias": "Huskyh2k",
       "br_source": "open_data_matches",
       "last_match_date": 1794716955,
-      "last_seen_ingame_ts": 1795132094,
+      "last_seen_ingame_ts": 1795189556,
       "last_seen_online_ts": 1795188956,
       "max_elo": 1000,
       "profile_id": 1453666,
@@ -7087,7 +7087,7 @@
       "alias": "Fioti",
       "br_source": "open_data_lb",
       "last_match_date": 1794878813,
-      "last_seen_online_ts": 1795187755,
+      "last_seen_online_ts": 1795189556,
       "max_elo": 1028,
       "profile_id": 31504,
       "steam_id": "76561198095301909",
@@ -7933,7 +7933,7 @@
     "628581": {
       "alias": "kxxpz",
       "br_source": "open_data_matches",
-      "last_match_date": 1795133681,
+      "last_match_date": 1795189461,
       "last_seen_online_ts": 1795188055,
       "max_elo": 1000,
       "profile_id": 628581,
@@ -8018,7 +8018,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795143761,
       "last_seen_ingame_ts": 1795187455,
-      "last_seen_online_ts": 1795187455,
+      "last_seen_online_ts": 1795189556,
       "max_elo": 1000,
       "profile_id": 649522,
       "steam_id": "76561198058948819",
@@ -9533,12 +9533,12 @@
     "895134": {
       "alias": "moisespferrer123",
       "br_source": "open_data_lb",
-      "last_match_date": 1795187744,
+      "last_match_date": 1795189321,
       "last_seen_online_ts": 1795188956,
       "max_elo": 1048,
       "profile_id": 895134,
       "steam_id": "76561199418077121",
-      "total_matches": 554
+      "total_matches": 555
     },
     "895162": {
       "alias": "sua_mãe",
@@ -10369,7 +10369,7 @@
       "alias": "9Billy",
       "br_source": "open_data_matches",
       "last_match_date": 1794342123,
-      "last_seen_online_ts": 1795152462,
+      "last_seen_online_ts": 1795189556,
       "max_elo": 1000,
       "profile_id": 99753,
       "steam_id": "76561198114530349",
