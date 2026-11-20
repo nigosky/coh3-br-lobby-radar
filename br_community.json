@@ -1701,14 +1701,14 @@
     "1123905": {
       "alias": "Wintermute",
       "br_source": "open_data_lb",
-      "last_match_date": 1795190494,
+      "last_match_date": 1795200707,
       "last_seen_ingame_ts": 1795189556,
       "last_seen_ingame_webapi_ts": 1795198463,
       "last_seen_online_ts": 1795203904,
       "max_elo": 1049,
       "profile_id": 1123905,
       "steam_id": "76561198020133377",
-      "total_matches": 659
+      "total_matches": 663
     },
     "1127202": {
       "alias": "Zeus",
@@ -4146,6 +4146,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1795142556,
       "last_seen_ingame_ts": 1795179436,
+      "last_seen_ingame_webapi_ts": 1795203986,
       "last_seen_online_ts": 1795202404,
       "max_elo": 1097,
       "profile_id": 1428123,
@@ -5086,7 +5087,6 @@
     "1445924": {
       "alias": "Et Bilusca",
       "br_source": "open_data_matches",
-      "current_alias": "Wiz",
       "last_match_date": 1794579345,
       "last_seen_ingame_webapi_ts": 1795200904,
       "last_seen_online_ts": 1795202404,
@@ -7163,12 +7163,12 @@
     "1707": {
       "alias": "Anhangá",
       "br_source": "open_data_lb",
-      "last_match_date": 1795201934,
+      "last_match_date": 1795203975,
       "last_seen_online_ts": 0,
       "max_elo": 1389,
       "profile_id": 1707,
       "steam_id": "76561197998487466",
-      "total_matches": 9160
+      "total_matches": 9161
     },
     "170825": {
       "alias": "SKillomer",
@@ -10053,14 +10053,14 @@
     "84816": {
       "alias": "ChadVader",
       "br_source": "open_data_lb",
-      "last_match_date": 1795201316,
+      "last_match_date": 1795203925,
       "last_seen_online_ts": 1795203904,
       "max_elo": 1252,
       "profile_id": 84816,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795198463,
       "steam_id": "76561198159203637",
-      "total_matches": 778
+      "total_matches": 779
     },
     "848258": {
       "alias": "knove",
@@ -10431,7 +10431,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794020111,
       "last_seen_ingame_ts": 1795174567,
-      "last_seen_online_ts": 1795200904,
+      "last_seen_online_ts": 1795203986,
       "max_elo": 1000,
       "profile_id": 904746,
       "steam_games_hidden": false,
