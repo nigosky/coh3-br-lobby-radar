@@ -80,6 +80,9 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
+        self.assertEqual(vet_by_pid[55693]["original_alias"], "Alface aka BinhoBiceps")
+        self.assertIn("BinhoBiceps", vet_by_pid[55693].get("known_aliases") or [])
+
         self.assertEqual(vet_by_pid[559962]["original_alias"], "Gabe")
         self.assertEqual(vet_by_pid[557890]["original_alias"], "Gabe")
         self.assertEqual(vet_by_pid[557890]["merged_into_profile_id"], 559962)

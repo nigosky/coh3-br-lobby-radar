@@ -166,7 +166,12 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 639157, "steam_id": "76561197979883434", "original_alias": "Itaperuna"},
     {"profile_id": 110078, "steam_id": "76561198024839791", "original_alias": "Bineto"},
     {"profile_id": 1143262, "steam_id": "76561198105073246", "original_alias": "Mazzaroppee"},
-    {"profile_id": 55693, "steam_id": "76561197996817129", "original_alias": "BinhoBiceps"},
+    {
+        "profile_id": 55693,
+        "steam_id": "76561197996817129",
+        "original_alias": "Alface aka BinhoBiceps",
+        "known_aliases": ["BinhoBiceps", "Alface", "Alface aka BinhoBiceps"],
+    },
     {"profile_id": 337051, "steam_id": "76561197981615184", "original_alias": "Maiti"},
     {"profile_id": 1022333, "steam_id": "76561198264285149", "original_alias": "gaules"},
     {"profile_id": 32922, "steam_id": "76561197986271242", "original_alias": "Showtaro"},
