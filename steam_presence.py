@@ -2624,7 +2624,7 @@ def _build_category_lists(
         )
         online_steam_list.sort(
             key=lambda x: (
-                1 if (x["is_away"] or x["is_busy"]) else 0,
+                1 if ((x["is_away"] or x["is_busy"]) and not str(x.get("other_game") or "").strip()) else 0,
                 1 if x.get("prominence_tier") == "low" else 0,
                 _online_availability_rank(x),
                 PROMINENCE_TIER_ORDER.get(str(x.get("prominence_tier") or "medium"), 1),
@@ -2654,17 +2654,19 @@ def _online_availability_rank(entry: dict[str, Any]) -> int:
     """
     Ordem estrita de disponibilidade na seção 'Online na Steam':
     0 = Online e livre para chamar agora
-    1 = Online e ativo no PC (em outro jogo)
-    2 = Ocupado (Busy)
-    3 = Ausente na Steam (Away)
-    4 = Ausente há mais tempo (Snooze / zZz)
+    1 = Em outro jogo (ativo)
+    2 = Em outro jogo (Steam marcou Ausente/Ocupado)
+    3 = Ocupado na Steam (Busy)
+    4 = Ausente na Steam (Away)
+    5 = Ausente na Steam há mais tempo (Snooze / zZz)
     """
-    if entry.get("is_away"):
-        return 4 if entry.get("is_snooze") else 3
+    has_other = bool(str(entry.get("other_game") or "").strip())
+    if has_other:
+        return 2 if (entry.get("is_away") or entry.get("is_snooze") or entry.get("is_busy")) else 1
+    if entry.get("is_away") or entry.get("is_snooze"):
+        return 5 if entry.get("is_snooze") else 4
     if entry.get("is_busy"):
-        return 2
-    if str(entry.get("other_game") or "").strip():
-        return 1
+        return 3
     return 0
 
 
