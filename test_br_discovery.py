@@ -624,10 +624,15 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
             self.assertEqual(players["910006"]["max_elo"], 1590)
             self.assertEqual(players["910006"]["br_source"], "steam_group_br")
 
-            # Excluídos (Veterano, Inativo, Argentino)
+            # Excluídos de ativos (Veterano, Inativo >15d, Argentino)
             self.assertNotIn("79327", players)
             self.assertNotIn("910002", players)
             self.assertNotIn("910005", players)
+            # Inativo de 60d (16..90d) fica em vigília silenciosa (`dormant_players`) p/ reativação imediata
+            dormant = saved.get("dormant_players") or {}
+            self.assertIn("910002", dormant)
+            self.assertNotIn("79327", dormant)
+            self.assertNotIn("910005", dormant)
 
     def test_manual_other_br_generick_us_expat_resolved_and_preserved(self) -> None:
         from lobby_radar import resolve_manual_other_br_entries

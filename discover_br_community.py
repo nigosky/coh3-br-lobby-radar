@@ -30,9 +30,12 @@ from lobby_radar import (
     COMMUNITY_SCHEMA_VERSION,
     DEFAULT_COMMUNITY_CACHE_PATH,
     DEFAULT_STATE_PATH,
+    MAX_OTHER_BR_DORMANT_CACHE,
     OTHER_BR_ACTIVE_MATCH_WINDOW_SEC,
+    OTHER_BR_DORMANT_RETENTION_SEC,
     _merge_player_into_community,
     _resolve_veteranos_roster,
+    _trim_dormant_players_dict,
     load_community_cache,
     load_state,
     resolve_manual_other_br_entries,
@@ -43,6 +46,7 @@ from steam_presence import (
     BRAZILIAN_COH_STEAM_GROUPS,
     MANUAL_OTHER_BR_PLAYERS,
     OTHER_BR_ACTIVE_COH3_DAYS,
+    OTHER_BR_DORMANT_RETENTION_DAYS,
     SOUTH_AMERICA_REGION_ID,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
@@ -151,6 +155,7 @@ def run_deep_br_discovery(
     """
     now = int(now_ts) if now_ts is not None else int(time.time())
     active_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
+    dormant_cutoff = now - OTHER_BR_DORMANT_RETENTION_SEC
 
     r_client = relic_client if relic_client is not None else RelicActivityClient()
     p_client = presence_client if presence_client is not None else SteamPresenceClient()
@@ -167,6 +172,9 @@ def run_deep_br_discovery(
 
     community_cache = load_community_cache(community_cache_path)
     existing_players: dict[str, dict[str, Any]] = dict(community_cache.get("players") or {})
+    raw_existing_dormant = community_cache.get("dormant_players")
+    existing_dormant: dict[str, dict[str, Any]] = dict(raw_existing_dormant) if isinstance(raw_existing_dormant, dict) else {}
+    existing_all: dict[str, dict[str, Any]] = {**existing_dormant, **existing_players}
     before_pids = {int(k) for k in existing_players if str(k).isdigit()}
     before_high_elo = sum(1 for r in existing_players.values() if int(r.get("max_elo", 0) or 0) >= 1300)
 
@@ -175,8 +183,8 @@ def run_deep_br_discovery(
     br_pool: dict[int, dict[str, Any]] = {}
     cand_pool: dict[int, dict[str, Any]] = {}
 
-    # Carrega jogadores já verificados anteriormente (preserva Steam-verified ativos e nick anterior)
-    for k, row in existing_players.items():
+    # Carrega jogadores já verificados anteriormente (ativos e dormentes, preservando Steam-verified e nick anterior)
+    for k, row in existing_all.items():
         if not isinstance(row, dict):
             continue
         pid = int(row.get("profile_id", 0) or 0)
@@ -435,7 +443,7 @@ def run_deep_br_discovery(
             sum(1 for x in manual_resolved.values() if int(x.get("last_match_date", 0) or 0) >= active_cutoff),
         )
 
-    # 5. Filtra apenas ativos no CoH3 (<= 30d) e enriquece TODOS com ELO máximo real / total_matches na Relic API
+    # 5. Filtra apenas ativos no CoH3 (<= 15d) e enriquece TODOS com ELO máximo real / total_matches na Relic API
     active_br_pids = [
         pid
         for pid, item in br_pool.items()
@@ -473,38 +481,61 @@ def run_deep_br_discovery(
             len(active_br_pids),
         )
 
-    # 6. Convergência final em `br_community.json` (somente ativos <= 30d, preservando timestamps online/ingame)
-    final_players: dict[str, dict[str, Any]] = {}
-    for pid in active_br_pids:
-        item = dict(br_pool[pid])
-        prev = existing_players.get(str(pid))
-        if isinstance(prev, dict):
-            item["last_seen_online_ts"] = max(
-                int(item.get("last_seen_online_ts", 0) or 0),
-                int(prev.get("last_seen_online_ts", 0) or 0),
+    # 6. Convergência final em `br_community.json`:
+    #    - `players`: exclusivamente ativos no CoH3 <= 15d (exibidos no lobby/card)
+    #    - `dormant_players`: inativos 16..90d em vigília silenciosa para reativação instantânea ao voltar ao CoH3
+    def _populate_bucket(target: dict[str, dict[str, Any]], pids: list[int], min_lmd: int) -> None:
+        for pid in pids:
+            item = dict(br_pool[pid])
+            prev = existing_all.get(str(pid))
+            if isinstance(prev, dict):
+                item["last_seen_online_ts"] = max(
+                    int(item.get("last_seen_online_ts", 0) or 0),
+                    int(prev.get("last_seen_online_ts", 0) or 0),
+                )
+                if int(prev.get("last_seen_ingame_ts", 0) or 0) > 0:
+                    item["last_seen_ingame_ts"] = int(prev["last_seen_ingame_ts"])
+            if not str(item.get("br_source") or "").strip():
+                item["br_source"] = "existing_cache"
+            _merge_player_into_community(
+                target,
+                item,
+                vet_pids=vet_pids,
+                vet_sids=vet_sids,
+                min_last_match_date=min_lmd,
+                replace_matches=False,
             )
-            if int(prev.get("last_seen_ingame_ts", 0) or 0) > 0:
-                item["last_seen_ingame_ts"] = int(prev["last_seen_ingame_ts"])
-        if not str(item.get("br_source") or "").strip():
-            item["br_source"] = "existing_cache"
-        _merge_player_into_community(
-            final_players,
-            item,
-            vet_pids=vet_pids,
-            vet_sids=vet_sids,
-            min_last_match_date=active_cutoff,
-            replace_matches=False,
-        )
-        # Garante preservação explícita de `br_source`, `last_seen_ingame_ts` e `flag_country`
-        key = str(pid)
-        if key in final_players:
-            if item.get("br_source"):
-                final_players[key]["br_source"] = str(item["br_source"])
-            if int(item.get("last_seen_ingame_ts", 0) or 0) > 0:
-                final_players[key]["last_seen_ingame_ts"] = int(item["last_seen_ingame_ts"])
-            f_ctry = str(item.get("flag_country") or (prev.get("flag_country") if isinstance(prev, dict) else "") or "").strip().lower()
-            if f_ctry and f_ctry != "br":
-                final_players[key]["flag_country"] = f_ctry
+            # Garante preservação explícita de metadados auxiliares (`br_source`, timestamps, cache GD, `flag_country`)
+            key = str(pid)
+            if key in target:
+                if item.get("br_source"):
+                    target[key]["br_source"] = str(item["br_source"])
+                if int(item.get("last_seen_ingame_ts", 0) or 0) > 0:
+                    target[key]["last_seen_ingame_ts"] = int(item["last_seen_ingame_ts"])
+                if isinstance(prev, dict):
+                    if int(prev.get("last_seen_ingame_webapi_ts", 0) or 0) > 0:
+                        target[key]["last_seen_ingame_webapi_ts"] = int(prev["last_seen_ingame_webapi_ts"])
+                    if "steam_games_hidden" in prev and int(prev.get("steam_gd_checked_ts", 0) or 0) > 0:
+                        target[key]["steam_games_hidden"] = bool(prev["steam_games_hidden"])
+                        target[key]["steam_gd_checked_ts"] = int(prev["steam_gd_checked_ts"])
+                f_ctry = str(item.get("flag_country") or (prev.get("flag_country") if isinstance(prev, dict) else "") or "").strip().lower()
+                if f_ctry and f_ctry != "br":
+                    target[key]["flag_country"] = f_ctry
+
+    final_players: dict[str, dict[str, Any]] = {}
+    _populate_bucket(final_players, active_br_pids, active_cutoff)
+
+    dormant_br_pids = [
+        pid
+        for pid, item in br_pool.items()
+        if pid not in vet_pids
+        and str(pid) not in final_players
+        and str(item.get("steam_id") or "") not in vet_sids
+        and dormant_cutoff <= int(item.get("last_match_date", 0) or 0) < active_cutoff
+    ]
+    final_dormant: dict[str, dict[str, Any]] = {}
+    _populate_bucket(final_dormant, dormant_br_pids, dormant_cutoff)
+    _trim_dormant_players_dict(final_dormant, max_entries=MAX_OTHER_BR_DORMANT_CACHE)
 
     after_pids = {int(k) for k in final_players if str(k).isdigit()}
     newly_added_pids = after_pids - before_pids
@@ -522,16 +553,20 @@ def run_deep_br_discovery(
             "deep_discovery_at": now,
             "source": "+".join(dict.fromkeys(sources_used)) or "deep_discovery",
             "players": final_players,
+            "dormant_players": final_dormant,
         }
         save_community_cache(community_cache_path, out_cache)
 
     logger.info(
-        "[RESUMO CONVERGÊNCIA BR] Antes: %d (%d ELO>=1300) -> Depois: %d (%d ELO>=1300) | Novos ativos: +%d | Por fonte: %s",
+        "[RESUMO CONVERGÊNCIA BR] Ativos <=%dd: %d (%d ELO>=1300) -> %d (%d ELO>=1300) | Novos ativos: +%d | Vigília 16-%dd: %d | Por fonte: %s",
+        OTHER_BR_ACTIVE_COH3_DAYS,
         len(before_pids),
         before_high_elo,
         len(after_pids),
         after_high_elo,
         len(newly_added_pids),
+        OTHER_BR_DORMANT_RETENTION_DAYS,
+        len(final_dormant),
         dict(by_source),
     )
     top_new_high = [r for r in newly_added_rows if int(r.get("max_elo", 0) or 0) >= 1200][:30]

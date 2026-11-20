@@ -40,6 +40,7 @@ from steam_presence import (
     CORE_BR_ROSTER,
     MANUAL_OTHER_BR_PLAYERS,
     OTHER_BR_ACTIVE_COH3_DAYS,
+    OTHER_BR_DORMANT_RETENTION_DAYS,
     PROMINENCE_TIER_ORDER,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
@@ -66,15 +67,19 @@ DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
 # 4m30s garante que o ciclo de 5 min (300s) nunca pule a atualização por 1-2s de jitter do relógio
 PANEL_HEARTBEAT_REFRESH_SEC = 270
-PANEL_LAYOUT_VERSION = 7
+PANEL_LAYOUT_VERSION = 8
 COMMUNITY_SCHEMA_VERSION = 3
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
 MANUAL_OTHER_BR_RECHECK_TTL_SEC = 6 * 3600
-OTHER_BR_ACTIVE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400  # 30 dias (1 mês)
+OTHER_BR_ACTIVE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400  # 15 dias
 OTHER_BR_INVISIBLE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400
+OTHER_BR_DORMANT_RETENTION_SEC = OTHER_BR_DORMANT_RETENTION_DAYS * 86400  # 90 dias em cache silencioso p/ reativação
 MAX_OTHER_BR_ACTIVE_PER_CYCLE = 220
 MAX_OTHER_BR_ACTIVE_WEB_API = 1500
+MAX_OTHER_BR_DORMANT_CACHE = 1500
+MAX_OTHER_BR_DORMANT_WATCH_WEB_API = 1000
+MAX_OTHER_BR_DORMANT_RELIC_RECHECK = 20
 OTHER_BR_ROTATION_SLICE = 64
 OTHER_BR_HOT_ONLINE_PIN_SEC = 90 * 60     # 90 min: fixa no ciclo de 5 min quem foi visto online há pouco
 OTHER_BR_HOT_INGAME_PIN_SEC = 2 * 3600    # 2h: fixa quem foi visto jogando há pouco
@@ -104,14 +109,16 @@ def save_state(state_path: Path, state: dict[str, Any]) -> None:
 
 def load_community_cache(cache_path: Path = DEFAULT_COMMUNITY_CACHE_PATH) -> dict[str, Any]:
     if not cache_path.is_file():
-        return {"schema_version": 0, "updated_at": 0, "source": "", "players": {}}
+        return {"schema_version": 0, "updated_at": 0, "source": "", "players": {}, "dormant_players": {}}
     try:
         parsed = json.loads(cache_path.read_text(encoding="utf-8"))
         if isinstance(parsed, dict) and isinstance(parsed.get("players"), dict):
+            if not isinstance(parsed.get("dormant_players"), dict):
+                parsed["dormant_players"] = {}
             return parsed
     except Exception:
         pass
-    return {"schema_version": 0, "updated_at": 0, "source": "", "players": {}}
+    return {"schema_version": 0, "updated_at": 0, "source": "", "players": {}, "dormant_players": {}}
 
 
 def save_community_cache(cache_path: Path, cache: dict[str, Any]) -> None:
@@ -400,6 +407,28 @@ def _merge_player_into_community(
     return changed
 
 
+def _trim_dormant_players_dict(
+    dormant_players: dict[str, dict[str, Any]],
+    *,
+    max_entries: int = MAX_OTHER_BR_DORMANT_CACHE,
+) -> bool:
+    """Mantém o cache silencioso de inativos (16..90d) limitado aos mais recentes no CoH3."""
+    cap = max(1, int(max_entries))
+    if len(dormant_players) <= cap:
+        return False
+    ranked_keys = sorted(
+        dormant_players.keys(),
+        key=lambda k: (
+            -int((dormant_players.get(k) or {}).get("last_match_date", 0) or 0),
+            -int((dormant_players.get(k) or {}).get("max_elo", 0) or 0),
+            k,
+        ),
+    )
+    for k in ranked_keys[cap:]:
+        del dormant_players[k]
+    return True
+
+
 def _select_other_br_candidates(
     community_players: dict[str, dict[str, Any]],
     *,
@@ -408,8 +437,9 @@ def _select_other_br_candidates(
     max_per_cycle: int = MAX_OTHER_BR_ACTIVE_PER_CYCLE,
 ) -> tuple[list[dict[str, Any]], int]:
     """
-    Seleciona EXCLUSIVAMENTE 'Outros Brasileiros' ATIVOS no CoH3 (partida nos últimos 30 dias):
-    - Inativos (> 30 dias sem partida no CoH3 ou sem histórico) jamais são checados ou exibidos.
+    Seleciona EXCLUSIVAMENTE 'Outros Brasileiros' ATIVOS no CoH3 (partida nos últimos 15 dias):
+    - Inativos (> 15 dias sem partida no CoH3 ou sem histórico) jamais são exibidos como apenas online na Steam;
+      ficam no cache silencioso (`dormant_players`) e são reativados automaticamente ao voltar ao CoH3.
     - Jogadores vistos online/em jogo/com partida há pouco (independente do ELO!) são FIXADOS em TODOS
       os ciclos de 5 min para não desaparecerem na fila de rotação.
     - As demais vagas até `max_per_cycle` (220 no modo XML; até 1500 com Steam Web API) são preenchidas
@@ -937,35 +967,86 @@ def run_lobby_radar_sync(
             f" [{', '.join(hidden_games)}]" if hidden_games else "",
         )
 
-    # 4. PRIORIDADE 2 — Categoria "Outros Brasileiros" (catálogo BR + Steam XML + Invisíveis na Relic)
+    # 4. PRIORIDADE 2 — Categoria "Outros Brasileiros" (catálogo BR ativos <=15d + reativação automática de inativos)
     community_cache = load_community_cache(comm_path)
     community_players: dict[str, dict[str, Any]] = dict(community_cache.get("players") or {})
+    raw_dormant = community_cache.get("dormant_players")
+    dormant_players: dict[str, dict[str, Any]] = dict(raw_dormant) if isinstance(raw_dormant, dict) else {}
     community_updated_at = int(community_cache.get("updated_at", 0) or 0)
     community_schema_ver = int(community_cache.get("schema_version", 0) or 0)
     community_dirty = False
+    reactivated_count = 0
 
     active_coh3_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
+    dormant_retention_cutoff = now - OTHER_BR_DORMANT_RETENTION_SEC
 
-    # Remove Veteranos e qualquer brasileiro INATIVO no CoH3 (> 30 dias sem partida) do catálogo
+    def _reactivate_dormant_before_merge(item: dict[str, Any]) -> bool:
+        """Se o jogador estava em `dormant_players` e voltou à ativa (<=15d), devolve o registro preservando histórico."""
+        ipid = int(item.get("profile_id", 0) or 0)
+        ilmd = int(item.get("last_match_date", 0) or 0)
+        if ipid <= 0 or ilmd < active_coh3_cutoff or ipid in vet_pids_set:
+            return False
+        key = str(ipid)
+        if key in dormant_players and key not in community_players:
+            prev_dormant = dormant_players.pop(key)
+            if isinstance(prev_dormant, dict):
+                community_players[key] = prev_dormant
+            return True
+        return False
+
+    # Move inativos (16..90d) para `dormant_players` (cache silencioso p/ reativação automática) e remove Veteranos ou >90d
+    moved_to_dormant = 0
     pruned_inactive = 0
     for k in list(community_players.keys()):
         row = community_players[k]
         rpid = int(row.get("profile_id", 0) or 0) if isinstance(row, dict) else 0
         rsid = str(row.get("steam_id") or "").strip() if isinstance(row, dict) else ""
         rlmd = int(row.get("last_match_date", 0) or 0) if isinstance(row, dict) else 0
-        if rpid in vet_pids_set or rsid in vet_sids_set or rpid <= 0 or rlmd < active_coh3_cutoff:
+        if rpid in vet_pids_set or rsid in vet_sids_set or rpid <= 0:
             del community_players[k]
             community_dirty = True
-            if rlmd < active_coh3_cutoff and rpid not in vet_pids_set:
+        elif rlmd < active_coh3_cutoff:
+            del community_players[k]
+            community_dirty = True
+            if rlmd >= dormant_retention_cutoff and STEAM_ID64_VALID_RE.fullmatch(rsid):
+                dormant_players[str(rpid)] = row
+                moved_to_dormant += 1
+            else:
                 pruned_inactive += 1
-    if pruned_inactive:
+
+    # Higieniza `dormant_players`: remove Veteranos, inválidos, duplicados ou >90d; promove se já estiver <=15d
+    for k in list(dormant_players.keys()):
+        row = dormant_players[k]
+        rpid = int(row.get("profile_id", 0) or 0) if isinstance(row, dict) else 0
+        rsid = str(row.get("steam_id") or "").strip() if isinstance(row, dict) else ""
+        rlmd = int(row.get("last_match_date", 0) or 0) if isinstance(row, dict) else 0
+        if (
+            not isinstance(row, dict)
+            or rpid <= 0
+            or not STEAM_ID64_VALID_RE.fullmatch(rsid)
+            or rpid in vet_pids_set
+            or rsid in vet_sids_set
+            or str(rpid) in community_players
+            or rlmd < dormant_retention_cutoff
+        ):
+            del dormant_players[k]
+            community_dirty = True
+        elif rlmd >= active_coh3_cutoff:
+            community_players[str(rpid)] = dormant_players.pop(k)
+            community_dirty = True
+            reactivated_count += 1
+
+    if moved_to_dormant or pruned_inactive:
         logger.info(
-            "[RADAR COMUNIDADE BR] %d jogador(es) inativo(s) no CoH3 (>%dd) removido(s) de Outros Brasileiros.",
-            pruned_inactive,
+            "[RADAR COMUNIDADE BR] Corte <=%dd aplicado: %d movido(s) p/ monitoramento silencioso (16-%dd) | %d removido(s) (>%dd).",
             OTHER_BR_ACTIVE_COH3_DAYS,
+            moved_to_dormant,
+            OTHER_BR_DORMANT_RETENTION_DAYS,
+            pruned_inactive,
+            OTHER_BR_DORMANT_RETENTION_DAYS,
         )
 
-    # Atualização periódica (12h) ou migração de esquema (total_matches) do catálogo global de brasileiros ativos (<= 30d)
+    # Atualização periódica (12h) ou migração de esquema (total_matches) do catálogo global de brasileiros ativos (<= 15d)
     need_discovery = (
         (not community_players)
         or (community_schema_ver < COMMUNITY_SCHEMA_VERSION)
@@ -999,28 +1080,45 @@ def run_lobby_radar_sync(
 
         if discovered:
             for item in discovered.values():
-                if _merge_player_into_community(
-                    community_players,
-                    item,
-                    vet_pids=vet_pids_set,
-                    vet_sids=vet_sids_set,
-                    min_last_match_date=active_coh3_cutoff,
-                    replace_matches=False,
-                ):
-                    community_dirty = True
+                ilmd = int(item.get("last_match_date", 0) or 0)
+                if ilmd >= active_coh3_cutoff:
+                    if _reactivate_dormant_before_merge(item):
+                        reactivated_count += 1
+                        community_dirty = True
+                    if _merge_player_into_community(
+                        community_players,
+                        item,
+                        vet_pids=vet_pids_set,
+                        vet_sids=vet_sids_set,
+                        min_last_match_date=active_coh3_cutoff,
+                        replace_matches=False,
+                    ):
+                        community_dirty = True
+                elif ilmd >= dormant_retention_cutoff and str(int(item.get("profile_id", 0) or 0)) not in community_players:
+                    if _merge_player_into_community(
+                        dormant_players,
+                        item,
+                        vet_pids=vet_pids_set,
+                        vet_sids=vet_sids_set,
+                        min_last_match_date=dormant_retention_cutoff,
+                        replace_matches=False,
+                    ):
+                        community_dirty = True
             community_cache["schema_version"] = COMMUNITY_SCHEMA_VERSION
             community_cache["updated_at"] = now
             community_cache["source"] = source_lbl
             community_dirty = True
             logger.info(
-                "[RADAR COMUNIDADE BR] Catálogo atualizado (%s): %d Outros Brasileiros ativos no CoH3 (<=%dd).",
+                "[RADAR COMUNIDADE BR] Catálogo atualizado (%s): %d Outros Brasileiros ativos no CoH3 (<=%dd) | %d em vigília silenciosa.",
                 source_lbl or "cache",
                 len(community_players),
                 OTHER_BR_ACTIVE_COH3_DAYS,
+                len(dormant_players),
             )
 
-    # Descoberta passiva (zero chamadas extras) apenas de participantes brasileiros ativos no CoH3 (<= 30d)
+    # Descoberta passiva (zero chamadas extras) de participantes brasileiros ativos no CoH3 (<= 15d) — também reativa inativos!
     for item in discovered_br_from_matches.values():
+        was_dormant = _reactivate_dormant_before_merge(item)
         if _merge_player_into_community(
             community_players,
             item,
@@ -1029,9 +1127,18 @@ def run_lobby_radar_sync(
             min_last_match_date=active_coh3_cutoff,
         ):
             community_dirty = True
+        if was_dormant:
+            reactivated_count += 1
+            community_dirty = True
+            logger.info(
+                "[RADAR COMUNIDADE BR] Jogador inativo (>%dd) reativado por partida recente: %s (pid=%d).",
+                OTHER_BR_ACTIVE_COH3_DAYS,
+                item.get("alias") or item.get("profile_id"),
+                int(item.get("profile_id", 0) or 0),
+            )
 
     # Brasileiros confirmados residentes no exterior (`MANUAL_OTHER_BR_PLAYERS`, ex.: Generick nos EUA):
-    # resolvidos imediatamente quando novos ou periodicamente (6h/descoberta) caso voltem a jogar após >30d
+    # resolvidos imediatamente quando novos ou periodicamente (6h/descoberta) caso voltem a jogar após >15d
     manual_checked_pids = {int(x) for x in (state.get("manual_other_br_checked_pids") or []) if int(x or 0) > 0}
     manual_checked_ts = int(state.get("manual_other_br_checked_ts", 0) or 0)
     manual_to_sync = [
@@ -1059,22 +1166,37 @@ def run_lobby_radar_sync(
             vet_sids=vet_sids_set,
         )
         for item in manual_resolved.values():
-            if _merge_player_into_community(
-                community_players,
-                item,
-                vet_pids=vet_pids_set,
-                vet_sids=vet_sids_set,
-                min_last_match_date=active_coh3_cutoff,
-                replace_matches=False,
-            ):
-                community_dirty = True
-                logger.info(
-                    "[RADAR COMUNIDADE BR] Brasileiro manual ativo sincronizado: %s (pid=%d, ELO=%d, %d jogos).",
-                    item.get("alias") or item["profile_id"],
-                    int(item["profile_id"]),
-                    int(item.get("max_elo", 0) or 0),
-                    int(item.get("total_matches", 0) or 0),
-                )
+            ilmd = int(item.get("last_match_date", 0) or 0)
+            if ilmd >= active_coh3_cutoff:
+                if _reactivate_dormant_before_merge(item):
+                    reactivated_count += 1
+                    community_dirty = True
+                if _merge_player_into_community(
+                    community_players,
+                    item,
+                    vet_pids=vet_pids_set,
+                    vet_sids=vet_sids_set,
+                    min_last_match_date=active_coh3_cutoff,
+                    replace_matches=False,
+                ):
+                    community_dirty = True
+                    logger.info(
+                        "[RADAR COMUNIDADE BR] Brasileiro manual ativo sincronizado: %s (pid=%d, ELO=%d, %d jogos).",
+                        item.get("alias") or item["profile_id"],
+                        int(item["profile_id"]),
+                        int(item.get("max_elo", 0) or 0),
+                        int(item.get("total_matches", 0) or 0),
+                    )
+            elif ilmd >= dormant_retention_cutoff and str(int(item["profile_id"])) not in community_players:
+                if _merge_player_into_community(
+                    dormant_players,
+                    item,
+                    vet_pids=vet_pids_set,
+                    vet_sids=vet_sids_set,
+                    min_last_match_date=dormant_retention_cutoff,
+                    replace_matches=False,
+                ):
+                    community_dirty = True
         if manual_resolved:
             updated_checked = sorted(manual_checked_pids | set(manual_resolved.keys()))
             if updated_checked != sorted(manual_checked_pids) or manual_checked_ts != now:
@@ -1083,37 +1205,35 @@ def run_lobby_radar_sync(
                 state_dirty = True
 
     # Garante sincronização imediata de `flag_country` (ex.: `us` para Generick) e apelidos canônicos
-    # (ex.: `Golden Cobra` para pid 16867) mesmo quando o perfil já estava em cache
+    # (ex.: `Golden Cobra` para pid 16867) mesmo quando o perfil já estava em cache (ativo ou dormente)
     for m_row in MANUAL_OTHER_BR_PLAYERS:
         m_pid = int(m_row.get("profile_id", 0) or 0)
         if m_pid <= 0:
             continue
-        existing_rec = community_players.get(str(m_pid))
-        if not isinstance(existing_rec, dict):
-            continue
-        m_flag = normalize_flag_country(m_row.get("flag_country") or m_row.get("country"))
-        if m_flag and m_flag != "br" and existing_rec.get("flag_country") != m_flag:
-            existing_rec["flag_country"] = m_flag
-            community_dirty = True
-        m_alias = strip_unsafe_chars(m_row.get("original_alias") or "")[:40]
-        m_known = m_row.get("known_aliases") or []
-        if m_alias and (m_row.get("pin_alias") or m_known):
-            if existing_rec.get("alias") != m_alias:
-                old_al = str(existing_rec.get("alias") or "").strip()
-                existing_rec["alias"] = m_alias
+        for target_pool in (community_players, dormant_players):
+            existing_rec = target_pool.get(str(m_pid))
+            if not isinstance(existing_rec, dict):
+                continue
+            m_flag = normalize_flag_country(m_row.get("flag_country") or m_row.get("country"))
+            if m_flag and m_flag != "br" and existing_rec.get("flag_country") != m_flag:
+                existing_rec["flag_country"] = m_flag
                 community_dirty = True
-                if old_al:
-                    _record_community_alias_update(existing_rec, old_al, pid=m_pid)
-            elif existing_rec.get("current_alias"):
-                if _record_community_alias_update(existing_rec, str(existing_rec["current_alias"]), pid=m_pid):
+            m_alias = strip_unsafe_chars(m_row.get("original_alias") or "")[:40]
+            m_known = m_row.get("known_aliases") or []
+            if m_alias and (m_row.get("pin_alias") or m_known):
+                if existing_rec.get("alias") != m_alias:
+                    old_al = str(existing_rec.get("alias") or "").strip()
+                    existing_rec["alias"] = m_alias
                     community_dirty = True
+                    if old_al:
+                        _record_community_alias_update(existing_rec, old_al, pid=m_pid)
+                elif existing_rec.get("current_alias"):
+                    if _record_community_alias_update(existing_rec, str(existing_rec["current_alias"]), pid=m_pid):
+                        community_dirty = True
 
     rotation_offset = int(state.get("other_br_rotation_offset", 0) or 0)
-    other_scan_cap = (
-        MAX_OTHER_BR_ACTIVE_WEB_API
-        if getattr(p_client, "uses_web_api", False)
-        else MAX_OTHER_BR_ACTIVE_PER_CYCLE
-    )
+    uses_web_api = bool(getattr(p_client, "uses_web_api", False))
+    other_scan_cap = MAX_OTHER_BR_ACTIVE_WEB_API if uses_web_api else MAX_OTHER_BR_ACTIVE_PER_CYCLE
     selected_others, next_rotation_offset = _select_other_br_candidates(
         community_players,
         now=now,
@@ -1137,16 +1257,73 @@ def run_lobby_radar_sync(
         ):
             other_skip_xml_sids.add(sid)
 
+    # Vigília silenciosa de reativação instantânea (Steam Web API): monitora inativos (16..90d) sem gastar XML;
+    # se algum voltar a abrir CoH3, é reativado na hora para o lobby e catálogo ativo (<=15d)!
+    dormant_watch: list[dict[str, Any]] = []
+    dormant_steam_ids: list[str] = []
+    if uses_web_api and dormant_players:
+        dormant_sorted = sorted(
+            (
+                row
+                for row in dormant_players.values()
+                if isinstance(row, dict)
+                and int(row.get("profile_id", 0) or 0) > 0
+                and STEAM_ID64_VALID_RE.fullmatch(str(row.get("steam_id") or "").strip())
+            ),
+            key=lambda r: (
+                -int(r.get("last_match_date", 0) or 0),
+                -int(r.get("max_elo", 0) or 0),
+                int(r.get("profile_id", 0) or 0),
+            ),
+        )
+        dormant_watch = dormant_sorted[:MAX_OTHER_BR_DORMANT_WATCH_WEB_API]
+        dormant_steam_ids = [str(r["steam_id"]) for r in dormant_watch]
+        other_skip_xml_sids.update(dormant_steam_ids)
+
+    scan_steam_ids = list(dict.fromkeys(other_steam_ids + dormant_steam_ids))
     other_presence_map: dict[str, dict[str, Any]] = {}
-    if other_steam_ids:
+    if scan_steam_ids:
         other_presence_map = _call_batch_presence(
             p_client,
-            other_steam_ids,
+            scan_steam_ids,
             max_workers=5,
             pace_delay_sec=0.05,
             stop_on_rate_limit=True,
             skip_xml_enrich_sids=other_skip_xml_sids,
         )
+
+    # Reativação instantânea: se algum inativo (16..90d) abriu CoH3 agora na Steam, volta imediatamente ao lobby!
+    selected_other_pids: set[int] = {int(r["profile_id"]) for r in selected_others if int(r.get("profile_id", 0) or 0) > 0}
+    dormant_online_relic_candidates: list[int] = []
+    for drow in dormant_watch:
+        dpid = int(drow.get("profile_id", 0) or 0)
+        dsid = str(drow.get("steam_id") or "")
+        dpres = other_presence_map.get(dsid)
+        if not dpres:
+            continue
+        if dpres.get("is_in_coh3"):
+            drow["last_match_date"] = now
+            drow["last_seen_online_ts"] = now
+            dormant_players.pop(str(dpid), None)
+            community_players[str(dpid)] = drow
+            community_dirty = True
+            reactivated_count += 1
+            if dpid not in selected_other_pids:
+                selected_others.append(drow)
+                selected_other_pids.add(dpid)
+            logger.info(
+                "[RADAR COMUNIDADE BR] Jogador inativo (>%dd) reativado automaticamente ao abrir CoH3: %s (pid=%d).",
+                OTHER_BR_ACTIVE_COH3_DAYS,
+                drow.get("alias") or dpid,
+                dpid,
+            )
+        elif (
+            dpres.get("is_online_steam")
+            and not dpres.get("other_game")
+            and not dpres.get("is_away")
+            and not dpres.get("is_busy")
+        ):
+            dormant_online_relic_candidates.append(dpid)
 
     # Atualiza last_seen_online_ts (30 min), last_seen_ingame_ts (XML/Web API), cache 24h de jogos ocultos e mudanças de nick Steam
     other_known_ingame_sids: set[str] = set()
@@ -1211,6 +1388,7 @@ def run_lobby_radar_sync(
     # 1) Prioridade máxima: contas ONLINE livres na Steam com detalhes de jogos ocultos (para promover a `in_coh3`!).
     # 2) Demais contas ONLINE livres na Steam (cobre atraso de cache XML <= 5 min).
     # 3) Contas OFFLINE / Steam privada (detecta invisíveis ativos nos últimos 35 min).
+    # 4) Até 20 dormentes (16..90d) que estão ONLINE livres agora (reativa na hora quem joga com jogos ocultos!).
     other_latest_matches: dict[int, dict[str, Any]] = dict(br_participant_matches)
     other_elo_by_pid: dict[int, int] = {
         int(r["profile_id"]): int(r.get("max_elo", 0) or 0) for r in selected_others if int(r.get("max_elo", 0) or 0) > 0
@@ -1246,15 +1424,74 @@ def run_lobby_radar_sync(
     invisible_candidates = (
         online_hidden_candidates + online_public_candidates + offline_candidates
     )[:MAX_OTHER_BR_RELIC_INVISIBLE_CHECK]
+    dormant_relic_slice = [
+        pid for pid in dormant_online_relic_candidates if pid not in set(invisible_candidates)
+    ][:MAX_OTHER_BR_DORMANT_RELIC_RECHECK]
+    dormant_relic_set = set(dormant_relic_slice)
+    relic_batch_pids = invisible_candidates + dormant_relic_slice
 
-    if invisible_candidates and hasattr(r_client, "fetch_profile_stats_batch"):
+    if relic_batch_pids and hasattr(r_client, "fetch_profile_stats_batch"):
         recent_cutoff_sec = RECENT_RELIC_WINDOW_MINUTES * 60
         try:
-            other_stats = r_client.fetch_profile_stats_batch(invisible_candidates, pace_delay_sec=0.22)
+            other_stats = r_client.fetch_profile_stats_batch(relic_batch_pids, pace_delay_sec=0.22)
             for pid, st in other_stats.items():
                 lmd = int(st.get("last_match_date", 0) or 0)
                 elo = int(st.get("max_elo", 0) or 0)
                 t_matches = max(0, int(st.get("total_matches", 0) or 0))
+                if pid in dormant_relic_set and str(pid) in dormant_players:
+                    if lmd < active_coh3_cutoff:
+                        continue
+                    drow = dormant_players.pop(str(pid))
+                    drow["last_match_date"] = max(int(drow.get("last_match_date", 0) or 0), lmd)
+                    drow["last_seen_online_ts"] = now
+                    if elo > int(drow.get("max_elo", 0) or 0):
+                        drow["max_elo"] = elo
+                    if t_matches > int(drow.get("total_matches", 0) or 0):
+                        drow["total_matches"] = t_matches
+                    al = str(st.get("alias") or "").strip()
+                    if al:
+                        _record_community_alias_update(drow, al, pid=pid)
+                    dsid = str(drow.get("steam_id") or "")
+                    dpres = other_presence_map.get(dsid)
+                    if dpres and dpres.get("steam_alias"):
+                        _record_community_alias_update(drow, str(dpres["steam_alias"]), pid=pid)
+                    if dpres and dpres.get("ok") and str(dpres.get("source") or "xml").strip().lower() == "web_api" and dpres.get("privacy_state") == "public":
+                        if dpres.get("game_details_checked") is False:
+                            gd_ts = int(drow.get("steam_gd_checked_ts", 0) or 0)
+                            if gd_ts > 0 and (now - gd_ts) <= STEAM_GD_CACHE_TTL_SEC and "steam_games_hidden" in drow:
+                                is_hidden = bool(drow.get("steam_games_hidden"))
+                                dpres["has_public_game_details"] = not is_hidden
+                                dpres["has_coh3_in_recent_games"] = not is_hidden
+                                dpres["most_played_count"] = 0 if is_hidden else 3
+                                dpres["game_details_checked"] = True
+                    prev_ig_webapi = int(drow.get("last_seen_ingame_webapi_ts", 0) or 0)
+                    if dsid and prev_ig_webapi > 0 and (now - prev_ig_webapi) <= STEAM_INGAME_VISIBLE_TTL_SEC:
+                        known_ingame_visible_webapi_sids.add(dsid)
+                    community_players[str(pid)] = drow
+                    community_dirty = True
+                    reactivated_count += 1
+                    if pid not in selected_other_pids:
+                        selected_others.append(drow)
+                        selected_other_pids.add(pid)
+                    if elo > other_elo_by_pid.get(pid, 0):
+                        other_elo_by_pid[pid] = elo
+                    if (now - lmd) <= recent_cutoff_sec:
+                        prev_m = other_latest_matches.get(pid)
+                        if prev_m is None or lmd > int(prev_m.get("completion_time", 0)):
+                            other_latest_matches[pid] = {
+                                "profile_id": pid,
+                                "match_id": 0,
+                                "completion_time": lmd,
+                                "mode": str(st.get("last_match_mode") or "Partida"),
+                            }
+                    logger.info(
+                        "[RADAR COMUNIDADE BR] Jogador inativo (>%dd) reativado automaticamente por nova partida CoH3 na Relic: %s (pid=%d).",
+                        OTHER_BR_ACTIVE_COH3_DAYS,
+                        drow.get("alias") or pid,
+                        pid,
+                    )
+                    continue
+
                 if elo > other_elo_by_pid.get(pid, 0):
                     other_elo_by_pid[pid] = elo
                 if lmd > 0 and (now - lmd) <= recent_cutoff_sec:
@@ -1324,8 +1561,12 @@ def run_lobby_radar_sync(
         except Exception as exc:
             logger.debug("Falha transitória ao checar histórico Custom/IA de Outros Brasileiros: %s", redact_secrets(exc))
 
+    if _trim_dormant_players_dict(dormant_players, max_entries=MAX_OTHER_BR_DORMANT_CACHE):
+        community_dirty = True
+
     if community_dirty:
         community_cache["players"] = community_players
+        community_cache["dormant_players"] = dormant_players
         save_community_cache(comm_path, community_cache)
 
     snapshot = build_lobby_radar_snapshot(
@@ -1354,6 +1595,7 @@ def run_lobby_radar_sync(
     summary["other_br_online_steam"] = len(oth_bucket["online_steam"])
     summary["other_br_recent_relic"] = len(oth_bucket["recent_relic"])
     summary["other_br_catalog_total"] = len(community_players)
+    summary["other_br_reactivated"] = reactivated_count
 
     digest = compute_lobby_state_digest(snapshot)
     prev_digest = str(state.get("last_digest") or "")
