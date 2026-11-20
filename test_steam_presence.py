@@ -620,6 +620,208 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         self.assertEqual(parsed["mode"], "vs IA")
         self.assertEqual(parsed["completion_time"], 1_800_000_000)
 
+    def test_steam_web_api_parses_away_snooze_busy_online_and_steam_alias(self) -> None:
+        from steam_presence import parse_steam_web_api_player
+
+        p_busy = parse_steam_web_api_player(
+            {
+                "steamid": "76561197993922195",
+                "communityvisibilitystate": 3,
+                "personastate": 2,
+                "personaname": "INFIEL",
+            }
+        )
+        assert p_busy is not None
+        self.assertTrue(p_busy["is_online_steam"])
+        self.assertTrue(p_busy["is_busy"])
+        self.assertFalse(p_busy["is_away"])
+        self.assertFalse(p_busy["is_snooze"])
+        self.assertEqual(p_busy["steam_alias"], "INFIEL")
+
+        p_away = parse_steam_web_api_player(
+            {
+                "steamid": "76561197994245218",
+                "communityvisibilitystate": 3,
+                "personastate": 3,
+                "personaname": "Kefbr",
+            }
+        )
+        assert p_away is not None
+        self.assertTrue(p_away["is_online_steam"])
+        self.assertTrue(p_away["is_away"])
+        self.assertFalse(p_away["is_snooze"])
+        self.assertFalse(p_away["is_busy"])
+
+        p_snooze = parse_steam_web_api_player(
+            {
+                "steamid": "76561197981615184",
+                "communityvisibilitystate": 3,
+                "personastate": 4,
+                "personaname": "Maiti",
+            }
+        )
+        assert p_snooze is not None
+        self.assertTrue(p_snooze["is_online_steam"])
+        self.assertTrue(p_snooze["is_away"])
+        self.assertTrue(p_snooze["is_snooze"])
+        self.assertFalse(p_snooze["is_busy"])
+
+        p_coh3 = parse_steam_web_api_player(
+            {
+                "steamid": SAMPLE_SID,
+                "communityvisibilitystate": 3,
+                "personastate": 1,
+                "personaname": "ChacineiroNovo",
+                "gameid": "1677280",
+                "gameextrainfo": "Company of Heroes 3",
+            }
+        )
+        assert p_coh3 is not None
+        self.assertTrue(p_coh3["is_in_coh3"])
+        self.assertEqual(p_coh3["steam_alias"], "ChacineiroNovo")
+
+    def test_nick_change_preserves_previous_nick_with_asterisk_while_arc_stays_pinned_and_golden_cobra_applies(self) -> None:
+        now = 1_800_000_000
+        vet_roster = [
+            {"profile_id": 79327, "steam_id": SAMPLE_SID, "original_alias": "Chacineiro"},
+            {
+                "profile_id": 559962,
+                "steam_id": "76561198062871244",
+                "original_alias": "Gabe",
+                "known_aliases": ["É o Gabe", "Gabe"],
+            },
+            {
+                "profile_id": 1005730,
+                "steam_id": "76561199791811246",
+                "original_alias": "arc",
+                "pin_alias": True,
+            },
+            {
+                "profile_id": 1423426,
+                "steam_id": "76561199482388323",
+                "original_alias": "arc",
+                "pin_alias": True,
+                "merged_into_profile_id": 1005730,
+                "merged_into_steam_id": "76561199791811246",
+                "known_aliases": ["uncle hans", "geladeira velha", "dibas", "arc"],
+            },
+        ]
+        other_roster = [
+            {
+                "profile_id": 16867,
+                "steam_id": "76561198874381986",
+                "alias": "COHBRAMACHINE",
+                "max_elo": 1583,
+                "last_match_date": now - 3600,
+                "total_matches": 6167,
+            },
+            {
+                "profile_id": 999123,
+                "steam_id": "76561198000999123",
+                "alias": "AntigoBR",
+                "current_alias": "NovoNickBR",
+                "max_elo": 1420,
+                "last_match_date": now - 3600,
+                "total_matches": 150,
+            },
+        ]
+        pres = {
+            # Chacineiro trocou de nick na Steam -> mantém nick anterior com '*'!
+            SAMPLE_SID: {
+                "steam_id": SAMPLE_SID,
+                "steam_alias": "ChacineiroDisfarce",
+                "ok": True,
+                "is_in_coh3": True,
+                "is_online_steam": True,
+                "is_away": False,
+                "is_snooze": False,
+                "is_busy": False,
+                "other_game": "",
+            },
+            # Gabe com nick conhecido "É o Gabe" -> exibe simplesmente "Gabe" sem '*'!
+            "76561198062871244": {
+                "steam_id": "76561198062871244",
+                "steam_alias": "É o Gabe",
+                "ok": True,
+                "is_in_coh3": False,
+                "is_online_steam": True,
+                "is_away": True,
+                "is_snooze": True,
+                "is_busy": False,
+                "other_game": "",
+            },
+            # arc na conta secundária 1423426 com nick aleatório "geladeira velha" -> SEMPRE "arc" sem '*'!
+            "76561199482388323": {
+                "steam_id": "76561199482388323",
+                "steam_alias": "geladeira velha",
+                "ok": True,
+                "is_in_coh3": False,
+                "is_online_steam": True,
+                "is_away": False,
+                "is_snooze": False,
+                "is_busy": True,
+                "other_game": "",
+            },
+            # COHBRAMACHINE (16867) em Outros Brasileiros -> exibe "Golden Cobra" sem '*'!
+            "76561198874381986": {
+                "steam_id": "76561198874381986",
+                "steam_alias": "COHBRAMACHINE",
+                "ok": True,
+                "is_in_coh3": True,
+                "is_online_steam": True,
+                "is_away": False,
+                "is_snooze": False,
+                "is_busy": False,
+                "other_game": "",
+            },
+            # Outro BR que trocou de nick -> mantém nick anterior com '*'!
+            "76561198000999123": {
+                "steam_id": "76561198000999123",
+                "steam_alias": "NovoNickBR",
+                "ok": True,
+                "is_in_coh3": False,
+                "is_online_steam": True,
+                "is_away": False,
+                "is_snooze": False,
+                "is_busy": False,
+                "other_game": "",
+            },
+        }
+        snap = build_lobby_radar_snapshot(
+            vet_roster,
+            pres,
+            latest_matches_by_pid={1005730: {"profile_id": 1005730, "completion_time": now - 60, "mode": "2v2"}},
+            now_ts=now,
+            other_br_players=other_roster,
+            other_presence_by_steam=pres,
+        )
+        # 1) Chacineiro manteve nick anterior + '*' + current_alias
+        vet_coh3 = snap["veteranos"]["in_coh3"]
+        self.assertEqual([p["profile_id"] for p in vet_coh3], [79327])
+        self.assertEqual(vet_coh3[0]["alias"], "Chacineiro*")
+        self.assertTrue(vet_coh3[0]["nick_changed"])
+        self.assertEqual(vet_coh3[0]["previous_alias"], "Chacineiro")
+        self.assertEqual(vet_coh3[0]["current_alias"], "ChacineiroDisfarce")
+
+        # 2) Gabe ("É o Gabe" conhecido) e arc (pin_alias=True, Ocupado — NÃO promovido via Relic!)
+        vet_on = {p["profile_id"]: p for p in snap["veteranos"]["online_steam"]}
+        self.assertEqual(vet_on[559962]["alias"], "Gabe")
+        self.assertFalse(vet_on[559962]["nick_changed"])
+        self.assertTrue(vet_on[559962]["is_away"])
+        self.assertTrue(vet_on[559962]["is_snooze"])
+        self.assertEqual(vet_on[1005730]["alias"], "arc")
+        self.assertFalse(vet_on[1005730]["nick_changed"])
+        self.assertTrue(vet_on[1005730]["is_busy"])
+
+        # 3) Outros Brasileiros: 16867 -> Golden Cobra; 999123 -> AntigoBR*
+        oth_coh3 = snap["outros_brasileiros"]["in_coh3"]
+        self.assertEqual(oth_coh3[0]["alias"], "Golden Cobra")
+        self.assertFalse(oth_coh3[0]["nick_changed"])
+        oth_on = snap["outros_brasileiros"]["online_steam"]
+        self.assertEqual(oth_on[0]["alias"], "AntigoBR*")
+        self.assertTrue(oth_on[0]["nick_changed"])
+        self.assertEqual(oth_on[0]["current_alias"], "NovoNickBR")
+
 
 if __name__ == "__main__":
     unittest.main()

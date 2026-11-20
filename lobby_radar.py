@@ -48,6 +48,7 @@ from steam_presence import (
     build_lobby_radar_snapshot,
     classify_other_br_prominence,
     compute_lobby_state_digest,
+    get_manual_other_br_override,
     normalize_flag_country,
     steam_presence_hides_coh3_game,
 )
@@ -65,7 +66,7 @@ DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
 # 4m30s garante que o ciclo de 5 min (300s) nunca pule a atualização por 1-2s de jitter do relógio
 PANEL_HEARTBEAT_REFRESH_SEC = 270
-PANEL_LAYOUT_VERSION = 6
+PANEL_LAYOUT_VERSION = 7
 COMMUNITY_SCHEMA_VERSION = 3
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
@@ -73,6 +74,7 @@ MANUAL_OTHER_BR_RECHECK_TTL_SEC = 6 * 3600
 OTHER_BR_ACTIVE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400  # 30 dias (1 mês)
 OTHER_BR_INVISIBLE_MATCH_WINDOW_SEC = OTHER_BR_ACTIVE_COH3_DAYS * 86400
 MAX_OTHER_BR_ACTIVE_PER_CYCLE = 220
+MAX_OTHER_BR_ACTIVE_WEB_API = 1500
 OTHER_BR_ROTATION_SLICE = 64
 OTHER_BR_HOT_ONLINE_PIN_SEC = 90 * 60     # 90 min: fixa no ciclo de 5 min quem foi visto online há pouco
 OTHER_BR_HOT_INGAME_PIN_SEC = 2 * 3600    # 2h: fixa quem foi visto jogando há pouco
@@ -145,9 +147,20 @@ def resolve_lobby_webhook_url(base_dir: Path = BASE_DIR) -> str:
 
 
 def _compute_fast_steam_signature(presence_map: dict[str, dict[str, Any]]) -> str:
-    in_coh3 = sorted(sid for sid, p in presence_map.items() if p.get("is_in_coh3"))
+    in_coh3 = sorted(
+        (sid, bool(p.get("is_away")), bool(p.get("is_snooze")), bool(p.get("is_busy")), str(p.get("steam_alias") or ""))
+        for sid, p in presence_map.items()
+        if p.get("is_in_coh3")
+    )
     online = sorted(
-        (sid, str(p.get("other_game") or ""), bool(p.get("is_away")))
+        (
+            sid,
+            str(p.get("other_game") or ""),
+            bool(p.get("is_away")),
+            bool(p.get("is_snooze")),
+            bool(p.get("is_busy")),
+            str(p.get("steam_alias") or ""),
+        )
         for sid, p in presence_map.items()
         if p.get("is_online_steam") and not p.get("is_in_coh3")
     )
@@ -248,6 +261,45 @@ def _build_veteranos_privacy_diagnostics(
     return diag
 
 
+def _record_community_alias_update(rec: dict[str, Any], incoming_alias: str, *, pid: int) -> bool:
+    """
+    Preserva o nick anterior em `rec['alias']` e registra eventual novo nick em `rec['current_alias']`,
+    respeitando `known_aliases` / `pin_alias` de `MANUAL_OTHER_BR_PLAYERS` (ex.: `Golden Cobra`).
+    """
+    al = strip_unsafe_chars(incoming_alias)[:40]
+    if not al or al.startswith("Jogador "):
+        return False
+    changed = False
+    manual_ov = get_manual_other_br_override(pid)
+    known_cf: set[str] = set()
+    pin_alias = False
+    if manual_ov:
+        pin_alias = bool(manual_ov.get("pin_alias"))
+        ov_known = [strip_unsafe_chars(k)[:40] for k in (manual_ov.get("known_aliases") or []) if strip_unsafe_chars(k)]
+        known_cf = {k.casefold() for k in ov_known}
+        ov_alias = strip_unsafe_chars(manual_ov.get("original_alias") or "")[:40]
+        if ov_alias and (pin_alias or ov_known) and rec.get("alias") != ov_alias:
+            rec["alias"] = ov_alias
+            changed = True
+
+    base_alias = str(rec.get("alias") or "").strip()
+    if not base_alias or base_alias.startswith("Jogador "):
+        rec["alias"] = al
+        if rec.pop("current_alias", None) is not None:
+            changed = True
+        return True
+
+    if pin_alias or al.casefold() == base_alias.casefold() or al.casefold() in known_cf:
+        if rec.pop("current_alias", None) is not None:
+            changed = True
+        return changed
+
+    if rec.get("current_alias") != al:
+        rec["current_alias"] = al
+        changed = True
+    return changed
+
+
 def _merge_player_into_community(
     players_dict: dict[str, dict[str, Any]],
     entry: dict[str, Any],
@@ -264,6 +316,7 @@ def _merge_player_into_community(
 
     key = str(pid)
     alias = strip_unsafe_chars(entry.get("alias") or "")[:40] or f"Jogador {pid}"
+    cur_alias = strip_unsafe_chars(entry.get("current_alias") or "")[:40]
     max_elo = max(0, int(entry.get("max_elo", 0) or 0))
     last_md = max(0, int(entry.get("last_match_date", 0) or 0))
     total_matches = max(0, int(entry.get("total_matches", 0) or 0))
@@ -276,6 +329,15 @@ def _merge_player_into_community(
     last_seen_ig = max(0, int(entry.get("last_seen_ingame_ts", 0) or 0))
     flag_ctry = normalize_flag_country(entry.get("flag_country"))
 
+    manual_ov = get_manual_other_br_override(pid)
+    if manual_ov:
+        ov_alias = strip_unsafe_chars(manual_ov.get("original_alias") or "")[:40]
+        ov_known = manual_ov.get("known_aliases") or []
+        if ov_alias and (manual_ov.get("pin_alias") or ov_known):
+            if alias.casefold() != ov_alias.casefold() and not cur_alias:
+                cur_alias = alias
+            alias = ov_alias
+
     if prev is None:
         rec: dict[str, Any] = {
             "profile_id": pid,
@@ -286,6 +348,8 @@ def _merge_player_into_community(
             "total_matches": total_matches,
             "last_seen_online_ts": max(0, int(entry.get("last_seen_online_ts", 0) or 0)),
         }
+        if cur_alias:
+            _record_community_alias_update(rec, cur_alias, pid=pid)
         if br_source:
             rec["br_source"] = br_source
         if last_seen_ig > 0:
@@ -299,8 +363,9 @@ def _merge_player_into_community(
     if sid != prev.get("steam_id"):
         prev["steam_id"] = sid
         changed = True
-    if alias and not alias.startswith("Jogador ") and alias != prev.get("alias"):
-        prev["alias"] = alias
+    if _record_community_alias_update(prev, alias, pid=pid):
+        changed = True
+    if cur_alias and _record_community_alias_update(prev, cur_alias, pid=pid):
         changed = True
     if max_elo > int(prev.get("max_elo", 0) or 0):
         prev["max_elo"] = max_elo
@@ -334,14 +399,15 @@ def _select_other_br_candidates(
     *,
     now: int,
     rotation_offset: int,
+    max_per_cycle: int = MAX_OTHER_BR_ACTIVE_PER_CYCLE,
 ) -> tuple[list[dict[str, Any]], int]:
     """
     Seleciona EXCLUSIVAMENTE 'Outros Brasileiros' ATIVOS no CoH3 (partida nos últimos 30 dias):
     - Inativos (> 30 dias sem partida no CoH3 ou sem histórico) jamais são checados ou exibidos.
     - Jogadores vistos online/em jogo/com partida há pouco (independente do ELO!) são FIXADOS em TODOS
       os ciclos de 5 min para não desaparecerem na fila de rotação.
-    - As demais vagas até `MAX_OTHER_BR_ACTIVE_PER_CYCLE` (220) são preenchidas pelos de maior evidência
-      (ELO alto + atividade no CoH3), e o excedente dormente rotaciona em fatias de `OTHER_BR_ROTATION_SLICE` (64).
+    - As demais vagas até `max_per_cycle` (220 no modo XML; até 1500 com Steam Web API) são preenchidas
+      pelos de maior evidência (ELO alto + atividade no CoH3), e o excedente rotaciona em fatias de 64.
     """
     active_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
     active_rows = [
@@ -385,8 +451,9 @@ def _select_other_br_candidates(
     regular_rows = [r for r in active_rows if not _is_hot_player(r)]
     prioritized_rows = hot_rows + regular_rows
 
-    selected = prioritized_rows[:MAX_OTHER_BR_ACTIVE_PER_CYCLE]
-    overflow_active = prioritized_rows[MAX_OTHER_BR_ACTIVE_PER_CYCLE:]
+    cap = max(1, int(max_per_cycle))
+    selected = prioritized_rows[:cap]
+    overflow_active = prioritized_rows[cap:]
 
     next_offset = 0
     if overflow_active:
@@ -407,6 +474,7 @@ def _call_batch_presence(
     max_workers: int,
     pace_delay_sec: float = 0.0,
     stop_on_rate_limit: bool = False,
+    require_xml_details: bool = False,
 ) -> dict[str, dict[str, Any]]:
     fn = p_client.fetch_batch_presence
     try:
@@ -420,6 +488,8 @@ def _call_batch_presence(
         kwargs["pace_delay_sec"] = pace_delay_sec
     if "stop_on_rate_limit" in params:
         kwargs["stop_on_rate_limit"] = stop_on_rate_limit
+    if "require_xml_details" in params:
+        kwargs["require_xml_details"] = require_xml_details
     return fn(steam_ids, **kwargs)
 
 
@@ -455,7 +525,7 @@ def resolve_manual_other_br_entries(
     """
     Resolve via Relic API (`getPersonalStat` + `getRecentMatchHistoryByProfileId`) os brasileiros
     confirmados cadastrados manualmente em `MANUAL_OTHER_BR_PLAYERS` (ex.: brasileiros residentes
-    nos EUA/Europa cuja bandeira na Relic/Steam não é `br`).
+    nos EUA/Europa cuja bandeira na Relic/Steam não é `br`, ou apelidos canônicos como `Golden Cobra`).
     """
     targets: dict[int, dict[str, Any]] = {}
     for row in manual_players:
@@ -467,7 +537,9 @@ def resolve_manual_other_br_entries(
             "profile_id": pid,
             "steam_id": sid if STEAM_ID64_VALID_RE.fullmatch(sid) else "",
             "alias": str(row.get("original_alias") or row.get("alias") or "").strip(),
-            "flag_country": normalize_flag_country(row.get("flag_country")),
+            "flag_country": normalize_flag_country(row.get("flag_country") or row.get("country")),
+            "known_aliases": [strip_unsafe_chars(k)[:40] for k in (row.get("known_aliases") or []) if strip_unsafe_chars(k)],
+            "pin_alias": bool(row.get("pin_alias")),
         }
     if not targets:
         return {}
@@ -502,7 +574,22 @@ def resolve_manual_other_br_entries(
         st = stats_map.get(pid) or {}
         lm = latest_map.get(pid) or {}
         sid = str(st.get("steam_id") or base["steam_id"] or "").replace("/steam/", "").strip()
-        alias = str(st.get("alias") or base["alias"] or f"Jogador {pid}").strip()
+        live_relic_alias = str(st.get("alias") or "").strip()
+        if base["alias"] and (base["pin_alias"] or base["known_aliases"]):
+            alias = base["alias"]
+            known_cf = {k.casefold() for k in base["known_aliases"]} | {alias.casefold()}
+            cur_alias = (
+                live_relic_alias
+                if (live_relic_alias and not base["pin_alias"] and live_relic_alias.casefold() not in known_cf)
+                else ""
+            )
+        else:
+            alias = base["alias"] or live_relic_alias or f"Jogador {pid}"
+            cur_alias = (
+                live_relic_alias
+                if (live_relic_alias and live_relic_alias.casefold() != alias.casefold())
+                else ""
+            )
         max_elo = max(0, int(st.get("max_elo", 0) or 0))
         total_matches = max(0, int(st.get("total_matches", 0) or 0))
         lmd = max(
@@ -518,7 +605,9 @@ def resolve_manual_other_br_entries(
             "total_matches": total_matches,
             "br_source": "manual_other_br",
         }
-        if base.get("flag_country"):
+        if cur_alias:
+            entry_out["current_alias"] = cur_alias
+        if base.get("flag_country") and base["flag_country"] != "br":
             entry_out["flag_country"] = base["flag_country"]
         resolved[pid] = entry_out
     return resolved
@@ -880,21 +969,43 @@ def run_lobby_radar_sync(
                 state["manual_other_br_checked_ts"] = now
                 state_dirty = True
 
-    # Garante sincronização imediata de `flag_country` (ex.: `us` para Generick) mesmo quando o perfil já estava em cache
+    # Garante sincronização imediata de `flag_country` (ex.: `us` para Generick) e apelidos canônicos
+    # (ex.: `Golden Cobra` para pid 16867) mesmo quando o perfil já estava em cache
     for m_row in MANUAL_OTHER_BR_PLAYERS:
         m_pid = int(m_row.get("profile_id", 0) or 0)
-        m_flag = normalize_flag_country(m_row.get("flag_country"))
-        if m_pid > 0 and m_flag and m_flag != "br":
-            existing_rec = community_players.get(str(m_pid))
-            if isinstance(existing_rec, dict) and existing_rec.get("flag_country") != m_flag:
-                existing_rec["flag_country"] = m_flag
+        if m_pid <= 0:
+            continue
+        existing_rec = community_players.get(str(m_pid))
+        if not isinstance(existing_rec, dict):
+            continue
+        m_flag = normalize_flag_country(m_row.get("flag_country") or m_row.get("country"))
+        if m_flag and m_flag != "br" and existing_rec.get("flag_country") != m_flag:
+            existing_rec["flag_country"] = m_flag
+            community_dirty = True
+        m_alias = strip_unsafe_chars(m_row.get("original_alias") or "")[:40]
+        m_known = m_row.get("known_aliases") or []
+        if m_alias and (m_row.get("pin_alias") or m_known):
+            if existing_rec.get("alias") != m_alias:
+                old_al = str(existing_rec.get("alias") or "").strip()
+                existing_rec["alias"] = m_alias
                 community_dirty = True
+                if old_al:
+                    _record_community_alias_update(existing_rec, old_al, pid=m_pid)
+            elif existing_rec.get("current_alias"):
+                if _record_community_alias_update(existing_rec, str(existing_rec["current_alias"]), pid=m_pid):
+                    community_dirty = True
 
     rotation_offset = int(state.get("other_br_rotation_offset", 0) or 0)
+    other_scan_cap = (
+        MAX_OTHER_BR_ACTIVE_WEB_API
+        if getattr(p_client, "uses_web_api", False)
+        else MAX_OTHER_BR_ACTIVE_PER_CYCLE
+    )
     selected_others, next_rotation_offset = _select_other_br_candidates(
         community_players,
         now=now,
         rotation_offset=rotation_offset,
+        max_per_cycle=other_scan_cap,
     )
     if next_rotation_offset != rotation_offset:
         state["other_br_rotation_offset"] = next_rotation_offset
@@ -911,11 +1022,15 @@ def run_lobby_radar_sync(
             stop_on_rate_limit=True,
         )
 
-    # Atualiza last_seen_online_ts (30 min) e last_seen_ingame_ts (6h) para evitar ruído no git
+    # Atualiza last_seen_online_ts (30 min), last_seen_ingame_ts (6h) e detecta mudanças de nick Steam
     other_known_ingame_sids: set[str] = set()
     for row in selected_others:
+        rpid = int(row.get("profile_id", 0) or 0)
         sid = str(row.get("steam_id") or "")
         pres = other_presence_map.get(sid)
+        if pres and pres.get("steam_alias"):
+            if _record_community_alias_update(row, str(pres["steam_alias"]), pid=rpid):
+                community_dirty = True
         if pres and (pres.get("is_in_coh3") or pres.get("is_online_steam")):
             prev_seen = int(row.get("last_seen_online_ts", 0) or 0)
             if (now - prev_seen) >= 1800:
@@ -955,7 +1070,7 @@ def run_lobby_radar_sync(
         if pres.get("is_in_coh3"):
             continue
         if pres.get("is_online_steam"):
-            if pres.get("other_game") or pres.get("is_away"):
+            if pres.get("other_game") or pres.get("is_away") or pres.get("is_busy"):
                 continue
             if (
                 steam_presence_hides_coh3_game(pres, known_ingame_visible_sids=known_ingame_visible_sids)
@@ -1002,8 +1117,7 @@ def run_lobby_radar_sync(
                         crow["total_matches"] = t_matches
                         community_dirty = True
                     al = str(st.get("alias") or "").strip()
-                    if al and al != crow.get("alias"):
-                        crow["alias"] = al
+                    if al and _record_community_alias_update(crow, al, pid=pid):
                         community_dirty = True
         except Exception as exc:
             logger.debug("Falha transitória ao checar invisíveis de Outros Brasileiros: %s", redact_secrets(exc))

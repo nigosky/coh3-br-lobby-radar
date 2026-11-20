@@ -87,11 +87,18 @@ class SecurityPrimitivesTests(unittest.TestCase):
     def test_redact_secrets_and_strip_bidi_spoofing(self) -> None:
         fake_host = "https://discord.com"
         fake_path = "/api/" + "webhooks/" + "999999999999999999/" + ("A" * 40)
-        leaked = f"Erro ao chamar {fake_host}{fake_path} com DISCORD_LOBBY_WEBHOOK_URL=secret123"
+        fake_steam_key = "ABCDEF1234567890ABCDEF1234567890"
+        leaked = (
+            f"Erro ao chamar {fake_host}{fake_path} com DISCORD_LOBBY_WEBHOOK_URL=secret123 "
+            f"e https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={fake_steam_key}&steamids=76561197963172584 "
+            f"STEAM_WEB_API_KEY={fake_steam_key}"
+        )
         scrubbed = redact_secrets(leaked)
         self.assertNotIn("999999999999999999", scrubbed)
         self.assertNotIn("secret123", scrubbed)
+        self.assertNotIn(fake_steam_key, scrubbed)
         self.assertIn("[WEBHOOK_REDACTED]", scrubbed)
+        self.assertIn("[STEAM_KEY_REDACTED]", scrubbed)
 
         # Remove RLO (U+202E) e caracteres de controle
         spoofed = "Jogador\u202e\x00\x07Test"

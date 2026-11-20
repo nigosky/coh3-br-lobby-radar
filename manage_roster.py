@@ -201,6 +201,7 @@ def upsert_player_in_roster(
     alias: str = "",
     country: str = "",
     in_ranking: bool = True,
+    pin_alias: bool | None = None,
     relic_client: RelicActivityClient | None = None,
 ) -> dict[str, Any]:
     if section not in ("veteranos", "manual_other_br"):
@@ -232,6 +233,8 @@ def upsert_player_in_roster(
     }
     if section == "veteranos":
         entry["in_ranking"] = bool(in_ranking)
+    if pin_alias is not None:
+        entry["pin_alias"] = bool(pin_alias)
 
     updated = False
     for idx, row in enumerate(doc[section]):

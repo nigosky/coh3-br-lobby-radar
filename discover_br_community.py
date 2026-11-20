@@ -175,7 +175,7 @@ def run_deep_br_discovery(
     br_pool: dict[int, dict[str, Any]] = {}
     cand_pool: dict[int, dict[str, Any]] = {}
 
-    # Carrega jogadores já verificados anteriormente (preserva Steam-verified ativos)
+    # Carrega jogadores já verificados anteriormente (preserva Steam-verified ativos e nick anterior)
     for k, row in existing_players.items():
         if not isinstance(row, dict):
             continue
@@ -187,6 +187,7 @@ def run_deep_br_discovery(
                 profile_id=pid,
                 steam_id=sid,
                 alias=str(row.get("alias") or ""),
+                current_alias=str(row.get("current_alias") or ""),
                 max_elo=int(row.get("max_elo", 0) or 0),
                 last_match_date=int(row.get("last_match_date", 0) or 0),
                 total_matches=int(row.get("total_matches", 0) or 0),
@@ -322,8 +323,16 @@ def run_deep_br_discovery(
 
             # Para membros de grupo BR cuja Relic mostra outro país, confirma via `<location>` da Steam
             if verify_foreign_group and hasattr(p_client, "fetch_batch_presence"):
+                from lobby_radar import _call_batch_presence
                 fg_sids = [str(x["steam_id"]) for x in verify_foreign_group if x.get("steam_id")]
-                fg_pres = p_client.fetch_batch_presence(fg_sids, max_workers=4, pace_delay_sec=0.06, stop_on_rate_limit=True)
+                fg_pres = _call_batch_presence(
+                    p_client,
+                    fg_sids,
+                    max_workers=4,
+                    pace_delay_sec=0.06,
+                    stop_on_rate_limit=True,
+                    require_xml_details=True,
+                )
                 for st in verify_foreign_group:
                     pres = fg_pres.get(str(st.get("steam_id") or ""))
                     if pres and pres.get("is_steam_brazil"):
@@ -369,13 +378,16 @@ def run_deep_br_discovery(
     active_candidates = sorted(cand_pool.values(), key=lambda c: _candidate_verify_priority(c, now=now))
     verify_slice = active_candidates[: max(0, int(max_steam_verify))]
     if verify_slice and hasattr(p_client, "fetch_batch_presence"):
+        from lobby_radar import _call_batch_presence
         bucket_counts = Counter(_candidate_verify_priority(c, now=now)[0] for c in verify_slice)
         verify_sids = [str(c["steam_id"]) for c in verify_slice if c.get("steam_id")]
-        steam_pres_map = p_client.fetch_batch_presence(
+        steam_pres_map = _call_batch_presence(
+            p_client,
             verify_sids,
             max_workers=5,
             pace_delay_sec=0.06,
             stop_on_rate_limit=True,
+            require_xml_details=True,
         )
         for cand in verify_slice:
             sid = str(cand.get("steam_id") or "")

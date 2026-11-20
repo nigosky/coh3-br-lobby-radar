@@ -1192,6 +1192,151 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertIn("🇺🇸", oth_desc)
         self.assertNotIn("COHBRAMACHINE** ↗](https://steamcommunity.com/profiles/76561198000999001) 🇺🇸", oth_desc)
 
+    def test_away_snooze_busy_and_nick_change_asterisk_render_in_discord_and_cards(self) -> None:
+        from lobby_radar import _merge_player_into_community
+
+        # 1. _merge_player_into_community nunca sobrescreve nick anterior de Outro BR (guarda novo nick em current_alias)
+        players: dict[str, dict[str, Any]] = {}
+        _merge_player_into_community(
+            players,
+            {
+                "profile_id": 910555,
+                "steam_id": "76561198000910555",
+                "alias": "SoldadoBR",
+                "max_elo": 1410,
+                "last_match_date": 1_800_000_000,
+            },
+            vet_pids=set(),
+            vet_sids=set(),
+        )
+        _merge_player_into_community(
+            players,
+            {
+                "profile_id": 910555,
+                "steam_id": "76561198000910555",
+                "alias": "SoldadoTrocado",
+                "max_elo": 1420,
+                "last_match_date": 1_800_001_000,
+            },
+            vet_pids=set(),
+            vet_sids=set(),
+        )
+        self.assertEqual(players["910555"]["alias"], "SoldadoBR")
+        self.assertEqual(players["910555"]["current_alias"], "SoldadoTrocado")
+
+        # 2. 16867 (COHBRAMACHINE) vira Golden Cobra automaticamente em br_community sem acionar current_alias
+        _merge_player_into_community(
+            players,
+            {
+                "profile_id": 16867,
+                "steam_id": "76561198874381986",
+                "alias": "COHBRAMACHINE",
+                "max_elo": 1583,
+                "last_match_date": 1_800_000_000,
+            },
+            vet_pids=set(),
+            vet_sids=set(),
+        )
+        self.assertEqual(players["16867"]["alias"], "Golden Cobra")
+        self.assertNotIn("current_alias", players["16867"])
+
+        # 3. Discord links e Cards PNG exibem Ausente zZz, Ocupado e NickAnterior* *(agora: NovoNick)*
+        snap = {
+            "timestamp": 1_800_000_000,
+            "veteranos": {
+                "total_monitored": 44,
+                "in_coh3": [
+                    {
+                        "profile_id": 79327,
+                        "steam_id": "76561197963172584",
+                        "alias": "Chacineiro*",
+                        "previous_alias": "Chacineiro",
+                        "current_alias": "Chacineiro2",
+                        "nick_changed": True,
+                        "max_elo": 1662,
+                        "status_note": "Com Company of Heroes 3 aberto agora",
+                        "is_away": False,
+                        "is_snooze": False,
+                        "is_busy": False,
+                    }
+                ],
+                "online_steam": [
+                    {
+                        "profile_id": 58737,
+                        "steam_id": "76561197993922195",
+                        "alias": "INFIEL",
+                        "max_elo": 1150,
+                        "other_game": "",
+                        "is_away": True,
+                        "is_snooze": True,
+                        "is_busy": False,
+                    },
+                    {
+                        "profile_id": 337051,
+                        "steam_id": "76561197981615184",
+                        "alias": "Maiti",
+                        "max_elo": 1240,
+                        "other_game": "",
+                        "is_away": False,
+                        "is_snooze": False,
+                        "is_busy": True,
+                    },
+                ],
+                "recent_relic": [],
+            },
+            "outros_brasileiros": {
+                "total_monitored": 500,
+                "active_window_days": 30,
+                "in_coh3": [
+                    {
+                        "profile_id": 16867,
+                        "steam_id": "76561198874381986",
+                        "alias": "Golden Cobra",
+                        "max_elo": 1583,
+                        "prominence_tier": "high",
+                        "status_note": "Com Company of Heroes 3 aberto agora",
+                    }
+                ],
+                "online_steam": [
+                    {
+                        "profile_id": 910555,
+                        "steam_id": "76561198000910555",
+                        "alias": "SoldadoBR*",
+                        "previous_alias": "SoldadoBR",
+                        "current_alias": "SoldadoTrocado",
+                        "nick_changed": True,
+                        "max_elo": 1420,
+                        "prominence_tier": "high",
+                        "other_game": "",
+                        "is_away": True,
+                        "is_snooze": False,
+                        "is_busy": False,
+                    }
+                ],
+                "recent_relic": [],
+            },
+        }
+        payload = build_lobby_radar_links_payload(snap)
+        vet_desc = payload["embeds"][0]["description"]
+        oth_desc = payload["embeds"][1]["description"]
+        footer_txt = payload["embeds"][1]["footer"]["text"]
+
+        self.assertIn("[**Chacineiro**\\* ↗]", vet_desc)
+        self.assertIn("*(agora: Chacineiro2)*", vet_desc)
+        self.assertIn("*(💤 Ausente zZz)*", vet_desc)
+        self.assertIn("*(⛔ Ocupado)*", vet_desc)
+        self.assertIn("Golden Cobra", oth_desc)
+        self.assertIn("[SoldadoBR\\* ↗]", oth_desc)
+        self.assertIn("*(agora: SoldadoTrocado)*", oth_desc)
+        self.assertIn("*(💤 Ausente)*", oth_desc)
+        self.assertIn("* = mudou de nick", footer_txt)
+
+        vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for png_b in (vet_png, oth_png):
+            self.assertTrue(png_b.startswith(b"\x89PNG\r\n\x1a\n"))
+            with Image.open(io.BytesIO(png_b)) as im:
+                self.assertEqual(im.width, 1100)
+
 
 if __name__ == "__main__":
     unittest.main()
