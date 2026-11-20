@@ -518,6 +518,65 @@ def _draw_gold_elo_pill(
     return x0
 
 
+def _resolve_presence_badge(pl: dict[str, Any]) -> tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]] | None:
+    """Retorna `(label, fill, outline, text_color)` para badges Steam `OCUPADO` ou `zZz` (Ausente)."""
+    if pl.get("is_busy"):
+        return ("OCUPADO", (76, 22, 34, 255), (248, 113, 113, 230), (254, 202, 202, 255))
+    if pl.get("is_away") or pl.get("is_snooze"):
+        return ("zZz", (24, 46, 70, 255), (96, 165, 250, 220), (147, 197, 253, 255))
+    return None
+
+
+def _measure_status_pill_width(draw: ImageDraw.ImageDraw, text: str, font_size: int = 13) -> int:
+    fnt = pick_font(text, size=font_size, bold=True)
+    return int(text_width(draw, text, fnt)) + 14
+
+
+def _draw_status_pill(
+    draw: ImageDraw.ImageDraw,
+    *,
+    x: int,
+    top_y: int,
+    text: str,
+    fill: tuple[int, int, int, int],
+    outline: tuple[int, int, int, int],
+    text_color: tuple[int, int, int, int],
+    font_size: int = 13,
+) -> int:
+    """Desenha selo compacto de status Steam (`zZz` ou `OCUPADO`) alinhado à esquerda e retorna a largura."""
+    fnt = pick_font(text, size=font_size, bold=True)
+    tw = int(text_width(draw, text, fnt))
+    pad_x = 7
+    pill_w = tw + pad_x * 2
+    pill_h = font_size + 7
+    draw.rounded_rectangle(
+        (x, top_y, x + pill_w, top_y + pill_h),
+        radius=6,
+        fill=fill,
+        outline=outline,
+        width=1,
+    )
+    draw.text((x + pad_x, top_y + 2), text, font=fnt, fill=text_color)
+    return pill_w
+
+
+def _bucket_has_nick_change(bucket: dict[str, Any]) -> bool:
+    for sec in ("in_coh3", "online_steam", "recent_relic"):
+        for pl in (bucket.get(sec) or []):
+            if pl.get("nick_changed") or str(pl.get("alias") or "").endswith("*"):
+                return True
+    return False
+
+
+def _append_nick_change_note(note: str, pl: dict[str, Any]) -> str:
+    if pl.get("nick_changed") and pl.get("current_alias"):
+        cur = strip_unsafe_chars(str(pl["current_alias"]))[:26]
+        if cur and f"agora: {cur}" not in note:
+            compact = note.replace("Com Company of Heroes 3 aberto agora", "No CoH3")
+            return f"{compact} • agora: {cur}" if compact else f"agora: {cur}"
+    return note
+
+
 def _draw_low_prominence_strip(
     draw: ImageDraw.ImageDraw,
     *,
@@ -817,20 +876,35 @@ def _draw_category_block(
                                 draw.text((cx_limit - ew, ry + 9), elo_tag, font=ef, fill=(226, 232, 240, 255))
 
                         name_x = cx0 + 78
-                        badge_pad = 26 if is_veteranos else 8
+                        pres_badge = _resolve_presence_badge(pl)
+                        pill_reserve = (_measure_status_pill_width(draw, pres_badge[0], font_size=13) + 6) if pres_badge else 0
+                        badge_pad = (26 if is_veteranos else 8) + pill_reserve
                         disp_alias, a_fnt = truncate_to_px(
                             draw,
                             str(pl.get("alias") or ""),
-                            max_px=max(90, (cx_limit - ew - 10) - name_x - badge_pad),
+                            max_px=max(80, (cx_limit - ew - 10) - name_x - badge_pad),
                             size=name_2col_size,
                             bold=True,
                         )
                         nm_col = (254, 249, 195, 255) if is_high else (240, 253, 244, 255)
                         draw.text((name_x, ry + 6), disp_alias, font=a_fnt, fill=nm_col)
+                        next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
                         if is_veteranos:
-                            img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 8), vet_xs)
+                            img.paste(vet_xs, (next_x, ry + 8), vet_xs)
+                            next_x += 24
+                        if pres_badge:
+                            _draw_status_pill(
+                                draw,
+                                x=next_x + 2,
+                                top_y=ry + 7,
+                                text=pres_badge[0],
+                                fill=pres_badge[1],
+                                outline=pres_badge[2],
+                                text_color=pres_badge[3],
+                                font_size=13,
+                            )
 
-                        note_raw = str(pl.get("status_note") or "No CoH3 agora")
+                        note_raw = _append_nick_change_note(str(pl.get("status_note") or "No CoH3 agora"), pl)
                         st_disp, st_fnt = truncate_to_px(
                             draw,
                             note_raw,
@@ -868,7 +942,7 @@ def _draw_category_block(
                         img.paste(pl_flag, (82, y + 21), pl_flag)
 
                         elo_val = int(pl.get("max_elo", 0) or 0)
-                        note_raw = str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora")
+                        note_raw = _append_nick_change_note(str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora"), pl)
                         note_disp, n_fnt = truncate_to_px(draw, note_raw, max_px=520, size=18, bold=True)
                         nw = text_width(draw, note_disp, n_fnt)
                         note_x = width - 26 - nw
@@ -890,15 +964,29 @@ def _draw_category_block(
                             elo_x = int(note_x - 24 - ew)
                             draw.text((elo_x, y + 19), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
 
-                        badge_pad = 34 if is_veteranos else 10
-                        max_alias_px = max(120, int(elo_x - 118 - badge_pad))
+                        pres_badge = _resolve_presence_badge(pl)
+                        pill_reserve = (_measure_status_pill_width(draw, pres_badge[0], font_size=14) + 10) if pres_badge else 0
+                        badge_pad = (34 if is_veteranos else 10) + pill_reserve
+                        max_alias_px = max(110, int(elo_x - 118 - badge_pad))
                         alias_sz = 23 if (is_veteranos or is_high) else 21
                         alias_col = (254, 249, 195, 255) if is_high else (240, 253, 244, 255)
                         disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_alias_px, size=alias_sz, bold=True)
                         draw.text((118, y + (15 if alias_sz >= 22 else 17)), disp_alias, font=a_fnt, fill=alias_col)
+                        next_x = int(118 + text_width(draw, disp_alias, a_fnt) + 8)
                         if is_veteranos:
-                            bx = int(118 + text_width(draw, disp_alias, a_fnt) + 8)
-                            img.paste(vet_sm, (bx, y + 18), vet_sm)
+                            img.paste(vet_sm, (next_x, y + 18), vet_sm)
+                            next_x += 29
+                        if pres_badge:
+                            _draw_status_pill(
+                                draw,
+                                x=next_x + 2,
+                                top_y=y + 18,
+                                text=pres_badge[0],
+                                fill=pres_badge[1],
+                                outline=pres_badge[2],
+                                text_color=pres_badge[3],
+                                font_size=14,
+                            )
 
                         y += coh3_row_h
 
@@ -979,13 +1067,25 @@ def _draw_category_block(
                     is_high = (not is_veteranos) and (tier == "high")
                     has_other = bool(pl.get("other_game"))
                     is_away = bool(pl.get("is_away"))
+                    is_snooze = bool(pl.get("is_snooze"))
+                    is_busy = bool(pl.get("is_busy"))
 
                     if is_high:
                         draw.rectangle((cell_x0, ry + 2, cell_x1, ry + online_row_h - 2), fill=(24, 33, 45, 255))
                         draw.rectangle((cell_x0, ry + 3, cell_x0 + 3, ry + online_row_h - 3), fill=(250, 204, 21, 235))
-                        ring_c = (217, 170, 56, 225) if (has_other or is_away) else (250, 204, 21, 255)
+                        if is_busy:
+                            ring_c = (248, 113, 113, 240)
+                        elif is_away:
+                            ring_c = (96, 165, 250, 215)
+                        else:
+                            ring_c = (217, 170, 56, 225) if has_other else (250, 204, 21, 255)
                     else:
-                        ring_c = (148, 163, 184, 235) if (has_other or is_away) else (56, 189, 248, 245)
+                        if is_busy:
+                            ring_c = (248, 113, 113, 240)
+                        elif is_away:
+                            ring_c = (96, 165, 250, 215)
+                        else:
+                            ring_c = (148, 163, 184, 235) if has_other else (56, 189, 248, 245)
 
                     av_im = avatar_provider.get_circular_avatar(
                         size=40,
@@ -1016,24 +1116,47 @@ def _draw_category_block(
                             draw.text((cx_limit - elo_w, ry + 9), elo_tag, font=ef, fill=(203, 213, 225, 255))
 
                     name_x = cx0 + 76
-                    badge_pad = 26 if is_veteranos else 8
-                    max_nm_px = max(90, (cx_limit - elo_w - 10) - name_x - badge_pad)
+                    pres_badge = _resolve_presence_badge(pl)
+                    pill_reserve = (_measure_status_pill_width(draw, pres_badge[0], font_size=13) + 6) if pres_badge else 0
+                    badge_pad = (26 if is_veteranos else 8) + pill_reserve
+                    max_nm_px = max(80, (cx_limit - elo_w - 10) - name_x - badge_pad)
                     disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_nm_px, size=name_2col_size, bold=True)
-                    if is_high:
-                        nm_col = (248, 240, 198, 255) if (has_other or is_away) else (254, 249, 195, 255)
+                    if is_busy:
+                        nm_col = (254, 202, 202, 255)
+                    elif is_away:
+                        nm_col = (147, 197, 253, 235)
+                    elif is_high:
+                        nm_col = (248, 240, 198, 255) if has_other else (254, 249, 195, 255)
                     else:
-                        nm_col = (226, 232, 240, 255) if (has_other or is_away) else (186, 230, 253, 255)
+                        nm_col = (226, 232, 240, 255) if has_other else (186, 230, 253, 255)
                     draw.text((name_x, ry + 6), disp_alias, font=a_fnt, fill=nm_col)
+                    next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
                     if is_veteranos:
-                        img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 8), vet_xs)
+                        img.paste(vet_xs, (next_x, ry + 8), vet_xs)
+                        next_x += 24
+                    if pres_badge:
+                        _draw_status_pill(
+                            draw,
+                            x=next_x + 2,
+                            top_y=ry + 7,
+                            text=pres_badge[0],
+                            fill=pres_badge[1],
+                            outline=pres_badge[2],
+                            text_color=pres_badge[3],
+                            font_size=13,
+                        )
 
                     rec_tag = _format_coh3_recency_short(pl) if not is_veteranos else ""
                     if has_other:
                         sub_st = f"Em outro jogo: {pl['other_game']}"
                         sub_col = (148, 163, 184, 255)
+                    elif is_busy:
+                        sub_st = f"Ocupado • {rec_tag}" if rec_tag else "Ocupado na Steam"
+                        sub_col = (252, 165, 165, 255)
                     elif is_away:
-                        sub_st = f"Ausente • {rec_tag}" if rec_tag else "Online (Ausente na Steam)"
-                        sub_col = (148, 163, 184, 255)
+                        away_lbl = "Ausente (zZz)" if is_snooze else "Ausente na Steam"
+                        sub_st = f"Ausente • {rec_tag}" if rec_tag else away_lbl
+                        sub_col = (125, 175, 224, 255)
                     elif pl.get("last_age_min") is not None and int(pl["last_age_min"]) <= 35:
                         sub_st = f"Livre • jogou CoH3 há {max(1, int(pl['last_age_min']))} min"
                         sub_col = (134, 239, 172, 255)
@@ -1044,6 +1167,7 @@ def _draw_category_block(
                         sub_st = "Livre na Steam para chamar"
                         sub_col = (125, 211, 252, 255)
 
+                    sub_st = _append_nick_change_note(sub_st, pl)
                     st_disp, st_fnt = truncate_to_px(draw, sub_st, max_px=max(100, cx_limit - (cx0 + 48)), size=sub_2col_size, bold=False)
                     draw.text((cx0 + 48, ry + 32), st_disp, font=st_fnt, fill=sub_col)
 
@@ -1155,7 +1279,7 @@ def _draw_category_block(
                     draw.text((name_x, ry + 5), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
                     if is_veteranos:
                         img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 6), vet_xs)
-                    note_r = str(pl.get("status_note") or "Partida recente na Relic")
+                    note_r = _append_nick_change_note(str(pl.get("status_note") or "Partida recente na Relic"), pl)
                     nd, nf = truncate_to_px(draw, note_r, max_px=max(90, cx_limit - (cx0 + 46)), size=max(14, sub_2col_size - 1), bold=False)
                     draw.text((cx0 + 46, ry + 31), nd, font=nf, fill=(253, 230, 138, 255))
                 y += grid_h
@@ -1177,7 +1301,7 @@ def _draw_category_block(
                     pl_flag = get_country_flag(pl.get("flag_country"), w=26, h=18)
                     img.paste(pl_flag, (76, y + 18), pl_flag)
 
-                    note_r = str(pl.get("status_note") or "Partida recente na Relic")
+                    note_r = _append_nick_change_note(str(pl.get("status_note") or "Partida recente na Relic"), pl)
                     nd, nf = truncate_to_px(draw, note_r, max_px=520, size=17, bold=True)
                     nw = text_width(draw, nd, nf)
                     nx = width - 26 - nw
@@ -1439,10 +1563,11 @@ def _render_single_category_card_png(
 
     draw.rectangle((rail_w, y, width, total_h), fill=(15, 18, 24, 255))
     draw.line([(rail_w, y), (width, y)], fill=(42, 48, 60, 255), width=1)
+    nick_note = "  •  * = mudou de nick" if _bucket_has_nick_change(bucket) else ""
     if is_veteranos:
-        foot_txt = f"Veteranos: todos os {total_cat} monitorados exibidos sem filtro  •  Links Steam na mensagem abaixo"
+        foot_txt = f"Veteranos: todos os {total_cat} monitorados exibidos sem filtro{nick_note}  •  Links Steam abaixo"
     else:
-        foot_txt = f"Outros BR ativos ≤{active_days}d ({total_cat}): ★ ELO alto + ativos em destaque  •  Links Steam abaixo"
+        foot_txt = f"Outros BR ativos ≤{active_days}d ({total_cat}): ★ ELO alto + ativos{nick_note}  •  Links Steam abaixo"
     f_fnt = pick_font(foot_txt, size=15, bold=False)
     draw.text((28, y + 8), foot_txt, font=f_fnt, fill=(148, 163, 184, 255))
     draw.rectangle((0, 0, width - 1, total_h - 1), outline=(56, 65, 82, 255), width=1)

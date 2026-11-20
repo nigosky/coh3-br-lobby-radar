@@ -19,6 +19,7 @@ import concurrent.futures
 import html
 import json
 import logging
+import os
 import re
 import threading
 import time
@@ -44,9 +45,11 @@ logger = logging.getLogger("coh3_br.lobby.presence")
 
 COH3_STEAM_APP_ID = "1677280"
 ALLOWED_STEAM_COMMUNITY_HOSTS: frozenset[str] = frozenset({"steamcommunity.com"})
+ALLOWED_STEAM_API_HOSTS: frozenset[str] = frozenset({"api.steampowered.com"})
 ALLOWED_RELIC_HOSTS: frozenset[str] = frozenset({"coh3-api.reliclink.com"})
 ALLOWED_COH3STATS_HOSTS: frozenset[str] = frozenset({"storage.coh3stats.com"})
 RELIC_BASE_URL = "https://coh3-api.reliclink.com/community/leaderboard"
+STEAM_API_SUMMARIES_URL = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
 COH3STATS_LEADERBOARDS_BASE = "https://storage.coh3stats.com/leaderboards"
 COH3STATS_MATCHES_BASE = "https://storage.coh3stats.com/matches"
 
@@ -76,6 +79,8 @@ OPENDATA_MODES: tuple[str, ...] = ("1v1", "2v2", "3v3", "4v4")
 OPENDATA_FACTIONS: tuple[str, ...] = ("american", "british", "german", "dak")
 
 STEAM_ID64_VALID_RE = re.compile(r"^7656119\d{10}$")
+STEAM_API_KEY_VALID_RE = re.compile(r"^[A-Za-z0-9]{16,64}$")
+STEAM_API_SUMMARIES_PATH_RE = re.compile(r"^/ISteamUser/GetPlayerSummaries/v0*2/?$")
 STEAM_PROFILE_XML_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/?$")
 STEAM_GROUP_MEMBERS_PATH_RE = re.compile(r"^/groups/[A-Za-z0-9_-]{2,64}/memberslistxml/?$")
 STEAM_REDIRECT_PATH_RE = re.compile(r"^/(?:profiles/7656119\d{10}|id/[A-Za-z0-9_-]{1,64})/?$")
@@ -93,6 +98,7 @@ _EXPLICIT_BR_TAG_RE = re.compile(
 )
 
 MAX_STEAM_PRESENCE_XML_BYTES = 131_072  # 128 KB (cobre <groups> completos com folga segura)
+MAX_STEAM_API_RESPONSE_BYTES = 524_288  # 512 KB (100 perfis GetPlayerSummaries ~ 40 KB)
 MAX_STEAM_GROUP_XML_BYTES = 2 * 1024 * 1024  # 2 MB
 MAX_RELIC_RESPONSE_BYTES = 2 * 1024 * 1024  # 2 MB
 MAX_OPENDATA_RESPONSE_BYTES = 128 * 1024 * 1024  # 128 MB limite seguro anti-bomb para leaderboards Open Data
@@ -113,13 +119,18 @@ FALLBACK_MATCH_TYPES: dict[int, str] = {
 PLAYERS_ROSTER_PATH = Path(__file__).resolve().parent / "players_roster.json"
 _VALID_FLAG_COUNTRY_RE = re.compile(r"^[a-z]{2}$")
 
-# Fallback embutido caso players_roster.json esteja ausente (45 contas Steam / 44 Veteranos únicos, incluindo Kefbr)
+# Fallback embutido caso players_roster.json esteja ausente (46 contas Steam / 44 Veteranos únicos)
 _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 79327, "steam_id": "76561197963172584", "original_alias": "Chacineiro"},
     {"profile_id": 991764, "steam_id": "76561198115923932", "original_alias": "SaNgar [BR]"},
     {"profile_id": 1088455, "steam_id": "76561198108568598", "original_alias": "luiz_fmh"},
     {"profile_id": 735940, "steam_id": "76561198034510845", "original_alias": "Jimmy Duelista"},
-    {"profile_id": 559962, "steam_id": "76561198062871244", "original_alias": "É o Gabe"},
+    {
+        "profile_id": 559962,
+        "steam_id": "76561198062871244",
+        "original_alias": "Gabe",
+        "known_aliases": ["É o Gabe", "Gabe"],
+    },
     {"profile_id": 648514, "steam_id": "76561198372757032", "original_alias": "Halokoo"},
     {"profile_id": 35952, "steam_id": "76561198121484554", "original_alias": "Sauronzinho"},
     {"profile_id": 900358, "steam_id": "76561198070545853", "original_alias": "Margheriti"},
@@ -149,16 +160,25 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {
         "profile_id": 557890,
         "steam_id": "76561199538846112",
-        "original_alias": "É o Gabe",
+        "original_alias": "Gabe",
         "merged_into_profile_id": 559962,
         "merged_into_steam_id": "76561198062871244",
-        "known_aliases": ["gabe44arg", "gabe444arg", "É o Gabe"],
+        "known_aliases": ["gabe44arg", "gabe444arg", "É o Gabe", "Gabe"],
     },
     {"profile_id": 26910, "steam_id": "76561197963741792", "original_alias": "nigo_BR ᵀᴹ"},
     {"profile_id": 6557, "steam_id": "76561198135142137", "original_alias": "Dragoness"},
     {"profile_id": 1226910, "steam_id": "76561198140782132", "original_alias": "Lupus Alba"},
     {"profile_id": 3895, "steam_id": "76561198054318813", "original_alias": "Liquid"},
-    {"profile_id": 1005730, "steam_id": "76561199791811246", "original_alias": "arc"},
+    {"profile_id": 1005730, "steam_id": "76561199791811246", "original_alias": "arc", "pin_alias": True},
+    {
+        "profile_id": 1423426,
+        "steam_id": "76561199482388323",
+        "original_alias": "arc",
+        "pin_alias": True,
+        "merged_into_profile_id": 1005730,
+        "merged_into_steam_id": "76561199791811246",
+        "known_aliases": ["uncle hans", "geladeira velha", "dibas", "arc"],
+    },
     {"profile_id": 31145, "steam_id": "76561197985268629", "original_alias": "vonMises"},
     {"profile_id": 58737, "steam_id": "76561197993922195", "original_alias": "INFIEL"},
     {"profile_id": 431802, "steam_id": "76561198000099422", "original_alias": "Conflict.BR"},
@@ -186,6 +206,13 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
 
 _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 33487, "steam_id": "76561197995712470", "original_alias": "Generick", "country": "us", "flag_country": "us"},
+    {
+        "profile_id": 16867,
+        "steam_id": "76561198874381986",
+        "original_alias": "Golden Cobra",
+        "country": "br",
+        "known_aliases": ["COHBRAMACHINE", "Golden Cobra"],
+    },
 ]
 
 
@@ -226,6 +253,8 @@ def _normalize_shared_roster_entry(raw: Any, *, default_in_ranking: bool = True)
         entry["in_ranking"] = bool(raw.get("in_ranking"))
     elif default_in_ranking:
         entry["in_ranking"] = True
+    if raw.get("pin_alias"):
+        entry["pin_alias"] = True
     known = [strip_unsafe_chars(k)[:40] for k in (raw.get("known_aliases") or []) if strip_unsafe_chars(k)]
     if known:
         entry["known_aliases"] = known
@@ -298,6 +327,49 @@ def get_configured_flag_country(profile_id: int) -> str:
             if int(row.get("profile_id", 0) or 0) == pid:
                 return normalize_flag_country(row.get("flag_country") or row.get("country"))
     return ""
+
+
+def get_manual_other_br_override(profile_id: int) -> dict[str, Any] | None:
+    """Retorna metadados manuais de `MANUAL_OTHER_BR_PLAYERS` (alias preferencial, known_aliases, pin_alias, flag_country)."""
+    pid = int(profile_id or 0)
+    if pid <= 0:
+        return None
+    for row in MANUAL_OTHER_BR_PLAYERS:
+        if int(row.get("profile_id", 0) or 0) == pid:
+            return row
+    return None
+
+
+def resolve_nick_change_display(
+    stable_alias: str,
+    live_alias: str | None,
+    known_aliases: list[str] | tuple[str, ...] | set[str] | None = None,
+    *,
+    pin_alias: bool = False,
+) -> tuple[str, bool, str]:
+    """
+    Preserva o nick anterior quando um jogador muda de nick na Steam/Relic:
+    - Se `pin_alias=True` (ex.: `arc`), SEMPRE retorna o `stable_alias` sem asterisco nem sufixo.
+    - Se `live_alias` estiver vazio, for placeholder (`Jogador ...`) ou corresponder ao `stable_alias`
+      ou a `known_aliases` (case-insensitive), retorna `(stable_alias, False, "")`.
+    - Caso contrário, preserva o nick anterior com asterisco `*`: retorna `(f"{stable}*", True, live)`.
+    """
+    stable = strip_unsafe_chars(stable_alias)[:40] or "Jogador"
+    if pin_alias:
+        return stable, False, ""
+    live = strip_unsafe_chars(live_alias or "")[:40]
+    if not live or live.startswith("Jogador "):
+        return stable, False, ""
+    stable_cf = stable.casefold()
+    live_cf = live.casefold()
+    if live_cf == stable_cf:
+        return stable, False, ""
+    known_cf = {strip_unsafe_chars(k).casefold() for k in (known_aliases or ()) if strip_unsafe_chars(k)}
+    if live_cf in known_cf:
+        return stable, False, ""
+    base = stable.rstrip("*").rstrip() or stable
+    return f"{base}*", True, live
+
 
 _HTML_TAG_STRIP_RE = re.compile(r"<[^>]+>")
 _XML_UNSAFE_DECL_RE = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
@@ -413,6 +485,7 @@ def parse_steam_group_members_xml(xml_text: str) -> tuple[list[str], int, int]:
 def _make_empty_presence(steam_id: str, privacy_state: str = "error") -> dict[str, Any]:
     return {
         "steam_id": steam_id,
+        "steam_alias": "",
         "privacy_state": privacy_state,
         "visibility_state": "",
         "has_public_game_details": False,
@@ -422,12 +495,16 @@ def _make_empty_presence(steam_id: str, privacy_state: str = "error") -> dict[st
         "is_steam_brazil": False,
         "has_brazil_steam_group": False,
         "online_state": "offline",
+        "persona_state": 0,
         "is_in_coh3": False,
         "is_online_steam": False,
         "is_away": False,
+        "is_snooze": False,
+        "is_busy": False,
         "other_game": "",
         "state_message": "",
         "avatar_url": "",
+        "source": "xml",
         "ok": False,
     }
 
@@ -465,6 +542,7 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
         logger.warning("Divergência de steamID64 no XML (%s != %s); descartando por segurança.", xml_sid, steam_id)
         return _make_empty_presence(steam_id, privacy_state="mismatch")
 
+    steam_alias = _clean_xml_text(root.findtext("./steamID"), max_len=40)
     privacy_state = _clean_xml_text(root.findtext("./privacyState"), max_len=32).lower() or "unknown"
     visibility_raw = _clean_xml_text(root.findtext("./visibilityState"), max_len=8)
     raw_online_state = _clean_xml_text(root.findtext("./onlineState"), max_len=24).lower()
@@ -493,6 +571,7 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
     if not is_public_profile:
         return {
             "steam_id": steam_id,
+            "steam_alias": steam_alias,
             "privacy_state": privacy_state,
             "visibility_state": visibility_raw,
             "has_public_game_details": False,
@@ -502,12 +581,16 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
             "is_steam_brazil": steam_br,
             "has_brazil_steam_group": has_brazil_steam_group,
             "online_state": "offline",
+            "persona_state": 0,
             "is_in_coh3": False,
             "is_online_steam": False,
             "is_away": False,
+            "is_snooze": False,
+            "is_busy": False,
             "other_game": "",
             "state_message": state_msg[:60],
             "avatar_url": avatar_url,
+            "source": "xml",
             "ok": privacy_state != "unknown",
         }
 
@@ -579,12 +662,14 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
             other_game = cleaned_msg[:36]
 
     is_online_steam = online_state in ("online", "in-game")
-    is_away = is_online_steam and any(
-        tok in state_msg_lower for tok in ("away", "ausente", "snooze", "soneca", "busy", "ocupado")
-    )
+    is_busy = is_online_steam and any(tok in state_msg_lower for tok in ("busy", "ocupado"))
+    is_snooze = is_online_steam and any(tok in state_msg_lower for tok in ("snooze", "soneca"))
+    is_away = is_online_steam and (is_snooze or any(tok in state_msg_lower for tok in ("away", "ausente")))
+    persona_state = 2 if is_busy else (4 if is_snooze else (3 if is_away else (1 if is_online_steam else 0)))
 
     return {
         "steam_id": steam_id,
+        "steam_alias": steam_alias,
         "privacy_state": privacy_state,
         "visibility_state": visibility_raw,
         "has_public_game_details": has_public_game_details,
@@ -594,12 +679,123 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
         "is_steam_brazil": steam_br,
         "has_brazil_steam_group": has_brazil_steam_group,
         "online_state": online_state,
+        "persona_state": persona_state,
         "is_in_coh3": bool(is_in_coh3),
         "is_online_steam": bool(is_online_steam),
         "is_away": bool(is_away),
+        "is_snooze": bool(is_snooze),
+        "is_busy": bool(is_busy),
         "other_game": other_game,
         "state_message": state_msg[:60],
         "avatar_url": avatar_url,
+        "source": "xml",
+        "ok": True,
+    }
+
+
+def parse_steam_web_api_player(player_obj: dict[str, Any]) -> dict[str, Any] | None:
+    """
+    Converte um item oficial de `ISteamUser/GetPlayerSummaries/v2` em dicionário de presença padronizado.
+    Diferencia com 100% de exatidão o campo `personastate` da Steam:
+    0=Offline, 1=Online, 2=Busy (Ocupado), 3=Away (Ausente), 4=Snooze (Ausente zZz), 5/6=Online.
+    """
+    if not isinstance(player_obj, dict):
+        return None
+    sid = str(player_obj.get("steamid") or "").strip()
+    if not STEAM_ID64_VALID_RE.fullmatch(sid):
+        return None
+
+    vis = int(player_obj.get("communityvisibilitystate", 1) or 1)
+    is_public = vis == 3
+    privacy_state = "public" if is_public else "private"
+    steam_alias = strip_unsafe_chars(player_obj.get("personaname") or "")[:40]
+    avatar_cand = (
+        str(player_obj.get("avatarmedium") or "").strip()
+        or str(player_obj.get("avatarfull") or "").strip()
+    )
+    avatar_url = avatar_cand if avatar_cand.startswith("https://") and len(avatar_cand) <= 256 else ""
+    loc_cc = str(player_obj.get("loccountrycode") or "").strip().upper()
+    is_steam_br = loc_cc == "BR"
+    location = "Brazil" if is_steam_br else loc_cc
+
+    if not is_public:
+        return {
+            "steam_id": sid,
+            "steam_alias": steam_alias,
+            "privacy_state": privacy_state,
+            "visibility_state": str(vis),
+            "has_public_game_details": False,
+            "has_coh3_in_recent_games": False,
+            "most_played_count": 0,
+            "location": location,
+            "is_steam_brazil": is_steam_br,
+            "has_brazil_steam_group": False,
+            "online_state": "offline",
+            "persona_state": 0,
+            "is_in_coh3": False,
+            "is_online_steam": False,
+            "is_away": False,
+            "is_snooze": False,
+            "is_busy": False,
+            "other_game": "",
+            "state_message": "",
+            "avatar_url": avatar_url,
+            "source": "web_api",
+            "ok": True,
+        }
+
+    pstate = int(player_obj.get("personastate", 0) or 0)
+    gameid = str(player_obj.get("gameid") or "").strip()
+    game_extra = strip_unsafe_chars(player_obj.get("gameextrainfo") or "")[:36]
+
+    is_in_coh3 = gameid == COH3_STEAM_APP_ID or "company of heroes 3" in game_extra.lower()
+    other_game = ""
+    if not is_in_coh3 and (gameid or game_extra):
+        other_game = game_extra or f"App {gameid}"
+
+    is_online_steam = pstate in (1, 2, 3, 4, 5, 6) or is_in_coh3 or bool(other_game)
+    is_busy = is_online_steam and pstate == 2
+    is_snooze = is_online_steam and pstate == 4
+    is_away = is_online_steam and pstate in (3, 4)
+    online_state = "in-game" if (is_in_coh3 or other_game) else ("online" if is_online_steam else "offline")
+
+    if is_in_coh3:
+        state_msg = "In-Game Company of Heroes 3"
+    elif other_game:
+        state_msg = f"In-Game {other_game}"
+    elif is_busy:
+        state_msg = "Busy"
+    elif is_snooze:
+        state_msg = "Snooze"
+    elif is_away:
+        state_msg = "Away"
+    elif is_online_steam:
+        state_msg = "Online"
+    else:
+        state_msg = "Offline"
+
+    return {
+        "steam_id": sid,
+        "steam_alias": steam_alias,
+        "privacy_state": privacy_state,
+        "visibility_state": str(vis),
+        "has_public_game_details": True,
+        "has_coh3_in_recent_games": True,
+        "most_played_count": 3,
+        "location": location,
+        "is_steam_brazil": is_steam_br,
+        "has_brazil_steam_group": False,
+        "online_state": online_state,
+        "persona_state": pstate,
+        "is_in_coh3": bool(is_in_coh3),
+        "is_online_steam": bool(is_online_steam),
+        "is_away": bool(is_away),
+        "is_snooze": bool(is_snooze),
+        "is_busy": bool(is_busy),
+        "other_game": other_game,
+        "state_message": state_msg[:60],
+        "avatar_url": avatar_url,
+        "source": "web_api",
         "ok": True,
     }
 
@@ -615,6 +811,7 @@ def _merge_discovered_br_player(
     profile_id: int,
     steam_id: str,
     alias: str,
+    current_alias: str = "",
     max_elo: int = 0,
     last_match_date: int = 0,
     total_matches: int = 0,
@@ -629,6 +826,7 @@ def _merge_discovered_br_player(
     if profile_id <= 0 or not STEAM_ID64_VALID_RE.fullmatch(steam_id):
         return
     clean_alias = strip_unsafe_chars(alias)[:40] or f"Jogador {profile_id}"
+    clean_cur_alias = strip_unsafe_chars(current_alias)[:40]
     m_cnt = max(0, int(total_matches or 0))
     ctry = str(country or "").strip().lower()[:8]
     reg = max(0, int(region_id or 0))
@@ -645,6 +843,8 @@ def _merge_discovered_br_player(
             "last_match_date": max(0, int(last_match_date or 0)),
             "total_matches": m_cnt,
         }
+        if clean_cur_alias and clean_cur_alias.casefold() != clean_alias.casefold():
+            item["current_alias"] = clean_cur_alias
         if ctry:
             item["country"] = ctry
         if reg > 0:
@@ -659,8 +859,19 @@ def _merge_discovered_br_player(
             item["flag_country"] = f_ctry
         catalog[profile_id] = item
         return
+    # Preserva nick anterior já consolidado e registra eventual mudança em `current_alias`
+    prev_alias = str(existing.get("alias") or "").strip()
     if clean_alias and not clean_alias.startswith("Jogador "):
-        existing["alias"] = clean_alias
+        if not prev_alias or prev_alias.startswith("Jogador "):
+            existing["alias"] = clean_alias
+        elif clean_alias.casefold() != prev_alias.casefold():
+            existing["current_alias"] = clean_alias
+        else:
+            existing.pop("current_alias", None)
+    if clean_cur_alias and not clean_cur_alias.startswith("Jogador "):
+        eff_base = str(existing.get("alias") or "").strip()
+        if eff_base and clean_cur_alias.casefold() != eff_base.casefold():
+            existing["current_alias"] = clean_cur_alias
     if int(max_elo or 0) > int(existing.get("max_elo", 0) or 0):
         existing["max_elo"] = int(max_elo)
     if int(last_match_date or 0) > int(existing.get("last_match_date", 0) or 0):
@@ -1048,7 +1259,133 @@ def extract_br_players_from_relic_leaderboard_payload(data: dict[str, Any]) -> d
 
 
 class SteamPresenceClient:
-    """Cliente seguro (TLS 1.2+, allowlist estrita, anti-cache CDN, circuit-breaker 429) para presença pública Steam."""
+    """
+    Cliente seguro (TLS 1.2+, allowlist estrita, anti-cache CDN, circuit-breaker 429) para presença Steam:
+    - Quando `STEAM_WEB_API_KEY` está configurada, usa a API oficial `ISteamUser/GetPlayerSummaries/v2`
+      (100 contas por chamada, detectando com 100% de precisão `Ausente` / `zZz` / `Ocupado` via `personastate`).
+    - Sem chave (ou em caso de falha transitória da Web API), faz fallback transparente para o XML público `/?xml=1`.
+    """
+
+    def __init__(self, api_key: str | None = None) -> None:
+        raw_key = os.environ.get("STEAM_WEB_API_KEY", "") if api_key is None else str(api_key or "")
+        clean_key = raw_key.strip()
+        self._api_key = clean_key if STEAM_API_KEY_VALID_RE.fullmatch(clean_key) else ""
+
+    @property
+    def uses_web_api(self) -> bool:
+        return bool(self._api_key)
+
+    def fetch_web_api_presence_batch(
+        self,
+        steam_ids: list[str],
+        *,
+        enrich_free_online_xml: bool = True,
+        max_xml_enrich: int = 35,
+    ) -> dict[str, dict[str, Any]] | None:
+        """
+        Consulta até 100 perfis por requisição em `api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/`
+        retornando `personastate` exato (`Ocupado`, `Ausente`, `Ausente zZz`, `Online`), jogo e nick atuais.
+        Retorna `None` em caso de falha da API para acionar fallback automático para XML.
+        """
+        if not self._api_key:
+            return None
+        unique_sids = list(dict.fromkeys(str(s).replace("/steam/", "").strip() for s in steam_ids if s))
+        valid_sids = [s for s in unique_sids if STEAM_ID64_VALID_RE.fullmatch(s)]
+        if not valid_sids:
+            return {}
+
+        headers = {
+            "User-Agent": "CoH3-BR-Lobby-Radar/1.3",
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip",
+        }
+        result: dict[str, dict[str, Any]] = {}
+        chunk_size = 100
+
+        for idx in range(0, len(valid_sids), chunk_size):
+            chunk = valid_sids[idx : idx + chunk_size]
+            qs = urllib.parse.urlencode({"key": self._api_key, "steamids": ",".join(chunk), "format": "json"})
+            url = f"{STEAM_API_SUMMARIES_URL}?{qs}"
+            validate_https_endpoint(
+                url,
+                ALLOWED_STEAM_API_HOSTS,
+                path_prefix="/ISteamUser/GetPlayerSummaries/",
+                path_regex=STEAM_API_SUMMARIES_PATH_RE,
+            )
+            chunk_ok = False
+            for attempt in range(2):
+                req = urllib.request.Request(url, headers=headers, method="GET")
+                try:
+                    with _get_relic_opener().open(req, timeout=12) as resp:
+                        raw_bytes = read_bounded_http_body(resp, MAX_STEAM_API_RESPONSE_BYTES)
+                    payload = json.loads(raw_bytes.decode("utf-8"))
+                    players = (payload.get("response") or {}).get("players") if isinstance(payload, dict) else None
+                    if not isinstance(players, list):
+                        raise ValueError("Payload inválido de GetPlayerSummaries.")
+                    returned_sids: set[str] = set()
+                    for p_obj in players:
+                        parsed = parse_steam_web_api_player(p_obj)
+                        if parsed is not None:
+                            result[parsed["steam_id"]] = parsed
+                            returned_sids.add(parsed["steam_id"])
+                    for missing_sid in chunk:
+                        if missing_sid not in returned_sids:
+                            result[missing_sid] = _make_empty_presence(missing_sid, privacy_state="not_found")
+                    chunk_ok = True
+                    break
+                except urllib.error.HTTPError as exc:
+                    if exc.code in (401, 403):
+                        logger.warning(
+                            "Steam Web API retornou HTTP %d (chave inválida ou revogada); usando fallback XML público.",
+                            exc.code,
+                        )
+                        return None
+                    if attempt == 0:
+                        time.sleep(0.4)
+                    else:
+                        logger.warning("Steam Web API falhou com HTTP %d; usando fallback XML público.", exc.code)
+                        return None
+                except Exception as exc:
+                    if attempt == 0:
+                        time.sleep(0.4)
+                    else:
+                        logger.warning(
+                            "Falha transitória na Steam Web API; usando fallback XML público: %s",
+                            redact_secrets(exc),
+                        )
+                        return None
+            if not chunk_ok:
+                return None
+
+        # Para perfis públicos "Online livres" (sem jogo visível e não ausentes/ocupados), consulta XML
+        # somente para saber se "Detalhes dos jogos" está oculto (preservando `personastate`/nick da Web API!)
+        if enrich_free_online_xml and max_xml_enrich > 0:
+            free_online_sids = [
+                sid
+                for sid, pres in result.items()
+                if pres.get("ok")
+                and pres.get("privacy_state") == "public"
+                and pres.get("is_online_steam")
+                and not pres.get("is_in_coh3")
+                and not pres.get("other_game")
+                and not pres.get("is_away")
+                and not pres.get("is_busy")
+            ][: max(1, int(max_xml_enrich))]
+            if free_online_sids:
+                xml_workers = max(1, min(4, len(free_online_sids)))
+                with concurrent.futures.ThreadPoolExecutor(max_workers=xml_workers) as pool:
+                    xml_items = list(pool.map(self.fetch_one_presence, free_online_sids))
+                for xml_p in xml_items:
+                    if not isinstance(xml_p, dict) or not xml_p.get("ok"):
+                        continue
+                    sid = str(xml_p.get("steam_id") or "")
+                    target = result.get(sid)
+                    if target is not None:
+                        target["has_public_game_details"] = bool(xml_p.get("has_public_game_details"))
+                        target["has_coh3_in_recent_games"] = bool(xml_p.get("has_coh3_in_recent_games"))
+                        target["most_played_count"] = int(xml_p.get("most_played_count", 0) or 0)
+
+        return result
 
     def fetch_one_presence(self, steam_id: str) -> dict[str, Any]:
         sid = str(steam_id or "").replace("/steam/", "").strip()
@@ -1109,11 +1446,18 @@ class SteamPresenceClient:
         pace_delay_sec: float = 0.0,
         stop_on_rate_limit: bool = False,
         rate_limit_threshold: int = 3,
+        require_xml_details: bool = False,
     ) -> dict[str, dict[str, Any]]:
         unique_sids = list(dict.fromkeys(str(s).replace("/steam/", "").strip() for s in steam_ids if s))
         valid_sids = [s for s in unique_sids if STEAM_ID64_VALID_RE.fullmatch(s)]
         if not valid_sids:
             return {}
+
+        if self._api_key and not require_xml_details:
+            api_result = self.fetch_web_api_presence_batch(valid_sids)
+            if api_result:
+                return api_result
+
         workers = max(1, min(int(max_workers), len(valid_sids), 8))
         pace = max(0.0, min(float(pace_delay_sec), 1.0))
 
@@ -1985,12 +2329,31 @@ def _build_category_lists(
             secondary_rows.append(row)
             continue
         sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
-        alias = str(row.get("alias") or row.get("original_alias") or f"Jogador {pid}")
+        manual_ov = get_manual_other_br_override(pid) if category == "outros_brasileiros" else None
+        raw_alias = str(row.get("alias") or row.get("original_alias") or f"Jogador {pid}")
+        known_aliases: list[str] = [
+            strip_unsafe_chars(k)[:40] for k in (row.get("known_aliases") or []) if strip_unsafe_chars(k)
+        ]
+        pin_alias = bool(row.get("pin_alias"))
+        if manual_ov:
+            ov_alias = str(manual_ov.get("original_alias") or "").strip()
+            ov_known = [
+                strip_unsafe_chars(k)[:40] for k in (manual_ov.get("known_aliases") or []) if strip_unsafe_chars(k)
+            ]
+            if ov_known:
+                known_aliases.extend(k for k in ov_known if k not in known_aliases)
+            if manual_ov.get("pin_alias"):
+                pin_alias = True
+            if ov_alias and (manual_ov.get("pin_alias") or ov_known):
+                raw_alias = ov_alias
         flag_ctry = normalize_flag_country(row.get("flag_country")) or get_configured_flag_country(pid) or "br"
         canonical_entries[pid] = {
             "profile_id": pid,
             "steam_id": sid,
-            "alias": alias,
+            "alias": raw_alias,
+            "current_alias": strip_unsafe_chars(row.get("current_alias") or "")[:40],
+            "known_aliases": known_aliases,
+            "pin_alias": pin_alias,
             "flag_country": flag_ctry,
             "steam_ids_all": [sid] if sid else [],
             "profile_ids_all": [pid],
@@ -2008,6 +2371,12 @@ def _build_category_lists(
                 canonical_entries[target_pid]["steam_ids_all"].append(sec_sid)
             if sec_pid > 0 and sec_pid not in canonical_entries[target_pid]["profile_ids_all"]:
                 canonical_entries[target_pid]["profile_ids_all"].append(sec_pid)
+            if sec.get("pin_alias"):
+                canonical_entries[target_pid]["pin_alias"] = True
+            for ka in (sec.get("known_aliases") or []):
+                clean_ka = strip_unsafe_chars(ka)[:40]
+                if clean_ka and clean_ka not in canonical_entries[target_pid]["known_aliases"]:
+                    canonical_entries[target_pid]["known_aliases"].append(clean_ka)
 
     in_coh3_list: list[dict[str, Any]] = []
     online_steam_list: list[dict[str, Any]] = []
@@ -2024,19 +2393,42 @@ def _build_category_lists(
         avatar_url = ""
         other_game = ""
         is_away = False
+        is_snooze = False
+        is_busy = False
+        live_steam_alias = ""
 
         for p in pres_candidates:
             if p.get("avatar_url") and not avatar_url:
                 avatar_url = str(p["avatar_url"])
+            if p.get("steam_alias") and not live_steam_alias:
+                live_steam_alias = str(p["steam_alias"])
             if p.get("is_in_coh3"):
                 active_steam_id = str(p.get("steam_id") or active_steam_id)
                 avatar_url = str(p.get("avatar_url") or avatar_url)
+                if p.get("steam_alias"):
+                    live_steam_alias = str(p["steam_alias"])
+                is_away = bool(p.get("is_away"))
+                is_snooze = bool(p.get("is_snooze"))
+                is_busy = bool(p.get("is_busy"))
                 break
             if p.get("is_online_steam"):
                 active_steam_id = str(p.get("steam_id") or active_steam_id)
                 avatar_url = str(p.get("avatar_url") or avatar_url)
+                if p.get("steam_alias"):
+                    live_steam_alias = str(p["steam_alias"])
                 other_game = str(p.get("other_game") or other_game)
                 is_away = bool(p.get("is_away"))
+                is_snooze = bool(p.get("is_snooze"))
+                is_busy = bool(p.get("is_busy"))
+
+        # Preserva nick anterior com '*' caso tenha mudado de nick (exceto perfis pin_alias=True como 'arc')
+        live_nick_candidate = live_steam_alias or str(meta.get("current_alias") or "")
+        display_alias, nick_changed, current_live_alias = resolve_nick_change_display(
+            meta["alias"],
+            live_nick_candidate,
+            meta.get("known_aliases"),
+            pin_alias=bool(meta.get("pin_alias")),
+        )
 
         best_match: dict[str, Any] | None = None
         for cand_pid in meta["profile_ids_all"]:
@@ -2058,7 +2450,7 @@ def _build_category_lists(
         total_matches = max(0, int(meta.get("total_matches", 0) or 0))
 
         # Promoção segura para `in_coh3` por corroboração da Relic API quando o jogador está ONLINE e livre
-        # na Steam (jamais offline, jamais em outro jogo, jamais ausente):
+        # na Steam (jamais offline, jamais em outro jogo, jamais ausente ou ocupado):
         # - Se o perfil Steam oculta "Detalhes dos jogos"/CoH3 (ou relata `in-game` sem nome): janela de 35 min
         #   para manter o jogador em "Jogando CoH3" durante partidas consecutivas e fila/menu.
         # - Se os detalhes são públicos (ou `<inGameInfo>` já foi observado): janela curta de 5 min (300s).
@@ -2073,7 +2465,14 @@ def _build_category_lists(
             for p in online_pres_candidates
         )
         is_in_coh3_via_relic = False
-        if (not is_in_coh3_steam) and is_online and (not other_game) and (not is_away) and last_ct > 0:
+        if (
+            (not is_in_coh3_steam)
+            and is_online
+            and (not other_game)
+            and (not is_away)
+            and (not is_busy)
+            and last_ct > 0
+        ):
             if steam_hides_coh3_game or steam_in_unknown_game:
                 is_in_coh3_via_relic = age_sec <= recent_cutoff_sec
             else:
@@ -2095,7 +2494,10 @@ def _build_category_lists(
         player_card = {
             "profile_id": pid,
             "steam_id": active_steam_id,
-            "alias": meta["alias"],
+            "alias": display_alias,
+            "previous_alias": meta["alias"],
+            "current_alias": current_live_alias,
+            "nick_changed": bool(nick_changed),
             "flag_country": meta["flag_country"],
             "avatar_url": avatar_url,
             "max_elo": max_elo,
@@ -2110,6 +2512,8 @@ def _build_category_lists(
             "last_coh3_age_days": int(coh3_age_sec // 86400) if coh3_age_sec is not None else None,
             "other_game": other_game,
             "is_away": is_away,
+            "is_snooze": is_snooze,
+            "is_busy": is_busy,
             "in_coh3_via_relic": bool(is_in_coh3_via_relic),
             "category": category,
             "steam_profile_url": f"https://steamcommunity.com/profiles/{active_steam_id}" if active_steam_id else "",
@@ -2125,6 +2529,10 @@ def _build_category_lists(
                 status_note = f"No CoH3 • saiu de {last_mode or 'partida'} há {max(1, age_min)} min (provável menu/fila!)"
             else:
                 status_note = "Com Company of Heroes 3 aberto agora"
+            if is_busy:
+                status_note += " • Ocupado"
+            elif is_away:
+                status_note += " • Ausente zZz" if is_snooze else " • Ausente"
             player_card["status_kind"] = "in_coh3"
             player_card["status_note"] = status_note
             in_coh3_list.append(player_card)
@@ -2135,6 +2543,10 @@ def _build_category_lists(
                     continue
             if other_game:
                 status_note = f"Online na Steam • jogando {other_game}"
+            elif is_busy:
+                status_note = "Online na Steam (Ocupado)"
+            elif is_snooze:
+                status_note = "Online na Steam (Ausente zZz)"
             elif is_away:
                 status_note = "Online na Steam (Ausente)"
             elif last_ct > 0 and age_sec <= 1800:
@@ -2162,7 +2574,7 @@ def _build_category_lists(
         online_steam_list.sort(
             key=lambda x: (
                 1 if x.get("prominence_tier") == "low" else 0,
-                1 if (x["other_game"] or x["is_away"]) else 0,
+                1 if (x["other_game"] or x["is_away"] or x["is_busy"]) else 0,
                 PROMINENCE_TIER_ORDER.get(str(x.get("prominence_tier") or "medium"), 1),
                 -int(x.get("prominence_score", 0)),
                 -int(x.get("max_elo", 0)),
@@ -2180,7 +2592,7 @@ def _build_category_lists(
         )
     else:
         in_coh3_list.sort(key=lambda x: (x["last_age_min"] if x["last_age_min"] is not None else 9999, -x["max_elo"], x["alias"].lower()))
-        online_steam_list.sort(key=lambda x: (1 if x["other_game"] else (1 if x["is_away"] else 0), -x["max_elo"], x["alias"].lower()))
+        online_steam_list.sort(key=lambda x: (1 if (x["other_game"] or x["is_away"] or x["is_busy"]) else 0, -x["max_elo"], x["alias"].lower()))
         recent_relic_list.sort(key=lambda x: (x["last_age_min"] if x["last_age_min"] is not None else 9999, -x["max_elo"], x["alias"].lower()))
 
     return in_coh3_list, online_steam_list, recent_relic_list, len(canonical_entries)
@@ -2300,14 +2712,33 @@ def build_lobby_radar_snapshot(
 
 def _category_digest(bucket: dict[str, Any]) -> tuple[Any, Any, Any]:
     in_coh3_sig = [
-        (p["profile_id"], p["last_age_min"] is not None and p["last_age_min"] <= 15)
+        (
+            p["profile_id"],
+            p["last_age_min"] is not None and p["last_age_min"] <= 15,
+            bool(p.get("is_away")),
+            bool(p.get("is_snooze")),
+            bool(p.get("is_busy")),
+            str(p.get("alias") or ""),
+            str(p.get("current_alias") or ""),
+        )
         for p in bucket.get("in_coh3", [])
     ]
     online_sig = [
-        (p["profile_id"], p.get("other_game", ""), bool(p.get("is_away")))
+        (
+            p["profile_id"],
+            p.get("other_game", ""),
+            bool(p.get("is_away")),
+            bool(p.get("is_snooze")),
+            bool(p.get("is_busy")),
+            str(p.get("alias") or ""),
+            str(p.get("current_alias") or ""),
+        )
         for p in bucket.get("online_steam", [])
     ]
-    recent_sig = [p["profile_id"] for p in bucket.get("recent_relic", [])]
+    recent_sig = [
+        (p["profile_id"], str(p.get("alias") or ""), str(p.get("current_alias") or ""))
+        for p in bucket.get("recent_relic", [])
+    ]
     return in_coh3_sig, online_sig, recent_sig
 
 

@@ -34,6 +34,14 @@ ENV_SECRET_REDACT_RE = re.compile(
     r"(DISCORD_(?:LOBBY_)?WEBHOOK_URL\s*=\s*)[^\s\"'<>]+",
     re.IGNORECASE,
 )
+STEAM_API_KEY_QUERY_REDACT_RE = re.compile(
+    r"([?&]key=)[^&\s\"'<>]+",
+    re.IGNORECASE,
+)
+STEAM_API_KEY_ENV_REDACT_RE = re.compile(
+    r"(STEAM_WEB_API_KEY\s*=\s*)[^\s\"'<>]+",
+    re.IGNORECASE,
+)
 
 # Remove caracteres de controle ASCII, zero-width e overrides bidirecionais Unicode (anti-spoofing visual RLO)
 UNSAFE_TEXT_CHARS_RE = re.compile(r"[\x00-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]+")
@@ -41,12 +49,14 @@ URL_FORBIDDEN_CHARS_RE = re.compile(r"[\x00-\x20\x7f]")
 
 
 def redact_secrets(text: Any) -> str:
-    """Remove qualquer URL/token de Webhook do Discord em logs, exceções ou mensagens de erro."""
+    """Remove qualquer URL/token de Webhook do Discord ou chave da Steam Web API em logs, exceções ou erros."""
     raw = str(text or "")
     if not raw:
         return ""
     scrubbed = WEBHOOK_REDACT_RE.sub("[WEBHOOK_REDACTED]", raw)
-    return ENV_SECRET_REDACT_RE.sub(r"\1[WEBHOOK_REDACTED]", scrubbed)
+    scrubbed = ENV_SECRET_REDACT_RE.sub(r"\1[WEBHOOK_REDACTED]", scrubbed)
+    scrubbed = STEAM_API_KEY_QUERY_REDACT_RE.sub(r"\1[STEAM_KEY_REDACTED]", scrubbed)
+    return STEAM_API_KEY_ENV_REDACT_RE.sub(r"\1[STEAM_KEY_REDACTED]", scrubbed)
 
 
 class SecretRedactingFilter(logging.Filter):

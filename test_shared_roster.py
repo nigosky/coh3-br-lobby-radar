@@ -51,9 +51,9 @@ class TestSharedPlayersRoster(unittest.TestCase):
     def test_canonical_players_roster_integrity_and_parity(self) -> None:
         doc = manage_roster.load_roster_doc(PLAYERS_ROSTER_PATH)
         tot_v, uniq_v, tot_o = manage_roster.validate_roster_doc(doc)
-        self.assertGreaterEqual(tot_v, 45)
-        self.assertEqual(uniq_v, tot_v - 1)  # 1 conta secundária mesclada (É o Gabe)
-        self.assertGreaterEqual(tot_o, 1)
+        self.assertGreaterEqual(tot_v, 46)
+        self.assertEqual(uniq_v, tot_v - 2)  # 2 contas secundárias mescladas (Gabe 557890->559962 e arc 1423426->1005730)
+        self.assertGreaterEqual(tot_o, 2)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr está presente; Lem22 e Generick têm bandeira US
         vet_by_pid = {int(r["profile_id"]): r for r in CORE_BR_ROSTER}
@@ -65,10 +65,24 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertEqual(get_configured_flag_country(33487), "us")
         self.assertTrue(all(STEAM_ID64_VALID_RE.fullmatch(str(r.get("steam_id") or "")) for r in CORE_BR_ROSTER))
 
-        # Generick está em manual_other_br (fora dos Veteranos do Ranking)
+        # Gabe (renomeado de "É o Gabe") e arc (fixado com pin_alias + conta secundária 1423426 mesclada)
+        self.assertEqual(vet_by_pid[559962]["original_alias"], "Gabe")
+        self.assertEqual(vet_by_pid[557890]["original_alias"], "Gabe")
+        self.assertEqual(vet_by_pid[557890]["merged_into_profile_id"], 559962)
+        self.assertEqual(vet_by_pid[1005730]["original_alias"], "arc")
+        self.assertTrue(vet_by_pid[1005730].get("pin_alias"))
+        self.assertEqual(vet_by_pid[1423426]["original_alias"], "arc")
+        self.assertEqual(vet_by_pid[1423426]["merged_into_profile_id"], 1005730)
+        self.assertTrue(vet_by_pid[1423426].get("pin_alias"))
+
+        # Generick (33487) e Golden Cobra (16867) estão em manual_other_br (fora dos Veteranos do Ranking)
         oth_by_pid = {int(r["profile_id"]): r for r in MANUAL_OTHER_BR_PLAYERS}
         self.assertIn(33487, oth_by_pid)
         self.assertNotIn(33487, vet_by_pid)
+        self.assertIn(16867, oth_by_pid)
+        self.assertNotIn(16867, vet_by_pid)
+        self.assertEqual(oth_by_pid[16867]["original_alias"], "Golden Cobra")
+        self.assertIn("COHBRAMACHINE", oth_by_pid[16867].get("known_aliases") or [])
 
     def test_manage_roster_add_update_promote_and_remove(self) -> None:
         fake_relic = _FakeRelicResolver()

@@ -233,6 +233,49 @@ def _format_player_flag_badge(player: dict[str, Any]) -> str:
     return f" {flag_emoji}"
 
 
+def _format_discord_player_link(
+    player: dict[str, Any],
+    *,
+    bold: bool = True,
+    max_len: int = 24,
+) -> tuple[str, str]:
+    """
+    Formata o link Markdown do jogador preservando o nick anterior com `*` em caso de troca de nick.
+    Retorna `(link_markdown, nick_change_suffix)`.
+    """
+    raw_alias = str(player.get("alias") or "")
+    surl = build_safe_steam_profile_url(player.get("steam_id"))
+    nick_changed = bool(player.get("nick_changed")) or raw_alias.endswith("*")
+    cur_alias = strip_unsafe_chars(str(player.get("current_alias") or ""))[:max_len]
+
+    if nick_changed:
+        base_raw = str(player.get("previous_alias") or raw_alias.rstrip("*")).strip() or raw_alias
+        nm = sanitize_discord_text(base_raw, max_len)
+        if bold:
+            link_txt = f"[**{nm}**\\* ↗]({surl})" if surl else f"**{nm}**\\*"
+        else:
+            link_txt = f"[{nm}\\* ↗]({surl})" if surl else f"{nm}\\*"
+        nick_suffix = f" *(agora: {sanitize_discord_text(cur_alias, max_len)})*" if cur_alias else ""
+        return link_txt, nick_suffix
+
+    nm = sanitize_discord_text(raw_alias, max_len)
+    if bold:
+        link_txt = f"[**{nm}** ↗]({surl})" if surl else f"**{nm}**"
+    else:
+        link_txt = f"[{nm} ↗]({surl})" if surl else nm
+    return link_txt, ""
+
+
+def _format_presence_status_label(player: dict[str, Any]) -> str:
+    if player.get("other_game"):
+        return sanitize_discord_text(player.get("other_game"), 36)
+    if player.get("is_busy"):
+        return "⛔ Ocupado"
+    if player.get("is_snooze"):
+        return "💤 Ausente zZz"
+    return "💤 Ausente"
+
+
 def _format_category_vertical_description(
     bucket: dict[str, Any],
     *,
@@ -265,12 +308,16 @@ def _format_category_vertical_description(
         if prom_coh3:
             coh3_lines: list[str] = []
             for pl in prom_coh3[:coh3_cap]:
-                nm = sanitize_discord_text(pl.get("alias"), 24)
-                surl = build_safe_steam_profile_url(pl.get("steam_id"))
+                link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=24)
                 flag_tag = _format_player_flag_badge(pl)
                 age_m = pl.get("last_age_min")
                 tier = _resolve_discord_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
                 elo_val = int(pl.get("max_elo", 0) or 0)
+                status_extra = ""
+                if pl.get("is_busy"):
+                    status_extra = " *(⛔ Ocupado)*"
+                elif pl.get("is_away"):
+                    status_extra = " *(💤 Ausente zZz)*" if pl.get("is_snooze") else " *(💤 Ausente)*"
                 if not is_veteranos:
                     star = "⭐ " if tier == "high" else ""
                     elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
@@ -280,8 +327,7 @@ def _format_category_vertical_description(
                         rec_tag = f" *(via Relic há {max(1, int(age_m))}m)*"
                     else:
                         rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
-                    link_txt = f"[**{nm}** ↗]({surl})" if surl else f"**{nm}**"
-                    coh3_lines.append(f"• {star}🎮 {link_txt}{flag_tag}{elo_txt}{rec_tag}")
+                    coh3_lines.append(f"• {star}🎮 {link_txt}{flag_tag}{nick_suffix}{elo_txt}{rec_tag}{status_extra}")
                 else:
                     if age_m is not None and int(age_m) <= 15:
                         tag = f" *(saiu de partida há {max(1, int(age_m))}m)*"
@@ -289,10 +335,7 @@ def _format_category_vertical_description(
                         tag = f" *(via Relic há {max(1, int(age_m))}m)*"
                     else:
                         tag = ""
-                    if surl:
-                        coh3_lines.append(f"• 🎮 [**{nm}** ↗]({surl}){flag_tag}{tag}")
-                    else:
-                        coh3_lines.append(f"• 🎮 **{nm}**{flag_tag}{tag}")
+                    coh3_lines.append(f"• 🎮 {link_txt}{flag_tag}{nick_suffix}{tag}{status_extra}")
             if len(prom_coh3) > coh3_cap:
                 coh3_lines.append(f"• _...e mais {len(prom_coh3) - coh3_cap} no CoH3_")
             rem = _append_vertical_section(
@@ -305,16 +348,18 @@ def _format_category_vertical_description(
     free_online: list[dict[str, Any]] = []
     busy_online: list[dict[str, Any]] = []
     for p in online_steam:
-        is_busy = bool(p.get("other_game") or p.get("is_away"))
+        is_busy_entry = bool(p.get("other_game") or p.get("is_away") or p.get("is_busy"))
         if not is_veteranos and _resolve_discord_prominence_tier(p, is_veteranos=False, is_in_coh3=False) == "low":
             if p.get("other_game"):
                 low_entries.append((p, sanitize_discord_text(p.get("other_game"), 20)))
+            elif p.get("is_busy"):
+                low_entries.append((p, "ocupado"))
             elif p.get("is_away"):
-                low_entries.append((p, "ausente"))
+                low_entries.append((p, "ausente zZz" if p.get("is_snooze") else "ausente"))
             else:
                 low_entries.append((p, _format_coh3_recency_compact(p) or "Steam"))
             continue
-        if is_busy:
+        if is_busy_entry:
             busy_online.append(p)
         else:
             free_online.append(p)
@@ -322,23 +367,22 @@ def _format_category_vertical_description(
     if free_online:
         on_lines: list[str] = []
         for pl in free_online[:free_cap]:
-            nm = sanitize_discord_text(pl.get("alias"), 24)
-            surl = build_safe_steam_profile_url(pl.get("steam_id"))
             flag_tag = _format_player_flag_badge(pl)
             rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
             if not is_veteranos:
                 tier = _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 if tier == "high":
+                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=24)
                     elo_txt = f" — **{elo_val} ELO**" if elo_val > 0 else ""
-                    link_txt = f"[**{nm}** ↗]({surl})" if surl else f"**{nm}**"
-                    on_lines.append(f"• ⭐ {link_txt}{flag_tag}{elo_txt}{rec_tag}")
+                    on_lines.append(f"• ⭐ {link_txt}{flag_tag}{nick_suffix}{elo_txt}{rec_tag}")
                 else:
+                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=False, max_len=24)
                     elo_txt = f" — {elo_val} ELO" if elo_val > 0 else ""
-                    link_txt = f"[{nm} ↗]({surl})" if surl else nm
-                    on_lines.append(f"• {link_txt}{flag_tag}{elo_txt}{rec_tag}")
+                    on_lines.append(f"• {link_txt}{flag_tag}{nick_suffix}{elo_txt}{rec_tag}")
             else:
-                on_lines.append((f"• [**{nm}** ↗]({surl}){flag_tag}" if surl else f"• **{nm}**{flag_tag}") + rec_tag)
+                link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=24)
+                on_lines.append(f"• {link_txt}{flag_tag}{nick_suffix}{rec_tag}")
         if len(free_online) > free_cap:
             on_lines.append(f"• _...e mais {len(free_online) - free_cap} online livres_")
         rem = _append_vertical_section(
@@ -351,23 +395,22 @@ def _format_category_vertical_description(
     if busy_online:
         bz_lines: list[str] = []
         for pl in busy_online[:busy_cap]:
-            nm = sanitize_discord_text(pl.get("alias"), 24)
-            surl = build_safe_steam_profile_url(pl.get("steam_id"))
+            link_txt, nick_suffix = _format_discord_player_link(pl, bold=False, max_len=24)
             flag_tag = _format_player_flag_badge(pl)
-            og = sanitize_discord_text(pl.get("other_game"), 36) if pl.get("other_game") else "Ausente"
+            og = _format_presence_status_label(pl)
             if not is_veteranos:
                 tier = _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 star = "⭐ " if tier == "high" else ""
                 elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
-                bz_lines.append((f"• {star}[{nm} ↗]({surl}){flag_tag}" if surl else f"• {star}{nm}{flag_tag}") + f"{elo_txt} *({og})*")
+                bz_lines.append(f"• {star}{link_txt}{flag_tag}{nick_suffix}{elo_txt} *({og})*")
             else:
-                bz_lines.append((f"• [{nm} ↗]({surl}){flag_tag}" if surl else f"• {nm}{flag_tag}") + f" *({og})*")
+                bz_lines.append(f"• {link_txt}{flag_tag}{nick_suffix} *({og})*")
         if len(busy_online) > busy_cap:
-            bz_lines.append(f"• _...e mais {len(busy_online) - busy_cap} em outro jogo / ausentes_")
+            bz_lines.append(f"• _...e mais {len(busy_online) - busy_cap} em outro jogo / ausentes / ocupados_")
         rem = _append_vertical_section(
             blocks,
-            "🕹️ **Em outro jogo / ausentes:**",
+            "🕹️ **Em outro jogo / ausentes / ocupados:**",
             bz_lines,
             rem,
         )
@@ -384,8 +427,6 @@ def _format_category_vertical_description(
         if prom_recent:
             rec_lines: list[str] = []
             for pl in prom_recent[:recent_cap]:
-                nm = sanitize_discord_text(pl.get("alias"), 24)
-                surl = build_safe_steam_profile_url(pl.get("steam_id"))
                 flag_tag = _format_player_flag_badge(pl)
                 age_m = max(1, int(pl.get("last_age_min") or 1))
                 if not is_veteranos:
@@ -393,13 +434,11 @@ def _format_category_vertical_description(
                     elo_val = int(pl.get("max_elo", 0) or 0)
                     star = "⭐ " if tier == "high" else ""
                     elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
-                    link_txt = f"[**{nm}** ↗]({surl})" if (surl and tier == "high") else (f"[{nm} ↗]({surl})" if surl else f"**{nm}**")
-                    rec_lines.append(f"• {star}{link_txt}{flag_tag}{elo_txt} *(há {age_m}m)*")
+                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=(tier == "high"), max_len=24)
+                    rec_lines.append(f"• {star}{link_txt}{flag_tag}{nick_suffix}{elo_txt} *(há {age_m}m)*")
                 else:
-                    if surl:
-                        rec_lines.append(f"• [**{nm}** ↗]({surl}){flag_tag} *(há {age_m}m)*")
-                    else:
-                        rec_lines.append(f"• **{nm}**{flag_tag} *(há {age_m}m)*")
+                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=24)
+                    rec_lines.append(f"• {link_txt}{flag_tag}{nick_suffix} *(há {age_m}m)*")
             if len(prom_recent) > recent_cap:
                 rec_lines.append(f"• _...e mais {len(prom_recent) - recent_cap} invisíveis ativos_")
             rem = _append_vertical_section(
@@ -413,8 +452,7 @@ def _format_category_vertical_description(
     if not is_veteranos and low_entries and rem >= 90:
         low_lines: list[str] = []
         for pl, detail in low_entries[:low_cap]:
-            nm = sanitize_discord_text(pl.get("alias"), 22)
-            surl = build_safe_steam_profile_url(pl.get("steam_id"))
+            link_txt, nick_suffix = _format_discord_player_link(pl, bold=False, max_len=22)
             flag_tag = _format_player_flag_badge(pl)
             elo_val = int(pl.get("max_elo", 0) or 0)
             meta_parts: list[str] = []
@@ -423,10 +461,7 @@ def _format_category_vertical_description(
             if detail:
                 meta_parts.append(detail)
             meta_str = f" ({' · '.join(meta_parts)})" if meta_parts else ""
-            if surl:
-                low_lines.append(f"-# • [{nm} ↗]({surl}){flag_tag}{meta_str}")
-            else:
-                low_lines.append(f"-# • {nm}{flag_tag}{meta_str}")
+            low_lines.append(f"-# • {link_txt}{flag_tag}{nick_suffix}{meta_str}")
         if len(low_entries) > low_cap:
             low_lines.append(f"-# _...e mais {len(low_entries) - low_cap} de baixa evidência_")
         _append_vertical_section(
@@ -492,6 +527,14 @@ def build_lobby_radar_links_payload(
         else (COLOR_OTHER_BR_ONLINE if (oth["online_steam"] or oth["recent_relic"]) else COLOR_OTHER_BR_IDLE)
     )
 
+    any_nick_changed = any(
+        bool(pl.get("nick_changed")) or str(pl.get("alias") or "").endswith("*")
+        for cat in (vet, oth)
+        for sec in ("in_coh3", "online_steam", "recent_relic")
+        for pl in (cat.get(sec) or [])
+    )
+    nick_legend = "* = mudou de nick (mantendo nick anterior) • " if any_nick_changed else ""
+
     vet_embed = {
         "title": "🎖️ VETERANOS — LINKS RÁPIDOS DA STEAM",
         "description": vet_desc,
@@ -505,7 +548,7 @@ def build_lobby_radar_links_payload(
             "text": (
                 f"Veteranos: {len(vet['in_coh3'])} CoH3 / {len(vet['online_steam'])} Steam • "
                 f"Outros BR ≤{oth_days}d: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam (⭐ = ELO alto + ativo) • "
-                "Atualizado a cada 5 min"
+                f"{nick_legend}Atualizado a cada 5 min"
             )
         },
         "timestamp": datetime.now(tz=timezone.utc).isoformat(),
@@ -548,7 +591,9 @@ def build_lobby_alert_payload(
         linked_names.append(f"[**{nm}**](<{surl}>)" if surl else f"**{nm}**")
 
     extra_coh3 = f" +{len(in_coh3) - 8}" if len(in_coh3) > 8 else ""
-    free_cnt = sum(1 for p in online_steam if not p.get("other_game") and not p.get("is_away"))
+    free_cnt = sum(
+        1 for p in online_steam if not p.get("other_game") and not p.get("is_away") and not p.get("is_busy")
+    )
     online_tail = f"  •  🟢 **+{free_cnt} Veterano(s) livre(s) na Steam**" if free_cnt > 0 else ""
     oth_coh3_cnt = len(oth["in_coh3"])
     oth_tail = f"  •  🇧🇷 **+{oth_coh3_cnt} Outro(s) BR no CoH3**" if oth_coh3_cnt > 0 else ""
