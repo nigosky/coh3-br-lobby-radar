@@ -8,6 +8,7 @@ import re
 import ssl
 import stat
 import tempfile
+import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -42,25 +43,29 @@ STEAM_API_KEY_ENV_REDACT_RE = re.compile(
     r"(STEAM_WEB_API_KEY\s*=\s*)[^\s\"'<>]+",
     re.IGNORECASE,
 )
+GITHUB_TOKEN_REDACT_RE = re.compile(
+    r"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b",
+)
 
 # Remove caracteres de controle ASCII, zero-width e overrides bidirecionais Unicode (anti-spoofing visual RLO)
 UNSAFE_TEXT_CHARS_RE = re.compile(r"[\x00-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]+")
-URL_FORBIDDEN_CHARS_RE = re.compile(r"[\x00-\x20\x7f]")
+URL_FORBIDDEN_CHARS_RE = re.compile(r"[\x00-\x20\x7f\\]")
 
 
 def redact_secrets(text: Any) -> str:
-    """Remove qualquer URL/token de Webhook do Discord ou chave da Steam Web API em logs, exceções ou erros."""
+    """Remove qualquer URL/token de Webhook do Discord, chave da Steam Web API ou token GitHub em logs e exceções."""
     raw = str(text or "")
     if not raw:
         return ""
     scrubbed = WEBHOOK_REDACT_RE.sub("[WEBHOOK_REDACTED]", raw)
     scrubbed = ENV_SECRET_REDACT_RE.sub(r"\1[WEBHOOK_REDACTED]", scrubbed)
     scrubbed = STEAM_API_KEY_QUERY_REDACT_RE.sub(r"\1[STEAM_KEY_REDACTED]", scrubbed)
-    return STEAM_API_KEY_ENV_REDACT_RE.sub(r"\1[STEAM_KEY_REDACTED]", scrubbed)
+    scrubbed = STEAM_API_KEY_ENV_REDACT_RE.sub(r"\1[STEAM_KEY_REDACTED]", scrubbed)
+    return GITHUB_TOKEN_REDACT_RE.sub("[GH_TOKEN_REDACTED]", scrubbed)
 
 
 class SecretRedactingFilter(logging.Filter):
-    """Filtro global de logging que impede vazamento acidental de Webhooks/tokens em stdout ou Actions."""
+    """Filtro global de logging que impede vazamento acidental de Webhooks/tokens em mensagens e tracebacks."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         if isinstance(record.msg, str):
@@ -76,11 +81,17 @@ class SecretRedactingFilter(logging.Filter):
                     redact_secrets(a) if isinstance(a, (str, BaseException)) else a
                     for a in record.args
                 )
+        if record.exc_info:
+            formatted_exc = "".join(traceback.format_exception(*record.exc_info)).rstrip()
+            record.exc_text = redact_secrets(formatted_exc)
+            record.exc_info = None
+        elif record.exc_text:
+            record.exc_text = redact_secrets(record.exc_text)
         return True
 
 
 def configure_secure_logging(level: int = logging.INFO, datefmt: str = "%Y-%m-%d %H:%M:%S") -> None:
-    """Configura o logger raiz e anexa o filtro anti-vazamento em todos os handlers."""
+    """Configura o logger raiz e anexa o filtro anti-vazamento uma única vez em todos os handlers."""
     root = logging.getLogger()
     if not root.handlers:
         logging.basicConfig(
@@ -89,9 +100,11 @@ def configure_secure_logging(level: int = logging.INFO, datefmt: str = "%Y-%m-%d
             datefmt=datefmt,
         )
     redact_filter = SecretRedactingFilter()
-    root.addFilter(redact_filter)
+    if not any(isinstance(f, SecretRedactingFilter) for f in root.filters):
+        root.addFilter(redact_filter)
     for handler in root.handlers:
-        handler.addFilter(redact_filter)
+        if not any(isinstance(f, SecretRedactingFilter) for f in handler.filters):
+            handler.addFilter(redact_filter)
 
 
 def strip_unsafe_chars(raw: Any) -> str:
@@ -155,7 +168,7 @@ def validate_https_endpoint(
     path_prefix: str = "/",
     path_regex: re.Pattern[str] | None = None,
 ) -> urllib.parse.ParseResult:
-    """Valida esquema HTTPS, host em allowlist, porta 443, ausência de credenciais e caminho permitido."""
+    """Valida esquema HTTPS, host em allowlist, porta 443, ausência de credenciais/traversal e caminho permitido."""
     clean = (url or "").strip()
     if not clean or URL_FORBIDDEN_CHARS_RE.search(clean):
         raise ValueError("URL inválida ou contendo caracteres de controle proibidos.")
@@ -173,9 +186,13 @@ def validate_https_endpoint(
         raise ValueError("Porta inválida na URL.") from exc
     if port not in (None, 443):
         raise ValueError(f"Porta não autorizada bloqueada: {port}")
-    if path_prefix and not (parsed.path or "").startswith(path_prefix):
+    raw_path = parsed.path or ""
+    decoded_path = urllib.parse.unquote(raw_path)
+    if ".." in raw_path.split("/") or ".." in decoded_path.split("/") or "\\" in decoded_path:
+        raise ValueError("Path traversal detectado e bloqueado na URL.")
+    if path_prefix and not raw_path.startswith(path_prefix):
         raise ValueError("Caminho da URL fora do escopo permitido.")
-    if path_regex is not None and not path_regex.fullmatch(parsed.path or ""):
+    if path_regex is not None and not path_regex.fullmatch(raw_path):
         raise ValueError("Formato do caminho da URL rejeitado pela validação estrita.")
     return parsed
 

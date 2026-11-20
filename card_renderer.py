@@ -21,7 +21,12 @@ from security import (
     strip_unsafe_chars,
     validate_https_endpoint,
 )
-from steam_presence import OTHER_BR_ACTIVE_COH3_DAYS, classify_other_br_prominence
+from steam_presence import (
+    OTHER_BR_ACTIVE_COH3_DAYS,
+    extract_snapshot_category,
+    get_unique_veteranos_count,
+    resolve_prominence_tier,
+)
 
 # Proteção estrita contra Decompression Bomb (CWE-409)
 Image.MAX_IMAGE_PIXELS = 4_000_000
@@ -338,36 +343,6 @@ class SteamAvatarProvider:
         return out
 
 
-def _extract_category_bucket(snapshot: dict[str, Any], key: str) -> dict[str, Any]:
-    raw = snapshot.get(key)
-    if isinstance(raw, dict):
-        return {
-            "total_monitored": int(raw.get("total_monitored") or 0),
-            "checked_count": int(raw.get("checked_count") or 0),
-            "active_window_days": int(raw.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS),
-            "in_coh3": list(raw.get("in_coh3") or []),
-            "online_steam": list(raw.get("online_steam") or []),
-            "recent_relic": list(raw.get("recent_relic") or []),
-        }
-    if key == "veteranos":
-        return {
-            "total_monitored": int(snapshot.get("total_monitored_unique") or 43),
-            "checked_count": int(snapshot.get("total_monitored_unique") or 43),
-            "active_window_days": 0,
-            "in_coh3": list(snapshot.get("in_coh3") or []),
-            "online_steam": list(snapshot.get("online_steam") or []),
-            "recent_relic": list(snapshot.get("recent_relic") or []),
-        }
-    return {
-        "total_monitored": 0,
-        "checked_count": 0,
-        "active_window_days": OTHER_BR_ACTIVE_COH3_DAYS,
-        "in_coh3": [],
-        "online_steam": [],
-        "recent_relic": [],
-    }
-
-
 def _format_coh3_recency_short(pl: dict[str, Any]) -> str:
     hrs = pl.get("last_coh3_age_hours")
     days = pl.get("last_coh3_age_days")
@@ -382,25 +357,6 @@ def _format_coh3_recency_short(pl: dict[str, Any]) -> str:
     return f"CoH3 há {d_int}d"
 
 
-def _resolve_prominence_tier(pl: dict[str, Any], *, is_veteranos: bool, is_in_coh3: bool = False) -> str:
-    if is_veteranos:
-        return "veterano"
-    raw = str(pl.get("prominence_tier") or "").strip().lower()
-    if raw in ("high", "medium", "low"):
-        return raw
-    elo = int(pl.get("max_elo", 0) or 0)
-    hrs = pl.get("last_coh3_age_hours")
-    if hrs is None and elo > 0:
-        hrs = 0
-    tier, _ = classify_other_br_prominence(
-        max_elo=elo,
-        coh3_age_hours=hrs,
-        total_matches=int(pl.get("total_matches", 0) or 0),
-        is_in_coh3=is_in_coh3,
-    )
-    return tier
-
-
 def _split_prominent_and_low(
     players: list[dict[str, Any]],
     *,
@@ -412,7 +368,7 @@ def _split_prominent_and_low(
     prominent: list[dict[str, Any]] = []
     low: list[dict[str, Any]] = []
     for pl in players:
-        if _resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=is_in_coh3) == "low":
+        if resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=is_in_coh3) == "low":
             low.append(pl)
         else:
             prominent.append(pl)
@@ -610,7 +566,6 @@ def _measure_category_height(
     coh3_cap: int,
     online_cap: int,
     recent_cap: int,
-    cat_hdr_h: int,
     sec_hdr_h: int,
     coh3_row_h: int,
     empty_row_h: int,
@@ -619,7 +574,6 @@ def _measure_category_height(
     overflow_h: int,
     low_line_h: int = 20,
     low_pad_y: int = 6,
-    show_cat_header: bool = True,
     coh3_2col_min: int = 15,
     recent_2col_min: int = 11,
     online_low_max_lines: int = 3,
@@ -630,7 +584,7 @@ def _measure_category_height(
     recent = bucket["recent_relic"]
     low_max_px = width - 54
 
-    h = cat_hdr_h if show_cat_header else 0
+    h = 0
     if not show_empty_sections and not in_coh3 and not online and not recent:
         return h + empty_row_h
 
@@ -721,7 +675,6 @@ def _draw_category_block(
     coh3_cap: int,
     online_cap: int,
     recent_cap: int,
-    cat_hdr_h: int,
     sec_hdr_h: int,
     coh3_row_h: int,
     empty_row_h: int,
@@ -730,7 +683,6 @@ def _draw_category_block(
     overflow_h: int,
     low_line_h: int = 20,
     low_pad_y: int = 6,
-    show_cat_header: bool = True,
     coh3_2col_min: int = 15,
     recent_2col_min: int = 11,
     online_low_max_lines: int = 3,
@@ -742,50 +694,11 @@ def _draw_category_block(
     in_coh3 = bucket["in_coh3"]
     online = bucket["online_steam"]
     recent = bucket["recent_relic"]
-    total_cat = int(bucket.get("total_monitored") or 0)
     active_days = int(bucket.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
     low_max_px = width - 54
 
     vet_sm = get_veteranos_badge_icon(size=23)
     vet_xs = get_veteranos_badge_icon(size=20)
-
-    # Faixa de cabeçalho da categoria (opcional quando o card já é dedicado a uma única categoria)
-    if show_cat_header:
-        if is_veteranos:
-            cat_bg = (34, 29, 18, 255)
-            cat_border = (234, 179, 8, 200)
-            cat_title = f"VETERANOS  •  TRACKER DE PARTIDAS ({total_cat})" if total_cat > 0 else "VETERANOS  •  TRACKER DE PARTIDAS"
-            cat_title_col = (253, 224, 71, 255)
-            cat_icon = get_veteranos_badge_icon(size=26)
-            icon_y = y + 9
-        else:
-            cat_bg = (16, 33, 35, 255)
-            cat_border = (45, 212, 191, 195)
-            cat_title = (
-                f"OUTROS BRASILEIROS  •  ATIVOS NO COH3 ≤{active_days} DIAS ({total_cat})"
-                if total_cat > 0
-                else f"OUTROS BRASILEIROS  •  ATIVOS NO COH3 ≤{active_days} DIAS"
-            )
-            cat_title_col = (94, 234, 212, 255)
-            cat_icon = get_br_flag(w=28, h=19)
-            icon_y = y + 12
-
-        draw.rectangle((rail_w, y, width, y + cat_hdr_h), fill=cat_bg)
-        draw.line([(rail_w, y), (width, y)], fill=cat_border, width=2)
-        draw.line([(rail_w, y + cat_hdr_h - 1), (width, y + cat_hdr_h - 1)], fill=cat_border, width=1)
-        img.paste(cat_icon, (24, icon_y), cat_icon)
-
-        c_fnt = pick_font(cat_title, size=20, bold=True, condensed=True)
-        draw.text((62, y + 10), cat_title, font=c_fnt, fill=cat_title_col)
-
-        sum_parts = [f"CoH3: {len(in_coh3)}", f"Steam: {len(online)}"]
-        if recent:
-            sum_parts.append(f"Invisíveis: {len(recent)}")
-        cat_sum = "  •  ".join(sum_parts)
-        cs_fnt = pick_font(cat_sum, size=16, bold=True)
-        csw = text_width(draw, cat_sum, cs_fnt)
-        draw.text((width - 24 - csw, y + 12), cat_sum, font=cs_fnt, fill=(226, 232, 240, 255))
-        y += cat_hdr_h
 
     if not is_veteranos and not in_coh3 and not online and not recent:
         draw.rectangle((rail_w, y, width, y + empty_row_h), fill=(18, 22, 28, 255))
@@ -803,7 +716,7 @@ def _draw_category_block(
         s1_txt = f"JOGANDO COMPANY OF HEROES 3 AGORA ({len(in_coh3)})"
         s1_fnt = pick_font(s1_txt, size=19, bold=True, condensed=True)
         draw.text((52, y + 8), s1_txt, font=s1_fnt, fill=(134, 239, 172, 255))
-        if not is_veteranos and any(_resolve_prominence_tier(p, is_veteranos=False, is_in_coh3=True) == "high" for p in in_coh3):
+        if not is_veteranos and any(resolve_prominence_tier(p, is_veteranos=False, is_in_coh3=True) == "high" for p in in_coh3):
             leg1_txt = "★ ELO alto + ativo"
             leg1_fnt = pick_font(leg1_txt, size=15, bold=True)
             l1w = text_width(draw, leg1_txt, leg1_fnt)
@@ -838,7 +751,7 @@ def _draw_category_block(
                         if col_i == 0 and row_i > 0:
                             draw.line([(20, ry), (width - 18, ry)], fill=(28, 42, 34, 255), width=1)
 
-                        tier = _resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
+                        tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
                         is_high = (not is_veteranos) and (tier == "high")
                         if is_high:
                             draw.rectangle((cell_x0, ry + 2, cell_x1, ry + coh3_row_h - 2), fill=(23, 39, 29, 255))
@@ -917,7 +830,7 @@ def _draw_category_block(
                     y += grid_h
                 else:
                     for idx, pl in enumerate(vis_coh3):
-                        tier = _resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
+                        tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
                         is_high = (not is_veteranos) and (tier == "high")
                         if is_high:
                             r_bg = (23, 38, 28, 255) if idx % 2 == 0 else (20, 34, 25, 255)
@@ -1028,7 +941,7 @@ def _draw_category_block(
         s2_txt = f"ONLINE NA STEAM  •  DISPONÍVEIS PARA CHAMAR ({len(online)})"
         s2_fnt = pick_font(s2_txt, size=19, bold=True, condensed=True)
         draw.text((52, y + 8), s2_txt, font=s2_fnt, fill=(125, 211, 252, 255))
-        if not is_veteranos and any(_resolve_prominence_tier(p, is_veteranos=False) == "high" for p in online):
+        if not is_veteranos and any(resolve_prominence_tier(p, is_veteranos=False) == "high" for p in online):
             leg_txt = "★ ELO alto + ativo no topo"
             leg_fnt = pick_font(leg_txt, size=15, bold=True)
             lw = text_width(draw, leg_txt, leg_fnt)
@@ -1063,7 +976,7 @@ def _draw_category_block(
                     if col_i == 0 and row_i > 0:
                         draw.line([(20, ry), (width - 18, ry)], fill=(29, 35, 46, 255), width=1)
 
-                    tier = _resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
+                    tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
                     is_high = (not is_veteranos) and (tier == "high")
                     has_other = bool(pl.get("other_game"))
                     is_away = bool(pl.get("is_away") or pl.get("is_snooze"))
@@ -1237,7 +1150,7 @@ def _draw_category_block(
                     if col_i == 0 and row_i > 0:
                         draw.line([(20, ry), (width - 18, ry)], fill=(45, 38, 25, 255), width=1)
 
-                    tier = _resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
+                    tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
                     is_high = (not is_veteranos) and (tier == "high")
                     if is_high:
                         draw.rectangle((cell_x0, ry + 2, cell_x1, ry + recent_row_h - 2), fill=(31, 27, 19, 255))
@@ -1289,7 +1202,7 @@ def _draw_category_block(
                 y += grid_h
             else:
                 for idx, pl in enumerate(vis_recent):
-                    tier = _resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
+                    tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
                     is_high = (not is_veteranos) and (tier == "high")
                     r_bg = (30, 26, 19, 255) if is_high else ((26, 23, 18, 255) if idx % 2 == 0 else (22, 20, 16, 255))
                     draw.rectangle((rail_w, y, width, y + recent_row_h), fill=r_bg)
@@ -1383,13 +1296,13 @@ def _render_single_category_card_png(
     """
     width = 1100
     bucket_key = "veteranos" if is_veteranos else "outros_brasileiros"
-    bucket = _extract_category_bucket(snapshot, bucket_key)
+    bucket = extract_snapshot_category(snapshot, bucket_key)
     now_ts = int(snapshot.get("timestamp") or time.time())
 
     n_coh3 = len(bucket["in_coh3"])
     n_online = len(bucket["online_steam"])
     n_recent = len(bucket["recent_relic"])
-    total_cat = int(bucket.get("total_monitored") or (43 if is_veteranos else 0))
+    total_cat = int(bucket.get("total_monitored") or (get_unique_veteranos_count() if is_veteranos else 0))
     active_days = int(bucket.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
 
     header_h = 80
@@ -1427,7 +1340,6 @@ def _render_single_category_card_png(
             coh3_cap=c_cap,
             online_cap=o_cap,
             recent_cap=r_cap,
-            cat_hdr_h=0,
             sec_hdr_h=sec_hdr_h,
             coh3_row_h=coh3_row_h,
             empty_row_h=empty_row_h,
@@ -1436,7 +1348,6 @@ def _render_single_category_card_png(
             overflow_h=overflow_h,
             low_line_h=low_line_h,
             low_pad_y=low_pad_y,
-            show_cat_header=False,
             coh3_2col_min=2,
             recent_2col_min=2,
             online_low_max_lines=o_low_lines,
@@ -1555,7 +1466,6 @@ def _render_single_category_card_png(
         coh3_cap=coh3_cap,
         online_cap=online_cap,
         recent_cap=recent_cap,
-        cat_hdr_h=0,
         sec_hdr_h=sec_hdr_h,
         coh3_row_h=coh3_row_h,
         empty_row_h=empty_row_h,
@@ -1564,7 +1474,6 @@ def _render_single_category_card_png(
         overflow_h=overflow_h,
         low_line_h=low_line_h,
         low_pad_y=low_pad_y,
-        show_cat_header=False,
         coh3_2col_min=2,
         recent_2col_min=2,
         online_low_max_lines=online_low_max_lines,
@@ -1623,215 +1532,3 @@ def render_lobby_radar_cards_png(
         render_veteranos_card_png(snapshot, avatar_provider),
         render_outros_br_card_png(snapshot, avatar_provider),
     )
-
-
-def render_lobby_radar_card_png(
-    snapshot: dict[str, Any],
-    avatar_provider: SteamAvatarProvider,
-) -> bytes:
-    """
-    Renderiza o card combinado legado (1100px) em duas categorias claras:
-    1. Veteranos (sempre acima — mostra TODOS os online/ativos, independente de ELO ou atividade)
-    2. Outros Brasileiros (sempre abaixo — destaque para ELO alto + mais ativos; baixa evidência compacta ao final)
-    """
-    width = 1100
-    vet_bucket = _extract_category_bucket(snapshot, "veteranos")
-    oth_bucket = _extract_category_bucket(snapshot, "outros_brasileiros")
-    now_ts = int(snapshot.get("timestamp") or time.time())
-
-    total_coh3 = len(vet_bucket["in_coh3"]) + len(oth_bucket["in_coh3"])
-    total_online = len(vet_bucket["online_steam"]) + len(oth_bucket["online_steam"])
-    total_recent = len(vet_bucket["recent_relic"]) + len(oth_bucket["recent_relic"])
-
-    header_h = 96
-    cat_hdr_h = 44
-    sec_hdr_h = 40
-    coh3_row_h = 58
-    empty_row_h = 48
-    online_row_h = 54
-    recent_row_h = 50
-    overflow_h = 30
-    footer_h = 38
-    rail_w = 10
-
-    vet_coh3_cap = 45
-    vet_online_cap = 45
-    vet_recent_cap = 45
-
-    oth_coh3_cap = 12
-    oth_online_cap = 16
-    oth_recent_cap = 6
-
-    measure_draw = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
-    vet_h = _measure_category_height(
-        measure_draw,
-        vet_bucket,
-        width=width,
-        is_veteranos=True,
-        show_empty_sections=True,
-        coh3_cap=vet_coh3_cap,
-        online_cap=vet_online_cap,
-        recent_cap=vet_recent_cap,
-        cat_hdr_h=cat_hdr_h,
-        sec_hdr_h=sec_hdr_h,
-        coh3_row_h=coh3_row_h,
-        empty_row_h=empty_row_h,
-        online_row_h=online_row_h,
-        recent_row_h=recent_row_h,
-        overflow_h=overflow_h,
-    )
-    oth_h = _measure_category_height(
-        measure_draw,
-        oth_bucket,
-        width=width,
-        is_veteranos=False,
-        show_empty_sections=False,
-        coh3_cap=oth_coh3_cap,
-        online_cap=oth_online_cap,
-        recent_cap=oth_recent_cap,
-        cat_hdr_h=cat_hdr_h,
-        sec_hdr_h=sec_hdr_h,
-        coh3_row_h=coh3_row_h,
-        empty_row_h=empty_row_h,
-        online_row_h=online_row_h,
-        recent_row_h=recent_row_h,
-        overflow_h=overflow_h,
-    )
-
-    max_safe_h = (Image.MAX_IMAGE_PIXELS // width) - 40
-    total_h = header_h + vet_h + oth_h + footer_h
-    if total_h > max_safe_h:
-        oth_coh3_cap = min(oth_coh3_cap, 6)
-        oth_online_cap = min(oth_online_cap, 8)
-        oth_recent_cap = min(oth_recent_cap, 4)
-        oth_h = _measure_category_height(
-            measure_draw,
-            oth_bucket,
-            width=width,
-            is_veteranos=False,
-            show_empty_sections=False,
-            coh3_cap=oth_coh3_cap,
-            online_cap=oth_online_cap,
-            recent_cap=oth_recent_cap,
-            cat_hdr_h=cat_hdr_h,
-            sec_hdr_h=sec_hdr_h,
-            coh3_row_h=coh3_row_h,
-            empty_row_h=empty_row_h,
-            online_row_h=online_row_h,
-            recent_row_h=recent_row_h,
-            overflow_h=overflow_h,
-        )
-        total_h = header_h + vet_h + oth_h + footer_h
-
-    img = Image.new("RGBA", (width, total_h), (16, 19, 25, 255))
-    draw = ImageDraw.Draw(img)
-
-    if total_coh3:
-        rail_col = (34, 197, 94, 255)
-    elif total_online:
-        rail_col = (56, 189, 248, 255)
-    else:
-        rail_col = (245, 184, 46, 255)
-
-    draw.rectangle((0, 0, width, header_h), fill=(21, 25, 32, 255))
-    draw.line([(0, header_h - 1), (width, header_h - 1)], fill=(64, 74, 92, 255), width=2)
-    draw.rectangle((0, 0, rail_w, total_h), fill=rail_col)
-
-    vet_hdr = get_veteranos_badge_icon(size=46)
-    img.paste(vet_hdr, (28, 25), vet_hdr)
-
-    title_txt = "RADAR DE LOBBY AO VIVO  •  COH3 BRASIL"
-    t_fnt = pick_font(title_txt, size=25, bold=True, condensed=True)
-    draw.text((86, 18), title_txt, font=t_fnt, fill=(253, 224, 71, 255))
-
-    brt_str = datetime.fromtimestamp(now_ts, tz=BRT_TZ).strftime("%d/%m às %H:%M BRT")
-    sub_txt = (
-        f"No CoH3 agora: {total_coh3}   •   Online Steam: {total_online}"
-        + (f"   •   Invisíveis (Relic): {total_recent}" if total_recent else "")
-        + f"   •   Atualizado {brt_str}"
-    )
-    sub_fnt = pick_font(sub_txt, size=17, bold=True)
-    draw.text((86, 56), sub_txt, font=sub_fnt, fill=(195, 204, 218, 255))
-
-    if total_coh3:
-        pill_txt = f"EM JOGO ({total_coh3})"
-        pill_bg = (22, 163, 74, 255)
-    elif total_online:
-        pill_txt = f"ONLINE ({total_online})"
-        pill_bg = (2, 132, 199, 255)
-    else:
-        pill_txt = "LOBBY CALMO"
-        pill_bg = (75, 85, 99, 255)
-    pill_w, pill_h = 178, 38
-    pill_x, pill_y = width - pill_w - 24, 18
-    draw.rounded_rectangle((pill_x, pill_y, pill_x + pill_w, pill_y + pill_h), radius=19, fill=pill_bg)
-    p_fnt = pick_font(pill_txt, size=18, bold=True, condensed=True)
-    ptw = text_width(draw, pill_txt, p_fnt)
-    draw.text((pill_x + (pill_w - ptw) / 2, pill_y + 8), pill_txt, font=p_fnt, fill=(255, 255, 255, 255))
-
-    y = header_h
-
-    # CATEGORIA 1 (SEMPRE ACIMA): VETERANOS
-    y = _draw_category_block(
-        img,
-        draw,
-        y=y,
-        width=width,
-        rail_w=rail_w,
-        bucket=vet_bucket,
-        avatar_provider=avatar_provider,
-        is_veteranos=True,
-        coh3_cap=vet_coh3_cap,
-        online_cap=vet_online_cap,
-        recent_cap=vet_recent_cap,
-        cat_hdr_h=cat_hdr_h,
-        sec_hdr_h=sec_hdr_h,
-        coh3_row_h=coh3_row_h,
-        empty_row_h=empty_row_h,
-        online_row_h=online_row_h,
-        recent_row_h=recent_row_h,
-        overflow_h=overflow_h,
-    )
-
-    # CATEGORIA 2 (SEMPRE ABAIXO): OUTROS BRASILEIROS
-    y = _draw_category_block(
-        img,
-        draw,
-        y=y,
-        width=width,
-        rail_w=rail_w,
-        bucket=oth_bucket,
-        avatar_provider=avatar_provider,
-        is_veteranos=False,
-        coh3_cap=oth_coh3_cap,
-        online_cap=oth_online_cap,
-        recent_cap=oth_recent_cap,
-        cat_hdr_h=cat_hdr_h,
-        sec_hdr_h=sec_hdr_h,
-        coh3_row_h=coh3_row_h,
-        empty_row_h=empty_row_h,
-        online_row_h=online_row_h,
-        recent_row_h=recent_row_h,
-        overflow_h=overflow_h,
-    )
-
-    draw.rectangle((rail_w, y, width, total_h), fill=(15, 18, 24, 255))
-    draw.line([(rail_w, y), (width, y)], fill=(42, 48, 60, 255), width=1)
-    vet_tot = int(vet_bucket.get("total_monitored") or 43)
-    oth_tot = int(oth_bucket.get("total_monitored") or 0)
-    oth_days = int(oth_bucket.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
-    foot_txt = (
-        f"Veteranos: todos exibidos ({vet_tot})"
-        + (f"  •  Outros BR ativos ≤{oth_days} dias ({oth_tot}): ★ ELO alto + ativos em destaque" if oth_tot > 0 else "")
-        + "  •  Links Steam abaixo!"
-    )
-    f_fnt = pick_font(foot_txt, size=15, bold=False)
-    draw.text((28, y + 10), foot_txt, font=f_fnt, fill=(148, 163, 184, 255))
-
-    draw.rectangle((0, 0, width - 1, total_h - 1), outline=(56, 65, 82, 255), width=1)
-
-    rgb = Image.new("RGB", img.size, (16, 19, 25))
-    rgb.paste(img, mask=img.split()[3])
-    buf = io.BytesIO()
-    rgb.save(buf, format="PNG", optimize=True)
-    return buf.getvalue()

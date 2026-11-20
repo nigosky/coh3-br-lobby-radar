@@ -13,7 +13,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from card_renderer import SteamAvatarProvider, render_lobby_radar_card_png, render_lobby_radar_cards_png
+from card_renderer import SteamAvatarProvider, render_lobby_radar_cards_png
 from security import (
     build_no_redirect_https_opener,
     read_bounded_http_body,
@@ -21,7 +21,12 @@ from security import (
     strip_unsafe_chars,
     validate_discord_webhook_url,
 )
-from steam_presence import OTHER_BR_ACTIVE_COH3_DAYS, STEAM_ID64_VALID_RE, classify_other_br_prominence
+from steam_presence import (
+    OTHER_BR_ACTIVE_COH3_DAYS,
+    STEAM_ID64_VALID_RE,
+    extract_snapshot_category,
+    resolve_prominence_tier,
+)
 
 logger = logging.getLogger("coh3_br.lobby.discord")
 
@@ -112,33 +117,6 @@ COLOR_OTHER_BR_ONLINE = 0x14B8A6  # Verde-água Outros Brasileiros
 COLOR_OTHER_BR_IDLE = 0x64748B    # Ardósia neutro
 
 
-def _extract_snapshot_category(snapshot: dict[str, Any], key: str) -> dict[str, Any]:
-    raw = snapshot.get(key)
-    if isinstance(raw, dict):
-        return {
-            "total_monitored": int(raw.get("total_monitored") or 0),
-            "active_window_days": int(raw.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS),
-            "in_coh3": list(raw.get("in_coh3") or []),
-            "online_steam": list(raw.get("online_steam") or []),
-            "recent_relic": list(raw.get("recent_relic") or []),
-        }
-    if key == "veteranos":
-        return {
-            "total_monitored": int(snapshot.get("total_monitored_unique") or 43),
-            "active_window_days": 0,
-            "in_coh3": list(snapshot.get("in_coh3") or []),
-            "online_steam": list(snapshot.get("online_steam") or []),
-            "recent_relic": list(snapshot.get("recent_relic") or []),
-        }
-    return {
-        "total_monitored": 0,
-        "active_window_days": OTHER_BR_ACTIVE_COH3_DAYS,
-        "in_coh3": [],
-        "online_steam": [],
-        "recent_relic": [],
-    }
-
-
 def _format_coh3_recency_tag(pl: dict[str, Any]) -> str:
     hrs = pl.get("last_coh3_age_hours")
     days = pl.get("last_coh3_age_days")
@@ -165,25 +143,6 @@ def _format_coh3_recency_compact(pl: dict[str, Any]) -> str:
         return f"{h_int}h"
     d_int = max(1, int(days if days is not None else (h_int // 24)))
     return f"{d_int}d"
-
-
-def _resolve_discord_prominence_tier(pl: dict[str, Any], *, is_veteranos: bool, is_in_coh3: bool = False) -> str:
-    if is_veteranos:
-        return "veterano"
-    raw = str(pl.get("prominence_tier") or "").strip().lower()
-    if raw in ("high", "medium", "low"):
-        return raw
-    elo = int(pl.get("max_elo", 0) or 0)
-    hrs = pl.get("last_coh3_age_hours")
-    if hrs is None and elo > 0:
-        hrs = 0
-    tier, _ = classify_other_br_prominence(
-        max_elo=elo,
-        coh3_age_hours=hrs,
-        total_matches=int(pl.get("total_matches", 0) or 0),
-        is_in_coh3=is_in_coh3,
-    )
-    return tier
 
 
 def _append_vertical_section(
@@ -298,7 +257,7 @@ def _format_category_vertical_description(
     if in_coh3:
         prom_coh3: list[dict[str, Any]] = []
         for pl in in_coh3:
-            if not is_veteranos and _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=True) == "low":
+            if not is_veteranos and resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=True) == "low":
                 low_entries.append((pl, "no CoH3"))
             else:
                 prom_coh3.append(pl)
@@ -309,7 +268,7 @@ def _format_category_vertical_description(
                 link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=24)
                 flag_tag = _format_player_flag_badge(pl)
                 age_m = pl.get("last_age_min")
-                tier = _resolve_discord_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
+                tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 status_extra = ""
                 if pl.get("is_busy"):
@@ -347,7 +306,7 @@ def _format_category_vertical_description(
     busy_online: list[dict[str, Any]] = []
     for p in online_steam:
         is_busy_entry = bool(p.get("other_game") or p.get("is_away") or p.get("is_snooze") or p.get("is_busy"))
-        if not is_veteranos and _resolve_discord_prominence_tier(p, is_veteranos=False, is_in_coh3=False) == "low":
+        if not is_veteranos and resolve_prominence_tier(p, is_veteranos=False, is_in_coh3=False) == "low":
             if p.get("other_game"):
                 low_entries.append((p, sanitize_discord_text(p.get("other_game"), 20)))
             elif p.get("is_busy"):
@@ -368,7 +327,7 @@ def _format_category_vertical_description(
             flag_tag = _format_player_flag_badge(pl)
             rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
             if not is_veteranos:
-                tier = _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
+                tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 if tier == "high":
                     link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=24)
@@ -397,7 +356,7 @@ def _format_category_vertical_description(
             flag_tag = _format_player_flag_badge(pl)
             og = _format_presence_status_label(pl)
             if not is_veteranos:
-                tier = _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
+                tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 star = "⭐ " if tier == "high" else ""
                 elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
@@ -416,7 +375,7 @@ def _format_category_vertical_description(
     if recent_relic:
         prom_recent: list[dict[str, Any]] = []
         for pl in recent_relic:
-            if not is_veteranos and _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=False) == "low":
+            if not is_veteranos and resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False) == "low":
                 age_m = max(1, int(pl.get("last_age_min") or 1))
                 low_entries.append((pl, f"invisível há {age_m}m"))
             else:
@@ -428,7 +387,7 @@ def _format_category_vertical_description(
                 flag_tag = _format_player_flag_badge(pl)
                 age_m = max(1, int(pl.get("last_age_min") or 1))
                 if not is_veteranos:
-                    tier = _resolve_discord_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
+                    tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
                     elo_val = int(pl.get("max_elo", 0) or 0)
                     star = "⭐ " if tier == "high" else ""
                     elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
@@ -485,8 +444,8 @@ def build_lobby_radar_links_payload(
     2. Embed inferior (sempre abaixo): Categoria `Outros Brasileiros` (ativos <=15d) — destaque para ELO alto + ativos;
        ELO baixo e pouca atividade em subtexto discreto ao final.
     """
-    vet = _extract_snapshot_category(snapshot, "veteranos")
-    oth = _extract_snapshot_category(snapshot, "outros_brasileiros")
+    vet = extract_snapshot_category(snapshot, "veteranos")
+    oth = extract_snapshot_category(snapshot, "outros_brasileiros")
     oth_days = int(oth.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
 
     vet_desc = _format_category_vertical_description(
@@ -561,24 +520,14 @@ def build_lobby_radar_links_payload(
     }
 
 
-def build_lobby_radar_payload(
-    snapshot: dict[str, Any],
-    bot_username: str = "CoH3 Brasil Radar",
-    attachment_filename: str = "lobby_radar.png",
-) -> dict[str, Any]:
-    """Alias de compatibilidade retroativa para `build_lobby_radar_links_payload`."""
-    _ = attachment_filename
-    return build_lobby_radar_links_payload(snapshot, bot_username=bot_username)
-
-
 def build_lobby_alert_payload(
     snapshot: dict[str, Any],
     retention_hours: int = 2,
     bot_username: str = "CoH3 Brasil Radar",
 ) -> dict[str, Any]:
     """Monta aviso curto vivo de movimentação no CoH3 (atualizado em tempo real e limpo automaticamente)."""
-    vet = _extract_snapshot_category(snapshot, "veteranos")
-    oth = _extract_snapshot_category(snapshot, "outros_brasileiros")
+    vet = extract_snapshot_category(snapshot, "veteranos")
+    oth = extract_snapshot_category(snapshot, "outros_brasileiros")
     in_coh3: list[dict[str, Any]] = vet["in_coh3"]
     online_steam: list[dict[str, Any]] = vet["online_steam"]
 
@@ -597,7 +546,9 @@ def build_lobby_alert_payload(
 
     extra_coh3 = f" +{len(in_coh3) - 8}" if len(in_coh3) > 8 else ""
     free_cnt = sum(
-        1 for p in online_steam if not p.get("other_game") and not p.get("is_away") and not p.get("is_busy")
+        1
+        for p in online_steam
+        if not p.get("other_game") and not p.get("is_away") and not p.get("is_snooze") and not p.get("is_busy")
     )
     online_tail = f"  •  🟢 **+{free_cnt} Veterano(s) livre(s) na Steam**" if free_cnt > 0 else ""
     oth_coh3_cnt = len(oth["in_coh3"])
@@ -641,9 +592,6 @@ class DiscordLobbyWebhookClient:
     @property
     def is_configured(self) -> bool:
         return validate_discord_webhook_url(self._webhook_url)
-
-    def get_avatar_provider(self) -> SteamAvatarProvider:
-        return self._avatar_provider
 
     def _request(
         self,
@@ -852,11 +800,6 @@ class DiscordLobbyWebhookClient:
                 )
 
         return created_ids
-
-    def upsert_lobby_radar_message(self, snapshot: dict[str, Any], existing_message_id: str | None) -> str | None:
-        old_ids = [existing_message_id] if existing_message_id else []
-        created = self.upsert_lobby_radar_messages(snapshot, existing_message_ids=old_ids)
-        return created[0] if created else None
 
     def send_lobby_alert_message(self, snapshot: dict[str, Any], retention_hours: int = 2) -> str | None:
         if not self.is_configured or not snapshot.get("in_coh3"):

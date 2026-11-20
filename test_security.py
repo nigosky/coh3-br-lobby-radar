@@ -77,6 +77,9 @@ class SecurityPrimitivesTests(unittest.TestCase):
             "https://discord.com:8443/api/v10/resource",
             "https://discord.com/other/path",
             "https://discord.com/api/v10/resource\r\nX-Injected: 1",
+            "https://discord.com/api/../admin",
+            "https://discord.com/api/%2e%2e/admin",
+            "https://discord.com/api\\admin",
         ):
             with self.assertRaises(ValueError, msg=f"URL insegura não bloqueada: {bad!r}"):
                 validate_https_endpoint(bad, ALLOWED_DISCORD_HOSTS, path_prefix="/api/")
@@ -88,21 +91,52 @@ class SecurityPrimitivesTests(unittest.TestCase):
         fake_host = "https://discord.com"
         fake_path = "/api/" + "webhooks/" + "999999999999999999/" + ("A" * 40)
         fake_steam_key = "ABCDEF1234567890ABCDEF1234567890"
+        fake_gh_token = "ghp_" + ("X" * 36)
         leaked = (
             f"Erro ao chamar {fake_host}{fake_path} com DISCORD_LOBBY_WEBHOOK_URL=secret123 "
             f"e https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={fake_steam_key}&steamids=76561197963172584 "
-            f"STEAM_WEB_API_KEY={fake_steam_key}"
+            f"STEAM_WEB_API_KEY={fake_steam_key} token={fake_gh_token}"
         )
         scrubbed = redact_secrets(leaked)
         self.assertNotIn("999999999999999999", scrubbed)
         self.assertNotIn("secret123", scrubbed)
         self.assertNotIn(fake_steam_key, scrubbed)
+        self.assertNotIn(fake_gh_token, scrubbed)
         self.assertIn("[WEBHOOK_REDACTED]", scrubbed)
         self.assertIn("[STEAM_KEY_REDACTED]", scrubbed)
+        self.assertIn("[GH_TOKEN_REDACTED]", scrubbed)
 
         # Remove RLO (U+202E) e caracteres de controle
         spoofed = "Jogador\u202e\x00\x07Test"
         self.assertEqual(strip_unsafe_chars(spoofed), "Jogador Test")
+
+    def test_logging_filter_redacts_exception_tracebacks_and_deduplicates_handlers(self) -> None:
+        import logging
+        from security import SecretRedactingFilter, configure_secure_logging
+
+        stream = io.StringIO()
+        test_logger = logging.getLogger("coh3_br.test.redact_exc")
+        test_logger.propagate = False
+        test_logger.setLevel(logging.ERROR)
+        handler = logging.StreamHandler(stream)
+        handler.addFilter(SecretRedactingFilter())
+        test_logger.addHandler(handler)
+        try:
+            fake_key = "1234567890ABCDEF1234567890ABCDEF"
+            try:
+                raise RuntimeError(f"Falha em https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={fake_key}&steamids=1")
+            except RuntimeError:
+                test_logger.exception("Erro inesperado no cliente")
+            out = stream.getvalue()
+            self.assertNotIn(fake_key, out)
+            self.assertIn("[STEAM_KEY_REDACTED]", out)
+        finally:
+            test_logger.removeHandler(handler)
+
+        configure_secure_logging()
+        configure_secure_logging()
+        root = logging.getLogger()
+        self.assertEqual(sum(isinstance(f, SecretRedactingFilter) for f in root.filters), 1)
 
     def test_atomic_write_text_blocks_symlink_target(self) -> None:
         with tempfile.TemporaryDirectory() as td:
