@@ -3798,13 +3798,13 @@
     "1434825": {
       "alias": "Kelkn04",
       "br_source": "open_data_matches",
-      "last_match_date": 1795144409,
+      "last_match_date": 1795181351,
       "last_seen_ingame_ts": 1795180445,
       "last_seen_online_ts": 1795180445,
       "max_elo": 1000,
       "profile_id": 1434825,
       "steam_id": "76561198402263609",
-      "total_matches": 10
+      "total_matches": 11
     },
     "1435339": {
       "alias": "Gevete",
@@ -4318,7 +4318,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794781818,
       "last_seen_ingame_ts": 1795177637,
-      "last_seen_online_ts": 1795177637,
+      "last_seen_online_ts": 1795182244,
       "max_elo": 1000,
       "profile_id": 1444874,
       "steam_id": "76561198105380832",
@@ -7178,7 +7178,7 @@
       "alias": "Generick",
       "br_source": "manual_other_br",
       "last_match_date": 1795138965,
-      "last_seen_online_ts": 1795137670,
+      "last_seen_online_ts": 1795182244,
       "max_elo": 1546,
       "profile_id": 33487,
       "steam_id": "76561197995712470",
@@ -8814,13 +8814,13 @@
     "768410": {
       "alias": "ᵛᵘˡᵍᵒ Nunes",
       "br_source": "open_data_lb",
-      "last_match_date": 1795141840,
+      "last_match_date": 1795181548,
       "last_seen_ingame_ts": 1795177637,
       "last_seen_online_ts": 1795181645,
       "max_elo": 1121,
       "profile_id": 768410,
       "steam_id": "76561198066105144",
-      "total_matches": 951
+      "total_matches": 953
     },
     "771400": {
       "alias": "Fwanti",
@@ -9295,7 +9295,7 @@
     "84816": {
       "alias": "ChadVader",
       "br_source": "open_data_lb",
-      "last_match_date": 1795180019,
+      "last_match_date": 1795180020,
       "last_seen_online_ts": 1795181645,
       "max_elo": 1252,
       "profile_id": 84816,
