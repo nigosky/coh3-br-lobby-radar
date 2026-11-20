@@ -200,7 +200,7 @@
       "alias": "Vanros",
       "br_source": "open_data_matches",
       "last_match_date": 1794712224,
-      "last_seen_online_ts": 1795188956,
+      "last_seen_online_ts": 1795190832,
       "max_elo": 1000,
       "profile_id": 1022676,
       "steam_id": "76561199017512501",
@@ -529,7 +529,7 @@
       "alias": "Melifero",
       "br_source": "open_data_matches",
       "last_match_date": 1794782740,
-      "last_seen_online_ts": 1795188656,
+      "last_seen_online_ts": 1795190832,
       "max_elo": 1000,
       "profile_id": 1079663,
       "steam_id": "76561199522835204",
@@ -1518,12 +1518,12 @@
     "1213751": {
       "alias": "Zera",
       "br_source": "open_data_lb",
-      "last_match_date": 1795189175,
+      "last_match_date": 1795190725,
       "last_seen_online_ts": 1795189256,
       "max_elo": 1044,
       "profile_id": 1213751,
       "steam_id": "76561198163510110",
-      "total_matches": 547
+      "total_matches": 548
     },
     "1213971": {
       "alias": "VFzada",
@@ -2134,8 +2134,8 @@
       "alias": "Tiagod",
       "br_source": "open_data_lb",
       "last_match_date": 1792803639,
-      "last_seen_ingame_ts": 1795122952,
-      "last_seen_online_ts": 1795188956,
+      "last_seen_ingame_ts": 1795190832,
+      "last_seen_online_ts": 1795190832,
       "max_elo": 1081,
       "profile_id": 1279100,
       "steam_id": "76561198117204290",
@@ -2204,12 +2204,12 @@
     "1285745": {
       "alias": "maathmunix",
       "br_source": "relic_sa_lb",
-      "last_match_date": 1795183184,
+      "last_match_date": 1795190784,
       "last_seen_online_ts": 1795190156,
       "max_elo": 1000,
       "profile_id": 1285745,
       "steam_id": "76561199014615184",
-      "total_matches": 36
+      "total_matches": 37
     },
     "1285769": {
       "alias": "Ouvido Albino",
@@ -2459,12 +2459,12 @@
     "1304125": {
       "alias": "LordBaconBR",
       "br_source": "open_data_lb",
-      "last_match_date": 1795189677,
+      "last_match_date": 1795190494,
       "last_seen_online_ts": 1795189256,
       "max_elo": 1012,
       "profile_id": 1304125,
       "steam_id": "76561199482244877",
-      "total_matches": 801
+      "total_matches": 802
     },
     "1304518": {
       "alias": "B4NDEIRA",
@@ -2513,7 +2513,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795135893,
       "last_seen_ingame_ts": 1795187090,
-      "last_seen_online_ts": 1795188956,
+      "last_seen_online_ts": 1795190832,
       "max_elo": 1027,
       "profile_id": 1306623,
       "steam_id": "76561198009899628",
@@ -4805,7 +4805,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794716955,
       "last_seen_ingame_ts": 1795189556,
-      "last_seen_online_ts": 1795188956,
+      "last_seen_online_ts": 1795190832,
       "max_elo": 1000,
       "profile_id": 1453666,
       "steam_id": "76561198862434103",
@@ -7230,7 +7230,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795144429,
       "last_seen_ingame_ts": 1795142287,
-      "last_seen_online_ts": 1795188956,
+      "last_seen_online_ts": 1795190832,
       "max_elo": 1073,
       "profile_id": 3414,
       "steam_id": "76561198111168811",
@@ -7862,7 +7862,7 @@
       "alias": "Andrews [Hk]",
       "br_source": "open_data_lb",
       "last_match_date": 1795134823,
-      "last_seen_online_ts": 1795137971,
+      "last_seen_online_ts": 1795190832,
       "max_elo": 1133,
       "profile_id": 593274,
       "steam_id": "76561198006484037",
@@ -9307,7 +9307,7 @@
     "84816": {
       "alias": "ChadVader",
       "br_source": "open_data_lb",
-      "last_match_date": 1795188366,
+      "last_match_date": 1795188367,
       "last_seen_online_ts": 1795189256,
       "max_elo": 1252,
       "profile_id": 84816,
@@ -10082,7 +10082,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795152352,
       "last_seen_ingame_ts": 1795148183,
-      "last_seen_online_ts": 1795151262,
+      "last_seen_online_ts": 1795190832,
       "max_elo": 1164,
       "profile_id": 956645,
       "steam_id": "76561198119663404",
