@@ -4655,7 +4655,7 @@
       "alias": "Jack Reacher",
       "br_source": "open_data_matches",
       "last_match_date": 1794789962,
-      "last_seen_online_ts": 1795148183,
+      "last_seen_online_ts": 1795150061,
       "max_elo": 1000,
       "profile_id": 1453118,
       "steam_id": "76561197997171515",
@@ -5443,7 +5443,7 @@
       "alias": "Manolloz",
       "br_source": "open_data_matches",
       "last_match_date": 1794794399,
-      "last_seen_online_ts": 1795148183,
+      "last_seen_online_ts": 1795150061,
       "max_elo": 1000,
       "profile_id": 1468010,
       "steam_id": "76561197993833579",
@@ -5686,12 +5686,12 @@
     "1475656": {
       "alias": "Movezinho",
       "br_source": "open_data_matches",
-      "last_match_date": 1795147599,
+      "last_match_date": 1795149791,
       "last_seen_online_ts": 0,
       "max_elo": 1000,
       "profile_id": 1475656,
       "steam_id": "76561198128788012",
-      "total_matches": 37
+      "total_matches": 38
     },
     "1475704": {
       "alias": "Lionel Messi da Shoope",
@@ -6349,12 +6349,12 @@
     "188677": {
       "alias": "Mestre Yoda",
       "br_source": "open_data_matches",
-      "last_match_date": 1794806786,
+      "last_match_date": 1795149505,
       "last_seen_online_ts": 0,
       "max_elo": 1038,
       "profile_id": 188677,
       "steam_id": "76561198060406418",
-      "total_matches": 252
+      "total_matches": 253
     },
     "1959": {
       "alias": "Black Seven",
@@ -9987,12 +9987,12 @@
     "951280": {
       "alias": "Cap. Virgulino Ferreira da Silva",
       "br_source": "open_data_lb",
-      "last_match_date": 1795149270,
+      "last_match_date": 1795149851,
       "last_seen_online_ts": 1795145393,
       "max_elo": 1014,
       "profile_id": 951280,
       "steam_id": "76561198098608981",
-      "total_matches": 1091
+      "total_matches": 1092
     },
     "952088": {
       "alias": "heavy",
@@ -10089,13 +10089,13 @@
     "961602": {
       "alias": "São Leopoldo",
       "br_source": "open_data_lb",
-      "last_match_date": 1795146353,
+      "last_match_date": 1795149994,
       "last_seen_ingame_ts": 1795130294,
       "last_seen_online_ts": 1795147284,
       "max_elo": 1218,
       "profile_id": 961602,
       "steam_id": "76561198120093374",
-      "total_matches": 256
+      "total_matches": 257
     },
     "963782": {
       "alias": "Destruidor_BRZ",
