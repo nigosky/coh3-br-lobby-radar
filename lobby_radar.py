@@ -84,6 +84,7 @@ MAX_OTHER_BR_RECENT_HISTORY_CHECK = 25    # Consulta getRecentMatchHistoryByProf
 RECENT_RELIC_WINDOW_MINUTES = 35
 STEAM_INGAME_VISIBLE_TTL_SEC = 14 * 86400
 STEAM_INGAME_VISIBLE_REFRESH_SEC = 6 * 3600
+STEAM_GD_CACHE_TTL_SEC = 24 * 3600
 
 
 def load_state(state_path: Path = DEFAULT_STATE_PATH) -> dict[str, Any]:
@@ -219,6 +220,7 @@ def _build_veteranos_privacy_diagnostics(
     *,
     now: int,
     known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
+    known_ingame_visible_webapi_sids: set[str] | frozenset[str] | None = None,
 ) -> dict[str, str]:
     """
     Classifica a visibilidade Steam de cada conta dos Veteranos (`public`, `private`, `friendsonly`,
@@ -249,7 +251,11 @@ def _build_veteranos_privacy_diagnostics(
             last_ct = int(last_m.get("completion_time", 0) or 0)
             played_last_14d = last_ct > 0 and (now - last_ct) <= two_weeks_sec
             if (
-                steam_presence_hides_coh3_game(pres, known_ingame_visible_sids=known_ingame_visible_sids)
+                steam_presence_hides_coh3_game(
+                    pres,
+                    known_ingame_visible_sids=known_ingame_visible_sids,
+                    known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
+                )
                 and played_last_14d
                 and (not pres.get("is_in_coh3"))
             ):
@@ -475,6 +481,7 @@ def _call_batch_presence(
     pace_delay_sec: float = 0.0,
     stop_on_rate_limit: bool = False,
     require_xml_details: bool = False,
+    skip_xml_enrich_sids: set[str] | frozenset[str] | None = None,
 ) -> dict[str, dict[str, Any]]:
     fn = p_client.fetch_batch_presence
     try:
@@ -490,6 +497,8 @@ def _call_batch_presence(
         kwargs["stop_on_rate_limit"] = stop_on_rate_limit
     if "require_xml_details" in params:
         kwargs["require_xml_details"] = require_xml_details
+    if "skip_xml_enrich_sids" in params and skip_xml_enrich_sids is not None:
+        kwargs["skip_xml_enrich_sids"] = skip_xml_enrich_sids
     return fn(steam_ids, **kwargs)
 
 
@@ -713,7 +722,73 @@ def run_lobby_radar_sync(
         state_dirty = True
 
     vet_steam_ids = [str(r["steam_id"]) for r in vet_roster if r.get("steam_id")]
-    vet_presence_map = _call_batch_presence(p_client, vet_steam_ids, max_workers=6)
+
+    # Cache 24h da checagem XML de 'Detalhes dos jogos' + registro separado XML vs Web API de visibilidade in-game
+    gd_cache_raw = state.get("steam_gd_cache")
+    gd_cache: dict[str, dict[str, Any]] = {
+        str(sid): {"hidden": bool(rec.get("hidden")), "ts": int(rec.get("ts", 0) or 0)}
+        for sid, rec in (gd_cache_raw.items() if isinstance(gd_cache_raw, dict) else [])
+        if STEAM_ID64_VALID_RE.fullmatch(str(sid))
+        and isinstance(rec, dict)
+        and int(rec.get("ts", 0) or 0) > 0
+        and (now - int(rec.get("ts", 0) or 0)) <= STEAM_GD_CACHE_TTL_SEC
+    }
+    gd_cache_changed = isinstance(gd_cache_raw, dict) and len(gd_cache) != len(gd_cache_raw)
+
+    ingame_vis_raw = state.get("steam_ingame_visible_ts")
+    ingame_vis: dict[str, int] = {
+        str(sid): int(ts)
+        for sid, ts in (ingame_vis_raw.items() if isinstance(ingame_vis_raw, dict) else [])
+        if STEAM_ID64_VALID_RE.fullmatch(str(sid))
+        and int(ts or 0) > 0
+        and (now - int(ts or 0)) <= STEAM_INGAME_VISIBLE_TTL_SEC
+    }
+    ingame_vis_changed = isinstance(ingame_vis_raw, dict) and len(ingame_vis) != len(ingame_vis_raw)
+
+    ingame_vis_webapi_raw = state.get("steam_ingame_visible_webapi_ts")
+    ingame_vis_webapi: dict[str, int] = {
+        str(sid): int(ts)
+        for sid, ts in (ingame_vis_webapi_raw.items() if isinstance(ingame_vis_webapi_raw, dict) else [])
+        if STEAM_ID64_VALID_RE.fullmatch(str(sid))
+        and int(ts or 0) > 0
+        and (now - int(ts or 0)) <= STEAM_INGAME_VISIBLE_TTL_SEC
+    }
+    ingame_vis_webapi_changed = isinstance(ingame_vis_webapi_raw, dict) and len(ingame_vis_webapi) != len(
+        ingame_vis_webapi_raw
+    )
+
+    vet_skip_xml_sids: set[str] = set(gd_cache.keys()) | set(ingame_vis_webapi.keys())
+    vet_presence_map = _call_batch_presence(
+        p_client,
+        vet_steam_ids,
+        max_workers=6,
+        skip_xml_enrich_sids=vet_skip_xml_sids,
+    )
+
+    # Aplica cache 24h de privacidade de jogos e grava novas checagens XML dos Veteranos
+    for sid, pres in vet_presence_map.items():
+        if not isinstance(pres, dict) or not pres.get("ok") or not STEAM_ID64_VALID_RE.fullmatch(sid):
+            continue
+        src = str(pres.get("source") or "xml").strip().lower()
+        if src == "web_api" and pres.get("privacy_state") == "public":
+            if pres.get("game_details_checked") is False:
+                cached_gd = gd_cache.get(sid)
+                if cached_gd is not None:
+                    is_hidden = bool(cached_gd["hidden"])
+                    pres["has_public_game_details"] = not is_hidden
+                    pres["has_coh3_in_recent_games"] = not is_hidden
+                    pres["most_played_count"] = 0 if is_hidden else 3
+                    pres["game_details_checked"] = True
+            elif not pres.get("is_in_coh3") and not str(pres.get("other_game") or "").strip():
+                is_hidden = not bool(pres.get("has_public_game_details", True))
+                prev_gd = gd_cache.get(sid)
+                if prev_gd is None or bool(prev_gd.get("hidden")) != is_hidden:
+                    gd_cache[sid] = {"hidden": is_hidden, "ts": now}
+                    gd_cache_changed = True
+
+    if gd_cache_changed:
+        state["steam_gd_cache"] = gd_cache
+        state_dirty = True
 
     if vet_steam_ids and not any(bool(v.get("ok")) for v in vet_presence_map.values()) and not force:
         logger.warning("[RADAR LOBBY] Comunidade Steam indisponível neste instante; mantendo Painel Vivo anterior.")
@@ -754,6 +829,23 @@ def run_lobby_radar_sync(
     else:
         vet_latest_matches = r_client.fetch_latest_matches_batch(vet_pids_list)
 
+    # Fallback leve via `getPersonalStat` (~15 KB / 10 contas) para qualquer Veterano cujo histórico completo falhou
+    missing_vet_match_pids = [pid for pid in vet_pids_list if pid not in vet_latest_matches]
+    if missing_vet_match_pids and hasattr(r_client, "fetch_profile_stats_batch"):
+        try:
+            fallback_vet_stats = r_client.fetch_profile_stats_batch(missing_vet_match_pids, pace_delay_sec=0.15)
+            for pid, st in (fallback_vet_stats or {}).items():
+                lmd = int(st.get("last_match_date", 0) or 0)
+                if lmd > 0:
+                    vet_latest_matches[int(pid)] = {
+                        "profile_id": int(pid),
+                        "match_id": 0,
+                        "completion_time": lmd,
+                        "mode": str(st.get("last_match_mode") or "Partida"),
+                    }
+        except Exception as exc:
+            logger.debug("Fallback getPersonalStat para Veteranos falhou: %s", redact_secrets(exc))
+
     elo_cache_raw: dict[str, int] = dict(state.get("elo_cache") or {})
     elo_cache_ts = int(state.get("elo_cache_ts", 0) or 0)
     missing_vet_elos = any(str(pid) not in elo_cache_raw for pid in vet_pids_list)
@@ -767,29 +859,32 @@ def run_lobby_radar_sync(
 
     vet_elo_by_pid = {int(k): int(v) for k, v in elo_cache_raw.items() if str(k).isdigit()}
 
-    # Registra contas que já exibiram `<inGameInfo>` (CoH3 ou outro jogo) nos últimos 14 dias:
-    # diferencia perfis que apenas ocultam horas jogadas (<hoursPlayed2Wk>) mas mostram o jogo atual!
-    ingame_vis_raw = state.get("steam_ingame_visible_ts")
-    ingame_vis: dict[str, int] = {
-        str(sid): int(ts)
-        for sid, ts in (ingame_vis_raw.items() if isinstance(ingame_vis_raw, dict) else [])
-        if STEAM_ID64_VALID_RE.fullmatch(str(sid))
-        and int(ts or 0) > 0
-        and (now - int(ts or 0)) <= STEAM_INGAME_VISIBLE_TTL_SEC
-    }
-    ingame_vis_changed = isinstance(ingame_vis_raw, dict) and len(ingame_vis) != len(ingame_vis_raw)
+    # Registra contas que exibiram jogo nos últimos 14 dias separando XML (`steam_ingame_visible_ts`)
+    # de Steam Web API (`steam_ingame_visible_webapi_ts`), impedindo que visibilidade de amigo na
+    # Web API mascare jogos ocultos em eventual fallback XML!
     for sid, pres in vet_presence_map.items():
         if not isinstance(pres, dict):
             continue
         if (pres.get("is_in_coh3") or str(pres.get("other_game") or "").strip()) and STEAM_ID64_VALID_RE.fullmatch(sid):
-            prev_ts = int(ingame_vis.get(sid, 0) or 0)
-            if (now - prev_ts) >= STEAM_INGAME_VISIBLE_REFRESH_SEC:
-                ingame_vis[sid] = now
-                ingame_vis_changed = True
+            src = str(pres.get("source") or "xml").strip().lower()
+            if src == "web_api":
+                prev_ts = int(ingame_vis_webapi.get(sid, 0) or 0)
+                if (now - prev_ts) >= STEAM_INGAME_VISIBLE_REFRESH_SEC:
+                    ingame_vis_webapi[sid] = now
+                    ingame_vis_webapi_changed = True
+            else:
+                prev_ts = int(ingame_vis.get(sid, 0) or 0)
+                if (now - prev_ts) >= STEAM_INGAME_VISIBLE_REFRESH_SEC:
+                    ingame_vis[sid] = now
+                    ingame_vis_changed = True
     if ingame_vis_changed:
         state["steam_ingame_visible_ts"] = ingame_vis
         state_dirty = True
+    if ingame_vis_webapi_changed:
+        state["steam_ingame_visible_webapi_ts"] = ingame_vis_webapi
+        state_dirty = True
     vet_known_ingame_sids: set[str] = set(ingame_vis.keys())
+    vet_known_ingame_webapi_sids: set[str] = set(ingame_vis_webapi.keys())
 
     # Diagnóstico leve de privacidade Steam dos Veteranos (identifica perfis privados/amigos/jogos ocultos)
     vet_privacy_diag = _build_veteranos_privacy_diagnostics(
@@ -798,6 +893,7 @@ def run_lobby_radar_sync(
         vet_latest_matches,
         now=now,
         known_ingame_visible_sids=vet_known_ingame_sids,
+        known_ingame_visible_webapi_sids=vet_known_ingame_webapi_sids,
     )
     if vet_privacy_diag and vet_privacy_diag != state.get("veteranos_steam_privacy"):
         state["veteranos_steam_privacy"] = vet_privacy_diag
@@ -1012,6 +1108,18 @@ def run_lobby_radar_sync(
         state_dirty = True
 
     other_steam_ids = [str(r["steam_id"]) for r in selected_others if r.get("steam_id")]
+    other_skip_xml_sids: set[str] = set()
+    for row in selected_others:
+        sid = str(row.get("steam_id") or "")
+        if not sid:
+            continue
+        gd_ts = int(row.get("steam_gd_checked_ts", 0) or 0)
+        ig_webapi_ts = int(row.get("last_seen_ingame_webapi_ts", 0) or 0)
+        if (gd_ts > 0 and (now - gd_ts) <= STEAM_GD_CACHE_TTL_SEC) or (
+            ig_webapi_ts > 0 and (now - ig_webapi_ts) <= STEAM_INGAME_VISIBLE_TTL_SEC
+        ):
+            other_skip_xml_sids.add(sid)
+
     other_presence_map: dict[str, dict[str, Any]] = {}
     if other_steam_ids:
         other_presence_map = _call_batch_presence(
@@ -1020,10 +1128,12 @@ def run_lobby_radar_sync(
             max_workers=5,
             pace_delay_sec=0.05,
             stop_on_rate_limit=True,
+            skip_xml_enrich_sids=other_skip_xml_sids,
         )
 
-    # Atualiza last_seen_online_ts (30 min), last_seen_ingame_ts (6h) e detecta mudanças de nick Steam
+    # Atualiza last_seen_online_ts (30 min), last_seen_ingame_ts (XML/Web API), cache 24h de jogos ocultos e mudanças de nick Steam
     other_known_ingame_sids: set[str] = set()
+    other_known_ingame_webapi_sids: set[str] = set()
     for row in selected_others:
         rpid = int(row.get("profile_id", 0) or 0)
         sid = str(row.get("steam_id") or "")
@@ -1036,19 +1146,49 @@ def run_lobby_radar_sync(
             if (now - prev_seen) >= 1800:
                 row["last_seen_online_ts"] = now
                 community_dirty = True
+        if pres and pres.get("ok") and str(pres.get("source") or "xml").strip().lower() == "web_api" and pres.get("privacy_state") == "public":
+            if pres.get("game_details_checked") is False:
+                gd_ts = int(row.get("steam_gd_checked_ts", 0) or 0)
+                if gd_ts > 0 and (now - gd_ts) <= STEAM_GD_CACHE_TTL_SEC and "steam_games_hidden" in row:
+                    is_hidden = bool(row.get("steam_games_hidden"))
+                    pres["has_public_game_details"] = not is_hidden
+                    pres["has_coh3_in_recent_games"] = not is_hidden
+                    pres["most_played_count"] = 0 if is_hidden else 3
+                    pres["game_details_checked"] = True
+            elif not pres.get("is_in_coh3") and not str(pres.get("other_game") or "").strip():
+                is_hidden = not bool(pres.get("has_public_game_details", True))
+                prev_gd_ts = int(row.get("steam_gd_checked_ts", 0) or 0)
+                if row.get("steam_games_hidden") != is_hidden or (now - prev_gd_ts) >= STEAM_GD_CACHE_TTL_SEC:
+                    row["steam_games_hidden"] = is_hidden
+                    row["steam_gd_checked_ts"] = now
+                    community_dirty = True
+
         if pres and (pres.get("is_in_coh3") or str(pres.get("other_game") or "").strip()):
-            prev_ig = int(row.get("last_seen_ingame_ts", 0) or 0)
-            if (now - prev_ig) >= STEAM_INGAME_VISIBLE_REFRESH_SEC:
-                row["last_seen_ingame_ts"] = now
-                community_dirty = True
-            if sid:
-                other_known_ingame_sids.add(sid)
+            src = str(pres.get("source") or "xml").strip().lower()
+            if src == "web_api":
+                prev_ig = int(row.get("last_seen_ingame_webapi_ts", 0) or 0)
+                if (now - prev_ig) >= STEAM_INGAME_VISIBLE_REFRESH_SEC:
+                    row["last_seen_ingame_webapi_ts"] = now
+                    community_dirty = True
+                if sid:
+                    other_known_ingame_webapi_sids.add(sid)
+            else:
+                prev_ig = int(row.get("last_seen_ingame_ts", 0) or 0)
+                if (now - prev_ig) >= STEAM_INGAME_VISIBLE_REFRESH_SEC:
+                    row["last_seen_ingame_ts"] = now
+                    community_dirty = True
+                if sid:
+                    other_known_ingame_sids.add(sid)
         else:
             prev_ig = int(row.get("last_seen_ingame_ts", 0) or 0)
             if sid and prev_ig > 0 and (now - prev_ig) <= STEAM_INGAME_VISIBLE_TTL_SEC:
                 other_known_ingame_sids.add(sid)
+            prev_ig_webapi = int(row.get("last_seen_ingame_webapi_ts", 0) or 0)
+            if sid and prev_ig_webapi > 0 and (now - prev_ig_webapi) <= STEAM_INGAME_VISIBLE_TTL_SEC:
+                other_known_ingame_webapi_sids.add(sid)
 
     known_ingame_visible_sids: set[str] = vet_known_ingame_sids | other_known_ingame_sids
+    known_ingame_visible_webapi_sids: set[str] = vet_known_ingame_webapi_sids | other_known_ingame_webapi_sids
 
     # Detecção via Relic `getPersonalStat` em lote para "Outros Brasileiros":
     # 1) Prioridade máxima: contas ONLINE livres na Steam com detalhes de jogos ocultos (para promover a `in_coh3`!).
@@ -1073,7 +1213,11 @@ def run_lobby_radar_sync(
             if pres.get("other_game") or pres.get("is_away") or pres.get("is_busy"):
                 continue
             if (
-                steam_presence_hides_coh3_game(pres, known_ingame_visible_sids=known_ingame_visible_sids)
+                steam_presence_hides_coh3_game(
+                    pres,
+                    known_ingame_visible_sids=known_ingame_visible_sids,
+                    known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
+                )
                 or str(pres.get("online_state") or "").lower() == "in-game"
             ):
                 online_hidden_candidates.append(rpid)
@@ -1181,6 +1325,7 @@ def run_lobby_radar_sync(
         other_br_total_catalog=len(community_players),
         other_br_active_days=OTHER_BR_ACTIVE_COH3_DAYS,
         known_ingame_visible_sids=known_ingame_visible_sids,
+        known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
     )
     vet_bucket = snapshot["veteranos"]
     oth_bucket = snapshot["outros_brasileiros"]
