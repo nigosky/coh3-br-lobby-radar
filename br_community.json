@@ -2988,12 +2988,12 @@
     "1383062": {
       "alias": "Freak2805",
       "br_source": "open_data_lb",
-      "last_match_date": 1795113783,
+      "last_match_date": 1795141458,
       "last_seen_online_ts": 0,
       "max_elo": 1168,
       "profile_id": 1383062,
       "steam_id": "76561198029447360",
-      "total_matches": 576
+      "total_matches": 579
     },
     "1385115": {
       "alias": "Lvas",
@@ -5211,7 +5211,7 @@
       "alias": "Brício",
       "br_source": "open_data_matches",
       "last_match_date": 1794780127,
-      "last_seen_online_ts": 1795157995,
+      "last_seen_online_ts": 1795159871,
       "max_elo": 1056,
       "profile_id": 1465039,
       "steam_id": "76561198987858021",
@@ -5976,7 +5976,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794802027,
       "last_seen_ingame_ts": 1795135457,
-      "last_seen_online_ts": 1795157995,
+      "last_seen_online_ts": 1795159871,
       "max_elo": 1055,
       "profile_id": 1478243,
       "steam_id": "76561199522927394",
@@ -8537,7 +8537,7 @@
       "alias": "SoyoSid",
       "br_source": "open_data_matches",
       "last_match_date": 1794794101,
-      "last_seen_online_ts": 1795154625,
+      "last_seen_online_ts": 1795159871,
       "max_elo": 1000,
       "profile_id": 741277,
       "steam_id": "76561198145060833",
