@@ -4798,12 +4798,12 @@
     "1453723": {
       "alias": "Bzika",
       "br_source": "open_data_matches",
-      "last_match_date": 1795153022,
+      "last_match_date": 1795153651,
       "last_seen_online_ts": 1795152462,
       "max_elo": 1042,
       "profile_id": 1453723,
       "steam_id": "76561199583581752",
-      "total_matches": 25
+      "total_matches": 26
     },
     "1453831": {
       "alias": "CΛЯИICΣIЯӨ",
@@ -5444,7 +5444,7 @@
       "alias": "Manolloz",
       "br_source": "open_data_matches",
       "last_match_date": 1794794399,
-      "last_seen_online_ts": 1795151861,
+      "last_seen_online_ts": 1795153725,
       "max_elo": 1000,
       "profile_id": 1468010,
       "steam_id": "76561197993833579",
@@ -6732,12 +6732,12 @@
     "259273": {
       "alias": "LHPereira",
       "br_source": "open_data_matches",
-      "last_match_date": 1795055469,
+      "last_match_date": 1795148370,
       "last_seen_online_ts": 0,
       "max_elo": 1008,
       "profile_id": 259273,
       "steam_id": "76561198004159961",
-      "total_matches": 150
+      "total_matches": 152
     },
     "25936": {
       "alias": "Bada.Boom 💣",
@@ -8834,7 +8834,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794351463,
       "last_seen_ingame_ts": 1795143891,
-      "last_seen_online_ts": 1795151562,
+      "last_seen_online_ts": 1795153725,
       "max_elo": 1038,
       "profile_id": 77992,
       "steam_id": "76561197985282872",
