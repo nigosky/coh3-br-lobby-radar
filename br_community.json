@@ -351,12 +351,12 @@
     "105384": {
       "alias": "gabrielprado921",
       "br_source": "open_data_lb",
-      "last_match_date": 1795187616,
+      "last_match_date": 1795193080,
       "last_seen_online_ts": 1795192932,
       "max_elo": 1072,
       "profile_id": 105384,
       "steam_id": "76561198961247689",
-      "total_matches": 519
+      "total_matches": 520
     },
     "1056763": {
       "alias": "FeralZ",
@@ -2832,7 +2832,7 @@
       "alias": "[PWA]-ForceMaster",
       "br_source": "open_data_lb",
       "last_match_date": 1794613777,
-      "last_seen_online_ts": 1795191132,
+      "last_seen_online_ts": 1795193232,
       "max_elo": 1041,
       "profile_id": 135141,
       "steam_id": "76561198039466768",
@@ -3292,12 +3292,12 @@
     "1413975": {
       "alias": "Osorkon",
       "br_source": "open_data_matches",
-      "last_match_date": 1795191558,
+      "last_match_date": 1795193195,
       "last_seen_online_ts": 0,
       "max_elo": 1000,
       "profile_id": 1413975,
       "steam_id": "76561199243081669",
-      "total_matches": 257
+      "total_matches": 258
     },
     "1414133": {
       "alias": "LAVIM",
@@ -4572,7 +4572,7 @@
       "alias": "RedTersao80220",
       "br_source": "open_data_matches",
       "last_match_date": 1794610787,
-      "last_seen_online_ts": 1795140187,
+      "last_seen_online_ts": 1795193232,
       "max_elo": 1000,
       "profile_id": 1451470,
       "steam_id": "76561198656958246",
@@ -6298,12 +6298,12 @@
     "16028": {
       "alias": "galoManco",
       "br_source": "open_data_lb",
-      "last_match_date": 1795187385,
+      "last_match_date": 1795193234,
       "last_seen_online_ts": 0,
       "max_elo": 977,
       "profile_id": 16028,
       "steam_id": "76561197992460081",
-      "total_matches": 2134
+      "total_matches": 2135
     },
     "16507": {
       "alias": "Honest Copper Dealer",
@@ -10257,12 +10257,12 @@
     "964593": {
       "alias": "Daulon",
       "br_source": "open_data_lb",
-      "last_match_date": 1795191168,
+      "last_match_date": 1795193101,
       "last_seen_online_ts": 0,
       "max_elo": 1008,
       "profile_id": 964593,
       "steam_id": "76561198049743790",
-      "total_matches": 433
+      "total_matches": 434
     },
     "965932": {
       "alias": "Benja",
@@ -10298,12 +10298,12 @@
     "967658": {
       "alias": "TiMC",
       "br_source": "open_data_lb",
-      "last_match_date": 1795189889,
+      "last_match_date": 1795193063,
       "last_seen_online_ts": 0,
       "max_elo": 1297,
       "profile_id": 967658,
       "steam_id": "76561198023693363",
-      "total_matches": 4031
+      "total_matches": 4032
     },
     "968467": {
       "alias": "Jouninn",
