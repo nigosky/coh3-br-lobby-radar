@@ -2245,7 +2245,8 @@ class RelicActivityClient:
         return br_catalog
 
 
-OTHER_BR_ACTIVE_COH3_DAYS = 30  # Máximo de 30 dias (1 mês) sem jogar CoH3 para constar em "Outros Brasileiros"
+OTHER_BR_ACTIVE_COH3_DAYS = 15  # Máximo de 15 dias sem jogar CoH3 para constar em "Outros Brasileiros"
+OTHER_BR_DORMANT_RETENTION_DAYS = 90  # Retém inativos (16-90d) em cache silencioso para reativação imediata ao voltar ao CoH3
 RELIC_PUBLIC_XML_LAG_PROMOTE_SEC = 300  # 5 min: cobre atraso de cache do XML Steam para perfis com detalhes públicos
 PROMINENCE_TIER_ORDER: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
 
@@ -2570,7 +2571,7 @@ def _build_category_lists(
             player_card["status_note"] = status_note
             in_coh3_list.append(player_card)
         elif is_online:
-            # Para "Outros Brasileiros", descarta quem está inativo no CoH3 há mais de `max_coh3_inactivity_sec` (30 dias)
+            # Para "Outros Brasileiros", descarta quem está inativo no CoH3 há mais de `max_coh3_inactivity_sec` (padrão 15 dias)
             if max_coh3_inactivity_sec is not None:
                 if coh3_age_sec is None or coh3_age_sec > max_coh3_inactivity_sec:
                     continue
@@ -2669,7 +2670,7 @@ def build_lobby_radar_snapshot(
     """
     Consolida as duas categorias do Radar de Lobby:
     1. `veteranos` (sempre acima): jogadores monitorados no tracker de partidas.
-    2. `outros_brasileiros` (sempre abaixo): demais brasileiros ATIVOS no CoH3 (partida nos últimos `other_br_active_days` dias, padrão 30d).
+    2. `outros_brasileiros` (sempre abaixo): demais brasileiros ATIVOS no CoH3 (partida nos últimos `other_br_active_days` dias, padrão 15d).
     """
     now = int(now_ts) if now_ts is not None else int(time.time())
     vet_roster = list(custom_players) if custom_players else list(CORE_BR_ROSTER)

@@ -21,7 +21,7 @@ from security import (
     strip_unsafe_chars,
     validate_https_endpoint,
 )
-from steam_presence import classify_other_br_prominence
+from steam_presence import OTHER_BR_ACTIVE_COH3_DAYS, classify_other_br_prominence
 
 # Proteção estrita contra Decompression Bomb (CWE-409)
 Image.MAX_IMAGE_PIXELS = 4_000_000
@@ -344,7 +344,7 @@ def _extract_category_bucket(snapshot: dict[str, Any], key: str) -> dict[str, An
         return {
             "total_monitored": int(raw.get("total_monitored") or 0),
             "checked_count": int(raw.get("checked_count") or 0),
-            "active_window_days": int(raw.get("active_window_days") or 30),
+            "active_window_days": int(raw.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS),
             "in_coh3": list(raw.get("in_coh3") or []),
             "online_steam": list(raw.get("online_steam") or []),
             "recent_relic": list(raw.get("recent_relic") or []),
@@ -361,7 +361,7 @@ def _extract_category_bucket(snapshot: dict[str, Any], key: str) -> dict[str, An
     return {
         "total_monitored": 0,
         "checked_count": 0,
-        "active_window_days": 30,
+        "active_window_days": OTHER_BR_ACTIVE_COH3_DAYS,
         "in_coh3": [],
         "online_steam": [],
         "recent_relic": [],
@@ -743,7 +743,7 @@ def _draw_category_block(
     online = bucket["online_steam"]
     recent = bucket["recent_relic"]
     total_cat = int(bucket.get("total_monitored") or 0)
-    active_days = int(bucket.get("active_window_days") or 30)
+    active_days = int(bucket.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
     low_max_px = width - 54
 
     vet_sm = get_veteranos_badge_icon(size=23)
@@ -762,9 +762,9 @@ def _draw_category_block(
             cat_bg = (16, 33, 35, 255)
             cat_border = (45, 212, 191, 195)
             cat_title = (
-                f"OUTROS BRASILEIROS  •  ATIVOS NO COH3 ≤{active_days}D ({total_cat})"
+                f"OUTROS BRASILEIROS  •  ATIVOS NO COH3 ≤{active_days} DIAS ({total_cat})"
                 if total_cat > 0
-                else f"OUTROS BRASILEIROS  •  ATIVOS NO COH3 ≤{active_days}D"
+                else f"OUTROS BRASILEIROS  •  ATIVOS NO COH3 ≤{active_days} DIAS"
             )
             cat_title_col = (94, 234, 212, 255)
             cat_icon = get_br_flag(w=28, h=19)
@@ -789,7 +789,7 @@ def _draw_category_block(
 
     if not is_veteranos and not in_coh3 and not online and not recent:
         draw.rectangle((rail_w, y, width, y + empty_row_h), fill=(18, 22, 28, 255))
-        e_txt = f"Nenhum outro brasileiro ativo no CoH3 (≤{active_days}d) online ou jogando neste instante."
+        e_txt = f"Nenhum outro brasileiro ativo no CoH3 (≤{active_days} dias) online ou jogando neste instante."
         e_fnt = pick_font(e_txt, size=18, bold=False)
         draw.text((30, y + 14), e_txt, font=e_fnt, fill=(148, 163, 184, 255))
         return y + empty_row_h
@@ -1386,7 +1386,7 @@ def _render_single_category_card_png(
     n_online = len(bucket["online_steam"])
     n_recent = len(bucket["recent_relic"])
     total_cat = int(bucket.get("total_monitored") or (43 if is_veteranos else 0))
-    active_days = int(bucket.get("active_window_days") or 30)
+    active_days = int(bucket.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
 
     header_h = 80
     sec_hdr_h = 36
@@ -1495,24 +1495,12 @@ def _render_single_category_card_png(
         hdr_icon = get_br_flag(w=44, h=30)
         img.paste(hdr_icon, (26, 27), hdr_icon)
         title_txt = (
-            f"OUTROS BRASILEIROS  •  ATIVOS COH3 ≤{active_days}D ({total_cat})"
+            f"OUTROS BRASILEIROS  •  ATIVOS COH3 ≤{active_days} DIAS ({total_cat})"
             if total_cat > 0
-            else f"OUTROS BRASILEIROS  •  ATIVOS COH3 ≤{active_days}D"
+            else f"OUTROS BRASILEIROS  •  ATIVOS COH3 ≤{active_days} DIAS"
         )
         title_col = (94, 234, 212, 255)
         title_x = 84
-
-    t_fnt = pick_font(title_txt, size=26, bold=True, condensed=True)
-    draw.text((title_x, 14), title_txt, font=t_fnt, fill=title_col)
-
-    brt_str = datetime.fromtimestamp(now_ts, tz=BRT_TZ).strftime("%d/%m às %H:%M BRT")
-    sub_txt = (
-        f"No CoH3 agora: {n_coh3}   •   Online Steam: {n_online}"
-        + (f"   •   Invisíveis: {n_recent}" if n_recent else "")
-        + f"   •   {brt_str}"
-    )
-    sub_fnt = pick_font(sub_txt, size=18, bold=True)
-    draw.text((title_x, 50), sub_txt, font=sub_fnt, fill=(203, 213, 225, 255))
 
     if n_coh3:
         pill_txt = f"EM JOGO ({n_coh3})"
@@ -1525,6 +1513,27 @@ def _render_single_category_card_png(
         pill_bg = (75, 85, 99, 255)
     pill_w, pill_h = 178, 38
     pill_x, pill_y = width - pill_w - 24, 16
+
+    max_title_w = pill_x - title_x - 22
+    t_fnt = pick_font(title_txt, size=26, bold=True, condensed=True)
+    title_y = 14
+    for cand_sz, cand_y in ((26, 14), (24, 15), (22, 16), (20, 17)):
+        cand_fnt = pick_font(title_txt, size=cand_sz, bold=True, condensed=True)
+        t_fnt = cand_fnt
+        title_y = cand_y
+        if text_width(draw, title_txt, cand_fnt) <= max_title_w:
+            break
+    draw.text((title_x, title_y), title_txt, font=t_fnt, fill=title_col)
+
+    brt_str = datetime.fromtimestamp(now_ts, tz=BRT_TZ).strftime("%d/%m às %H:%M BRT")
+    sub_txt = (
+        f"No CoH3 agora: {n_coh3}   •   Online Steam: {n_online}"
+        + (f"   •   Invisíveis: {n_recent}" if n_recent else "")
+        + f"   •   {brt_str}"
+    )
+    sub_fnt = pick_font(sub_txt, size=18, bold=True)
+    draw.text((title_x, 50), sub_txt, font=sub_fnt, fill=(203, 213, 225, 255))
+
     draw.rounded_rectangle((pill_x, pill_y, pill_x + pill_w, pill_y + pill_h), radius=19, fill=pill_bg)
     p_fnt = pick_font(pill_txt, size=19, bold=True, condensed=True)
     ptw = text_width(draw, pill_txt, p_fnt)
@@ -1567,8 +1576,14 @@ def _render_single_category_card_png(
     if is_veteranos:
         foot_txt = f"Veteranos: todos os {total_cat} monitorados exibidos sem filtro{nick_note}  •  Links Steam abaixo"
     else:
-        foot_txt = f"Outros BR ativos ≤{active_days}d ({total_cat}): ★ ELO alto + ativos{nick_note}  •  Links Steam abaixo"
+        cat_count_lbl = f" ({total_cat})" if total_cat > 0 else ""
+        foot_txt = (
+            f"Somente ativos no CoH3 nos últimos {active_days} dias{cat_count_lbl}"
+            f"  •  ★ ELO alto + ativos{nick_note}  •  Links Steam abaixo"
+        )
     f_fnt = pick_font(foot_txt, size=15, bold=False)
+    if text_width(draw, foot_txt, f_fnt) > (width - 52):
+        f_fnt = pick_font(foot_txt, size=14, bold=False)
     draw.text((28, y + 8), foot_txt, font=f_fnt, fill=(148, 163, 184, 255))
     draw.rectangle((0, 0, width - 1, total_h - 1), outline=(56, 65, 82, 255), width=1)
 
@@ -1800,10 +1815,10 @@ def render_lobby_radar_card_png(
     draw.line([(rail_w, y), (width, y)], fill=(42, 48, 60, 255), width=1)
     vet_tot = int(vet_bucket.get("total_monitored") or 43)
     oth_tot = int(oth_bucket.get("total_monitored") or 0)
-    oth_days = int(oth_bucket.get("active_window_days") or 30)
+    oth_days = int(oth_bucket.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
     foot_txt = (
         f"Veteranos: todos exibidos ({vet_tot})"
-        + (f"  •  Outros BR ≤{oth_days}d ({oth_tot}): ★ ELO alto + ativos em destaque" if oth_tot > 0 else "")
+        + (f"  •  Outros BR ativos ≤{oth_days} dias ({oth_tot}): ★ ELO alto + ativos em destaque" if oth_tot > 0 else "")
         + "  •  Links Steam abaixo!"
     )
     f_fnt = pick_font(foot_txt, size=15, bold=False)

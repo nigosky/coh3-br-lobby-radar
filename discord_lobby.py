@@ -21,7 +21,7 @@ from security import (
     strip_unsafe_chars,
     validate_discord_webhook_url,
 )
-from steam_presence import STEAM_ID64_VALID_RE, classify_other_br_prominence
+from steam_presence import OTHER_BR_ACTIVE_COH3_DAYS, STEAM_ID64_VALID_RE, classify_other_br_prominence
 
 logger = logging.getLogger("coh3_br.lobby.discord")
 
@@ -117,7 +117,7 @@ def _extract_snapshot_category(snapshot: dict[str, Any], key: str) -> dict[str, 
     if isinstance(raw, dict):
         return {
             "total_monitored": int(raw.get("total_monitored") or 0),
-            "active_window_days": int(raw.get("active_window_days") or 30),
+            "active_window_days": int(raw.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS),
             "in_coh3": list(raw.get("in_coh3") or []),
             "online_steam": list(raw.get("online_steam") or []),
             "recent_relic": list(raw.get("recent_relic") or []),
@@ -132,7 +132,7 @@ def _extract_snapshot_category(snapshot: dict[str, Any], key: str) -> dict[str, 
         }
     return {
         "total_monitored": 0,
-        "active_window_days": 30,
+        "active_window_days": OTHER_BR_ACTIVE_COH3_DAYS,
         "in_coh3": [],
         "online_steam": [],
         "recent_relic": [],
@@ -484,12 +484,12 @@ def build_lobby_radar_links_payload(
     """
     Monta a mensagem dedicada exclusivamente às listas verticais com links diretos da Steam (sem imagem anexa):
     1. Embed superior (sempre acima): Categoria `Veteranos` — SEMPRE exibe todos, independente de ELO ou atividade.
-    2. Embed inferior (sempre abaixo): Categoria `Outros Brasileiros` (ativos <=30d) — destaque para ELO alto + ativos;
+    2. Embed inferior (sempre abaixo): Categoria `Outros Brasileiros` (ativos <=15d) — destaque para ELO alto + ativos;
        ELO baixo e pouca atividade em subtexto discreto ao final.
     """
     vet = _extract_snapshot_category(snapshot, "veteranos")
     oth = _extract_snapshot_category(snapshot, "outros_brasileiros")
-    oth_days = int(oth.get("active_window_days") or 30)
+    oth_days = int(oth.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
 
     vet_desc = _format_category_vertical_description(
         vet,
@@ -505,7 +505,7 @@ def build_lobby_radar_links_payload(
     oth_budget = min(3800, max(900, 5650 - len(vet_desc) - 280))
     oth_desc = _format_category_vertical_description(
         oth,
-        empty_message=f"_Nenhum outro brasileiro ativo no CoH3 (≤{oth_days}d) online ou jogando neste instante._",
+        empty_message=f"_Nenhum outro brasileiro ativo no CoH3 (≤{oth_days} dias) online ou jogando neste instante._",
         is_veteranos=False,
         show_coh3_recency=True,
         max_chars=oth_budget,
@@ -541,13 +541,13 @@ def build_lobby_radar_links_payload(
         "color": vet_color,
     }
     oth_embed = {
-        "title": f"🇧🇷 OUTROS BRASILEIROS (ATIVOS COH3 ≤{oth_days}D) — LINKS DA STEAM",
+        "title": f"🇧🇷 OUTROS BRASILEIROS (ATIVOS COH3 ≤{oth_days} DIAS) — LINKS DA STEAM",
         "description": oth_desc,
         "color": oth_color,
         "footer": {
             "text": (
                 f"Veteranos: {len(vet['in_coh3'])} CoH3 / {len(vet['online_steam'])} Steam • "
-                f"Outros BR ≤{oth_days}d: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam (⭐ = ELO alto + ativo) • "
+                f"Outros BR ativos ≤{oth_days} dias: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam (⭐ = ELO alto + ativo) • "
                 f"{nick_legend}Atualizado a cada 5 min"
             )
         },

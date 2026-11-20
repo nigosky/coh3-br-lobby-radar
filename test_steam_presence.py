@@ -924,6 +924,35 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
             ["OutroBR_OutroJogo", "OutroBR_LivreBaixo", "OutroBR_AusenteAlto"],
         )
 
+    def test_other_br_15_day_active_window_and_instant_return_in_coh3(self) -> None:
+        from steam_presence import OTHER_BR_ACTIVE_COH3_DAYS, OTHER_BR_DORMANT_RETENTION_DAYS
+
+        self.assertEqual(OTHER_BR_ACTIVE_COH3_DAYS, 15)
+        self.assertEqual(OTHER_BR_DORMANT_RETENTION_DAYS, 90)
+
+        now = 1_800_000_000
+        vet_roster = [{"profile_id": 79327, "steam_id": SAMPLE_SID, "original_alias": "Chacineiro"}]
+        other_roster = [
+            {"profile_id": 801, "steam_id": "76561198000000801", "alias": "Ativo14d", "max_elo": 1350, "last_match_date": now - 14 * 86400},
+            {"profile_id": 802, "steam_id": "76561198000000802", "alias": "Dormente16d", "max_elo": 1620, "last_match_date": now - 16 * 86400},
+            {"profile_id": 803, "steam_id": "76561198000000803", "alias": "Retornando20d", "max_elo": 1480, "last_match_date": now - 20 * 86400},
+        ]
+        other_pres = {
+            "76561198000000801": {"steam_id": "76561198000000801", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False},
+            "76561198000000802": {"steam_id": "76561198000000802", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "", "is_away": False},
+            "76561198000000803": {"steam_id": "76561198000000803", "ok": True, "is_in_coh3": True, "is_online_steam": True, "other_game": "", "is_away": False},
+        }
+        snap = build_lobby_radar_snapshot(
+            vet_roster,
+            {},
+            now_ts=now,
+            other_br_players=other_roster,
+            other_presence_by_steam=other_pres,
+        )
+        self.assertEqual(snap["outros_brasileiros"]["active_window_days"], 15)
+        self.assertEqual([p["alias"] for p in snap["outros_brasileiros"]["online_steam"]], ["Ativo14d"])
+        self.assertEqual([p["alias"] for p in snap["outros_brasileiros"]["in_coh3"]], ["Retornando20d"])
+
 
 if __name__ == "__main__":
     unittest.main()

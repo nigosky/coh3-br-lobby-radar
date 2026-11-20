@@ -1572,6 +1572,260 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             saved2 = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(saved2["active_alerts"], [])
 
+    def test_outros_br_15d_cutoff_explicit_labels_and_auto_reactivation(self) -> None:
+        now = 1_800_000_000
+        sid_ativo = "76561198900950001"
+        sid_dorm_steam = "76561198900950002"
+        sid_dorm_relic = "76561198900950003"
+        sid_expirado = "76561198900950004"
+
+        class _WebApiReactivationPresence:
+            uses_web_api = True
+
+            def __init__(self) -> None:
+                self.dorm_steam_in_coh3 = False
+                self.dorm_relic_online = True
+                self.last_skip_xml: set[str] = set()
+                self.last_scanned_sids: list[str] = []
+
+            def fetch_batch_presence(
+                self,
+                steam_ids: list[str],
+                max_workers: int = 6,
+                pace_delay_sec: float = 0.0,
+                stop_on_rate_limit: bool = False,
+                skip_xml_enrich_sids: set[str] | frozenset[str] | None = None,
+            ) -> dict[str, dict[str, Any]]:
+                _ = (max_workers, pace_delay_sec, stop_on_rate_limit)
+                if sid_ativo in steam_ids or sid_dorm_steam in steam_ids:
+                    self.last_scanned_sids = list(steam_ids)
+                    self.last_skip_xml = set(skip_xml_enrich_sids or ())
+                out: dict[str, dict[str, Any]] = {}
+                for sid in steam_ids:
+                    if sid == sid_ativo:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "source": "web_api",
+                            "privacy_state": "public",
+                            "online_state": "online",
+                            "is_in_coh3": False,
+                            "is_online_steam": True,
+                            "other_game": "",
+                            "is_away": False,
+                            "is_snooze": False,
+                            "is_busy": False,
+                            "has_public_game_details": True,
+                            "game_details_checked": True,
+                        }
+                    elif sid == sid_dorm_steam:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "source": "web_api",
+                            "privacy_state": "public",
+                            "online_state": "in-game" if self.dorm_steam_in_coh3 else "online",
+                            "is_in_coh3": self.dorm_steam_in_coh3,
+                            "is_online_steam": True,
+                            "other_game": "",
+                            "is_away": False,
+                            "is_snooze": False,
+                            "is_busy": False,
+                            "has_public_game_details": True,
+                            "game_details_checked": False,
+                        }
+                    elif sid == sid_dorm_relic:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "source": "web_api",
+                            "privacy_state": "public",
+                            "online_state": "online" if self.dorm_relic_online else "offline",
+                            "is_in_coh3": False,
+                            "is_online_steam": self.dorm_relic_online,
+                            "other_game": "",
+                            "is_away": False,
+                            "is_snooze": False,
+                            "is_busy": False,
+                            "has_public_game_details": False,
+                            "game_details_checked": False,
+                        }
+                    else:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "source": "web_api",
+                            "privacy_state": "public",
+                            "online_state": "offline",
+                            "is_in_coh3": False,
+                            "is_online_steam": False,
+                            "other_game": "",
+                            "is_away": False,
+                            "is_snooze": False,
+                            "is_busy": False,
+                        }
+                return out
+
+        class _ReactivationRelic:
+            def __init__(self) -> None:
+                self.dorm_relic_lmd = now - 25 * 86400
+
+            def fetch_latest_matches_and_br_participants(self, profile_ids: list[int], max_workers: int = 6):
+                _ = (profile_ids, max_workers)
+                return {}, {}, {}
+
+            def fetch_latest_matches_batch(self, profile_ids: list[int], max_workers: int = 3):
+                _ = (profile_ids, max_workers)
+                return {}
+
+            def fetch_peak_elo_by_profile_ids(self, profile_ids: list[int]):
+                return {pid: 1400 for pid in profile_ids}
+
+            def fetch_profile_stats_batch(self, profile_ids: list[int], pace_delay_sec: float = 0.22):
+                _ = pace_delay_sec
+                out: dict[int, dict[str, Any]] = {}
+                if 950002 in profile_ids:
+                    out[950002] = {
+                        "profile_id": 950002,
+                        "steam_id": sid_dorm_steam,
+                        "alias": "Dormente20dSteam",
+                        "max_elo": 1520,
+                        "last_match_date": now - 20 * 86400,
+                        "total_matches": 140,
+                    }
+                if 950003 in profile_ids:
+                    out[950003] = {
+                        "profile_id": 950003,
+                        "steam_id": sid_dorm_relic,
+                        "alias": "Dormente25dRelic",
+                        "max_elo": 1490,
+                        "last_match_date": self.dorm_relic_lmd,
+                        "last_match_mode": "2v2",
+                        "total_matches": 110,
+                    }
+                return out
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            comm_path = Path(tmp) / "br_community.json"
+            comm_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 3,
+                        "updated_at": now - 600,
+                        "source": "open_data",
+                        "players": {
+                            "950001": {
+                                "profile_id": 950001,
+                                "steam_id": sid_ativo,
+                                "alias": "Ativo14d",
+                                "max_elo": 1360,
+                                "last_match_date": now - 14 * 86400,
+                                "total_matches": 80,
+                            },
+                            "950002": {
+                                "profile_id": 950002,
+                                "steam_id": sid_dorm_steam,
+                                "alias": "Dormente20dSteam",
+                                "max_elo": 1520,
+                                "last_match_date": now - 20 * 86400,
+                                "total_matches": 140,
+                            },
+                            "950003": {
+                                "profile_id": 950003,
+                                "steam_id": sid_dorm_relic,
+                                "alias": "Dormente25dRelic",
+                                "max_elo": 1490,
+                                "last_match_date": now - 25 * 86400,
+                                "total_matches": 110,
+                            },
+                            "950004": {
+                                "profile_id": 950004,
+                                "steam_id": sid_expirado,
+                                "alias": "Expirado95d",
+                                "max_elo": 1600,
+                                "last_match_date": now - 95 * 86400,
+                                "total_matches": 300,
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            fake_disc = _FakeDiscordClient()
+            pres = _WebApiReactivationPresence()
+            relic = _ReactivationRelic()
+
+            # Ciclo 1: corte <=15d esconde dormentes (20d e 25d) mesmo online na Steam e descarta >90d (95d)
+            s1 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=fake_disc,
+                presence_client=pres,  # type: ignore[arg-type]
+                relic_client=relic,  # type: ignore[arg-type]
+                now_ts=now,
+            )
+            self.assertEqual(s1["other_br_catalog_total"], 1)
+            self.assertEqual(s1["other_br_in_coh3"], 0)
+            self.assertEqual(s1["other_br_online_steam"], 1)
+            self.assertEqual(s1["other_br_reactivated"], 0)
+            # Garante zero chamadas XML para dormentes monitorados via Web API
+            self.assertIn(sid_dorm_steam, pres.last_skip_xml)
+            self.assertIn(sid_dorm_relic, pres.last_skip_xml)
+
+            comm1 = json.loads(comm_path.read_text(encoding="utf-8"))
+            self.assertEqual(sorted(comm1["players"].keys()), ["950001"])
+            self.assertEqual(sorted(comm1["dormant_players"].keys()), ["950002", "950003"])
+            self.assertNotIn("950004", comm1["players"])
+            self.assertNotIn("950004", comm1["dormant_players"])
+
+            # Verifica texto explícito de 15 dias nos embeds do Discord
+            links_posts = [p for m, _, p, f in fake_disc.calls if m == "POST" and not f and p and p.get("embeds")]
+            oth_embed = links_posts[-1]["embeds"][1]
+            self.assertIn("≤15 DIAS", oth_embed["title"])
+            self.assertIn("≤15 dias", oth_embed["footer"]["text"])
+            self.assertIn("Ativo14d", oth_embed["description"])
+            self.assertNotIn("Dormente20dSteam", oth_embed["description"])
+            self.assertNotIn("Dormente25dRelic", oth_embed["description"])
+
+            # Ciclo 2: Dormente20dSteam abre CoH3 (Web API) + Dormente25dRelic joga partida (jogos ocultos via Relic) -> ambos reativados!
+            now2 = now + 600
+            pres.dorm_steam_in_coh3 = True
+            relic.dorm_relic_lmd = now2 - 300
+            s2 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=fake_disc,
+                presence_client=pres,  # type: ignore[arg-type]
+                relic_client=relic,  # type: ignore[arg-type]
+                now_ts=now2,
+            )
+            self.assertEqual(s2["other_br_reactivated"], 2)
+            self.assertEqual(s2["other_br_catalog_total"], 3)
+            self.assertEqual(s2["other_br_in_coh3"], 2)
+            self.assertEqual(s2["other_br_online_steam"], 1)
+
+            comm2 = json.loads(comm_path.read_text(encoding="utf-8"))
+            self.assertEqual(sorted(comm2["players"].keys()), ["950001", "950002", "950003"])
+            self.assertEqual(comm2["dormant_players"], {})
+            self.assertEqual(comm2["players"]["950002"]["last_match_date"], now2)
+            self.assertEqual(comm2["players"]["950003"]["last_match_date"], now2 - 300)
+
+            # Ciclo 3 (2h depois): ambos fecham CoH3 mas continuam no lobby como ativos <=15d!
+            now3 = now2 + 7200
+            pres.dorm_steam_in_coh3 = False
+            s3 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=fake_disc,
+                presence_client=pres,  # type: ignore[arg-type]
+                relic_client=relic,  # type: ignore[arg-type]
+                now_ts=now3,
+            )
+            self.assertEqual(s3["other_br_catalog_total"], 3)
+            self.assertEqual(s3["other_br_in_coh3"], 0)
+            self.assertEqual(s3["other_br_online_steam"], 3)
+
 
 if __name__ == "__main__":
     unittest.main()
