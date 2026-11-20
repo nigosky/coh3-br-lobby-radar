@@ -119,9 +119,23 @@ FALLBACK_MATCH_TYPES: dict[int, str] = {
 PLAYERS_ROSTER_PATH = Path(__file__).resolve().parent / "players_roster.json"
 _VALID_FLAG_COUNTRY_RE = re.compile(r"^[a-z]{2}$")
 
-# Fallback embutido caso players_roster.json esteja ausente (46 contas Steam / 44 Veteranos únicos)
+# Fallback embutido caso players_roster.json esteja ausente (47 contas Steam / 44 Veteranos únicos)
 _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 79327, "steam_id": "76561197963172584", "original_alias": "Chacineiro"},
+    {
+        "profile_id": 1333418,
+        "steam_id": "76561198698969876",
+        "original_alias": "Chacineiro",
+        "merged_into_profile_id": 79327,
+        "merged_into_steam_id": "76561197963172584",
+        "known_aliases": [
+            "TacticalForceConcentration",
+            "Charles Bronson",
+            "Lord Charles Bronson",
+            "Charles Broson",
+            "Chacineiro",
+        ],
+    },
     {"profile_id": 991764, "steam_id": "76561198115923932", "original_alias": "SaNgar [BR]"},
     {"profile_id": 1088455, "steam_id": "76561198108568598", "original_alias": "luiz_fmh"},
     {"profile_id": 735940, "steam_id": "76561198034510845", "original_alias": "Jimmy Duelista"},
