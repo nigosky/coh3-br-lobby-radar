@@ -51,8 +51,8 @@ class TestSharedPlayersRoster(unittest.TestCase):
     def test_canonical_players_roster_integrity_and_parity(self) -> None:
         doc = manage_roster.load_roster_doc(PLAYERS_ROSTER_PATH)
         tot_v, uniq_v, tot_o = manage_roster.validate_roster_doc(doc)
-        self.assertGreaterEqual(tot_v, 46)
-        self.assertEqual(uniq_v, tot_v - 2)  # 2 contas secundárias mescladas (Gabe 557890->559962 e arc 1423426->1005730)
+        self.assertGreaterEqual(tot_v, 47)
+        self.assertEqual(uniq_v, tot_v - 3)  # 3 contas secundárias mescladas (Chacineiro 1333418->79327, Gabe 557890->559962, arc 1423426->1005730)
         self.assertGreaterEqual(tot_o, 2)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr está presente; Lem22 e Generick têm bandeira US
@@ -65,7 +65,21 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertEqual(get_configured_flag_country(33487), "us")
         self.assertTrue(all(STEAM_ID64_VALID_RE.fullmatch(str(r.get("steam_id") or "")) for r in CORE_BR_ROSTER))
 
-        # Gabe (renomeado de "É o Gabe") e arc (fixado com pin_alias + conta secundária 1423426 mesclada)
+        # Chacineiro (smurf 1333418 mesclada em 79327), Gabe (557890->559962) e arc (pin_alias + 1423426->1005730)
+        self.assertEqual(vet_by_pid[79327]["original_alias"], "Chacineiro")
+        self.assertEqual(vet_by_pid[1333418]["original_alias"], "Chacineiro")
+        self.assertEqual(vet_by_pid[1333418]["steam_id"], "76561198698969876")
+        self.assertEqual(vet_by_pid[1333418]["merged_into_profile_id"], 79327)
+        self.assertEqual(vet_by_pid[1333418]["merged_into_steam_id"], "76561197963172584")
+        for expected_alias in (
+            "TacticalForceConcentration",
+            "Charles Bronson",
+            "Lord Charles Bronson",
+            "Charles Broson",
+            "Chacineiro",
+        ):
+            self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
+
         self.assertEqual(vet_by_pid[559962]["original_alias"], "Gabe")
         self.assertEqual(vet_by_pid[557890]["original_alias"], "Gabe")
         self.assertEqual(vet_by_pid[557890]["merged_into_profile_id"], 559962)
@@ -83,6 +97,39 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertNotIn(16867, vet_by_pid)
         self.assertEqual(oth_by_pid[16867]["original_alias"], "Golden Cobra")
         self.assertIn("COHBRAMACHINE", oth_by_pid[16867].get("known_aliases") or [])
+
+        # Smurf do Chacineiro no CoH3 aparece unificada como Veterano 'Chacineiro' e nunca duplica em Outros BR
+        from steam_presence import build_lobby_radar_snapshot
+
+        now = 1_800_000_000
+        snap = build_lobby_radar_snapshot(
+            CORE_BR_ROSTER,
+            {
+                "76561198698969876": {
+                    "steam_id": "76561198698969876",
+                    "ok": True,
+                    "is_in_coh3": True,
+                    "is_online_steam": True,
+                    "steam_alias": "Charles Bronson",
+                    "other_game": "",
+                    "is_away": False,
+                }
+            },
+            now_ts=now,
+            other_br_players=[
+                {
+                    "profile_id": 1333418,
+                    "steam_id": "76561198698969876",
+                    "alias": "Charles Bronson",
+                    "max_elo": 1550,
+                    "last_match_date": now - 600,
+                }
+            ],
+        )
+        self.assertEqual([p["profile_id"] for p in snap["veteranos"]["in_coh3"]], [79327])
+        self.assertEqual(snap["veteranos"]["in_coh3"][0]["alias"], "Chacineiro")
+        self.assertFalse(snap["veteranos"]["in_coh3"][0]["nick_changed"])
+        self.assertEqual(snap["outros_brasileiros"]["in_coh3"], [])
 
     def test_manage_roster_add_update_promote_and_remove(self) -> None:
         fake_relic = _FakeRelicResolver()
