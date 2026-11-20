@@ -1808,12 +1808,12 @@
     "1242418": {
       "alias": "faveri.filho",
       "br_source": "open_data_lb",
-      "last_match_date": 1795143933,
+      "last_match_date": 1795145466,
       "last_seen_online_ts": 1795144192,
       "max_elo": 1005,
       "profile_id": 1242418,
       "steam_id": "76561198103034149",
-      "total_matches": 181
+      "total_matches": 182
     },
     "1242455": {
       "alias": "joevertepb",
@@ -2754,12 +2754,12 @@
     "1346169": {
       "alias": "TheMonkBR",
       "br_source": "open_data_lb",
-      "last_match_date": 1795142688,
+      "last_match_date": 1795145421,
       "last_seen_online_ts": 1795144192,
       "max_elo": 1112,
       "profile_id": 1346169,
       "steam_id": "76561199212918452",
-      "total_matches": 827
+      "total_matches": 828
     },
     "1348602": {
       "alias": "ViniTessaro",
@@ -3883,12 +3883,12 @@
     "1438656": {
       "alias": "guridocafe",
       "br_source": "open_data_lb",
-      "last_match_date": 1795143568,
+      "last_match_date": 1795145421,
       "last_seen_online_ts": 1795145092,
       "max_elo": 1117,
       "profile_id": 1438656,
       "steam_id": "76561198870731987",
-      "total_matches": 81
+      "total_matches": 82
     },
     "1438814": {
       "alias": "Ninguem Skins",
@@ -4070,8 +4070,8 @@
       "alias": "Zather",
       "br_source": "open_data_matches",
       "last_match_date": 1794853444,
-      "last_seen_ingame_ts": 1795123852,
-      "last_seen_online_ts": 1795143891,
+      "last_seen_ingame_ts": 1795145692,
+      "last_seen_online_ts": 1795145692,
       "max_elo": 1048,
       "profile_id": 1440424,
       "steam_id": "76561198128765954",
@@ -4162,13 +4162,13 @@
     "1440993": {
       "alias": "chupisko",
       "br_source": "open_data_matches",
-      "last_match_date": 1794972387,
+      "last_match_date": 1795145466,
       "last_seen_ingame_ts": 1795141087,
       "last_seen_online_ts": 1795144792,
       "max_elo": 1048,
       "profile_id": 1440993,
       "steam_id": "76561198120392137",
-      "total_matches": 20
+      "total_matches": 23
     },
     "1441015": {
       "alias": "MADARA.KM4",
@@ -4257,7 +4257,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794843213,
       "last_seen_ingame_ts": 1795135157,
-      "last_seen_online_ts": 1795143891,
+      "last_seen_online_ts": 1795145692,
       "max_elo": 1051,
       "profile_id": 1442048,
       "steam_id": "76561198078061644",
@@ -4948,13 +4948,13 @@
     "1456842": {
       "alias": "[BGD] Panella",
       "br_source": "open_data_lb",
-      "last_match_date": 1795125711,
+      "last_match_date": 1795145418,
       "last_seen_ingame_ts": 1795144792,
       "last_seen_online_ts": 1795144493,
       "max_elo": 1033,
       "profile_id": 1456842,
       "steam_id": "76561198272287621",
-      "total_matches": 24
+      "total_matches": 34
     },
     "1457577": {
       "alias": "Karyu",
@@ -6435,12 +6435,12 @@
     "20523": {
       "alias": "Goa Trance Mix",
       "br_source": "open_data_matches",
-      "last_match_date": 1795130105,
+      "last_match_date": 1795143605,
       "last_seen_online_ts": 0,
       "max_elo": 1081,
       "profile_id": 20523,
       "steam_id": "76561198044964084",
-      "total_matches": 2470
+      "total_matches": 2471
     },
     "206875": {
       "alias": "Fellschirm",
@@ -6779,13 +6779,13 @@
     "26736": {
       "alias": "Arkymendes",
       "br_source": "open_data_lb",
-      "last_match_date": 1795051114,
+      "last_match_date": 1795145421,
       "last_seen_ingame_ts": 1795132094,
       "last_seen_online_ts": 1795144493,
       "max_elo": 1000,
       "profile_id": 26736,
       "steam_id": "76561198002634846",
-      "total_matches": 549
+      "total_matches": 555
     },
     "268967": {
       "alias": "ronaldo.luis",
@@ -7436,7 +7436,7 @@
     "401275": {
       "alias": "asado de perro",
       "br_source": "open_data_lb",
-      "last_match_date": 1795143460,
+      "last_match_date": 1795143461,
       "last_seen_online_ts": 1795145393,
       "max_elo": 1195,
       "profile_id": 401275,
@@ -7763,7 +7763,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795115512,
       "last_seen_ingame_ts": 1795111692,
-      "last_seen_online_ts": 1795143891,
+      "last_seen_online_ts": 1795145692,
       "max_elo": 1155,
       "profile_id": 56354,
       "steam_id": "76561198188074241",
@@ -8334,12 +8334,12 @@
     "7255": {
       "alias": "NoLives",
       "br_source": "open_data_lb",
-      "last_match_date": 1795142689,
+      "last_match_date": 1795145421,
       "last_seen_online_ts": 1795145393,
       "max_elo": 1050,
       "profile_id": 7255,
       "steam_id": "76561198000943624",
-      "total_matches": 368
+      "total_matches": 369
     },
     "73623": {
       "alias": "Welter",
@@ -9393,12 +9393,12 @@
     "869772": {
       "alias": "Tazi",
       "br_source": "open_data_lb",
-      "last_match_date": 1795143404,
+      "last_match_date": 1795145454,
       "last_seen_online_ts": 0,
       "max_elo": 1300,
       "profile_id": 869772,
       "steam_id": "76561198874552921",
-      "total_matches": 1224
+      "total_matches": 1225
     },
     "87314": {
       "alias": "Pedro Jedi",
@@ -10127,7 +10127,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795056002,
       "last_seen_ingame_ts": 1795111093,
-      "last_seen_online_ts": 1795131794,
+      "last_seen_online_ts": 1795145692,
       "max_elo": 1028,
       "profile_id": 965932,
       "steam_id": "76561198012101010",
