@@ -132,7 +132,7 @@ CORE_BR_ROSTER: list[dict[str, Any]] = [
         "known_aliases": ["Minhoca de ferro!", "Minhoca de ferro", "Alekel"],
     },
     {"profile_id": 1114404, "steam_id": "76561198024118058", "original_alias": "Vikitor"},
-    {"profile_id": 366826, "steam_id": "76561198014985380", "original_alias": "Lem22"},
+    {"profile_id": 366826, "steam_id": "76561198014985380", "original_alias": "Lem22", "flag_country": "us"},
     {"profile_id": 1282592, "steam_id": "76561198028644178", "original_alias": "SapoBoi_BR"},
     {"profile_id": 639157, "steam_id": "76561197979883434", "original_alias": "Itaperuna"},
     {"profile_id": 110078, "steam_id": "76561198024839791", "original_alias": "Bineto"},
@@ -173,8 +173,34 @@ CORE_BR_ROSTER: list[dict[str, Any]] = [
 # Brasileiros confirmados residentes no exterior (EUA/Europa/bandeira diferente na Steam/Relic)
 # monitorados permanentemente na categoria "Outros Brasileiros" (SteamID64, ELO e atividade resolvidos via Relic API)
 MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
-    {"profile_id": 33487, "steam_id": "", "original_alias": "Generick"},
+    {"profile_id": 33487, "steam_id": "", "original_alias": "Generick", "flag_country": "us"},
 ]
+
+_VALID_FLAG_COUNTRY_RE = re.compile(r"^[a-z]{2}$")
+
+
+def normalize_flag_country(value: Any, *, default: str = "") -> str:
+    """Normaliza código ISO-2 de bandeira de residência/exibição (ex.: 'us', 'br')."""
+    raw = str(value or "").strip().lower()
+    if raw in ("usa", "eua"):
+        raw = "us"
+    elif raw == "bra":
+        raw = "br"
+    if _VALID_FLAG_COUNTRY_RE.fullmatch(raw):
+        return raw
+    return default
+
+
+def get_configured_flag_country(profile_id: int) -> str:
+    """Retorna a bandeira explícita configurada em CORE_BR_ROSTER/MANUAL_OTHER_BR_PLAYERS (ex.: 'us' para Lem22 e Generick)."""
+    pid = int(profile_id or 0)
+    if pid <= 0:
+        return ""
+    for roster in (CORE_BR_ROSTER, MANUAL_OTHER_BR_PLAYERS):
+        for row in roster:
+            if int(row.get("profile_id", 0) or 0) == pid:
+                return normalize_flag_country(row.get("flag_country"))
+    return ""
 
 _HTML_TAG_STRIP_RE = re.compile(r"<[^>]+>")
 _XML_UNSAFE_DECL_RE = re.compile(r"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
@@ -501,6 +527,7 @@ def _merge_discovered_br_player(
     br_source: str = "",
     br_teammate_count: int = 0,
     in_br_arranged_team: bool = False,
+    flag_country: str = "",
 ) -> None:
     if profile_id <= 0 or not STEAM_ID64_VALID_RE.fullmatch(steam_id):
         return
@@ -510,6 +537,7 @@ def _merge_discovered_br_player(
     reg = max(0, int(region_id or 0))
     tm_cnt = max(0, int(br_teammate_count or 0))
     src = str(br_source or "").strip()[:32]
+    f_ctry = normalize_flag_country(flag_country)
     existing = catalog.get(profile_id)
     if existing is None:
         item: dict[str, Any] = {
@@ -530,6 +558,8 @@ def _merge_discovered_br_player(
             item["br_teammate_count"] = tm_cnt
         if in_br_arranged_team:
             item["in_br_arranged_team"] = True
+        if f_ctry:
+            item["flag_country"] = f_ctry
         catalog[profile_id] = item
         return
     if clean_alias and not clean_alias.startswith("Jogador "):
@@ -553,6 +583,8 @@ def _merge_discovered_br_player(
         existing["br_teammate_count"] = int(existing.get("br_teammate_count", 0) or 0) + tm_cnt
     if in_br_arranged_team:
         existing["in_br_arranged_team"] = True
+    if f_ctry:
+        existing["flag_country"] = f_ctry
 
 
 def extract_br_and_candidates_from_opendata_payload(
@@ -1857,10 +1889,12 @@ def _build_category_lists(
             continue
         sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
         alias = str(row.get("alias") or row.get("original_alias") or f"Jogador {pid}")
+        flag_ctry = normalize_flag_country(row.get("flag_country")) or get_configured_flag_country(pid) or "br"
         canonical_entries[pid] = {
             "profile_id": pid,
             "steam_id": sid,
             "alias": alias,
+            "flag_country": flag_ctry,
             "steam_ids_all": [sid] if sid else [],
             "profile_ids_all": [pid],
             "fallback_elo": int(row.get("max_elo", 0) or 0),
@@ -1965,6 +1999,7 @@ def _build_category_lists(
             "profile_id": pid,
             "steam_id": active_steam_id,
             "alias": meta["alias"],
+            "flag_country": meta["flag_country"],
             "avatar_url": avatar_url,
             "max_elo": max_elo,
             "total_matches": total_matches,

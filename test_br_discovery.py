@@ -697,6 +697,7 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
         self.assertEqual(resolved[33487]["max_elo"], 1645)
         self.assertEqual(resolved[33487]["last_match_date"], now - 3600)
         self.assertEqual(resolved[33487]["br_source"], "manual_other_br")
+        self.assertEqual(resolved[33487]["flag_country"], "us")
 
         with tempfile.TemporaryDirectory() as td:
             comm_path = Path(td) / "br_community.json"
@@ -716,6 +717,7 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
             self.assertEqual(saved["players"]["33487"]["alias"], "Generick")
             self.assertEqual(saved["players"]["33487"]["br_source"], "manual_other_br")
             self.assertEqual(saved["players"]["33487"]["max_elo"], 1645)
+            self.assertEqual(saved["players"]["33487"]["flag_country"], "us")
 
     def test_arranged_teams_extraction_and_partner_verification_priority(self) -> None:
         from steam_presence import extract_br_arranged_teams_from_matches_payload
