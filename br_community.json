@@ -2746,7 +2746,7 @@
       "alias": "TheMonkBR",
       "br_source": "open_data_lb",
       "last_match_date": 1795149721,
-      "last_seen_online_ts": 1795158295,
+      "last_seen_online_ts": 1795160170,
       "max_elo": 1112,
       "profile_id": 1346169,
       "steam_id": "76561199212918452",
@@ -4798,12 +4798,12 @@
     "1453723": {
       "alias": "Bzika",
       "br_source": "open_data_matches",
-      "last_match_date": 1795158098,
+      "last_match_date": 1795159931,
       "last_seen_online_ts": 1795158595,
       "max_elo": 1042,
       "profile_id": 1453723,
       "steam_id": "76561199583581752",
-      "total_matches": 29
+      "total_matches": 30
     },
     "1453831": {
       "alias": "CΛЯИICΣIЯӨ",
