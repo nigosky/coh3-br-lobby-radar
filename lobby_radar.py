@@ -705,6 +705,23 @@ def run_lobby_radar_sync(
         else:
             remaining_alerts.append(item)
 
+    # Deduplicação: mantém no máximo 1 aviso curto ativo no canal (remove imediatamente avisos anteriores duplicados)
+    if len(remaining_alerts) > 1:
+        remaining_alerts.sort(key=lambda x: int(x.get("sent_at", 0) or 0))
+        kept_alert = remaining_alerts[-1]
+        for dup in remaining_alerts[:-1]:
+            dup_mid = str(dup.get("message_id") or "").strip()
+            if not dup_mid:
+                continue
+            try:
+                if discord.delete_message(dup_mid, protected_message_ids=frozenset(panel_ids)):
+                    summary["alerts_pruned"] += 1
+                    state_dirty = True
+                time.sleep(0.25)
+            except Exception as exc:
+                logger.warning("Falha transitória ao remover aviso curto duplicado (%s): %s", dup_mid, redact_secrets(exc))
+        remaining_alerts = [kept_alert]
+
     if summary["alerts_pruned"]:
         logger.info(
             "[LOBBY LIMPEZA %dh] %d aviso(s) curto(s) antigo(s) removido(s) automaticamente.",
@@ -1348,6 +1365,7 @@ def run_lobby_radar_sync(
         or (now - last_sync_ts) >= PANEL_HEARTBEAT_REFRESH_SEC
     )
 
+    initial_panel_ids: frozenset[str] = frozenset(panel_ids)
     if should_patch_panel:
         prev_panel_ids = list(panel_ids)
         new_panel_ids = discord.upsert_lobby_radar_messages(snapshot, existing_message_ids=prev_panel_ids)
@@ -1384,11 +1402,14 @@ def run_lobby_radar_sync(
             state["last_steam_fast_sig"] = fast_sig
             state_dirty = True
 
-    # 5. Aviso curto com limpeza automática (2+ Veteranos no CoH3 + entrante novo + cooldown de 60 min)
+    all_protected_panel_ids: frozenset[str] = frozenset(panel_ids) | initial_panel_ids
+
+    # 5. Aviso curto vivo (no máx. 1 mensagem: atualizada em tempo real via PATCH; limpa ao encerrar ou após 2h)
     curr_coh3_pids = sorted(int(p["profile_id"]) for p in vet_bucket["in_coh3"])
     prev_alert_pids = {int(x) for x in (state.get("last_alert_coh3_pids") or []) if int(x) > 0}
     last_alert_ts = int(state.get("last_alert_ts", 0) or 0)
     cooldown_sec = max(15, int(alert_cooldown_minutes)) * 60
+    min_alert_cnt = max(1, int(alert_min_in_coh3))
     has_new_entrant = any(pid not in prev_alert_pids for pid in curr_coh3_pids)
 
     if len(curr_coh3_pids) == 0:
@@ -1400,23 +1421,76 @@ def run_lobby_radar_sync(
         if still_present != sorted(prev_alert_pids):
             state["last_alert_coh3_pids"] = still_present
             state_dirty = True
-        if (
-            len(curr_coh3_pids) >= max(1, int(alert_min_in_coh3))
-            and has_new_entrant
-            and (now - last_alert_ts) >= cooldown_sec
-        ):
-            alert_id = discord.send_lobby_alert_message(snapshot, retention_hours=alert_cleanup_hours)
-            if alert_id:
-                state["active_alerts"].append({"message_id": alert_id, "sent_at": now})
-                state["last_alert_ts"] = now
-                state["last_alert_coh3_pids"] = curr_coh3_pids
-                state_dirty = True
-                summary["alert_sent"] = True
-                logger.info(
-                    "[RADAR LOBBY] Aviso curto enviado (ID %s | %d Veteranos no CoH3 | limpeza em %dh).",
-                    alert_id,
-                    len(curr_coh3_pids),
-                    alert_cleanup_hours,
+
+    if len(curr_coh3_pids) < min_alert_cnt:
+        # Movimento encerrou: remove imediatamente eventuais avisos antigos para não ficarem congelados no topo
+        if state.get("active_alerts"):
+            kept_after_clear: list[dict[str, Any]] = []
+            for old_item in list(state["active_alerts"]):
+                old_mid = str(old_item.get("message_id") or "").strip()
+                if not old_mid:
+                    state_dirty = True
+                    continue
+                if old_mid in all_protected_panel_ids:
+                    kept_after_clear.append(old_item)
+                    continue
+                try:
+                    if discord.delete_message(old_mid, protected_message_ids=all_protected_panel_ids):
+                        summary["alerts_pruned"] += 1
+                        state_dirty = True
+                    else:
+                        kept_after_clear.append(old_item)
+                except Exception as exc:
+                    logger.warning("Falha transitória ao remover aviso curto encerrado (%s): %s", old_mid, redact_secrets(exc))
+                    kept_after_clear.append(old_item)
+            state["active_alerts"] = kept_after_clear
+    elif has_new_entrant and (now - last_alert_ts) >= cooldown_sec:
+        prev_alerts = list(state.get("active_alerts") or [])
+        alert_id = discord.send_lobby_alert_message(snapshot, retention_hours=alert_cleanup_hours)
+        if alert_id:
+            protected_with_new = all_protected_panel_ids | {alert_id}
+            for old_item in prev_alerts:
+                old_mid = str(old_item.get("message_id") or "").strip()
+                if not old_mid or old_mid in protected_with_new:
+                    continue
+                try:
+                    if discord.delete_message(old_mid, protected_message_ids=protected_with_new):
+                        summary["alerts_pruned"] += 1
+                except Exception as exc:
+                    logger.warning("Falha transitória ao substituir aviso curto anterior (%s): %s", old_mid, redact_secrets(exc))
+            state["active_alerts"] = [{"message_id": alert_id, "sent_at": now}]
+            state["last_alert_ts"] = now
+            state["last_alert_coh3_pids"] = curr_coh3_pids
+            state_dirty = True
+            summary["alert_sent"] = True
+            logger.info(
+                "[RADAR LOBBY] Aviso curto enviado (ID %s | %d Veteranos no CoH3 | limpeza em %dh).",
+                alert_id,
+                len(curr_coh3_pids),
+                alert_cleanup_hours,
+            )
+    elif state.get("active_alerts") and should_patch_panel and hasattr(discord, "update_lobby_alert_message"):
+        # Mantém o único aviso curto ativo sincronizado via PATCH silencioso com o horário e jogadores atuais
+        cur_alert = state["active_alerts"][-1]
+        cur_alert_id = str(cur_alert.get("message_id") or "").strip()
+        if cur_alert_id and cur_alert_id not in all_protected_panel_ids:
+            try:
+                updated_ok = discord.update_lobby_alert_message(
+                    cur_alert_id,
+                    snapshot,
+                    retention_hours=alert_cleanup_hours,
+                )
+                if not updated_ok:
+                    state["active_alerts"] = []
+                    state_dirty = True
+                elif curr_coh3_pids != sorted(prev_alert_pids):
+                    state["last_alert_coh3_pids"] = curr_coh3_pids
+                    state_dirty = True
+            except Exception as exc:
+                logger.warning(
+                    "Falha transitória ao atualizar aviso curto ativo (%s): %s",
+                    cur_alert_id,
+                    redact_secrets(exc),
                 )
 
     if state_dirty:
