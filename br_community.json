@@ -577,7 +577,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795099108,
       "last_seen_ingame_ts": 1795164141,
-      "last_seen_online_ts": 1795165941,
+      "last_seen_online_ts": 1795167816,
       "max_elo": 1042,
       "profile_id": 1086495,
       "steam_id": "76561199582322486",
@@ -1512,12 +1512,12 @@
     "1213751": {
       "alias": "Zera",
       "br_source": "open_data_lb",
-      "last_match_date": 1795163065,
+      "last_match_date": 1795167574,
       "last_seen_online_ts": 1795166615,
       "max_elo": 1044,
       "profile_id": 1213751,
       "steam_id": "76561198163510110",
-      "total_matches": 536
+      "total_matches": 537
     },
     "1213971": {
       "alias": "VFzada",
