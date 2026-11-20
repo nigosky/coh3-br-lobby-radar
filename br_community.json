@@ -2746,7 +2746,7 @@
       "alias": "TheMonkBR",
       "br_source": "open_data_lb",
       "last_match_date": 1795149721,
-      "last_seen_online_ts": 1795160170,
+      "last_seen_online_ts": 1795161971,
       "max_elo": 1112,
       "profile_id": 1346169,
       "steam_id": "76561199212918452",
@@ -4940,13 +4940,13 @@
     "1456842": {
       "alias": "[BGD] Panella",
       "br_source": "open_data_lb",
-      "last_match_date": 1795145418,
+      "last_match_date": 1795161092,
       "last_seen_ingame_ts": 1795144792,
       "last_seen_online_ts": 1795161371,
       "max_elo": 1033,
       "profile_id": 1456842,
       "steam_id": "76561198272287621",
-      "total_matches": 34
+      "total_matches": 36
     },
     "1457577": {
       "alias": "Karyu",
@@ -5976,7 +5976,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794802027,
       "last_seen_ingame_ts": 1795135457,
-      "last_seen_online_ts": 1795159871,
+      "last_seen_online_ts": 1795161971,
       "max_elo": 1055,
       "profile_id": 1478243,
       "steam_id": "76561199522927394",
@@ -8537,7 +8537,7 @@
       "alias": "SoyoSid",
       "br_source": "open_data_matches",
       "last_match_date": 1794794101,
-      "last_seen_online_ts": 1795159871,
+      "last_seen_online_ts": 1795161971,
       "max_elo": 1000,
       "profile_id": 741277,
       "steam_id": "76561198145060833",
