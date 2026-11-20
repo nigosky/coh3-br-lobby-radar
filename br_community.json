@@ -312,7 +312,7 @@
       "alias": "Saker",
       "br_source": "open_data_lb",
       "last_match_date": 1794873342,
-      "last_seen_online_ts": 1795189556,
+      "last_seen_online_ts": 1795191433,
       "max_elo": 1050,
       "profile_id": 1042204,
       "steam_id": "76561198252921023",
@@ -373,7 +373,7 @@
       "alias": "Calas Typhon",
       "br_source": "open_data_matches",
       "last_match_date": 1795115328,
-      "last_seen_online_ts": 1795150662,
+      "last_seen_online_ts": 1795191433,
       "max_elo": 1000,
       "profile_id": 1057166,
       "steam_id": "76561198051562811",
@@ -1947,12 +1947,12 @@
     "1252534": {
       "alias": "Baldi",
       "br_source": "open_data_lb",
-      "last_match_date": 1795135297,
-      "last_seen_online_ts": 1795134857,
+      "last_match_date": 1795190701,
+      "last_seen_online_ts": 1795191433,
       "max_elo": 1000,
       "profile_id": 1252534,
       "steam_id": "76561197986354381",
-      "total_matches": 327
+      "total_matches": 328
     },
     "1253894": {
       "alias": "XarupS™",
@@ -3415,7 +3415,8 @@
       "alias": "Salah Frario",
       "br_source": "open_data_lb",
       "last_match_date": 1794952371,
-      "last_seen_online_ts": 1795149761,
+      "last_seen_ingame_ts": 1795191433,
+      "last_seen_online_ts": 1795191433,
       "max_elo": 1030,
       "profile_id": 1426084,
       "steam_id": "76561198413106918",
@@ -3571,7 +3572,7 @@
       "alias": "IKmottin",
       "br_source": "open_data_matches",
       "last_match_date": 1795050323,
-      "last_seen_online_ts": 1795185590,
+      "last_seen_online_ts": 1795191433,
       "max_elo": 1028,
       "profile_id": 1430626,
       "steam_id": "76561198343179989",
@@ -4274,7 +4275,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794843213,
       "last_seen_ingame_ts": 1795135157,
-      "last_seen_online_ts": 1795189556,
+      "last_seen_online_ts": 1795191433,
       "max_elo": 1051,
       "profile_id": 1442048,
       "steam_id": "76561198078061644",
@@ -7087,7 +7088,7 @@
       "alias": "Fioti",
       "br_source": "open_data_lb",
       "last_match_date": 1794878813,
-      "last_seen_online_ts": 1795189556,
+      "last_seen_online_ts": 1795191433,
       "max_elo": 1028,
       "profile_id": 31504,
       "steam_id": "76561198095301909",
@@ -7269,12 +7270,12 @@
     "351821": {
       "alias": "aldivx",
       "br_source": "open_data_lb",
-      "last_match_date": 1795179670,
+      "last_match_date": 1795191270,
       "last_seen_online_ts": 1795191132,
       "max_elo": 1187,
       "profile_id": 351821,
       "steam_id": "76561198102059312",
-      "total_matches": 4345
+      "total_matches": 4346
     },
     "356392": {
       "alias": "CoyotePlaysom",
@@ -7933,7 +7934,7 @@
     "628581": {
       "alias": "kxxpz",
       "br_source": "open_data_matches",
-      "last_match_date": 1795189461,
+      "last_match_date": 1795191283,
       "last_seen_online_ts": 1795189856,
       "max_elo": 1000,
       "profile_id": 628581,
@@ -8018,7 +8019,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795143761,
       "last_seen_ingame_ts": 1795187455,
-      "last_seen_online_ts": 1795189556,
+      "last_seen_online_ts": 1795191433,
       "max_elo": 1000,
       "profile_id": 649522,
       "steam_id": "76561198058948819",
@@ -9867,12 +9868,12 @@
     "929569": {
       "alias": "theleet",
       "br_source": "open_data_lb",
-      "last_match_date": 1795181739,
+      "last_match_date": 1795191443,
       "last_seen_online_ts": 1795191132,
       "max_elo": 1000,
       "profile_id": 929569,
       "steam_id": "76561197962733680",
-      "total_matches": 139
+      "total_matches": 140
     },
     "936632": {
       "alias": "1VARGAS",
@@ -10030,12 +10031,12 @@
     "951280": {
       "alias": "Cap. Virgulino Ferreira da Silva",
       "br_source": "open_data_lb",
-      "last_match_date": 1795153261,
+      "last_match_date": 1795190481,
       "last_seen_online_ts": 1795145393,
       "max_elo": 1014,
       "profile_id": 951280,
       "steam_id": "76561198098608981",
-      "total_matches": 1094
+      "total_matches": 1095
     },
     "952088": {
       "alias": "heavy",
