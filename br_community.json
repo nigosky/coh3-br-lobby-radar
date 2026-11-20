@@ -1880,13 +1880,13 @@
     "1247230": {
       "alias": "Span WolFox",
       "br_source": "open_data_matches",
-      "last_match_date": 1794972495,
+      "last_match_date": 1795152352,
       "last_seen_ingame_ts": 1795135457,
       "last_seen_online_ts": 1795152462,
       "max_elo": 1000,
       "profile_id": 1247230,
       "steam_id": "76561198351347890",
-      "total_matches": 152
+      "total_matches": 155
     },
     "1247254": {
       "alias": "BetoCAMPER",
@@ -5556,7 +5556,7 @@
       "alias": "Levih",
       "br_source": "open_data_matches",
       "last_match_date": 1794759581,
-      "last_seen_online_ts": 1795148783,
+      "last_seen_online_ts": 1795152761,
       "max_elo": 950,
       "profile_id": 1474035,
       "steam_id": "76561198789781560",
@@ -5698,7 +5698,7 @@
       "alias": "Lionel Messi da Shoope",
       "br_source": "open_data_matches",
       "last_match_date": 1794776098,
-      "last_seen_ingame_ts": 1795121980,
+      "last_seen_ingame_ts": 1795152761,
       "last_seen_online_ts": 1795152462,
       "max_elo": 954,
       "profile_id": 1475704,
@@ -8145,13 +8145,13 @@
     "6696": {
       "alias": "Roda",
       "br_source": "open_data_lb",
-      "last_match_date": 1794972495,
+      "last_match_date": 1795152352,
       "last_seen_ingame_ts": 1795134557,
       "last_seen_online_ts": 1795152462,
       "max_elo": 1312,
       "profile_id": 6696,
       "steam_id": "76561198182964383",
-      "total_matches": 696
+      "total_matches": 700
     },
     "670253": {
       "alias": "foecexgx",
@@ -8537,7 +8537,7 @@
       "alias": "SoyoSid",
       "br_source": "open_data_matches",
       "last_match_date": 1794794101,
-      "last_seen_online_ts": 1795149384,
+      "last_seen_online_ts": 1795152761,
       "max_elo": 1000,
       "profile_id": 741277,
       "steam_id": "76561198145060833",
@@ -10038,13 +10038,13 @@
     "956645": {
       "alias": "Magraiver",
       "br_source": "open_data_lb",
-      "last_match_date": 1795133879,
+      "last_match_date": 1795152352,
       "last_seen_ingame_ts": 1795148183,
       "last_seen_online_ts": 1795151262,
-      "max_elo": 1153,
+      "max_elo": 1164,
       "profile_id": 956645,
       "steam_id": "76561198119663404",
-      "total_matches": 562
+      "total_matches": 567
     },
     "957597": {
       "alias": "Tavinho",
