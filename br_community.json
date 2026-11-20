@@ -939,12 +939,12 @@
     "1151311": {
       "alias": "Farmer",
       "br_source": "open_data_lb",
-      "last_match_date": 1795038569,
+      "last_match_date": 1795136977,
       "last_seen_online_ts": 0,
       "max_elo": 1058,
       "profile_id": 1151311,
       "steam_id": "76561199061360237",
-      "total_matches": 1453
+      "total_matches": 1456
     },
     "1151802": {
       "alias": "[SUP]OverPower",
@@ -2949,12 +2949,12 @@
     "1374662": {
       "alias": "[COHBR] King Jong-Un",
       "br_source": "open_data_lb",
-      "last_match_date": 1795131597,
+      "last_match_date": 1795138300,
       "last_seen_online_ts": 1795137971,
       "max_elo": 1036,
       "profile_id": 1374662,
       "steam_id": "76561198187162605",
-      "total_matches": 381
+      "total_matches": 382
     },
     "137848": {
       "alias": "Elvenking",
@@ -3835,7 +3835,7 @@
       "alias": "luannmarcel",
       "br_source": "open_data_lb",
       "last_match_date": 1795049813,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795138270,
       "max_elo": 1067,
       "profile_id": 1436158,
       "steam_id": "76561198068195832",
@@ -6042,12 +6042,12 @@
     "1481993": {
       "alias": "japawe",
       "br_source": "open_data_matches",
-      "last_match_date": 1795136270,
+      "last_match_date": 1795138056,
       "last_seen_online_ts": 1795137070,
       "max_elo": 1000,
       "profile_id": 1481993,
       "steam_id": "76561198138981104",
-      "total_matches": 3
+      "total_matches": 4
     },
     "1481996": {
       "alias": "S4murai_7thL",
@@ -6545,7 +6545,7 @@
       "alias": "Edimar.",
       "br_source": "open_data_lb",
       "last_match_date": 1794188513,
-      "last_seen_online_ts": 1795135157,
+      "last_seen_online_ts": 1795138270,
       "max_elo": 1107,
       "profile_id": 220378,
       "steam_id": "76561198074392592",
@@ -7101,8 +7101,8 @@
     "326061": {
       "alias": "xVELHOBARREIROx",
       "br_source": "open_data_lb",
-      "last_match_date": 1795128030,
-      "last_seen_online_ts": 1795126320,
+      "last_match_date": 1795128031,
+      "last_seen_online_ts": 1795138270,
       "max_elo": 1190,
       "profile_id": 326061,
       "steam_id": "76561197982839318",
@@ -8739,12 +8739,12 @@
     "766623": {
       "alias": "AkuMA",
       "br_source": "open_data_matches",
-      "last_match_date": 1795125823,
+      "last_match_date": 1795136906,
       "last_seen_online_ts": 0,
       "max_elo": 1056,
       "profile_id": 766623,
       "steam_id": "76561198108515897",
-      "total_matches": 3176
+      "total_matches": 3177
     },
     "766635": {
       "alias": "Terr0rRJ",
