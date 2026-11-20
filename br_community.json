@@ -576,8 +576,8 @@
       "alias": "kamirk",
       "br_source": "open_data_lb",
       "last_match_date": 1795099108,
-      "last_seen_ingame_ts": 1795126619,
-      "last_seen_online_ts": 1795136171,
+      "last_seen_ingame_ts": 1795164141,
+      "last_seen_online_ts": 1795164141,
       "max_elo": 1042,
       "profile_id": 1086495,
       "steam_id": "76561199582322486",
@@ -6946,12 +6946,12 @@
     "29737": {
       "alias": "PABLO FLEXCOBAR",
       "br_source": "steam_location",
-      "last_match_date": 1795065729,
+      "last_match_date": 1795163935,
       "last_seen_online_ts": 0,
       "max_elo": 1203,
       "profile_id": 29737,
       "steam_id": "76561198158934331",
-      "total_matches": 1454
+      "total_matches": 1455
     },
     "298286": {
       "alias": "MDBDestruidorBR",
