@@ -10,7 +10,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from card_renderer import SteamAvatarProvider, render_lobby_radar_card_png, render_lobby_radar_cards_png
@@ -578,7 +578,7 @@ def build_lobby_alert_payload(
     retention_hours: int = 2,
     bot_username: str = "CoH3 Brasil Radar",
 ) -> dict[str, Any]:
-    """Monta aviso curto de movimentação ativa no CoH3 (auto-apagado após `retention_hours` horas)."""
+    """Monta aviso curto vivo de movimentação no CoH3 (atualizado em tempo real e limpo automaticamente)."""
     vet = _extract_snapshot_category(snapshot, "veteranos")
     oth = _extract_snapshot_category(snapshot, "outros_brasileiros")
     in_coh3: list[dict[str, Any]] = vet["in_coh3"]
@@ -586,9 +586,16 @@ def build_lobby_alert_payload(
 
     linked_names: list[str] = []
     for pl in in_coh3[:8]:
-        nm = sanitize_discord_text(pl.get("alias"), 22)
+        raw_alias = str(pl.get("alias") or "")
         surl = build_safe_steam_profile_url(pl.get("steam_id"))
-        linked_names.append(f"[**{nm}**](<{surl}>)" if surl else f"**{nm}**")
+        nick_changed = bool(pl.get("nick_changed")) or raw_alias.endswith("*")
+        if nick_changed:
+            base_raw = str(pl.get("previous_alias") or raw_alias.rstrip("*")).strip() or raw_alias
+            nm = sanitize_discord_text(base_raw, 22)
+            linked_names.append(f"[**{nm}**\\*](<{surl}>)" if surl else f"**{nm}**\\*")
+        else:
+            nm = sanitize_discord_text(raw_alias, 22)
+            linked_names.append(f"[**{nm}**](<{surl}>)" if surl else f"**{nm}**")
 
     extra_coh3 = f" +{len(in_coh3) - 8}" if len(in_coh3) > 8 else ""
     free_cnt = sum(
@@ -598,11 +605,14 @@ def build_lobby_alert_payload(
     oth_coh3_cnt = len(oth["in_coh3"])
     oth_tail = f"  •  🇧🇷 **+{oth_coh3_cnt} Outro(s) BR no CoH3**" if oth_coh3_cnt > 0 else ""
 
+    snap_ts = int(snapshot.get("timestamp") or time.time())
+    brt_hm = datetime.fromtimestamp(snap_ts, tz=timezone(timedelta(hours=-3))).strftime("%H:%M")
+
     plural = "Veteranos" if len(in_coh3) != 1 else "Veterano"
     content = (
         f"🔥 **MOVIMENTO NO LOBBY AGORA!** — 🎮 **{len(in_coh3)} {plural} no CoH3:** "
         f"{', '.join(linked_names)}{extra_coh3}{online_tail}{oth_tail}\n"
-        f"-# _Veja os detalhes completos no card do Radar no canal • Este aviso curto é limpo automaticamente em {max(1, int(retention_hours))}h._"
+        f"-# _Atualizado às {brt_hm} BRT • Detalhes completos no card abaixo • Limpo automaticamente ao encerrar ou após {max(1, int(retention_hours))}h._"
     )
 
     return {
@@ -856,3 +866,21 @@ class DiscordLobbyWebhookClient:
         payload = build_lobby_alert_payload(snapshot, retention_hours=retention_hours, bot_username=self.bot_username)
         _, data = self._request("POST", self._append_wait_param(self._webhook_url), payload)
         return self._extract_snowflake(data)
+
+    def update_lobby_alert_message(
+        self,
+        message_id: str,
+        snapshot: dict[str, Any],
+        retention_hours: int = 2,
+    ) -> bool:
+        """Atualiza silenciosamente (PATCH) o aviso curto ativo no Discord sem gerar novo ping de notificação."""
+        if not self.is_configured or not snapshot.get("in_coh3"):
+            return False
+        clean_id = (message_id or "").strip()
+        if not clean_id or not SNOWFLAKE_ID_RE.fullmatch(clean_id):
+            return False
+        payload = build_lobby_alert_payload(snapshot, retention_hours=retention_hours, bot_username=self.bot_username)
+        parsed = urllib.parse.urlparse(self._webhook_url)
+        msg_url = urllib.parse.urlunparse(parsed._replace(path=f"{parsed.path.rstrip('/')}/messages/{clean_id}"))
+        status, _ = self._request("PATCH", msg_url, payload)
+        return status in (200, 204)

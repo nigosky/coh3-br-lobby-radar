@@ -868,6 +868,62 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
             )
         )
 
+    def test_online_steam_sorting_puts_away_zzz_and_busy_below_all_active_players(self) -> None:
+        now = 1_800_000_000
+        vet_roster = [
+            {"profile_id": 1, "steam_id": "76561198000000001", "original_alias": "LivreBaixo"},
+            {"profile_id": 2, "steam_id": "76561198000000002", "original_alias": "OutroJogo"},
+            {"profile_id": 3, "steam_id": "76561198000000003", "original_alias": "RaziAusente"},
+            {"profile_id": 4, "steam_id": "76561198000000004", "original_alias": "KefbrSnooze"},
+            {"profile_id": 5, "steam_id": "76561198000000005", "original_alias": "OcupadoAlto"},
+        ]
+        other_roster = [
+            {"profile_id": 101, "steam_id": "76561198000000101", "alias": "OutroBR_AusenteAlto", "max_elo": 1650, "last_match_date": now - 3600, "total_matches": 400},
+            {"profile_id": 102, "steam_id": "76561198000000102", "alias": "OutroBR_LivreBaixo", "max_elo": 980, "last_match_date": now - 3600, "total_matches": 20},
+            {"profile_id": 103, "steam_id": "76561198000000103", "alias": "OutroBR_OutroJogo", "max_elo": 1200, "last_match_date": now - 3600, "total_matches": 50},
+        ]
+
+        def _mk(sid: str, *, other_game: str = "", away: bool = False, snooze: bool = False, busy: bool = False) -> dict[str, Any]:
+            return {
+                "steam_id": sid,
+                "ok": True,
+                "is_in_coh3": False,
+                "is_online_steam": True,
+                "other_game": other_game,
+                "is_away": away,
+                "is_snooze": snooze,
+                "is_busy": busy,
+            }
+
+        pres = {
+            "76561198000000001": _mk("76561198000000001"),
+            "76561198000000002": _mk("76561198000000002", other_game="Tabletop Simulator"),
+            "76561198000000003": _mk("76561198000000003", away=True),
+            "76561198000000004": _mk("76561198000000004", away=True, snooze=True),
+            "76561198000000005": _mk("76561198000000005", busy=True),
+            "76561198000000101": _mk("76561198000000101", away=True, snooze=True),
+            "76561198000000102": _mk("76561198000000102"),
+            "76561198000000103": _mk("76561198000000103", other_game="DayZ"),
+        }
+        snap = build_lobby_radar_snapshot(
+            vet_roster,
+            pres,
+            elo_by_pid={1: 1100, 2: 1150, 3: 1500, 4: 1600, 5: 1700},
+            now_ts=now,
+            other_br_players=other_roster,
+            other_presence_by_steam=pres,
+        )
+        # Veteranos: Livre -> Outro Jogo -> Ocupado -> Ausente -> Ausente zZz (independente de ELO!)
+        self.assertEqual(
+            [p["alias"] for p in snap["veteranos"]["online_steam"]],
+            ["LivreBaixo", "OutroJogo", "OcupadoAlto", "RaziAusente", "KefbrSnooze"],
+        )
+        # Outros BR: todos os ativos online (mesmo ELO baixo) ficam ACIMA de Ausente zZz (mesmo 1650 ELO!)
+        self.assertEqual(
+            [p["alias"] for p in snap["outros_brasileiros"]["online_steam"]],
+            ["OutroBR_OutroJogo", "OutroBR_LivreBaixo", "OutroBR_AusenteAlto"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

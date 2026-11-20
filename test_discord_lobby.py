@@ -1474,6 +1474,104 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(s2["in_coh3"], 1)
             self.assertEqual(s2["online_steam"], 0)
 
+    def test_single_live_alert_deduplicates_patches_and_clears_when_quiet(self) -> None:
+        now = 1_800_100_000
+        old_dup_id = "1573378126581604353"
+        active_alert_id = "1573396194128830566"
+
+        class _TwoVetPresence:
+            def __init__(self, in_coh3_count: int = 2) -> None:
+                self.in_coh3_count = in_coh3_count
+
+            def fetch_batch_presence(self, steam_ids: list[str], **_kw: Any) -> dict[str, dict[str, Any]]:
+                out: dict[str, dict[str, Any]] = {}
+                active_sids = {"76561198108568598", "76561198024839791"} if self.in_coh3_count >= 2 else set()
+                for sid in steam_ids:
+                    in_c = sid in active_sids
+                    out[sid] = {
+                        "steam_id": sid,
+                        "privacy_state": "public",
+                        "visibility_state": "3",
+                        "online_state": "in-game" if in_c else "offline",
+                        "is_in_coh3": in_c,
+                        "is_online_steam": in_c,
+                        "other_game": "",
+                        "ok": True,
+                    }
+                return out
+
+        class _QuietRelic:
+            def fetch_latest_matches_and_br_participants(self, profile_ids: list[int]) -> tuple[dict, dict, dict]:
+                _ = profile_ids
+                return {}, {}, {}
+
+            def fetch_peak_elo_by_profile_ids(self, profile_ids: list[int]) -> dict[int, int]:
+                return {pid: 1400 for pid in profile_ids}
+
+            def discover_br_players_from_open_data(self, now_ts: int | None = None) -> dict:
+                _ = now_ts
+                return {}
+
+            def fetch_profile_stats_batch(self, profile_ids: list[int], pace_delay_sec: float = 0.15) -> dict:
+                _ = (profile_ids, pace_delay_sec)
+                return {}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            comm_path = Path(tmp) / "br_community.json"
+            # Simula exatamente 2 avisos antigos (ex.: 13:42 e 14:54) dentro da janela de 2h
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "active_alerts": [
+                            {"message_id": old_dup_id, "sent_at": now - 4000},
+                            {"message_id": active_alert_id, "sent_at": now - 600},
+                        ],
+                        "last_alert_ts": now - 600,
+                        "last_alert_coh3_pids": [110078, 1088455],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            fake_disc = _FakeDiscordClient()
+            pres_client = _TwoVetPresence(in_coh3_count=2)
+
+            # Ciclo 1 (2 Veteranos no CoH3): remove duplicata antiga (13:42) e atualiza in-place via PATCH o ativo (14:54)
+            s1 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=fake_disc,
+                presence_client=pres_client,  # type: ignore[arg-type]
+                relic_client=_QuietRelic(),  # type: ignore[arg-type]
+                now_ts=now,
+            )
+            self.assertEqual(s1["alerts_pruned"], 1)
+            deleted_urls_1 = [u for m, u, _, _ in fake_disc.calls if m == "DELETE"]
+            self.assertTrue(any(u.endswith(f"/messages/{old_dup_id}") for u in deleted_urls_1))
+            patch_calls = [(u, p) for m, u, p, _ in fake_disc.calls if m == "PATCH"]
+            self.assertEqual(len(patch_calls), 1)
+            self.assertTrue(patch_calls[0][0].endswith(f"/messages/{active_alert_id}"))
+            self.assertIn("Atualizado às ", patch_calls[0][1]["content"])
+            self.assertIn("Bineto", patch_calls[0][1]["content"])
+            saved1 = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual([a["message_id"] for a in saved1["active_alerts"]], [active_alert_id])
+
+            # Ciclo 2 (0 Veteranos no CoH3): remove automaticamente o aviso ativo para não ficar congelado no topo
+            pres_client.in_coh3_count = 0
+            s2 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                discord_client=fake_disc,
+                presence_client=pres_client,  # type: ignore[arg-type]
+                relic_client=_QuietRelic(),  # type: ignore[arg-type]
+                now_ts=now + 300,
+            )
+            self.assertEqual(s2["alerts_pruned"], 1)
+            deleted_urls_2 = [u for m, u, _, _ in fake_disc.calls if m == "DELETE"]
+            self.assertTrue(any(u.endswith(f"/messages/{active_alert_id}") for u in deleted_urls_2))
+            saved2 = json.loads(state_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved2["active_alerts"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

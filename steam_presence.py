@@ -2606,8 +2606,9 @@ def _build_category_lists(
         )
         online_steam_list.sort(
             key=lambda x: (
+                1 if (x["is_away"] or x["is_busy"]) else 0,
                 1 if x.get("prominence_tier") == "low" else 0,
-                1 if (x["other_game"] or x["is_away"] or x["is_busy"]) else 0,
+                _online_availability_rank(x),
                 PROMINENCE_TIER_ORDER.get(str(x.get("prominence_tier") or "medium"), 1),
                 -int(x.get("prominence_score", 0)),
                 -int(x.get("max_elo", 0)),
@@ -2625,10 +2626,28 @@ def _build_category_lists(
         )
     else:
         in_coh3_list.sort(key=lambda x: (x["last_age_min"] if x["last_age_min"] is not None else 9999, -x["max_elo"], x["alias"].lower()))
-        online_steam_list.sort(key=lambda x: (1 if (x["other_game"] or x["is_away"] or x["is_busy"]) else 0, -x["max_elo"], x["alias"].lower()))
+        online_steam_list.sort(key=lambda x: (_online_availability_rank(x), -x["max_elo"], x["alias"].lower()))
         recent_relic_list.sort(key=lambda x: (x["last_age_min"] if x["last_age_min"] is not None else 9999, -x["max_elo"], x["alias"].lower()))
 
     return in_coh3_list, online_steam_list, recent_relic_list, len(canonical_entries)
+
+
+def _online_availability_rank(entry: dict[str, Any]) -> int:
+    """
+    Ordem estrita de disponibilidade na seção 'Online na Steam':
+    0 = Online e livre para chamar agora
+    1 = Online e ativo no PC (em outro jogo)
+    2 = Ocupado (Busy)
+    3 = Ausente na Steam (Away)
+    4 = Ausente há mais tempo (Snooze / zZz)
+    """
+    if entry.get("is_away"):
+        return 4 if entry.get("is_snooze") else 3
+    if entry.get("is_busy"):
+        return 2
+    if str(entry.get("other_game") or "").strip():
+        return 1
+    return 0
 
 
 def build_lobby_radar_snapshot(
