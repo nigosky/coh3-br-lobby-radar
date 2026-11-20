@@ -48,6 +48,7 @@ from steam_presence import (
     build_lobby_radar_snapshot,
     classify_other_br_prominence,
     compute_lobby_state_digest,
+    normalize_flag_country,
     steam_presence_hides_coh3_game,
 )
 
@@ -64,7 +65,7 @@ DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
 # 4m30s garante que o ciclo de 5 min (300s) nunca pule a atualização por 1-2s de jitter do relógio
 PANEL_HEARTBEAT_REFRESH_SEC = 270
-PANEL_LAYOUT_VERSION = 5
+PANEL_LAYOUT_VERSION = 6
 COMMUNITY_SCHEMA_VERSION = 3
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
@@ -273,6 +274,7 @@ def _merge_player_into_community(
 
     br_source = strip_unsafe_chars(entry.get("br_source") or "")[:32]
     last_seen_ig = max(0, int(entry.get("last_seen_ingame_ts", 0) or 0))
+    flag_ctry = normalize_flag_country(entry.get("flag_country"))
 
     if prev is None:
         rec: dict[str, Any] = {
@@ -288,6 +290,8 @@ def _merge_player_into_community(
             rec["br_source"] = br_source
         if last_seen_ig > 0:
             rec["last_seen_ingame_ts"] = last_seen_ig
+        if flag_ctry and flag_ctry != "br":
+            rec["flag_country"] = flag_ctry
         players_dict[key] = rec
         return True
 
@@ -318,6 +322,9 @@ def _merge_player_into_community(
         changed = True
     if last_seen_ig > int(prev.get("last_seen_ingame_ts", 0) or 0):
         prev["last_seen_ingame_ts"] = last_seen_ig
+        changed = True
+    if flag_ctry and flag_ctry != "br" and prev.get("flag_country") != flag_ctry:
+        prev["flag_country"] = flag_ctry
         changed = True
     return changed
 
@@ -460,6 +467,7 @@ def resolve_manual_other_br_entries(
             "profile_id": pid,
             "steam_id": sid if STEAM_ID64_VALID_RE.fullmatch(sid) else "",
             "alias": str(row.get("original_alias") or row.get("alias") or "").strip(),
+            "flag_country": normalize_flag_country(row.get("flag_country")),
         }
     if not targets:
         return {}
@@ -501,7 +509,7 @@ def resolve_manual_other_br_entries(
             int(st.get("last_match_date", 0) or 0),
             int(lm.get("completion_time", 0) or 0),
         )
-        resolved[pid] = {
+        entry_out: dict[str, Any] = {
             "profile_id": pid,
             "steam_id": sid,
             "alias": alias,
@@ -510,6 +518,9 @@ def resolve_manual_other_br_entries(
             "total_matches": total_matches,
             "br_source": "manual_other_br",
         }
+        if base.get("flag_country"):
+            entry_out["flag_country"] = base["flag_country"]
+        resolved[pid] = entry_out
     return resolved
 
 
@@ -868,6 +879,16 @@ def run_lobby_radar_sync(
                 state["manual_other_br_checked_pids"] = updated_checked
                 state["manual_other_br_checked_ts"] = now
                 state_dirty = True
+
+    # Garante sincronização imediata de `flag_country` (ex.: `us` para Generick) mesmo quando o perfil já estava em cache
+    for m_row in MANUAL_OTHER_BR_PLAYERS:
+        m_pid = int(m_row.get("profile_id", 0) or 0)
+        m_flag = normalize_flag_country(m_row.get("flag_country"))
+        if m_pid > 0 and m_flag and m_flag != "br":
+            existing_rec = community_players.get(str(m_pid))
+            if isinstance(existing_rec, dict) and existing_rec.get("flag_country") != m_flag:
+                existing_rec["flag_country"] = m_flag
+                community_dirty = True
 
     rotation_offset = int(state.get("other_br_rotation_offset", 0) or 0)
     selected_others, next_rotation_offset = _select_other_br_candidates(

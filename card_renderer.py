@@ -52,7 +52,7 @@ NEEDS_DEJAVU_RE = re.compile(r"[^\x00-\x024f]")
 _NO_REDIRECT_OPENER = build_no_redirect_https_opener()
 _FONT_CACHE: dict[tuple[str, int], ImageFont.FreeTypeFont | ImageFont.ImageFont] = {}
 _VETERANOS_BADGE_CACHE: dict[int, Image.Image] = {}
-_FLAG_CACHE: dict[tuple[int, int], Image.Image] = {}
+_FLAG_CACHE: dict[tuple[str, int, int], Image.Image] = {}
 
 FONT_CANDIDATES: dict[str, list[str]] = {
     "regular": [
@@ -156,7 +156,7 @@ def truncate_to_px(
 
 
 def get_br_flag(w: int = 20, h: int = 14) -> Image.Image:
-    key = (w, h)
+    key = ("br", w, h)
     cached = _FLAG_CACHE.get(key)
     if cached is not None:
         return cached
@@ -172,6 +172,57 @@ def get_br_flag(w: int = 20, h: int = 14) -> Image.Image:
     out = im.resize((w, h), Image.Resampling.LANCZOS)
     _FLAG_CACHE[key] = out
     return out
+
+
+def get_us_flag(w: int = 20, h: int = 14) -> Image.Image:
+    key = ("us", w, h)
+    cached = _FLAG_CACHE.get(key)
+    if cached is not None:
+        return cached
+    sw, sh = w * 4, h * 4
+    im = Image.new("RGBA", (sw, sh), (255, 255, 255, 255))
+    d = ImageDraw.Draw(im)
+    # 11 listras nítidas em ícones compactos (<=16px) ou 13 oficiais em tamanhos maiores para evitar serrilhado/rosa
+    n_stripes = 11 if h <= 16 else 13
+    red = (196, 26, 46, 255)
+    white = (250, 250, 252, 255)
+    for i in range(n_stripes):
+        y0 = int(round(i * sh / n_stripes))
+        y1 = int(round((i + 1) * sh / n_stripes)) - 1
+        if y1 >= y0:
+            d.rectangle((0, y0, sw - 1, y1), fill=red if (i % 2 == 0) else white)
+
+    canton_w = int(round(sw * 0.46))
+    canton_stripes = 6 if n_stripes == 11 else 7
+    canton_h = int(round(canton_stripes * sh / n_stripes))
+    d.rectangle((0, 0, canton_w, canton_h), fill=(24, 56, 122, 255))
+
+    # Estrelas escalonadas bem separadas para máxima legibilidade em ícones 22x15 / 26x18
+    star_r = max(1, int(round(min(sw, sh) * 0.032)))
+    rows_stars = [
+        (4, 0.20),
+        (3, 0.50),
+        (4, 0.80),
+    ]
+    for count, y_frac in rows_stars:
+        sy = int(round(canton_h * y_frac))
+        for j in range(count):
+            x_frac = (j + 0.5) / count if count == 4 else (j + 1.0) / (count + 1.0)
+            sx = int(round(canton_w * x_frac))
+            d.ellipse((sx - star_r, sy - star_r, sx + star_r, sy + star_r), fill=(255, 255, 255, 255))
+
+    d.rectangle((0, 0, sw - 1, sh - 1), outline=(0, 0, 0, 110), width=1)
+    out = im.resize((w, h), Image.Resampling.LANCZOS)
+    _FLAG_CACHE[key] = out
+    return out
+
+
+def get_country_flag(country_code: Any = "br", w: int = 20, h: int = 14) -> Image.Image:
+    """Retorna a bandeira correspondente ao código ISO-2 do jogador (`us` para residentes nos EUA; padrão `br`)."""
+    code = str(country_code or "br").strip().lower()
+    if code in ("us", "usa", "eua"):
+        return get_us_flag(w=w, h=h)
+    return get_br_flag(w=w, h=h)
 
 
 def get_veteranos_badge_icon(size: int = 20) -> Image.Image:
@@ -636,8 +687,6 @@ def _draw_category_block(
     active_days = int(bucket.get("active_window_days") or 30)
     low_max_px = width - 54
 
-    flag_br = get_br_flag(w=26, h=18)
-    flag_xs = get_br_flag(w=22, h=15)
     vet_sm = get_veteranos_badge_icon(size=23)
     vet_xs = get_veteranos_badge_icon(size=20)
 
@@ -746,7 +795,8 @@ def _draw_category_block(
                             ring_color=ring_c,
                         )
                         img.paste(av_im, (cx0, ry + 8), av_im)
-                        img.paste(flag_xs, (cx0 + 50, ry + 11), flag_xs)
+                        pl_flag = get_country_flag(pl.get("flag_country"), w=22, h=15)
+                        img.paste(pl_flag, (cx0 + 50, ry + 11), pl_flag)
 
                         elo_val = int(pl.get("max_elo", 0) or 0)
                         ew = 0
@@ -814,7 +864,8 @@ def _draw_category_block(
                             ring_color=ring_c,
                         )
                         img.paste(av_im, (28, y + 8), av_im)
-                        img.paste(flag_br, (82, y + 21), flag_br)
+                        pl_flag = get_country_flag(pl.get("flag_country"), w=26, h=18)
+                        img.paste(pl_flag, (82, y + 21), pl_flag)
 
                         elo_val = int(pl.get("max_elo", 0) or 0)
                         note_raw = str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora")
@@ -943,7 +994,8 @@ def _draw_category_block(
                         ring_color=ring_c,
                     )
                     img.paste(av_im, (cx0, ry + 8), av_im)
-                    img.paste(flag_xs, (cx0 + 48, ry + 11), flag_xs)
+                    pl_flag = get_country_flag(pl.get("flag_country"), w=22, h=15)
+                    img.paste(pl_flag, (cx0 + 48, ry + 11), pl_flag)
 
                     elo_val = int(pl.get("max_elo", 0) or 0)
                     elo_w = 0
@@ -1070,7 +1122,8 @@ def _draw_category_block(
                         ring_color=(250, 204, 21, 255) if is_high else (245, 184, 46, 235),
                     )
                     img.paste(av_im, (cx0, ry + 8), av_im)
-                    img.paste(flag_xs, (cx0 + 46, ry + 10), flag_xs)
+                    pl_flag = get_country_flag(pl.get("flag_country"), w=22, h=15)
+                    img.paste(pl_flag, (cx0 + 46, ry + 10), pl_flag)
 
                     elo_val = int(pl.get("max_elo", 0) or 0)
                     ew = 0
@@ -1121,7 +1174,8 @@ def _draw_category_block(
                         ring_color=(250, 204, 21, 255) if is_high else (245, 184, 46, 235),
                     )
                     img.paste(av_im, (28, y + 8), av_im)
-                    img.paste(flag_br, (76, y + 18), flag_br)
+                    pl_flag = get_country_flag(pl.get("flag_country"), w=26, h=18)
+                    img.paste(pl_flag, (76, y + 18), pl_flag)
 
                     note_r = str(pl.get("status_note") or "Partida recente na Relic")
                     nd, nf = truncate_to_px(draw, note_r, max_px=520, size=17, bold=True)

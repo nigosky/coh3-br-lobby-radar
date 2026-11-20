@@ -483,13 +483,16 @@ def run_deep_br_discovery(
             min_last_match_date=active_cutoff,
             replace_matches=False,
         )
-        # Garante preservação explícita de `br_source` e `last_seen_ingame_ts`
+        # Garante preservação explícita de `br_source`, `last_seen_ingame_ts` e `flag_country`
         key = str(pid)
         if key in final_players:
             if item.get("br_source"):
                 final_players[key]["br_source"] = str(item["br_source"])
             if int(item.get("last_seen_ingame_ts", 0) or 0) > 0:
                 final_players[key]["last_seen_ingame_ts"] = int(item["last_seen_ingame_ts"])
+            f_ctry = str(item.get("flag_country") or (prev.get("flag_country") if isinstance(prev, dict) else "") or "").strip().lower()
+            if f_ctry and f_ctry != "br":
+                final_players[key]["flag_country"] = f_ctry
 
     after_pids = {int(k) for k in final_players if str(k).isdigit()}
     newly_added_pids = after_pids - before_pids

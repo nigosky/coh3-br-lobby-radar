@@ -1081,6 +1081,117 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertIn("Pax Xavier youtube", oth_desc)
             self.assertIn("no CoH3", oth_desc)
 
+    def test_us_resident_brazilian_players_lem22_and_generick_render_us_flag_on_cards_and_links(self) -> None:
+        from card_renderer import get_br_flag, get_country_flag, get_us_flag
+        from steam_presence import (
+            CORE_BR_ROSTER,
+            MANUAL_OTHER_BR_PLAYERS,
+            build_lobby_radar_snapshot,
+            get_configured_flag_country,
+        )
+
+        # 1. Verifica cadastro explícito de bandeira EUA para Lem22 (Veteranos) e Generick (Outros Brasileiros)
+        self.assertEqual(get_configured_flag_country(366826), "us")
+        self.assertEqual(get_configured_flag_country(33487), "us")
+        self.assertEqual(get_configured_flag_country(26910), "")
+        self.assertTrue(
+            any(int(r.get("profile_id", 0) or 0) == 366826 and r.get("flag_country") == "us" for r in CORE_BR_ROSTER)
+        )
+        self.assertTrue(
+            any(int(r.get("profile_id", 0) or 0) == 33487 and r.get("flag_country") == "us" for r in MANUAL_OTHER_BR_PLAYERS)
+        )
+
+        # 2. Verifica distinção visual real entre bandeira EUA (listras vermelhas + cantão azul) e bandeira BR (verde)
+        br_im = get_br_flag(w=26, h=18)
+        us_im = get_us_flag(w=26, h=18)
+        self.assertIs(get_country_flag("us", w=26, h=18), us_im)
+        self.assertIs(get_country_flag("br", w=26, h=18), br_im)
+        self.assertIs(get_country_flag("", w=26, h=18), br_im)
+        us_pixels = list(us_im.getdata())
+        br_pixels = list(br_im.getdata())
+        self.assertNotEqual(us_pixels, br_pixels)
+        # Bandeira dos EUA deve ter pixels vermelhos intensos e zero pixels verdes puros da bandeira do Brasil
+        self.assertTrue(any(r > 150 and g < 70 and b < 80 for r, g, b, _ in us_pixels))
+        self.assertFalse(any(g > 130 and r < 50 and b < 90 for r, g, b, _ in us_pixels))
+
+        # 3. Snapshot propaga `flag_country="us"` tanto de CORE_BR_ROSTER (Lem22) quanto por fallback para Generick
+        now = 1_800_000_000
+        lem_sid = "76561198014985380"
+        nigo_sid = "76561197963741792"
+        gen_sid = "76561197995712470"
+        br_oth_sid = "76561198000999001"
+        vet_roster = [
+            {"profile_id": 366826, "steam_id": lem_sid, "original_alias": "Lem22", "flag_country": "us"},
+            {"profile_id": 26910, "steam_id": nigo_sid, "original_alias": "nigo_BR"},
+        ]
+        # Generick propositalmente sem `flag_country` no dicionário (simulando cache antigo) -> fallback garante "us"!
+        other_roster = [
+            {
+                "profile_id": 33487,
+                "steam_id": gen_sid,
+                "alias": "Generick",
+                "max_elo": 1546,
+                "total_matches": 7911,
+                "last_match_date": now - 1800,
+            },
+            {
+                "profile_id": 999001,
+                "steam_id": br_oth_sid,
+                "alias": "COHBRAMACHINE",
+                "max_elo": 1569,
+                "total_matches": 1200,
+                "last_match_date": now - 3600,
+            },
+        ]
+        pres = {
+            lem_sid: {"steam_id": lem_sid, "ok": True, "is_in_coh3": True, "is_online_steam": True, "online_state": "in-game"},
+            nigo_sid: {"steam_id": nigo_sid, "ok": True, "is_in_coh3": False, "is_online_steam": True, "online_state": "online"},
+            gen_sid: {"steam_id": gen_sid, "ok": True, "is_in_coh3": True, "is_online_steam": True, "online_state": "in-game"},
+            br_oth_sid: {"steam_id": br_oth_sid, "ok": True, "is_in_coh3": False, "is_online_steam": True, "online_state": "online"},
+        }
+        snap = build_lobby_radar_snapshot(
+            vet_roster,
+            pres,
+            elo_by_pid={366826: 1380, 26910: 1410},
+            now_ts=now,
+            other_br_players=other_roster,
+            other_presence_by_steam=pres,
+        )
+        self.assertEqual(snap["veteranos"]["in_coh3"][0]["alias"], "Lem22")
+        self.assertEqual(snap["veteranos"]["in_coh3"][0]["flag_country"], "us")
+        self.assertEqual(snap["veteranos"]["online_steam"][0]["flag_country"], "br")
+        self.assertEqual(snap["outros_brasileiros"]["in_coh3"][0]["alias"], "Generick")
+        self.assertEqual(snap["outros_brasileiros"]["in_coh3"][0]["flag_country"], "us")
+        self.assertEqual(snap["outros_brasileiros"]["online_steam"][0]["flag_country"], "br")
+
+        # 4. Cards PNG renderizam bandeira dos EUA na linha 1-col de Lem22 (Veteranos) e Generick (Outros BR)
+        av = SteamAvatarProvider()
+        vet_png, oth_png = render_lobby_radar_cards_png(snap, av)
+        for png_bytes, label in ((vet_png, "Veteranos/Lem22"), (oth_png, "OutrosBR/Generick")):
+            with Image.open(io.BytesIO(png_bytes)) as im:
+                # Região exata da bandeira na 1ª linha 1-col de in_coh3: header(84) + sec_hdr(40) + y_off(21) = y=145, x=82..108
+                crop = im.crop((82, 145, 108, 163))
+                crop_px = list(crop.getdata())
+                self.assertTrue(
+                    any(r > 140 and g < 80 and b < 90 for r, g, b in crop_px),
+                    msg=f"Esperava listras vermelhas da bandeira dos EUA em {label}",
+                )
+                self.assertFalse(
+                    any(g > 130 and r < 50 and b < 90 for r, g, b in crop_px),
+                    msg=f"Não deve desenhar verde da bandeira do Brasil em {label}",
+                )
+
+        # 5. Links verticais no Discord exibem 🇺🇸 para Lem22 e Generick e nenhuma bandeira extra para BRs comuns
+        links_payload = build_lobby_radar_links_payload(snap)
+        vet_desc = links_payload["embeds"][0]["description"]
+        oth_desc = links_payload["embeds"][1]["description"]
+        self.assertIn("Lem22", vet_desc)
+        self.assertIn("🇺🇸", vet_desc)
+        self.assertNotIn("nigo_BR** ↗](https://steamcommunity.com/profiles/76561197963741792) 🇺🇸", vet_desc)
+        self.assertIn("Generick", oth_desc)
+        self.assertIn("🇺🇸", oth_desc)
+        self.assertNotIn("COHBRAMACHINE** ↗](https://steamcommunity.com/profiles/76561198000999001) 🇺🇸", oth_desc)
+
 
 if __name__ == "__main__":
     unittest.main()
