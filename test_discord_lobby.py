@@ -489,9 +489,9 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             )
             self.assertEqual(saved["panel_outros_message_id"], "1900000000000000002")
             self.assertEqual(saved["panel_links_message_id"], "1900000000000000003")
-            self.assertEqual(saved["veteranos_steam_cache"]["58737"], "76561198099958737")
             self.assertIn("veteranos_steam_privacy", saved)
             self.assertEqual(saved["veteranos_steam_privacy"]["79327"], "public")
+            self.assertEqual(saved["veteranos_steam_privacy"]["58737"], "public")
 
             comm = json.loads(comm_path.read_text(encoding="utf-8"))
             self.assertEqual(comm.get("schema_version"), 3)

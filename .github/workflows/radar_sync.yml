@@ -9,6 +9,7 @@ on:
       - main
     paths:
       - "**.py"
+      - "players_roster.json"
       - "assets/**"
       - ".github/workflows/**"
   repository_dispatch:
@@ -69,6 +70,7 @@ jobs:
           PYTHONDONTWRITEBYTECODE: "1"
         run: |
           set -euo pipefail
+          python3 manage_roster.py validate
           python3 -m unittest discover -s . -p "test_*.py"
 
       - name: Sincronizar Radar a cada 5 min (sessao de 12 ciclos = 60 min)
