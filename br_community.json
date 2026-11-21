@@ -2468,7 +2468,7 @@
       "alias": "Major Caveira",
       "br_source": "open_data_lb",
       "last_match_date": 1795197902,
-      "last_seen_online_ts": 1795205786,
+      "last_seen_online_ts": 1795250574,
       "max_elo": 1013,
       "profile_id": 1214004,
       "steam_games_hidden": true,
@@ -3924,14 +3924,14 @@
     "1373102": {
       "alias": "frodoeric",
       "br_source": "open_data_lb",
-      "last_match_date": 1795248886,
+      "last_match_date": 1795250290,
       "last_seen_online_ts": 1795250275,
       "max_elo": 944,
       "profile_id": 1373102,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795204287,
       "steam_id": "76561198008464996",
-      "total_matches": 498
+      "total_matches": 499
     },
     "1374662": {
       "alias": "[COHBR] King Jong-Un",
