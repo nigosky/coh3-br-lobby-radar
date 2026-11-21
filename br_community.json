@@ -694,18 +694,6 @@
       "steam_id": "76561197992399401",
       "total_matches": 411
     },
-    "373127": {
-      "alias": "Monstro",
-      "br_source": "open_data_lb",
-      "last_match_date": 1793660421,
-      "last_seen_online_ts": 1795201503,
-      "max_elo": 1048,
-      "profile_id": 373127,
-      "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795201503,
-      "steam_id": "76561197988257395",
-      "total_matches": 1321
-    },
     "40833": {
       "alias": "Tokai Teio",
       "br_source": "open_data_lb",
@@ -2050,14 +2038,14 @@
     "1156831": {
       "alias": "DAk120",
       "br_source": "open_data_lb",
-      "last_match_date": 1795289400,
+      "last_match_date": 1795292016,
       "last_seen_online_ts": 1795291143,
       "max_elo": 1290,
       "profile_id": 1156831,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795285099,
       "steam_id": "76561198135522044",
-      "total_matches": 359
+      "total_matches": 360
     },
     "1156846": {
       "alias": "gabrielps38",
@@ -2772,7 +2760,7 @@
       "last_match_date": 1794701886,
       "last_seen_ingame_ts": 1795184990,
       "last_seen_ingame_webapi_ts": 1795275038,
-      "last_seen_online_ts": 1795289942,
+      "last_seen_online_ts": 1795292095,
       "max_elo": 1000,
       "profile_id": 1232741,
       "steam_games_hidden": false,
@@ -2942,11 +2930,11 @@
       "alias": "Baldi",
       "br_source": "open_data_lb",
       "last_match_date": 1795281509,
-      "last_seen_online_ts": 1795280490,
+      "last_seen_online_ts": 1795292095,
       "max_elo": 1000,
       "profile_id": 1252534,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795198463,
+      "steam_gd_checked_ts": 1795292095,
       "steam_id": "76561197986354381",
       "total_matches": 333
     },
@@ -3680,7 +3668,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794867525,
       "last_seen_ingame_webapi_ts": 1795274737,
-      "last_seen_online_ts": 1795290242,
+      "last_seen_online_ts": 1795292095,
       "max_elo": 1031,
       "profile_id": 1322297,
       "steam_id": "76561198119817594",
@@ -5207,11 +5195,11 @@
       "alias": "Tretinha",
       "br_source": "open_data_matches",
       "last_match_date": 1794623825,
-      "last_seen_online_ts": 1795289043,
+      "last_seen_online_ts": 1795292095,
       "max_elo": 1000,
       "profile_id": 1440897,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795199064,
+      "steam_gd_checked_ts": 1795292095,
       "steam_id": "76561198111575540",
       "total_matches": 6
     },
@@ -5473,7 +5461,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794588404,
       "last_seen_ingame_ts": 1795137370,
-      "last_seen_online_ts": 1795290242,
+      "last_seen_online_ts": 1795292095,
       "max_elo": 1000,
       "profile_id": 1447920,
       "steam_games_hidden": false,
@@ -5781,7 +5769,7 @@
       "max_elo": 1000,
       "profile_id": 1453052,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795205487,
+      "steam_gd_checked_ts": 1795292095,
       "steam_id": "76561198108514874",
       "total_matches": 3
     },
@@ -7725,14 +7713,14 @@
     "19840": {
       "alias": "[DOOM INTENSIFIES]",
       "br_source": "open_data_matches",
-      "last_match_date": 1795289015,
+      "last_match_date": 1795292005,
       "last_seen_online_ts": 1795291143,
       "max_elo": 1234,
       "profile_id": 19840,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795209425,
       "steam_id": "76561197972423172",
-      "total_matches": 4656
+      "total_matches": 4657
     },
     "198711": {
       "alias": "Товарищ Mérlin",
@@ -7902,7 +7890,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795198666,
       "last_seen_ingame_ts": 1795183790,
-      "last_seen_ingame_webapi_ts": 1795198463,
+      "last_seen_ingame_webapi_ts": 1795292095,
       "last_seen_online_ts": 1795291495,
       "max_elo": 1333,
       "profile_id": 22246,
@@ -8391,7 +8379,7 @@
       "max_elo": 1000,
       "profile_id": 30838,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795199963,
+      "steam_gd_checked_ts": 1795292095,
       "steam_id": "76561198046056626",
       "total_matches": 9
     },
@@ -8671,6 +8659,18 @@
       "steam_id": "76561198059696262",
       "total_matches": 317
     },
+    "373127": {
+      "alias": "Monstro",
+      "br_source": "open_data_lb",
+      "last_match_date": 1795292045,
+      "last_seen_online_ts": 1795292095,
+      "max_elo": 1048,
+      "profile_id": 373127,
+      "steam_games_hidden": true,
+      "steam_gd_checked_ts": 1795201503,
+      "steam_id": "76561197988257395",
+      "total_matches": 1322
+    },
     "373952": {
       "alias": "TONELERO10",
       "br_source": "open_data_matches",
@@ -8894,14 +8894,14 @@
     "428227": {
       "alias": "COSMONAUTA",
       "br_source": "open_data_lb",
-      "last_match_date": 1795225988,
+      "last_match_date": 1795292057,
       "last_seen_online_ts": 1795291143,
       "max_elo": 1041,
       "profile_id": 428227,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795285099,
       "steam_id": "76561198008039971",
-      "total_matches": 1605
+      "total_matches": 1606
     },
     "431386": {
       "alias": "lambda x: x",
@@ -8989,7 +8989,7 @@
       "alias": "Victor Arcanjo",
       "br_source": "open_data_matches",
       "last_match_date": 1794774004,
-      "last_seen_online_ts": 1795290242,
+      "last_seen_online_ts": 1795292095,
       "max_elo": 1000,
       "profile_id": 463343,
       "steam_games_hidden": true,
@@ -11352,14 +11352,14 @@
     "946322": {
       "alias": "phconzatti",
       "br_source": "open_data_lb",
-      "last_match_date": 1795289400,
+      "last_match_date": 1795292016,
       "last_seen_online_ts": 1795290542,
-      "max_elo": 1259,
+      "max_elo": 1273,
       "profile_id": 946322,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795285099,
       "steam_id": "76561198135260753",
-      "total_matches": 763
+      "total_matches": 764
     },
     "946411": {
       "alias": "Mr.Smoke",
@@ -11501,7 +11501,7 @@
       "max_elo": 1194,
       "profile_id": 96038,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795203604,
+      "steam_gd_checked_ts": 1795292095,
       "steam_id": "76561198038473331",
       "total_matches": 1746
     },
@@ -11631,14 +11631,14 @@
     "975900": {
       "alias": "[COHBR/RJ]Roney",
       "br_source": "open_data_lb",
-      "last_match_date": 1795290396,
+      "last_match_date": 1795291855,
       "last_seen_online_ts": 1795291143,
       "max_elo": 1539,
       "profile_id": 975900,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795285099,
       "steam_id": "76561198326055603",
-      "total_matches": 3701
+      "total_matches": 3702
     },
     "976559": {
       "alias": "[OMJ] Guiflick",
