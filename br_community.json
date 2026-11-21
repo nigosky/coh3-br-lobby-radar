@@ -2467,14 +2467,14 @@
     "1214004": {
       "alias": "Major Caveira",
       "br_source": "open_data_lb",
-      "last_match_date": 1795254105,
+      "last_match_date": 1795258121,
       "last_seen_online_ts": 1795257965,
       "max_elo": 1013,
       "profile_id": 1214004,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795199363,
       "steam_id": "76561198854581943",
-      "total_matches": 771
+      "total_matches": 772
     },
     "1215326": {
       "alias": "Buzungo",
@@ -4791,7 +4791,7 @@
       "alias": "kaiodcp14",
       "br_source": "open_data_matches",
       "last_match_date": 1794445478,
-      "last_seen_online_ts": 1795256411,
+      "last_seen_online_ts": 1795258264,
       "max_elo": 998,
       "profile_id": 1437413,
       "steam_games_hidden": true,
@@ -6654,7 +6654,7 @@
       "alias": "cafe14348",
       "br_source": "open_data_matches",
       "last_match_date": 1794942897,
-      "last_seen_online_ts": 1795256411,
+      "last_seen_online_ts": 1795258264,
       "max_elo": 1000,
       "profile_id": 1473530,
       "steam_games_hidden": true,
@@ -6668,7 +6668,7 @@
       "last_match_date": 1794758893,
       "last_seen_ingame_ts": 1795197263,
       "last_seen_ingame_webapi_ts": 1795220092,
-      "last_seen_online_ts": 1795219192,
+      "last_seen_online_ts": 1795258264,
       "max_elo": 1000,
       "profile_id": 1473725,
       "steam_id": "76561198139058363",
@@ -11532,14 +11532,14 @@
     "998836": {
       "alias": "SAMBANDIDO",
       "br_source": "open_data_lb",
-      "last_match_date": 1795256020,
+      "last_match_date": 1795258016,
       "last_seen_online_ts": 1795257311,
       "max_elo": 1000,
       "profile_id": 998836,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795199363,
       "steam_id": "76561198160207277",
-      "total_matches": 630
+      "total_matches": 631
     },
     "998942": {
       "alias": "Roberto-WAR-BR",
