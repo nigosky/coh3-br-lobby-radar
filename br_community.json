@@ -6314,9 +6314,11 @@
       "alias": "Pcbarbosa1212",
       "br_source": "open_data_matches",
       "last_match_date": 1794693598,
-      "last_seen_online_ts": 1795121980,
+      "last_seen_online_ts": 1795246303,
       "max_elo": 965,
       "profile_id": 1465653,
+      "steam_games_hidden": true,
+      "steam_gd_checked_ts": 1795246303,
       "steam_id": "76561198060570905",
       "total_matches": 1
     },
