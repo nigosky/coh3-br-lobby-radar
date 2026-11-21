@@ -1045,7 +1045,7 @@
       "last_match_date": 1794246076,
       "last_seen_ingame_ts": 1795117955,
       "last_seen_ingame_webapi_ts": 1795273782,
-      "last_seen_online_ts": 1795279289,
+      "last_seen_online_ts": 1795295146,
       "max_elo": 967,
       "profile_id": 1000730,
       "steam_games_hidden": false,
@@ -1963,14 +1963,14 @@
     "1148751": {
       "alias": "matarasso",
       "br_source": "open_data_lb",
-      "last_match_date": 1795275876,
+      "last_match_date": 1795294929,
       "last_seen_online_ts": 1795293594,
       "max_elo": 952,
       "profile_id": 1148751,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795286298,
       "steam_id": "76561198015025401",
-      "total_matches": 564
+      "total_matches": 565
     },
     "1148910": {
       "alias": "bill",
@@ -4317,11 +4317,11 @@
       "alias": "josenetoferrer2020",
       "br_source": "open_data_lb",
       "last_match_date": 1795282833,
-      "last_seen_online_ts": 1795281744,
+      "last_seen_online_ts": 1795295146,
       "max_elo": 1173,
       "profile_id": 1422841,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795198463,
+      "steam_gd_checked_ts": 1795295146,
       "steam_id": "76561198618672224",
       "total_matches": 71
     },
@@ -5591,11 +5591,11 @@
       "alias": "guilherme_carrilho",
       "br_source": "open_data_matches",
       "last_match_date": 1794706208,
-      "last_seen_online_ts": 1795279889,
+      "last_seen_online_ts": 1795295146,
       "max_elo": 1000,
       "profile_id": 1450240,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795199064,
+      "steam_gd_checked_ts": 1795295146,
       "steam_id": "76561199180829250",
       "total_matches": 4
     },
@@ -7951,14 +7951,14 @@
     "2290": {
       "alias": "luissaster",
       "br_source": "open_data_lb",
-      "last_match_date": 1795199725,
+      "last_match_date": 1795294660,
       "last_seen_ingame_ts": 1795197564,
       "last_seen_ingame_webapi_ts": 1795293294,
       "last_seen_online_ts": 1795293594,
       "max_elo": 1009,
       "profile_id": 2290,
       "steam_id": "76561198329413012",
-      "total_matches": 200
+      "total_matches": 201
     },
     "232075": {
       "alias": "Oberleutnant Otto Carius",
@@ -8683,14 +8683,14 @@
     "373127": {
       "alias": "Monstro",
       "br_source": "open_data_lb",
-      "last_match_date": 1795293162,
+      "last_match_date": 1795294894,
       "last_seen_online_ts": 1795293895,
-      "max_elo": 1048,
+      "max_elo": 1054,
       "profile_id": 373127,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795292395,
       "steam_id": "76561197988257395",
-      "total_matches": 1324
+      "total_matches": 1325
     },
     "373952": {
       "alias": "TONELERO10",
@@ -9715,7 +9715,7 @@
       "last_match_date": 1795211021,
       "last_seen_ingame_ts": 1795112501,
       "last_seen_ingame_webapi_ts": 1795210025,
-      "last_seen_online_ts": 1795293294,
+      "last_seen_online_ts": 1795295146,
       "max_elo": 1599,
       "profile_id": 71299,
       "steam_games_hidden": true,
@@ -9858,14 +9858,14 @@
     "739286": {
       "alias": "Maximus",
       "br_source": "open_data_lb",
-      "last_match_date": 1795226604,
+      "last_match_date": 1795285199,
       "last_seen_ingame_ts": 1795193832,
       "last_seen_ingame_webapi_ts": 1795276238,
       "last_seen_online_ts": 1795294195,
       "max_elo": 1043,
       "profile_id": 739286,
       "steam_id": "76561198167127970",
-      "total_matches": 185
+      "total_matches": 191
     },
     "739507": {
       "alias": "Midiel",
@@ -10669,14 +10669,14 @@
     "845669": {
       "alias": "PH0BB05",
       "br_source": "open_data_lb",
-      "last_match_date": 1795284853,
+      "last_match_date": 1795294949,
       "last_seen_online_ts": 1795294545,
       "max_elo": 1821,
       "profile_id": 845669,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795292695,
       "steam_id": "76561199696199477",
-      "total_matches": 5258
+      "total_matches": 5259
     },
     "84816": {
       "alias": "ChadVader",
@@ -11383,12 +11383,12 @@
     "947114": {
       "alias": "Sleepy",
       "br_source": "open_data_lb",
-      "last_match_date": 1795292975,
+      "last_match_date": 1795294982,
       "last_seen_online_ts": 0,
       "max_elo": 1323,
       "profile_id": 947114,
       "steam_id": "76561199005516405",
-      "total_matches": 468
+      "total_matches": 469
     },
     "9492": {
       "alias": "Kerafe",
