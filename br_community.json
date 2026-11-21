@@ -1274,6 +1274,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794785120,
       "last_seen_ingame_ts": 1795184990,
+      "last_seen_ingame_webapi_ts": 1795219791,
       "last_seen_online_ts": 1795219492,
       "max_elo": 1000,
       "profile_id": 1057422,
@@ -1287,6 +1288,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794917870,
       "last_seen_ingame_ts": 1795177036,
+      "last_seen_ingame_webapi_ts": 1795219791,
       "last_seen_online_ts": 1795219192,
       "max_elo": 1047,
       "profile_id": 1058561,
@@ -2557,7 +2559,8 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795149243,
       "last_seen_ingame_ts": 1795172394,
-      "last_seen_online_ts": 1795172394,
+      "last_seen_ingame_webapi_ts": 1795219791,
+      "last_seen_online_ts": 1795219791,
       "max_elo": 1200,
       "profile_id": 1228682,
       "steam_id": "76561198077573287",
@@ -7455,14 +7458,14 @@
     "19840": {
       "alias": "[DOOM INTENSIFIES]",
       "br_source": "open_data_matches",
-      "last_match_date": 1795218975,
+      "last_match_date": 1795219769,
       "last_seen_online_ts": 1795218592,
       "max_elo": 1234,
       "profile_id": 19840,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795209425,
       "steam_id": "76561197972423172",
-      "total_matches": 4636
+      "total_matches": 4637
     },
     "198711": {
       "alias": "Товарищ Mérlin",
@@ -7895,9 +7898,11 @@
       "alias": "drytron",
       "br_source": "open_data_lb",
       "last_match_date": 1795137918,
-      "last_seen_online_ts": 1795137971,
+      "last_seen_online_ts": 1795219791,
       "max_elo": 1181,
       "profile_id": 27356,
+      "steam_games_hidden": true,
+      "steam_gd_checked_ts": 1795219791,
       "steam_id": "76561198202237409",
       "total_matches": 212
     },
@@ -9340,7 +9345,7 @@
       "last_match_date": 1795211020,
       "last_seen_ingame_ts": 1795112501,
       "last_seen_ingame_webapi_ts": 1795210025,
-      "last_seen_online_ts": 1795210980,
+      "last_seen_online_ts": 1795219791,
       "max_elo": 1599,
       "profile_id": 71299,
       "steam_games_hidden": true,
@@ -9769,14 +9774,14 @@
     "763413": {
       "alias": "Milagre",
       "br_source": "open_data_matches",
-      "last_match_date": 1795187053,
+      "last_match_date": 1795215334,
       "last_seen_ingame_ts": 1795185291,
       "last_seen_ingame_webapi_ts": 1795198463,
       "last_seen_online_ts": 1795219192,
       "max_elo": 1000,
       "profile_id": 763413,
       "steam_id": "76561198237328554",
-      "total_matches": 161
+      "total_matches": 162
     },
     "763806": {
       "alias": "[BGD] kcinsmadA",
