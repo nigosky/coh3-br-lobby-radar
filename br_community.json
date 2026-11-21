@@ -3530,14 +3530,14 @@
     "1318025": {
       "alias": "matheus_rockkkk",
       "br_source": "open_data_lb",
-      "last_match_date": 1795224847,
+      "last_match_date": 1795229532,
       "last_seen_online_ts": 1795228662,
       "max_elo": 996,
       "profile_id": 1318025,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795203604,
       "steam_id": "76561198187613078",
-      "total_matches": 440
+      "total_matches": 441
     },
     "1318162": {
       "alias": "General Winter",
@@ -5817,7 +5817,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794626102,
       "last_seen_ingame_ts": 1795189256,
-      "last_seen_ingame_webapi_ts": 1795205186,
+      "last_seen_ingame_webapi_ts": 1795229562,
       "last_seen_online_ts": 1795228662,
       "max_elo": 1000,
       "profile_id": 1453831,
@@ -8251,14 +8251,14 @@
     "326061": {
       "alias": "xVELHOBARREIROx",
       "br_source": "open_data_lb",
-      "last_match_date": 1795227829,
+      "last_match_date": 1795229495,
       "last_seen_online_ts": 1795228662,
       "max_elo": 1190,
       "profile_id": 326061,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795201503,
       "steam_id": "76561197982839318",
-      "total_matches": 1096
+      "total_matches": 1097
     },
     "32671": {
       "alias": "Ravagge",
@@ -8373,7 +8373,7 @@
       "alias": "aldivx",
       "br_source": "open_data_lb",
       "last_match_date": 1795209029,
-      "last_seen_online_ts": 1795213080,
+      "last_seen_online_ts": 1795229562,
       "max_elo": 1187,
       "profile_id": 351821,
       "steam_games_hidden": true,
@@ -8565,14 +8565,14 @@
     "401275": {
       "alias": "asado de perro",
       "br_source": "open_data_lb",
-      "last_match_date": 1795227988,
+      "last_match_date": 1795229310,
       "last_seen_online_ts": 1795229262,
       "max_elo": 1195,
       "profile_id": 401275,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795206986,
       "steam_id": "76561198008634992",
-      "total_matches": 1500
+      "total_matches": 1501
     },
     "401816": {
       "alias": "MENGO456",
@@ -10789,7 +10789,7 @@
       "alias": "rodrigo.eisen895",
       "br_source": "open_data_matches",
       "last_match_date": 1795199012,
-      "last_seen_online_ts": 1795210624,
+      "last_seen_online_ts": 1795229562,
       "max_elo": 1000,
       "profile_id": 906896,
       "steam_games_hidden": true,
