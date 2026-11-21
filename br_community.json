@@ -7473,7 +7473,7 @@
     "17906": {
       "alias": "Leo",
       "br_source": "open_data_lb",
-      "last_match_date": 1795171110,
+      "last_match_date": 1795237251,
       "last_seen_ingame_ts": 1795173967,
       "last_seen_ingame_webapi_ts": 1795235061,
       "last_seen_online_ts": 1795236560,
@@ -7482,7 +7482,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795217335,
       "steam_id": "76561198312734088",
-      "total_matches": 551
+      "total_matches": 552
     },
     "179332": {
       "alias": "Cotoko",
@@ -8642,6 +8642,7 @@
     "40833": {
       "alias": "Tokai Teio",
       "br_source": "open_data_lb",
+      "current_alias": "Aston Machan",
       "last_match_date": 1793979920,
       "last_seen_ingame_ts": 1795140787,
       "last_seen_online_ts": 1795192032,
