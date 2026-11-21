@@ -1603,12 +1603,12 @@
     "1095143": {
       "alias": "Sniper-777",
       "br_source": "open_data_lb",
-      "last_match_date": 1795167471,
+      "last_match_date": 1795249147,
       "last_seen_online_ts": 0,
       "max_elo": 1069,
       "profile_id": 1095143,
       "steam_id": "76561198233679192",
-      "total_matches": 2390
+      "total_matches": 2391
     },
     "1095498": {
       "alias": "gallyver",
@@ -9970,12 +9970,12 @@
     "766623": {
       "alias": "AkuMA",
       "br_source": "open_data_matches",
-      "last_match_date": 1795206936,
+      "last_match_date": 1795233610,
       "last_seen_online_ts": 0,
       "max_elo": 1056,
       "profile_id": 766623,
       "steam_id": "76561198108515897",
-      "total_matches": 3182
+      "total_matches": 3185
     },
     "766635": {
       "alias": "Terr0rRJ",
