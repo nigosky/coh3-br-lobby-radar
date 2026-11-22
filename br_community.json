@@ -2623,14 +2623,14 @@
       "alias": "Zera",
       "br_source": "open_data_lb",
       "current_alias": "4 Queijos",
-      "last_match_date": 1795295173,
+      "last_match_date": 1795336635,
       "last_seen_online_ts": 1795336008,
       "max_elo": 1044,
       "profile_id": 1213751,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795285099,
       "steam_id": "76561198163510110",
-      "total_matches": 569
+      "total_matches": 570
     },
     "1213971": {
       "alias": "VFzada",
@@ -9875,7 +9875,7 @@
       "alias": "Welter",
       "br_source": "open_data_matches",
       "last_match_date": 1794788400,
-      "last_seen_online_ts": 1795335107,
+      "last_seen_online_ts": 1795336908,
       "max_elo": 1043,
       "profile_id": 73623,
       "steam_games_hidden": false,
