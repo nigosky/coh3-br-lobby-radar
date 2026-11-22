@@ -1510,9 +1510,11 @@
       "alias": "RWelliger",
       "br_source": "open_data_matches",
       "last_match_date": 1795214460,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795340260,
       "max_elo": 1000,
       "profile_id": 1056917,
+      "steam_games_hidden": true,
+      "steam_gd_checked_ts": 1795340260,
       "steam_id": "76561198298607977",
       "total_matches": 60
     },
@@ -2017,7 +2019,7 @@
     "1135322": {
       "alias": "KS",
       "br_source": "open_data_matches",
-      "last_match_date": 1795246475,
+      "last_match_date": 1795339754,
       "last_seen_ingame_ts": 1795145393,
       "last_seen_ingame_webapi_ts": 1795329618,
       "last_seen_online_ts": 1795339061,
@@ -2026,7 +2028,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795198463,
       "steam_id": "76561199557427423",
-      "total_matches": 256
+      "total_matches": 262
     },
     "1135750": {
       "alias": "checkmate",
