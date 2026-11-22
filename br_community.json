@@ -1197,7 +1197,7 @@
       "last_match_date": 1794846905,
       "last_seen_ingame_ts": 1795198164,
       "last_seen_ingame_webapi_ts": 1795319867,
-      "last_seen_online_ts": 1795319867,
+      "last_seen_online_ts": 1795321714,
       "max_elo": 1088,
       "profile_id": 1006075,
       "steam_id": "76561198991155553",
@@ -1440,6 +1440,7 @@
     "1042204": {
       "alias": "Saker",
       "br_source": "open_data_lb",
+      "current_alias": "fascismo hipotético",
       "last_match_date": 1794873342,
       "last_seen_online_ts": 1795321068,
       "max_elo": 1050,
@@ -1622,12 +1623,12 @@
     "1067293": {
       "alias": "ISYPatch",
       "br_source": "open_data_lb",
-      "last_match_date": 1795315739,
+      "last_match_date": 1795321659,
       "last_seen_online_ts": 0,
       "max_elo": 1000,
       "profile_id": 1067293,
       "steam_id": "76561198241238722",
-      "total_matches": 482
+      "total_matches": 483
     },
     "106869": {
       "alias": "Micaelis",
@@ -4404,7 +4405,7 @@
     "1422841": {
       "alias": "josenetoferrer2020",
       "br_source": "open_data_lb",
-      "last_match_date": 1795319421,
+      "last_match_date": 1795319422,
       "last_seen_online_ts": 1795321367,
       "max_elo": 1173,
       "profile_id": 1422841,
@@ -6322,7 +6323,7 @@
       "last_match_date": 1794671736,
       "last_seen_ingame_ts": 1795185291,
       "last_seen_ingame_webapi_ts": 1795314664,
-      "last_seen_online_ts": 1795319867,
+      "last_seen_online_ts": 1795321714,
       "max_elo": 1000,
       "profile_id": 1461583,
       "steam_games_hidden": false,
@@ -7631,7 +7632,7 @@
       "alias": "Smiloudont",
       "br_source": "open_data_lb",
       "last_match_date": 1795238540,
-      "last_seen_online_ts": 1795319867,
+      "last_seen_online_ts": 1795321714,
       "max_elo": 1004,
       "profile_id": 15129,
       "steam_games_hidden": true,
@@ -7948,14 +7949,14 @@
     "21255": {
       "alias": "Blue Six",
       "br_source": "open_data_matches",
-      "last_match_date": 1795319482,
+      "last_match_date": 1795321656,
       "last_seen_online_ts": 1795320168,
       "max_elo": 1047,
       "profile_id": 21255,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795312865,
       "steam_id": "76561198007696647",
-      "total_matches": 883
+      "total_matches": 884
     },
     "214408": {
       "alias": "arturaga",
@@ -11257,7 +11258,7 @@
       "last_match_date": 1795282576,
       "last_seen_ingame_ts": 1795191733,
       "last_seen_ingame_webapi_ts": 1795314664,
-      "last_seen_online_ts": 1795319867,
+      "last_seen_online_ts": 1795321714,
       "max_elo": 1009,
       "profile_id": 928301,
       "steam_id": "76561199164940732",
