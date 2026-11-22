@@ -2284,7 +2284,7 @@
       "last_match_date": 1795120600,
       "last_seen_ingame_ts": 1795192633,
       "last_seen_ingame_webapi_ts": 1795382328,
-      "last_seen_online_ts": 1795383227,
+      "last_seen_online_ts": 1795385066,
       "max_elo": 1058,
       "profile_id": 115658,
       "steam_id": "76561198122325359",
@@ -9867,14 +9867,14 @@
     "677039": {
       "alias": "Batman",
       "br_source": "open_data_lb",
-      "last_match_date": 1795382629,
+      "last_match_date": 1795385069,
       "last_seen_online_ts": 1795384128,
       "max_elo": 978,
       "profile_id": 677039,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795382028,
       "steam_id": "76561198116456200",
-      "total_matches": 891
+      "total_matches": 892
     },
     "677441": {
       "alias": "Resilient",
