@@ -3983,7 +3983,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794884526,
       "last_seen_ingame_ts": 1795181645,
-      "last_seen_ingame_webapi_ts": 1795276838,
+      "last_seen_ingame_webapi_ts": 1795327769,
       "last_seen_online_ts": 1795327169,
       "max_elo": 1061,
       "profile_id": 1352185,
@@ -7402,7 +7402,6 @@
     "1478243": {
       "alias": "HEADSHOT : MAGISK",
       "br_source": "open_data_matches",
-      "current_alias": "dontrySHOT",
       "last_match_date": 1794802027,
       "last_seen_ingame_ts": 1795181945,
       "last_seen_ingame_webapi_ts": 1795316518,
@@ -10111,14 +10110,14 @@
     "742572": {
       "alias": "SoNinG",
       "br_source": "open_data_matches",
-      "last_match_date": 1795158631,
+      "last_match_date": 1795321482,
       "last_seen_ingame_ts": 1795153124,
       "last_seen_ingame_webapi_ts": 1795324713,
       "last_seen_online_ts": 1795327169,
       "max_elo": 1089,
       "profile_id": 742572,
       "steam_id": "76561198053169063",
-      "total_matches": 194
+      "total_matches": 198
     },
     "742772": {
       "alias": "sebba_mnz",
