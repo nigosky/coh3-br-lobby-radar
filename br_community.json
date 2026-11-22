@@ -4138,7 +4138,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795310472,
       "last_seen_ingame_ts": 1795188956,
-      "last_seen_ingame_webapi_ts": 1795301858,
+      "last_seen_ingame_webapi_ts": 1795326869,
       "last_seen_online_ts": 1795325070,
       "max_elo": 1041,
       "profile_id": 137848,
@@ -7117,16 +7117,16 @@
     "1475932": {
       "alias": "Ophill",
       "br_source": "open_data_matches",
-      "last_match_date": 1795273795,
+      "last_match_date": 1795326729,
       "last_seen_ingame_ts": 1795184091,
       "last_seen_ingame_webapi_ts": 1795322313,
       "last_seen_online_ts": 1795325970,
-      "max_elo": 1061,
+      "max_elo": 1073,
       "profile_id": 1475932,
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795200263,
       "steam_id": "76561198018028765",
-      "total_matches": 55
+      "total_matches": 59
     },
     "1476048": {
       "alias": "RatãoZ Tubarão",
@@ -7173,7 +7173,7 @@
     "1476268": {
       "alias": "Dcpegas",
       "br_source": "open_data_matches",
-      "last_match_date": 1795314206,
+      "last_match_date": 1795326729,
       "last_seen_ingame_ts": 1795187090,
       "last_seen_ingame_webapi_ts": 1795307321,
       "last_seen_online_ts": 1795325070,
@@ -7182,7 +7182,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795203004,
       "steam_id": "76561197979490215",
-      "total_matches": 44
+      "total_matches": 48
     },
     "1476270": {
       "alias": "Titan1227",
@@ -7402,7 +7402,6 @@
     "1478243": {
       "alias": "HEADSHOT : MAGISK",
       "br_source": "open_data_matches",
-      "current_alias": "dontrySHOT",
       "last_match_date": 1794802027,
       "last_seen_ingame_ts": 1795181945,
       "last_seen_ingame_webapi_ts": 1795316518,
@@ -11359,8 +11358,8 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795294188,
       "last_seen_ingame_ts": 1795187455,
-      "last_seen_ingame_webapi_ts": 1795277439,
-      "last_seen_online_ts": 1795312565,
+      "last_seen_ingame_webapi_ts": 1795326869,
+      "last_seen_online_ts": 1795326869,
       "max_elo": 1150,
       "profile_id": 942935,
       "steam_games_hidden": false,
