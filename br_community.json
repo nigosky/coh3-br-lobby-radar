@@ -2243,14 +2243,14 @@
     "1162890": {
       "alias": "Fauzix",
       "br_source": "open_data_lb",
-      "last_match_date": 1795292665,
+      "last_match_date": 1795327855,
       "last_seen_ingame_ts": 1795179136,
       "last_seen_ingame_webapi_ts": 1795318018,
       "last_seen_online_ts": 1795330819,
       "max_elo": 1373,
       "profile_id": 1162890,
       "steam_id": "76561198117168962",
-      "total_matches": 452
+      "total_matches": 458
     },
     "1163279": {
       "alias": "Gamerkiis",
@@ -9872,7 +9872,7 @@
       "alias": "Welter",
       "br_source": "open_data_matches",
       "last_match_date": 1794788400,
-      "last_seen_online_ts": 1795329618,
+      "last_seen_online_ts": 1795331419,
       "max_elo": 1043,
       "profile_id": 73623,
       "steam_games_hidden": false,
