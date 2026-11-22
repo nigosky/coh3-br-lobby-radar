@@ -3892,12 +3892,12 @@
     "1346160": {
       "alias": "IZI",
       "br_source": "open_data_matches",
-      "last_match_date": 1795253602,
+      "last_match_date": 1795287403,
       "last_seen_online_ts": 0,
       "max_elo": 1091,
       "profile_id": 1346160,
       "steam_id": "76561198039712637",
-      "total_matches": 459
+      "total_matches": 460
     },
     "1346169": {
       "alias": "TheMonkBR",
@@ -7758,7 +7758,7 @@
     "17906": {
       "alias": "Leo",
       "br_source": "open_data_lb",
-      "last_match_date": 1795259977,
+      "last_match_date": 1795329271,
       "last_seen_ingame_ts": 1795173967,
       "last_seen_ingame_webapi_ts": 1795328069,
       "last_seen_online_ts": 1795330219,
@@ -7767,7 +7767,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795217335,
       "steam_id": "76561198312734088",
-      "total_matches": 562
+      "total_matches": 563
     },
     "179332": {
       "alias": "Cotoko",
@@ -9631,14 +9631,14 @@
     "664781": {
       "alias": "Flatline🔰",
       "br_source": "open_data_matches",
-      "last_match_date": 1795218915,
+      "last_match_date": 1795313060,
       "last_seen_online_ts": 1795292994,
       "max_elo": 1094,
       "profile_id": 664781,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795221944,
       "steam_id": "76561198412321280",
-      "total_matches": 856
+      "total_matches": 858
     },
     "667564": {
       "alias": "Friedhelm Winter",
