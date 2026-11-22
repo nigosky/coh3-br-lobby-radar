@@ -4087,7 +4087,7 @@
       "alias": "Dallas",
       "br_source": "open_data_matches",
       "last_match_date": 1794698522,
-      "last_seen_ingame_webapi_ts": 1795300610,
+      "last_seen_ingame_webapi_ts": 1795322313,
       "last_seen_online_ts": 1795320768,
       "max_elo": 1000,
       "profile_id": 1370422,
@@ -4160,12 +4160,12 @@
     "1383062": {
       "alias": "Freak2805",
       "br_source": "open_data_lb",
-      "last_match_date": 1795320915,
+      "last_match_date": 1795322077,
       "last_seen_online_ts": 0,
       "max_elo": 1168,
       "profile_id": 1383062,
       "steam_id": "76561198029447360",
-      "total_matches": 594
+      "total_matches": 595
     },
     "1384158": {
       "alias": "leander.mf",
@@ -4417,7 +4417,7 @@
       "alias": "Panzergrenadier",
       "br_source": "open_data_matches",
       "last_match_date": 1795295542,
-      "last_seen_online_ts": 1795320468,
+      "last_seen_online_ts": 1795322313,
       "max_elo": 1000,
       "profile_id": 1423710,
       "steam_games_hidden": true,
@@ -5203,7 +5203,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794536457,
       "last_seen_ingame_ts": 1795185590,
-      "last_seen_ingame_webapi_ts": 1795276238,
+      "last_seen_ingame_webapi_ts": 1795322313,
       "last_seen_online_ts": 1795321367,
       "max_elo": 1000,
       "profile_id": 1440340,
@@ -6978,9 +6978,11 @@
       "alias": "brenuu",
       "br_source": "open_data_matches",
       "last_match_date": 1794768914,
-      "last_seen_online_ts": 0,
+      "last_seen_online_ts": 1795322313,
       "max_elo": 1000,
       "profile_id": 1474911,
+      "steam_games_hidden": true,
+      "steam_gd_checked_ts": 1795322313,
       "steam_id": "76561198989920888",
       "total_matches": 2
     },
@@ -7118,7 +7120,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1795273795,
       "last_seen_ingame_ts": 1795184091,
-      "last_seen_ingame_webapi_ts": 1795290842,
+      "last_seen_ingame_webapi_ts": 1795322313,
       "last_seen_online_ts": 1795322014,
       "max_elo": 1061,
       "profile_id": 1475932,
@@ -8933,12 +8935,12 @@
     "40060": {
       "alias": "Soli Invictvs",
       "br_source": "open_data_lb",
-      "last_match_date": 1795320915,
+      "last_match_date": 1795322077,
       "last_seen_online_ts": 0,
       "max_elo": 1153,
       "profile_id": 40060,
       "steam_id": "76561198133838878",
-      "total_matches": 657
+      "total_matches": 658
     },
     "401275": {
       "alias": "asado de perro",
@@ -11661,12 +11663,12 @@
     "967658": {
       "alias": "TiMC",
       "br_source": "open_data_lb",
-      "last_match_date": 1795319911,
+      "last_match_date": 1795322289,
       "last_seen_online_ts": 0,
       "max_elo": 1297,
       "profile_id": 967658,
       "steam_id": "76561198023693363",
-      "total_matches": 4059
+      "total_matches": 4060
     },
     "970468": {
       "alias": "Московский метро",
