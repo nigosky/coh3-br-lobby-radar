@@ -1659,7 +1659,7 @@
       "alias": "M/A/R/I/N/A",
       "br_source": "open_data_matches",
       "last_match_date": 1795397193,
-      "last_seen_online_ts": 1795406401,
+      "last_seen_online_ts": 1795408202,
       "max_elo": 1000,
       "profile_id": 1041591,
       "steam_games_hidden": true,
@@ -2835,14 +2835,14 @@
     "1214004": {
       "alias": "Major Caveira",
       "br_source": "open_data_lb",
-      "last_match_date": 1795380147,
+      "last_match_date": 1795408065,
       "last_seen_online_ts": 1795407901,
       "max_elo": 1013,
       "profile_id": 1214004,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795406101,
       "steam_id": "76561198854581943",
-      "total_matches": 789
+      "total_matches": 790
     },
     "1215326": {
       "alias": "Buzungo",
@@ -5453,7 +5453,7 @@
       "last_match_date": 1795312510,
       "last_seen_ingame_ts": 1795144792,
       "last_seen_ingame_webapi_ts": 1795396049,
-      "last_seen_online_ts": 1795405153,
+      "last_seen_online_ts": 1795408202,
       "max_elo": 1000,
       "profile_id": 1440808,
       "steam_id": "76561198291609853",
@@ -10097,7 +10097,7 @@
       "alias": "Welter",
       "br_source": "open_data_matches",
       "last_match_date": 1794788400,
-      "last_seen_online_ts": 1795406401,
+      "last_seen_online_ts": 1795408202,
       "max_elo": 1043,
       "profile_id": 73623,
       "steam_games_hidden": false,
