@@ -97,13 +97,28 @@ class SecurityPrimitivesTests(unittest.TestCase):
                 allow_query=False,
             )
 
+        from discord_lobby import DiscordLobbyWebhookClient
+
+        sample_wh = "https://discord.com" + "/api/" + "webhooks/" + "123456789012345678/" + ("A" * 40)
         self.assertFalse(validate_discord_webhook_url("https://evil.example/api/webhooks/123456789012345678/tok"))
         self.assertFalse(validate_discord_webhook_url("https://discord.com/api/other/short/tok"))
-        self.assertFalse(
+        self.assertTrue(validate_discord_webhook_url(sample_wh))
+        self.assertFalse(validate_discord_webhook_url(sample_wh + "?wait=true", allow_message_subpath=False))
+        self.assertTrue(validate_discord_webhook_url(sample_wh + "?wait=true", allow_message_subpath=True))
+        self.assertTrue(
             validate_discord_webhook_url(
-                "https://discord.com" + "/api/" + "webhooks/" + "123456789012345678/" + ("A" * 40) + "?wait=true"
+                DiscordLobbyWebhookClient._append_wait_param(sample_wh),
+                allow_message_subpath=True,
             )
         )
+        self.assertTrue(
+            validate_discord_webhook_url(
+                sample_wh + "/messages/987654321098765432?wait=true",
+                allow_message_subpath=True,
+            )
+        )
+        self.assertFalse(validate_discord_webhook_url(sample_wh + "?wait=true&extra=1", allow_message_subpath=True))
+        self.assertFalse(validate_discord_webhook_url(sample_wh + "?wait=false", allow_message_subpath=True))
 
     def test_redact_secrets_and_strip_bidi_spoofing(self) -> None:
         fake_host = "https://discord.com"
