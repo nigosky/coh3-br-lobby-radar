@@ -1,6 +1,10 @@
 {
   "schema_version": 1,
   "description": "Base unica compartilhada de jogadores CoH3 Brasil (Radar, Scheduler, Tracker e Ranking). Alteracoes aqui refletem automaticamente nos 4 sistemas; o Ranking consome exclusivamente os veteranos com in_ranking=true.",
+  "naming_convention": {
+    "distinct_name_smurf": "<NomeDaSmurf> (<NomeOriginal>) com pin_alias=true",
+    "same_name_multi_account": "<NomeOriginal> (Principal) / <NomeOriginal> (Smurf 1) / <NomeOriginal> (Smurf 2) com pin_alias=true"
+  },
   "veteranos": [
     {
       "profile_id": 79327,
@@ -374,32 +378,6 @@
       ]
     },
     {
-      "profile_id": 1297821,
-      "steam_id": "76561198722284920",
-      "original_alias": "Smurf 1 (General Winter)",
-      "country": "br",
-      "in_ranking": true,
-      "pin_alias": true,
-      "known_aliases": [
-        "General Winter",
-        "Dick of the Galaxies",
-        "Smurf 1 (General Winter)"
-      ]
-    },
-    {
-      "profile_id": 1318162,
-      "steam_id": "76561198708550887",
-      "original_alias": "Smurf 2 (General Winter)",
-      "country": "br",
-      "in_ranking": true,
-      "pin_alias": true,
-      "known_aliases": [
-        "General Winter",
-        ".",
-        "Smurf 2 (General Winter)"
-      ]
-    },
-    {
       "profile_id": 1076221,
       "steam_id": "76561198815935562",
       "original_alias": "Lucielle (Colossus)",
@@ -463,6 +441,41 @@
       "steam_id": "76561198054318813",
       "original_alias": "Liquid",
       "country": "br"
+    },
+    {
+      "profile_id": 462597,
+      "steam_id": "76561198133760614",
+      "original_alias": "General Winter (Principal)",
+      "country": "br",
+      "pin_alias": true,
+      "known_aliases": [
+        "General Winter",
+        "General Winter (Principal)"
+      ]
+    },
+    {
+      "profile_id": 1297821,
+      "steam_id": "76561198722284920",
+      "original_alias": "General Winter (Smurf 1)",
+      "country": "br",
+      "pin_alias": true,
+      "known_aliases": [
+        "General Winter",
+        "Dick of the Galaxies",
+        "General Winter (Smurf 1)"
+      ]
+    },
+    {
+      "profile_id": 1318162,
+      "steam_id": "76561198708550887",
+      "original_alias": "General Winter (Smurf 2)",
+      "country": "br",
+      "pin_alias": true,
+      "known_aliases": [
+        "General Winter",
+        ".",
+        "General Winter (Smurf 2)"
+      ]
     }
   ]
 }
