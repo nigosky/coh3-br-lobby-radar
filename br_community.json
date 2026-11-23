@@ -2845,14 +2845,14 @@
     "1214004": {
       "alias": "Major Caveira",
       "br_source": "open_data_lb",
-      "last_match_date": 1795410748,
+      "last_match_date": 1795417069,
       "last_seen_online_ts": 1795417034,
       "max_elo": 1013,
       "profile_id": 1214004,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795406101,
       "steam_id": "76561198854581943",
-      "total_matches": 791
+      "total_matches": 792
     },
     "1215326": {
       "alias": "Buzungo",
@@ -8714,12 +8714,12 @@
     "29737": {
       "alias": "PABLO FLEXCOBAR",
       "br_source": "steam_location",
-      "last_match_date": 1795415175,
+      "last_match_date": 1795417192,
       "last_seen_online_ts": 0,
       "max_elo": 1203,
       "profile_id": 29737,
       "steam_id": "76561198158934331",
-      "total_matches": 1458
+      "total_matches": 1459
     },
     "300242": {
       "alias": "LionMaru",
