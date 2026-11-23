@@ -42,6 +42,8 @@ jobs:
     permissions:
       contents: write
       actions: write
+    env:
+      SECRET_PATTERN: "(ptb\\.|canary\\.)?discord(app)?\\.com/api/(v[0-9]+/)?webhooks/[0-9]+|STEAM_WEB_API_KEY=[A-Za-z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
 
     steps:
       - name: Checkout seguro (SHA imutavel)
@@ -101,8 +103,6 @@ jobs:
             CYCLES=1
           fi
 
-          SECRET_PATTERN="(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+|STEAM_WEB_API_KEY=[A-Za-z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -156,7 +156,6 @@ jobs:
           set -euo pipefail
 
           # Bloqueia qualquer URL de Webhook, token GitHub ou chave privada em TODOS os arquivos rastreados
-          SECRET_PATTERN="(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+|STEAM_WEB_API_KEY=[A-Za-z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
           if git ls-files -z | xargs -0 grep -InE "${SECRET_PATTERN}" 2>/dev/null; then
             echo "::error::Bloqueio de seguranca acionado: padrao de segredo/Webhook detectado em arquivo rastreado!"
             exit 1

@@ -436,6 +436,19 @@ class PlayerMatchTelemetry:
         return float(statistics.median(self.abil_per_min))
 
 
+def _normalize_match_window(start_ts: Any, completion_ts: Any) -> tuple[int, int] | None:
+    """Normaliza `(start_ts, completion_ts)` de uma partida aplicando fallback padrão de 20 min quando ausente."""
+    ct = int(completion_ts or 0)
+    st = int(start_ts or 0)
+    if ct <= 0 and st <= 0:
+        return None
+    if st <= 0 or st > ct:
+        st = max(1, ct - 1200) if ct > 0 else st
+    if ct <= 0:
+        ct = st + 1200
+    return st, ct
+
+
 class SmurfTelemetryCollector:
     """Coleta telemetria leve de partidas (incluindo APM e loadouts de Battlegroup) sobre Open Data e Relic direta."""
 
@@ -470,14 +483,10 @@ class SmurfTelemetryCollector:
             if not mode:
                 continue  # Apenas Automatch 1v1..4v4 para análise estatística limpa
 
-            ct = int(match.get("completiontime", 0) or 0)
-            st = int(match.get("startgametime", 0) or 0)
-            if ct <= 0 and st <= 0:
+            window = _normalize_match_window(match.get("startgametime"), match.get("completiontime"))
+            if window is None:
                 continue
-            if st <= 0 or st > ct:
-                st = max(1, ct - 1200) if ct > 0 else st
-            if ct <= 0:
-                ct = st + 1200
+            st, ct = window
 
             reports = match.get("matchhistoryreportresults") or []
             if not isinstance(reports, list) or len(reports) < 2:
@@ -598,14 +607,10 @@ class SmurfTelemetryCollector:
             if mid > 0 and mid in tel.seen_match_ids:
                 continue
 
-            ct = int(match.get("completiontime", 0) or 0)
-            st = int(match.get("startgametime", 0) or 0)
-            if ct <= 0 and st <= 0:
+            window = _normalize_match_window(match.get("startgametime"), match.get("completiontime"))
+            if window is None:
                 continue
-            if st <= 0 or st > ct:
-                st = max(1, ct - 1200) if ct > 0 else st
-            if ct <= 0:
-                ct = st + 1200
+            st, ct = window
             if ct > latest_ct:
                 latest_ct = ct
 

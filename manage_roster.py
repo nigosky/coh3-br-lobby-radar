@@ -20,7 +20,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from security import atomic_write_text, configure_secure_logging, redact_secrets, strip_unsafe_chars
+from security import (
+    atomic_write_text,
+    configure_secure_logging,
+    read_bounded_json_file,
+    redact_secrets,
+    strip_unsafe_chars,
+)
 from steam_presence import (
     PLAYERS_ROSTER_PATH,
     STEAM_ID64_VALID_RE,
@@ -63,9 +69,10 @@ def parse_profile_id_input(raw: str) -> int | None:
 
 
 def load_roster_doc(roster_path: Path = PLAYERS_ROSTER_PATH) -> dict[str, Any]:
-    if not roster_path.is_file() or roster_path.is_symlink():
-        raise FileNotFoundError(f"Arquivo canônico não encontrado ou inválido: {roster_path}")
-    parsed = json.loads(roster_path.read_text(encoding="utf-8"))
+    try:
+        parsed = read_bounded_json_file(roster_path, max_bytes=262_144)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Arquivo canônico não encontrado ou inválido: {roster_path}") from None
     if not isinstance(parsed, dict) or not isinstance(parsed.get("veteranos"), list):
         raise ValueError("Estrutura inválida em players_roster.json (esperado objeto com lista 'veteranos').")
     parsed.setdefault("schema_version", 1)

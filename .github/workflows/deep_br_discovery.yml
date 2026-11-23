@@ -58,6 +58,7 @@ jobs:
           PYTHONDONTWRITEBYTECODE: "1"
         run: |
           set -euo pipefail
+          python3 manage_roster.py validate
           python3 -m unittest discover -s . -p "test_*.py"
 
       - name: Executar varredura profunda (COH3 Stats Open Data + Relic SA + Steam)

@@ -65,6 +65,7 @@ from steam_presence import (
     RelicActivityClient,
     SteamPresenceClient,
     _merge_discovered_br_player,
+    extract_roster_id_sets,
     has_explicit_br_alias_tag,
     is_brazil_steam_location,
 )
@@ -179,13 +180,8 @@ def run_deep_br_discovery(
 
     state = load_state(state_path)
     vet_roster, _ = _resolve_veteranos_roster(state, r_client)
-    vet_pids = {int(r["profile_id"]) for r in vet_roster if int(r.get("profile_id", 0) or 0) > 0}
-    vet_sids = {
-        str(r.get("steam_id") or "").replace("/steam/", "").strip()
-        for r in vet_roster
-        if str(r.get("steam_id") or "").strip()
-    }
-    manual_pids = {int(r["profile_id"]) for r in MANUAL_OTHER_BR_PLAYERS if int(r.get("profile_id", 0) or 0) > 0}
+    vet_pids, vet_sids = extract_roster_id_sets(vet_roster)
+    manual_pids, _ = extract_roster_id_sets(MANUAL_OTHER_BR_PLAYERS)
 
     community_cache = load_community_cache(community_cache_path)
     prev_top50_br_pids = (

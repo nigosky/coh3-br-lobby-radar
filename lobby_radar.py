@@ -31,6 +31,7 @@ from discord_lobby import DiscordLobbyWebhookClient
 from security import (
     atomic_write_text,
     configure_secure_logging,
+    read_bounded_json_file,
     read_local_secret_webhook,
     redact_secrets,
     strip_unsafe_chars,
@@ -48,6 +49,7 @@ from steam_presence import (
     build_lobby_radar_snapshot,
     classify_other_br_prominence,
     compute_lobby_state_digest,
+    extract_roster_id_sets,
     extract_smurf_owner_and_nick,
     get_manual_other_br_override,
     is_legacy_synthetic_alias_label,
@@ -94,13 +96,18 @@ STEAM_INGAME_VISIBLE_REFRESH_SEC = 6 * 3600
 STEAM_GD_CACHE_TTL_SEC = 24 * 3600
 
 
+MAX_STATE_JSON_BYTES = 2 * 1024 * 1024
+MAX_COMMUNITY_CACHE_JSON_BYTES = 16 * 1024 * 1024
+
+
 def load_state(state_path: Path = DEFAULT_STATE_PATH) -> dict[str, Any]:
-    if not state_path.is_file():
-        return {}
     try:
-        parsed = json.loads(state_path.read_text(encoding="utf-8"))
+        parsed = read_bounded_json_file(state_path, max_bytes=MAX_STATE_JSON_BYTES)
         return parsed if isinstance(parsed, dict) else {}
-    except Exception:
+    except FileNotFoundError:
+        return {}
+    except Exception as exc:
+        logger.warning("Ignorando state.json inválido ou bloqueado (%s): %s", state_path.name, redact_secrets(exc))
         return {}
 
 
@@ -110,17 +117,18 @@ def save_state(state_path: Path, state: dict[str, Any]) -> None:
 
 
 def load_community_cache(cache_path: Path = DEFAULT_COMMUNITY_CACHE_PATH) -> dict[str, Any]:
-    if not cache_path.is_file():
-        return {"schema_version": 0, "updated_at": 0, "source": "", "players": {}, "dormant_players": {}}
+    empty = {"schema_version": 0, "updated_at": 0, "source": "", "players": {}, "dormant_players": {}}
     try:
-        parsed = json.loads(cache_path.read_text(encoding="utf-8"))
+        parsed = read_bounded_json_file(cache_path, max_bytes=MAX_COMMUNITY_CACHE_JSON_BYTES)
         if isinstance(parsed, dict) and isinstance(parsed.get("players"), dict):
             if not isinstance(parsed.get("dormant_players"), dict):
                 parsed["dormant_players"] = {}
             return parsed
-    except Exception:
-        pass
-    return {"schema_version": 0, "updated_at": 0, "source": "", "players": {}, "dormant_players": {}}
+    except FileNotFoundError:
+        return empty
+    except Exception as exc:
+        logger.warning("Ignorando cache comunitário inválido ou bloqueado (%s): %s", cache_path.name, redact_secrets(exc))
+    return empty
 
 
 def save_community_cache(cache_path: Path, cache: dict[str, Any]) -> None:
@@ -892,9 +900,8 @@ def run_lobby_radar_sync(
         return summary
 
     # 3. Enriquecimento dos Veteranos na API da Relic + descoberta passiva de brasileiros nas partidas deles
-    vet_pids_list = [int(r["profile_id"]) for r in vet_roster if int(r.get("profile_id", 0)) > 0]
-    vet_pids_set = set(vet_pids_list)
-    vet_sids_set = {str(r.get("steam_id") or "").replace("/steam/", "").strip() for r in vet_roster if r.get("steam_id")}
+    vet_pids_list = [int(r["profile_id"]) for r in vet_roster if int(r.get("profile_id", 0) or 0) > 0]
+    vet_pids_set, vet_sids_set = extract_roster_id_sets(vet_roster)
 
     discovered_br_from_matches: dict[int, dict[str, Any]] = {}
     br_participant_matches: dict[int, dict[str, Any]] = {}
