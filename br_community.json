@@ -3497,7 +3497,7 @@
       "alias": "E5p4rTaN0",
       "br_source": "open_data_lb",
       "last_match_date": 1795373391,
-      "last_seen_online_ts": 1795400595,
+      "last_seen_online_ts": 1795411247,
       "max_elo": 1045,
       "profile_id": 128231,
       "steam_games_hidden": true,
@@ -4344,14 +4344,14 @@
     "137848": {
       "alias": "Elvenking",
       "br_source": "open_data_lb",
-      "last_match_date": 1795329198,
+      "last_match_date": 1795410995,
       "last_seen_ingame_ts": 1795188956,
       "last_seen_ingame_webapi_ts": 1795402153,
       "last_seen_online_ts": 1795409747,
       "max_elo": 1041,
       "profile_id": 137848,
       "steam_id": "76561198083666457",
-      "total_matches": 213
+      "total_matches": 214
     },
     "1381510": {
       "alias": "CadRenan",
@@ -5183,14 +5183,14 @@
     "1438656": {
       "alias": "guridocafe",
       "br_source": "open_data_lb",
-      "last_match_date": 1795406370,
+      "last_match_date": 1795411003,
       "last_seen_online_ts": 1795410648,
       "max_elo": 1117,
       "profile_id": 1438656,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795396950,
       "steam_id": "76561198870731987",
-      "total_matches": 110
+      "total_matches": 111
     },
     "1438814": {
       "alias": "Ninguem Skins",
@@ -7228,7 +7228,6 @@
     "1475296": {
       "alias": "wIIIa",
       "br_source": "open_data_matches",
-      "current_alias": "Уилла",
       "last_match_date": 1794771844,
       "last_seen_ingame_ts": 1795197198,
       "last_seen_ingame_webapi_ts": 1795398795,
@@ -8507,7 +8506,7 @@
       "last_match_date": 1795360340,
       "last_seen_ingame_ts": 1795153124,
       "last_seen_ingame_webapi_ts": 1795399996,
-      "last_seen_online_ts": 1795409447,
+      "last_seen_online_ts": 1795411247,
       "max_elo": 1112,
       "profile_id": 26373,
       "steam_id": "76561198941629351",
