@@ -397,6 +397,84 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertIn(1_700_001, s2_pids)
         self.assertNotIn(1_700_002, s2_pids)
 
+    def test_apm_and_battlegroups_boost_real_smurf_and_block_meta_only_false_positive(self) -> None:
+        # 1. Parsing de counters (APM + abil/min) e matchhistoryitems (eslot 0-2)
+        apm, abil = sd._parse_counters_biometrics('{"gt": 600, "totalcmds": 870, "abil": 30}')
+        self.assertAlmostEqual(apm, 87.0, places=1)
+        self.assertAlmostEqual(abil, 3.0, places=1)
+        loadouts = sd._extract_bg_loadout_by_pid(
+            [
+                {"profile_id": 1001, "itemdefinition_id": 453182, "metadata": '{"epos":"0","eslot":"0"}'},
+                {"profile_id": 1001, "itemdefinition_id": 458973, "metadata": '{"epos":"1","eslot":"1"}'},
+                {"profile_id": 1001, "itemdefinition_id": 999999, "metadata": '{"epos":"15","eslot":"15"}'},
+            ]
+        )
+        self.assertEqual(loadouts, {1001: [453182, 458973]})
+
+        # 2. Parsing de Battlegroups no HTML de replay do cohdb
+        sample_html = (
+            '<div data-player-card class="x"><a href="/players/79327">Chacineiro</a>'
+            '<img src="/assets/races/german/battlegroups/breakthrough_ger_icon_mipped-abc123.webp">'
+            '<div>Battlegroup</div><div>Breakthrough</div></div>'
+        )
+        parsed = sd.CohDBBattlegroupClient.parse_replay_battlegroups(sample_html)
+        self.assertEqual(parsed, {79327: "Breakthrough"})
+
+        # 3. Guarda Anti-Ruído Meta: APM idêntico + BGs idênticos SEM nenhuma âncora de identidade (horários opostos, 0 squad, 0 handoff) -> teto <= 38%
+        t_cand = sd.PlayerMatchTelemetry(profile_id=1_900_111, games=10, wins=6)
+        t_main = sd.PlayerMatchTelemetry(profile_id=1001, games=10, wins=6)
+        for k in range(10):
+            t_cand.mode_counts["2v2"] += 1
+            t_main.mode_counts["2v2"] += 1
+            t_cand.mode_faction_counts[("2v2", 137123)] += 1
+            t_main.mode_faction_counts[("2v2", 137123)] += 1
+            t_cand.hour_counts[2] += 1  # Horário totalmente diferente do main (18 UTC)
+            t_main.hour_counts[18] += 1
+            t_cand.record_biometrics(mode="2v2", race_id=137123, apm=86.5, abil_pm=3.0, bg_loadout_items=[453182, 458973, 459364])
+            t_main.record_biometrics(mode="2v2", race_id=137123, apm=86.7, abil_pm=3.1, bg_loadout_items=[453182, 458973, 459364])
+        t_cand.cohdb_battlegroups.update({"Breakthrough": 5, "Terror": 3, "Mechanized": 2})
+        t_main.cohdb_battlegroups.update({"Breakthrough": 5, "Terror": 3, "Mechanized": 2})
+
+        meta_only = sd.score_smurf_pair(
+            {"profile_id": 1_900_111, "steam_id": "76561199900000111", "alias": "OutroPlayer", "country": "br", "max_elo": 1600, "total_matches": 150},
+            {"profile_id": 1001, "steam_id": "76561198000001001", "alias": "TopMain", "country": "br", "max_elo": 1620, "total_matches": 1800, "relic_br_rank": 5},
+            t_cand,
+            t_main,
+        )
+        self.assertEqual(meta_only["identity_anchor_signals"], 0)
+        self.assertLessEqual(meta_only["probability_pct"], 38)
+
+        # 4. Com âncora de identidade (horários compatíveis + squad em comum, modelo SKOBADARK/Chacineiro), APM + BG elevam para Alta/Muito Alta!
+        t_cand.hour_counts.clear()
+        t_cand.hour_counts[18] = 10
+        t_cand.ally_counts[7777] = 5
+        t_main.ally_counts[7777] = 8
+        anchored = sd.score_smurf_pair(
+            {"profile_id": 1_900_111, "steam_id": "76561199900000111", "alias": "SmurfReal", "country": "br", "max_elo": 1600, "total_matches": 150},
+            {"profile_id": 1001, "steam_id": "76561198000001001", "alias": "TopMain", "country": "br", "max_elo": 1620, "total_matches": 1800, "relic_br_rank": 5},
+            t_cand,
+            t_main,
+            pid_aliases={7777: "ParceiroFixo"},
+        )
+        self.assertGreaterEqual(anchored["probability_pct"], 80)
+        self.assertTrue(any("Biometria de APM" in e for e in anchored["evidence"]))
+        self.assertTrue(any("Battlegroups no cohdb" in e for e in anchored["evidence"]))
+
+    def test_family_coplay_disqualifies_squadmate_of_known_smurf(self) -> None:
+        # Ex.: parceiro de squad jogou na mesma partida da smurf conhecida #1297821 de General Winter (#462597)
+        t_cand = sd.PlayerMatchTelemetry(profile_id=1_317_093, games=15, wins=11)
+        t_cand.co_played_with.add(1_297_821)  # Jogou com General Winter (Smurf 1)!
+        t_main = sd.PlayerMatchTelemetry(profile_id=462_597, games=20, wins=14)
+        res = sd.score_smurf_pair(
+            {"profile_id": 1_317_093, "steam_id": "76561198706956909", "alias": "SquadMateAR", "country": "ar", "max_elo": 1850, "total_matches": 500},
+            {"profile_id": 462_597, "steam_id": "76561198133760614", "alias": "General Winter (Principal)", "country": "br", "max_elo": 1890, "total_matches": 5500, "relic_br_rank": 1},
+            t_cand,
+            t_main,
+            main_family_pids={462_597, 1_297_821, 1_318_162},
+        )
+        self.assertEqual(res["probability_pct"], 0)
+        self.assertEqual(res["disqualified_reason"], "jogaram_mesma_partida_familia")
+
 
 if __name__ == "__main__":
     unittest.main()
