@@ -650,6 +650,7 @@ class TestTop50SmurfDetector(unittest.TestCase):
             min_probability_pct=45,
         )
         self.assertTrue(stage2["relic_verified"])
+        self.assertFalse(stage2["cohdb_verified"])
         self.assertEqual(stage2["nick_changes_count"], 2)
         displays = {c["profile_id"]: c["display_alias"] for c in stage2["nick_changes"]}
         self.assertEqual(displays[462597], "WinterKing (General Winter)")
@@ -657,6 +658,54 @@ class TestTop50SmurfDetector(unittest.TestCase):
         txt = sd.format_smurf_report_text(stage2)
         self.assertIn("WinterKing (General Winter)", txt)
         self.assertIn("FrozenSmurf (Smurf: General Winter)", txt)
+
+    def test_post_smurf_regression_parenthetical_non_smurf_chronology_and_hardened_cohdb(self) -> None:
+        from security import HttpsOnlySchemeHandler, StrictNoRedirectHandler
+
+        # 1. Tags comuns entre parênteses e principais renomeados NÃO podem ser classificados como smurf!
+        self.assertFalse(sd.is_known_smurf_roster_entry({"profile_id": 70002, "original_alias": "Fulano (BR)"}))
+        self.assertFalse(sd.is_known_smurf_roster_entry({"profile_id": 79327, "original_alias": "ChacineiroNovo (Chacineiro)"}))
+
+        # 2. observe_relic_match_history com partidas antigas NÃO inverte a cronologia de ordered_seen_aliases()
+        collector = sd.SmurfTelemetryCollector()
+        t_old = 1_798_000_000
+        t_new = 1_799_000_000
+        collector.observe_matches_payload(
+            {
+                "matches": [
+                    _make_match(901, t_old, t_old + 1200, [(77001, "OldAliasBR", "br", 0, 1600, 1)], [(9901, "Opp1", "us", 1, 1600, 0)], matchtype_id=1),
+                    _make_match(902, t_new, t_new + 1200, [(77001, "NewAliasBR", "br", 0, 1610, 1)], [(9902, "Opp2", "us", 1, 1610, 0)], matchtype_id=1),
+                ]
+            },
+            known_br_pids={77001},
+        )
+        # Histórico Relic devolve partida ainda mais antiga (t_old - 500000), mas `profiles` sempre tem o nick ATUAL ("NewAliasBR")
+        collector.observe_relic_match_history(
+            77001,
+            {
+                "profiles": [{"profile_id": 77001, "alias": "NewAliasBR"}],
+                "matchHistoryStats": [
+                    {
+                        "id": 900,
+                        "matchtype_id": 1,
+                        "startgametime": t_old - 500_000,
+                        "completiontime": t_old - 498_800,
+                        "matchhistoryreportresults": [
+                            {"profile_id": 77001, "teamid": 0, "race_id": 0, "resulttype": 1},
+                            {"profile_id": 9900, "teamid": 1, "race_id": 1, "resulttype": 0},
+                        ],
+                        "matchhistorymember": [{"profile_id": 77001, "oldrating": 1580, "newrating": 1590}],
+                    }
+                ],
+            },
+        )
+        self.assertEqual(collector.players[77001].ordered_seen_aliases(), ["OldAliasBR", "NewAliasBR"])
+
+        # 3. CohDBBattlegroupClient usa opener endurecido HTTPS-only + anti-redirect de security.py
+        cohdb = sd.CohDBBattlegroupClient()
+        handler_types = {type(h) for h in cohdb._opener.handlers}
+        self.assertIn(HttpsOnlySchemeHandler, handler_types)
+        self.assertIn(StrictNoRedirectHandler, handler_types)
 
 
 if __name__ == "__main__":

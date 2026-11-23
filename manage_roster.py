@@ -25,6 +25,8 @@ from steam_presence import (
     PLAYERS_ROSTER_PATH,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
+    extract_smurf_owner_and_nick,
+    is_legacy_synthetic_alias_label,
     normalize_flag_country,
 )
 
@@ -73,7 +75,8 @@ def load_roster_doc(roster_path: Path = PLAYERS_ROSTER_PATH) -> dict[str, Any]:
 
 def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
     """
-    Valida rigorosamente `players_roster.json`.
+    Valida rigorosamente `players_roster.json` (incluindo unicidade de IDs, convenção de nomes,
+    consistência de `smurf_of` e ausência de rótulos legados `(Principal)`/`(Smurf 1)`).
     Retorna `(total_veteranos_contas, unique_veteranos, total_manual_other_br)`.
     """
     if not isinstance(doc, dict):
@@ -93,57 +96,63 @@ def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
     vet_pids: set[int] = set()
     merged_targets: list[int] = []
 
-    for idx, entry in enumerate(vets):
-        if not isinstance(entry, dict):
-            raise ValueError(f"veteranos[{idx}] deve ser objeto.")
-        pid = int(entry.get("profile_id", 0) or 0)
-        sid = str(entry.get("steam_id") or "").strip()
-        alias = strip_unsafe_chars(entry.get("original_alias") or "")
-        ctry = normalize_flag_country(entry.get("country") or "br")
-        if pid <= 0:
-            raise ValueError(f"veteranos[{idx}] profile_id inválido: {pid}")
-        if not STEAM_ID64_VALID_RE.fullmatch(sid):
-            raise ValueError(f"veteranos[{idx}] ({alias or pid}) steam_id inválido: {sid!r}")
-        if not alias:
-            raise ValueError(f"veteranos[{idx}] ({pid}) original_alias vazio.")
-        if not ctry:
-            raise ValueError(f"veteranos[{idx}] ({alias}) country inválido: {entry.get('country')!r}")
-        if pid in seen_pids:
-            raise ValueError(f"profile_id duplicado em veteranos: {pid}")
-        if sid in seen_sids:
-            raise ValueError(f"steam_id duplicado em veteranos: {sid}")
-        seen_pids.add(pid)
-        seen_sids.add(sid)
-        vet_pids.add(pid)
-        mpid = int(entry.get("merged_into_profile_id", 0) or 0)
-        if mpid:
-            merged_targets.append(mpid)
+    def _validate_section(sec_name: str, entries: list[Any]) -> None:
+        for idx, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                raise ValueError(f"{sec_name}[{idx}] deve ser objeto.")
+            pid = int(entry.get("profile_id", 0) or 0)
+            sid = str(entry.get("steam_id") or "").strip()
+            alias = strip_unsafe_chars(entry.get("original_alias") or "")
+            ctry = normalize_flag_country(entry.get("country") or "br")
+            if pid <= 0:
+                raise ValueError(f"{sec_name}[{idx}] profile_id inválido: {pid}")
+            if not STEAM_ID64_VALID_RE.fullmatch(sid):
+                raise ValueError(f"{sec_name}[{idx}] ({alias or pid}) steam_id inválido: {sid!r}")
+            if not alias:
+                raise ValueError(f"{sec_name}[{idx}] ({pid}) original_alias vazio.")
+            if not ctry:
+                raise ValueError(f"{sec_name}[{idx}] ({alias}) country inválido: {entry.get('country')!r}")
+            if is_legacy_synthetic_alias_label(alias):
+                raise ValueError(
+                    f"{sec_name}[{idx}] ({alias}) usa rótulo legado proibido; use '<NomeOriginal>' para principal "
+                    "ou '<NickAtual> (Smurf: <NomeOriginal>)' com 'smurf_of'."
+                )
+            raw_smurf_of = strip_unsafe_chars(entry.get("smurf_of") or "")[:40]
+            _, parsed_owner = extract_smurf_owner_and_nick(alias)
+            if raw_smurf_of and not parsed_owner:
+                raise ValueError(
+                    f"{sec_name}[{idx}] ({alias}) possui smurf_of={raw_smurf_of!r}, "
+                    f"mas original_alias não está no formato '<Nick> (Smurf: {raw_smurf_of})'."
+                )
+            if parsed_owner and not raw_smurf_of:
+                raise ValueError(
+                    f"{sec_name}[{idx}] ({alias}) indica smurf de {parsed_owner!r} sem o campo obrigatório 'smurf_of'."
+                )
+            if raw_smurf_of and parsed_owner and raw_smurf_of.casefold() != parsed_owner.casefold():
+                raise ValueError(
+                    f"{sec_name}[{idx}] ({alias}) tem smurf_of={raw_smurf_of!r} divergente de {parsed_owner!r}."
+                )
+            if raw_smurf_of and bool(entry.get("pin_alias")):
+                raise ValueError(
+                    f"{sec_name}[{idx}] ({alias}) não deve usar pin_alias=true em conta smurf (impede detecção de troca de nick)."
+                )
+            if pid in seen_pids:
+                raise ValueError(f"profile_id duplicado entre/em {sec_name}: {pid} ({alias})")
+            if sid in seen_sids:
+                raise ValueError(f"steam_id duplicado entre/em {sec_name}: {sid} ({alias})")
+            seen_pids.add(pid)
+            seen_sids.add(sid)
+            if sec_name == "veteranos":
+                vet_pids.add(pid)
+                mpid = int(entry.get("merged_into_profile_id", 0) or 0)
+                if mpid:
+                    merged_targets.append(mpid)
 
+    _validate_section("veteranos", vets)
     for target in merged_targets:
         if target not in vet_pids:
             raise ValueError(f"merged_into_profile_id={target} não existe na lista 'veteranos'.")
-
-    for idx, entry in enumerate(others):
-        if not isinstance(entry, dict):
-            raise ValueError(f"manual_other_br[{idx}] deve ser objeto.")
-        pid = int(entry.get("profile_id", 0) or 0)
-        sid = str(entry.get("steam_id") or "").strip()
-        alias = strip_unsafe_chars(entry.get("original_alias") or "")
-        ctry = normalize_flag_country(entry.get("country") or "br")
-        if pid <= 0:
-            raise ValueError(f"manual_other_br[{idx}] profile_id inválido: {pid}")
-        if not STEAM_ID64_VALID_RE.fullmatch(sid):
-            raise ValueError(f"manual_other_br[{idx}] ({alias or pid}) steam_id inválido: {sid!r}")
-        if not alias:
-            raise ValueError(f"manual_other_br[{idx}] ({pid}) original_alias vazio.")
-        if not ctry:
-            raise ValueError(f"manual_other_br[{idx}] ({alias}) country inválido: {entry.get('country')!r}")
-        if pid in seen_pids:
-            raise ValueError(f"profile_id={pid} ({alias}) já está cadastrado em veteranos ou duplicado em manual_other_br.")
-        if sid in seen_sids:
-            raise ValueError(f"steam_id={sid} ({alias}) já está cadastrado em veteranos ou duplicado em manual_other_br.")
-        seen_pids.add(pid)
-        seen_sids.add(sid)
+    _validate_section("manual_other_br", others)
 
     unique_vets = sum(1 for v in vets if not int(v.get("merged_into_profile_id", 0) or 0))
     return len(vets), unique_vets, len(others)
@@ -202,6 +211,7 @@ def upsert_player_in_roster(
     country: str = "",
     in_ranking: bool = True,
     pin_alias: bool | None = None,
+    smurf_of: str = "",
     relic_client: RelicActivityClient | None = None,
 ) -> dict[str, Any]:
     if section not in ("veteranos", "manual_other_br"):
@@ -225,15 +235,23 @@ def upsert_player_in_roster(
         if int(row.get("profile_id", 0) or 0) != pid and str(row.get("steam_id") or "").strip() != sid
     ]
 
+    clean_smurf_of = strip_unsafe_chars(smurf_of)[:40]
+    final_alias = resolved["original_alias"]
+    if clean_smurf_of:
+        outer_nick, _ = extract_smurf_owner_and_nick(final_alias, smurf_of=clean_smurf_of)
+        final_alias = f"{outer_nick} (Smurf: {clean_smurf_of})"[:48]
+
     entry: dict[str, Any] = {
         "profile_id": pid,
         "steam_id": sid,
-        "original_alias": resolved["original_alias"],
+        "original_alias": final_alias,
         "country": resolved["country"],
     }
+    if clean_smurf_of:
+        entry["smurf_of"] = clean_smurf_of
     if section == "veteranos":
         entry["in_ranking"] = bool(in_ranking)
-    if pin_alias is not None:
+    if pin_alias is not None and not clean_smurf_of:
         entry["pin_alias"] = bool(pin_alias)
 
     updated = False
@@ -241,6 +259,8 @@ def upsert_player_in_roster(
         if int(row.get("profile_id", 0) or 0) == pid or str(row.get("steam_id") or "").strip() == sid:
             merged = dict(row)
             merged.update(entry)
+            if clean_smurf_of:
+                merged.pop("pin_alias", None)
             doc[section][idx] = merged
             entry = merged
             updated = True
@@ -307,6 +327,7 @@ def main(argv: list[str] | None = None) -> int:
     p_av.add_argument("target", help="SteamID64, profile_id ou link coh3stats.com")
     p_av.add_argument("--alias", default="", help="Apelido preferencial opcional")
     p_av.add_argument("--country", default="", help="Bandeira ISO-2 opcional (ex.: br, us)")
+    p_av.add_argument("--smurf-of", default="", help="Nome da conta original se esta conta for Smurf")
     p_av.add_argument("--exclude-from-ranking", action="store_true", help="Define in_ranking=false (fora do Ranking Unificado)")
 
     p_rv = sub.add_parser("remove-veterano", help="Remove Veterano dos 4 sistemas")
@@ -316,6 +337,7 @@ def main(argv: list[str] | None = None) -> int:
     p_ao.add_argument("target", help="SteamID64, profile_id ou link coh3stats.com")
     p_ao.add_argument("--alias", default="", help="Apelido preferencial opcional")
     p_ao.add_argument("--country", default="", help="Bandeira ISO-2 opcional (ex.: us, pt, ca)")
+    p_ao.add_argument("--smurf-of", default="", help="Nome da conta original se esta conta for Smurf")
 
     p_ro = sub.add_parser("remove-other-br", help="Remove brasileiro manual de Outros BR")
     p_ro.add_argument("target", help="SteamID64, profile_id ou link coh3stats.com")
@@ -343,6 +365,7 @@ def main(argv: list[str] | None = None) -> int:
                 target=args.target,
                 alias=args.alias,
                 country=args.country,
+                smurf_of=args.smurf_of,
                 in_ranking=not args.exclude_from_ranking,
             )
             logger.info("Veterano salvo na base compartilhada: %s (pid=%d, country=%s, in_ranking=%s).", ent["original_alias"], ent["profile_id"], ent["country"], ent.get("in_ranking", True))
@@ -358,6 +381,7 @@ def main(argv: list[str] | None = None) -> int:
                 target=args.target,
                 alias=args.alias,
                 country=args.country,
+                smurf_of=args.smurf_of,
                 in_ranking=False,
             )
             logger.info("Outro BR manual salvo na base compartilhada: %s (pid=%d, country=%s).", ent["original_alias"], ent["profile_id"], ent["country"])

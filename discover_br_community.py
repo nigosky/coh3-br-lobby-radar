@@ -45,6 +45,7 @@ from lobby_radar import (
 )
 from security import atomic_write_text, configure_secure_logging, redact_secrets
 from smurf_detector import (
+    DEFAULT_MATCH_DAYS,
     DEFAULT_MIN_PROBABILITY_PCT,
     DEFAULT_TOP_N_BR,
     SmurfTelemetryCollector,
@@ -71,7 +72,6 @@ from steam_presence import (
 configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("coh3_br.lobby.discovery")
 
-DEFAULT_MATCH_DAYS = 30
 DEFAULT_MAX_STEAM_VERIFY = 750
 DEFAULT_RELIC_SA_PAGES = 14
 

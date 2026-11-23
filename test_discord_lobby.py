@@ -1952,6 +1952,52 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                 self.assertEqual(im.width, 1100)
                 self.assertLess(im.width * im.height, Image.MAX_IMAGE_PIXELS)
 
+    def test_literal_asterisk_in_nick_and_legacy_cache_migration_without_polluting_current_alias(self) -> None:
+        from discord_lobby import build_lobby_alert_payload
+        from lobby_radar import _record_community_alias_update
+        from steam_presence import resolve_nick_change_display
+
+        # 1. Jogador cujo nick real termina com '*' (ex.: [CoBrA] Shadow*, pid 38270) preserva o '*' intacto!
+        self.assertEqual(
+            resolve_nick_change_display("[CoBrA] Shadow*", "[CoBrA] Shadow*"),
+            ("[CoBrA] Shadow*", False, ""),
+        )
+        self.assertEqual(
+            resolve_nick_change_display("[CoBrA] Shadow*", "ShadowNovo"),
+            ("ShadowNovo ([CoBrA] Shadow*)", True, "ShadowNovo"),
+        )
+        player_star = {
+            "profile_id": 38270,
+            "steam_id": "76561197984468206",
+            "alias": "[CoBrA] Shadow*",
+            "nick_changed": False,
+            "current_alias": "",
+            "max_elo": 1037,
+            "prominence_tier": "medium",
+            "status_note": "Com Company of Heroes 3 aberto agora",
+        }
+        snap = {
+            "timestamp": 1_800_000_000,
+            "veteranos": {"total_monitored": 43, "in_coh3": [player_star], "online_steam": [], "recent_relic": []},
+            "outros_brasileiros": {"total_monitored": 50, "in_coh3": [player_star], "online_steam": [], "recent_relic": []},
+        }
+        links = build_lobby_radar_links_payload(snap)
+        self.assertIn("\\[CoBrA\\] Shadow\\*", links["embeds"][0]["description"])
+        self.assertIn("\\[CoBrA\\] Shadow\\*", links["embeds"][1]["description"])
+        alert = build_lobby_alert_payload(snap)
+        self.assertIn("\\[CoBrA\\] Shadow\\*", alert["content"])
+
+        # 2. Migração de rótulo legado sintético (Smurf 1 / Principal) NÃO polui current_alias!
+        rec_smurf = {"profile_id": 1297821, "alias": "General Winter (Smurf 1)"}
+        self.assertTrue(_record_community_alias_update(rec_smurf, "General Winter (Smurf 1)", pid=1297821))
+        self.assertEqual(rec_smurf["alias"], "General Winter (Smurf: General Winter)")
+        self.assertNotIn("current_alias", rec_smurf)
+
+        rec_main = {"profile_id": 462597, "alias": "General Winter (Principal)"}
+        self.assertTrue(_record_community_alias_update(rec_main, "General Winter (Principal)", pid=462597))
+        self.assertEqual(rec_main["alias"], "General Winter")
+        self.assertNotIn("current_alias", rec_main)
+
 
 if __name__ == "__main__":
     unittest.main()

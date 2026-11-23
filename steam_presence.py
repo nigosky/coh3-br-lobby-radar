@@ -243,7 +243,6 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
         "steam_id": "76561198133760614",
         "original_alias": "General Winter",
         "country": "br",
-        "known_aliases": ["General Winter", "General Winter (Principal)"],
     },
     {
         "profile_id": 1297821,
@@ -251,7 +250,7 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
         "original_alias": "General Winter (Smurf: General Winter)",
         "smurf_of": "General Winter",
         "country": "br",
-        "known_aliases": ["General Winter", "Dick of the Galaxies", "General Winter (Smurf 1)", "General Winter (Smurf: General Winter)"],
+        "known_aliases": ["General Winter", "Dick of the Galaxies", "General Winter (Smurf: General Winter)"],
     },
     {
         "profile_id": 1318162,
@@ -259,7 +258,7 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
         "original_alias": "General Winter (Smurf: General Winter)",
         "smurf_of": "General Winter",
         "country": "br",
-        "known_aliases": ["General Winter", ".", "General Winter (Smurf 2)", "General Winter (Smurf: General Winter)"],
+        "known_aliases": ["General Winter", ".", "General Winter (Smurf: General Winter)"],
     },
     {
         "profile_id": 509690,
@@ -305,6 +304,16 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
 
 
 _SMURF_LABEL_RE = re.compile(r"^(.*?)\s*\(\s*smurf\s*:\s*([^)]+?)\s*\)\s*$", re.IGNORECASE)
+_LEGACY_SYNTHETIC_LABEL_RE = re.compile(
+    r"\(\s*(?:principal|main|smurf\s*\d+)\s*\)\s*$",
+    re.IGNORECASE,
+)
+
+
+def is_legacy_synthetic_alias_label(alias: str) -> bool:
+    """Identifica rótulos legados sintéticos como `(Principal)`, `(Main)` ou `(Smurf 1)`/`(Smurf 2)`."""
+    clean = strip_unsafe_chars(alias)
+    return bool(clean and _LEGACY_SYNTHETIC_LABEL_RE.search(clean))
 
 
 def extract_smurf_owner_and_nick(alias: str, smurf_of: str | None = None) -> tuple[str, str]:
@@ -498,7 +507,7 @@ def resolve_nick_change_display(
     known_cf = {strip_unsafe_chars(k).casefold() for k in (known_aliases or ()) if strip_unsafe_chars(k)}
     if live_cf in known_cf:
         return stable, False, ""
-    base = stable.rstrip("*").rstrip() or stable
+    base = stable
     already_suffix = f" ({base})"
     if live_raw.casefold().endswith(already_suffix.casefold()):
         inner_new = live_raw[: -len(already_suffix)].strip()
@@ -2520,7 +2529,9 @@ def _build_category_lists(
                 pin_alias = True
             if manual_ov.get("smurf_of"):
                 smurf_of = strip_unsafe_chars(manual_ov.get("smurf_of") or "")[:40]
-            if ov_alias and (manual_ov.get("pin_alias") or smurf_of or ov_known):
+            if ov_alias and (
+                manual_ov.get("pin_alias") or smurf_of or ov_known or is_legacy_synthetic_alias_label(raw_alias)
+            ):
                 raw_alias = ov_alias
         if not smurf_of:
             _, smurf_of = extract_smurf_owner_and_nick(raw_alias)

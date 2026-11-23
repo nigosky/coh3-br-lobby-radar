@@ -365,6 +365,63 @@ class TestSharedPlayersRoster(unittest.TestCase):
             doc_final = manage_roster.load_roster_doc(rp)
             manage_roster.validate_roster_doc(doc_final)
 
+    def test_fallback_parity_and_strict_smurf_of_validation(self) -> None:
+        from steam_presence import _FALLBACK_CORE_BR_ROSTER, _FALLBACK_MANUAL_OTHER_BR_PLAYERS
+
+        doc = manage_roster.load_roster_doc(PLAYERS_ROSTER_PATH)
+
+        def _norm(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+            return [
+                {
+                    "profile_id": int(r["profile_id"]),
+                    "steam_id": str(r.get("steam_id") or ""),
+                    "original_alias": str(r["original_alias"]),
+                    "smurf_of": r.get("smurf_of"),
+                    "pin_alias": bool(r.get("pin_alias", False)),
+                    "country": str(r.get("flag_country") or r.get("country") or "br").lower(),
+                    "known_aliases": list(r.get("known_aliases") or []),
+                }
+                for r in rows
+            ]
+
+        self.assertEqual(_norm(doc["veteranos"]), _norm(_FALLBACK_CORE_BR_ROSTER))
+        self.assertEqual(_norm(doc["manual_other_br"]), _norm(_FALLBACK_MANUAL_OTHER_BR_PLAYERS))
+
+        # Rejeita rótulos legados, smurf com pin_alias e divergência entre original_alias e smurf_of
+        base_vet = {
+            "profile_id": 79327,
+            "steam_id": "76561197963172584",
+            "original_alias": "Chacineiro",
+            "country": "br",
+        }
+        for bad_entry in (
+            {**base_vet, "original_alias": "General Winter (Principal)"},
+            {**base_vet, "original_alias": "General Winter (Smurf 1)"},
+            {**base_vet, "original_alias": "Charles Bronson (Smurf: Chacineiro)"},  # sem smurf_of
+            {**base_vet, "original_alias": "Charles Bronson", "smurf_of": "Chacineiro"},  # sem '(Smurf: ...)'
+            {**base_vet, "original_alias": "Charles Bronson (Smurf: Gabe)", "smurf_of": "Chacineiro"},  # divergente
+            {**base_vet, "original_alias": "Charles Bronson (Smurf: Chacineiro)", "smurf_of": "Chacineiro", "pin_alias": True},
+        ):
+            with self.assertRaises(ValueError):
+                manage_roster.validate_roster_doc({"schema_version": 1, "veteranos": [bad_entry], "manual_other_br": []})
+
+        # upsert_player_in_roster com smurf_of formata automaticamente e remove pin_alias
+        fake_relic = _FakeRelicResolver()
+        with tempfile.TemporaryDirectory() as td:
+            rp = Path(td) / "players_roster.json"
+            rp.write_text(PLAYERS_ROSTER_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+            smurf = manage_roster.upsert_player_in_roster(
+                rp,
+                section="veteranos",
+                target="888001",
+                smurf_of="Chacineiro",
+                pin_alias=True,
+                relic_client=fake_relic,  # type: ignore[arg-type]
+            )
+            self.assertEqual(smurf["original_alias"], "NovoVeteranoBR (Smurf: Chacineiro)")
+            self.assertEqual(smurf["smurf_of"], "Chacineiro")
+            self.assertNotIn("pin_alias", smurf)
+
 
 if __name__ == "__main__":
     unittest.main()
