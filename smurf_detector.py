@@ -9,26 +9,41 @@ Regras de negócio:
    no Top 50 da Relic, passa automaticamente a ser considerado no monitoramento de smurfs.
 3. **Ignora smurfs de jogadores fora do Top 50 BR**: avalia pares contra o Top 50 e descarta
    candidatas cujo melhor vínculo forense aponte para um jogador ranqueado fora do Top 50 (`#51+`).
-4. **Zero spam público**: nunca publica alertas no Discord nem abre Issues automáticas — retorna
+4. **Calibrado pelos 4 modelos reais brasileiros** (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`),
+   combinando sinais temporais/sociais com biometria de **APM** (`totalcmds / gt`), cadência de habilidades
+   e **escolha de Battlegroups** (loadout Relic `eslot 0–2` + Battlegroups escolhidos no `cohdb.com`).
+5. **Zero spam público**: nunca publica alertas no Discord nem abre Issues automáticas — retorna
    relatório estruturado (stdout / JSON opcional) exclusivamente para consulta sob demanda no Antigravity.
 """
 
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import logging
 import math
 import re
+import statistics
 import sys
 import time
-from collections import Counter
+import urllib.error
+import urllib.request
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from security import atomic_write_text, configure_secure_logging, redact_secrets, strip_unsafe_chars
+from security import (
+    atomic_write_text,
+    configure_secure_logging,
+    create_hardened_ssl_context,
+    read_bounded_http_body,
+    redact_secrets,
+    strip_unsafe_chars,
+    validate_https_endpoint,
+)
 from steam_presence import (
     CORE_BR_ROSTER,
     MANUAL_OTHER_BR_PLAYERS,
@@ -45,6 +60,73 @@ DEFAULT_MIN_PROBABILITY_PCT = 45
 DEFAULT_MATCH_DAYS = 30
 STEAM_ID64_BASE = 76561197960265728
 
+COHDB_BASE_URL = "https://cohdb.com"
+ALLOWED_COHDB_HOSTS: frozenset[str] = frozenset({"cohdb.com"})
+COHDB_PLAYER_MATCHES_PATH_RE = re.compile(r"^/players/\d{1,12}/matches$")
+COHDB_REPLAY_PATH_RE = re.compile(r"^/replays/\d{1,12}$")
+MAX_COHDB_HTML_BYTES = 512 * 1024
+
+# Catálogo oficial dos 28 Battlegroups do Company of Heroes 3 (Patch 3.0.x)
+OFFICIAL_COH3_BATTLEGROUPS: dict[str, str] = {
+    "armored_us": "Armored",
+    "free_french_us": "Free French",
+    "infantry_us": "Advanced Infantry",
+    "italian_partisan_us": "Italian Partisan",
+    "paratroopers_us": "Airborne",
+    "spec_ops_us": "Special Operations",
+    "special_weapons_us": "Heavy Weapons",
+    "air_and_sea_uk": "Air and Sea",
+    "armored_uk": "Heavy Armor",
+    "ausdefense_uk": "Australian Defense",
+    "can_shock_uk": "Canadian Shock",
+    "indian_artillery_uk": "Indian Artillery",
+    "polish_cavalry_uk": "Polish Cavalry",
+    "special_services_uk": "Special Service",
+    "breakthrough_ger": "Breakthrough",
+    "coastal_ger": "Italian Coastal",
+    "last_stand_ger": "Last Stand",
+    "luftwaffe_ger": "Luftwaffe",
+    "mechanized_ger": "Mechanized",
+    "siege_breaker_ger": "Siege Breaker",
+    "terror_ger": "Terror",
+    "armored_ak": "Armored Support",
+    "combined_arms_ak": "Italian Combined Arms",
+    "dak_battlefield_ak": "Battlefield Espionage",
+    "elite_forces_ak": "Elite Forces",
+    "italian_infantry_ak": "Italian Infantry",
+    "kriegsmarine_ak": "Kriegsmarine",
+    "panzerjager_kommand_ak": "Panzerjäger Kommand",
+}
+_BG_NAME_TO_OFFICIAL: dict[str, str] = {v.casefold(): v for v in OFFICIAL_COH3_BATTLEGROUPS.values()}
+
+# 4 modelos reais brasileiros usados na calibração empírica do detector (APM, Battlegroups, squad, handoffs, UTC)
+MODEL_SMURF_BENCHMARKS: tuple[dict[str, Any], ...] = (
+    {
+        "model_name": "Chacineiro",
+        "archetype": "clone_completo_squad_handoff_bg_apm",
+        "main_profile_id": 79327,
+        "smurf_profile_ids": (1333418, 1390350),
+    },
+    {
+        "model_name": "General Winter",
+        "archetype": "squad_4v4_loadout_bg_utc_nick",
+        "main_profile_id": 462597,
+        "smurf_profile_ids": (1297821, 1318162),
+    },
+    {
+        "model_name": "Alekel",
+        "archetype": "solo_cross_faction_apm_distintivo_loadout",
+        "main_profile_id": 509690,
+        "smurf_profile_ids": (1297853,),
+    },
+    {
+        "model_name": "『V』SKOBADARK",
+        "archetype": "cross_faction_apm_identico_squad_utc",
+        "main_profile_id": 844225,
+        "smurf_profile_ids": (1297804,),
+    },
+)
+
 _MATCHTYPE_TO_MODE: dict[int, str] = {
     1: "1v1",
     2: "2v2",
@@ -59,9 +141,206 @@ _MATCHTYPE_TO_MODE: dict[int, str] = {
 _PAREN_TAG_RE = re.compile(r"^(.+?)\s+\(([^()]+)\)$")
 
 
+def normalize_battlegroup_label(raw_key: str = "", raw_name: str = "") -> str:
+    """Normaliza chave/nome de Battlegroup para o rótulo oficial (ou '' se ausente/None)."""
+    k = re.sub(r"_icon_mipped$", "", str(raw_key or "").strip().lower())
+    k = re.sub(r"[^a-z0-9_]", "", k)
+    if k in OFFICIAL_COH3_BATTLEGROUPS:
+        return OFFICIAL_COH3_BATTLEGROUPS[k]
+    n = strip_unsafe_chars(html.unescape(str(raw_name or ""))).strip()
+    if not n or n.casefold() in ("none", "n/a", "-", "unknown"):
+        return ""
+    return _BG_NAME_TO_OFFICIAL.get(n.casefold(), n[:40])
+
+
+def _parse_counters_biometrics(raw_counters: Any) -> tuple[float, float]:
+    """
+    Extrai `(apm, abil_per_min)` dos `counters` oficiais da Relic (`totalcmds`, `abil`, `gt`).
+    Ignora partidas muito curtas (<180s) ou valores absurdos fora de `[10, 300]` APM.
+    """
+    if not raw_counters:
+        return 0.0, 0.0
+    if isinstance(raw_counters, str):
+        try:
+            c = json.loads(raw_counters)
+        except Exception:
+            return 0.0, 0.0
+    elif isinstance(raw_counters, dict):
+        c = raw_counters
+    else:
+        return 0.0, 0.0
+    if not isinstance(c, dict):
+        return 0.0, 0.0
+    gt = float(c.get("gt", 0) or 0)
+    cmds = float(c.get("totalcmds", 0) or 0)
+    if gt < 180.0 or cmds <= 0.0:
+        return 0.0, 0.0
+    apm = cmds * 60.0 / gt
+    if not (10.0 <= apm <= 300.0):
+        return 0.0, 0.0
+    abil = float(c.get("abil", 0) or 0)
+    abil_pm = max(0.0, min(30.0, abil * 60.0 / gt)) if abil >= 0.0 else 0.0
+    return apm, abil_pm
+
+
+def _extract_bg_loadout_by_pid(match_items: Any) -> dict[int, list[int]]:
+    """
+    Extrai os `itemdefinition_id` equipados nos slots de Battlegroup (`eslot` 0, 1 e 2)
+    a partir de `matchhistoryitems` da Relic / COH3 Stats Open Data.
+    """
+    if not isinstance(match_items, list) or not match_items:
+        return {}
+    out: dict[int, list[int]] = defaultdict(list)
+    for item in match_items:
+        if not isinstance(item, dict):
+            continue
+        pid = int(item.get("profile_id", 0) or 0)
+        idef = int(item.get("itemdefinition_id", 0) or 0)
+        if pid <= 0 or idef <= 0:
+            continue
+        raw_meta = item.get("metadata")
+        if not raw_meta:
+            continue
+        if isinstance(raw_meta, str):
+            if '"eslot"' not in raw_meta:
+                continue
+            try:
+                meta = json.loads(raw_meta)
+            except Exception:
+                continue
+        elif isinstance(raw_meta, dict):
+            meta = raw_meta
+        else:
+            continue
+        if str(meta.get("eslot", "")) in ("0", "1", "2"):
+            out[pid].append(idef)
+    return dict(out)
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req: Any, fp: Any, code: int, msg: Any, headers: Any, newurl: Any) -> Any:
+        raise urllib.error.HTTPError(req.full_url, code, f"Redirecionamento bloqueado: {msg}", headers, fp)
+
+
+class CohDBBattlegroupClient:
+    """
+    Cliente HTTPS endurecido (somente-leitura, respeitando robots.txt) para coletar
+    os Battlegroups efetivamente escolhidos em partida nas páginas canônicas do `cohdb.com`.
+    """
+
+    _ROW_RE = re.compile(r'<tr[^>]*data-href="/replays/(\d{1,12})"[^>]*>', re.I)
+    _PLAYER_LINK_RE = re.compile(r'href="/players/(\d{1,12})"')
+    _BG_ICON_RE = re.compile(r'/assets/races/[^/"]+/battlegroups/([a-z0-9_]+?)(?:-[0-9a-f]+)?\.webp', re.I)
+    _BG_NAME_RE = re.compile(r"Battlegroup</div>\s*<div[^>]*>([^<]{1,80})</div>", re.I)
+
+    def __init__(self, *, pace_delay_sec: float = 0.12, max_replays_per_player: int = 8) -> None:
+        self.pace_delay_sec = max(0.05, float(pace_delay_sec))
+        self.max_replays_per_player = max(1, min(15, int(max_replays_per_player)))
+        self._opener = urllib.request.build_opener(
+            urllib.request.HTTPSHandler(context=create_hardened_ssl_context()),
+            _NoRedirectHandler(),
+        )
+        self._replay_cache: dict[int, dict[int, str]] = {}
+        self._player_cache: dict[int, Counter[str]] = {}
+        self._consecutive_errors = 0
+        self._circuit_open = False
+
+    def _fetch_html(self, path: str, path_regex: re.Pattern[str]) -> str | None:
+        if self._circuit_open:
+            return None
+        if not path or "?" in path or "#" in path or not path_regex.fullmatch(path):
+            raise ValueError(f"Caminho cohdb bloqueado: {path!r}")
+        url = f"{COHDB_BASE_URL}{path}"
+        validate_https_endpoint(url, ALLOWED_COHDB_HOSTS, path_prefix="/", path_regex=path_regex)
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "CoH3-BR-Lobby-Radar/1.3",
+                "Accept": "text/html,application/xhtml+xml",
+                "Accept-Encoding": "gzip",
+            },
+            method="GET",
+        )
+        try:
+            with self._opener.open(req, timeout=15) as resp:
+                raw = read_bounded_http_body(resp, MAX_COHDB_HTML_BYTES)
+            self._consecutive_errors = 0
+            return raw.decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                self._consecutive_errors = 0
+                return None
+            self._consecutive_errors += 1
+            if exc.code in (429, 403) or self._consecutive_errors >= 4:
+                self._circuit_open = True
+                logger.warning("[COHDB] Circuit-breaker ativado (HTTP %s).", exc.code)
+            return None
+        except Exception as exc:
+            self._consecutive_errors += 1
+            if self._consecutive_errors >= 4:
+                self._circuit_open = True
+                logger.warning("[COHDB] Circuit-breaker ativado após erros de rede: %s", redact_secrets(exc))
+            return None
+
+    @classmethod
+    def parse_replay_battlegroups(cls, html_body: str) -> dict[int, str]:
+        """Extrai `{profile_id: official_bg_name}` de uma página `/replays/<id>` do cohdb."""
+        out: dict[int, str] = {}
+        for card in html_body.split("<div data-player-card")[1:]:
+            pm = cls._PLAYER_LINK_RE.search(card)
+            if not pm:
+                continue
+            pid = int(pm.group(1))
+            if pid <= 0:
+                continue
+            bgm = cls._BG_ICON_RE.search(card)
+            bgn = cls._BG_NAME_RE.search(card)
+            lbl = normalize_battlegroup_label(
+                raw_key=bgm.group(1) if bgm else "",
+                raw_name=bgn.group(1) if bgn else "",
+            )
+            if lbl:
+                out[pid] = lbl
+        return out
+
+    def fetch_player_battlegroups(self, profile_id: int) -> Counter[str]:
+        """Coleta contagem dos Battlegroups efetivamente escolhidos em replays recentes no cohdb."""
+        pid = int(profile_id or 0)
+        if pid <= 0:
+            return Counter()
+        if pid in self._player_cache:
+            return Counter(self._player_cache[pid])
+        if self._circuit_open:
+            return Counter()
+
+        matches_html = self._fetch_html(f"/players/{pid}/matches", COHDB_PLAYER_MATCHES_PATH_RE)
+        if not matches_html:
+            self._player_cache[pid] = Counter()
+            return Counter()
+
+        replay_ids = list(dict.fromkeys(int(r) for r in self._ROW_RE.findall(matches_html)))[: self.max_replays_per_player]
+        bgs: Counter[str] = Counter()
+        for rid in replay_ids:
+            if self._circuit_open:
+                break
+            if rid in self._replay_cache:
+                bg_map = self._replay_cache[rid]
+            else:
+                time.sleep(self.pace_delay_sec)
+                rhtml = self._fetch_html(f"/replays/{rid}", COHDB_REPLAY_PATH_RE)
+                bg_map = self.parse_replay_battlegroups(rhtml) if rhtml else {}
+                self._replay_cache[rid] = bg_map
+            lbl = bg_map.get(pid)
+            if lbl:
+                bgs[lbl] += 1
+
+        self._player_cache[pid] = Counter(bgs)
+        return bgs
+
+
 @dataclass
 class PlayerMatchTelemetry:
-    """Telemetria compacta de partidas de um jogador coletada via Open Data e/ou Relic API direta."""
+    """Telemetria compacta de partidas de um jogador coletada via Open Data, Relic API direta e cohdb."""
 
     profile_id: int
     intervals: list[tuple[int, int, int]] = field(default_factory=list)  # (start_ts, end_ts, match_id)
@@ -76,13 +355,56 @@ class PlayerMatchTelemetry:
     games: int = 0
     seen_aliases: set[str] = field(default_factory=set)
     seen_match_ids: set[int] = field(default_factory=set)
+    apm_values: list[float] = field(default_factory=list)
+    apm_by_mode: dict[str, list[float]] = field(default_factory=lambda: defaultdict(list))
+    abil_per_min: list[float] = field(default_factory=list)
+    bg_loadout_by_race: dict[int, Counter[int]] = field(default_factory=lambda: defaultdict(Counter))
+    cohdb_battlegroups: Counter[str] = field(default_factory=Counter)
 
     def winrate(self) -> float:
         return (self.wins / self.games) if self.games > 0 else 0.0
 
+    def record_biometrics(
+        self,
+        *,
+        mode: str,
+        race_id: int,
+        apm: float = 0.0,
+        abil_pm: float = 0.0,
+        bg_loadout_items: list[int] | None = None,
+        max_samples: int = 200,
+    ) -> None:
+        if apm > 0.0 and len(self.apm_values) < max_samples:
+            self.apm_values.append(apm)
+            if mode and len(self.apm_by_mode[mode]) < max_samples:
+                self.apm_by_mode[mode].append(apm)
+            if abil_pm > 0.0 and len(self.abil_per_min) < max_samples:
+                self.abil_per_min.append(abil_pm)
+        if race_id >= 0 and bg_loadout_items:
+            rc = self.bg_loadout_by_race[race_id]
+            for idef in bg_loadout_items:
+                if idef > 0:
+                    rc[idef] += 1
+
+    def median_apm(self, min_samples: int = 3) -> float:
+        if len(self.apm_values) < min_samples:
+            return 0.0
+        return float(statistics.median(self.apm_values))
+
+    def median_apm_for_mode(self, mode: str, min_samples: int = 3) -> float:
+        vals = self.apm_by_mode.get(mode) or []
+        if len(vals) < min_samples:
+            return 0.0
+        return float(statistics.median(vals))
+
+    def median_abil_per_min(self, min_samples: int = 3) -> float:
+        if len(self.abil_per_min) < min_samples:
+            return 0.0
+        return float(statistics.median(self.abil_per_min))
+
 
 class SmurfTelemetryCollector:
-    """Coleta telemetria leve de partidas em passagem única sobre dumps `matches-{day}.json` e histórico direto da Relic."""
+    """Coleta telemetria leve de partidas (incluindo APM e loadouts de Battlegroup) sobre Open Data e Relic direta."""
 
     def __init__(self, *, max_intervals_per_player: int = 400) -> None:
         self.players: dict[int, PlayerMatchTelemetry] = {}
@@ -128,7 +450,7 @@ class SmurfTelemetryCollector:
             if not isinstance(reports, list) or len(reports) < 2:
                 continue
 
-            participants: list[tuple[int, int, int, int, int, str, str]] = []
+            participants: list[tuple[int, int, int, int, int, str, str, Any]] = []
             has_br_interest = False
             for rep in reports:
                 if not isinstance(rep, dict):
@@ -152,7 +474,7 @@ class SmurfTelemetryCollector:
                 )
                 if ctry == "br" or pid in br_set:
                     has_br_interest = True
-                participants.append((pid, team_id, race_id, res_type, elo, alias, ctry))
+                participants.append((pid, team_id, race_id, res_type, elo, alias, ctry, rep.get("counters")))
 
             if not has_br_interest or len(participants) < 2:
                 continue
@@ -161,15 +483,16 @@ class SmurfTelemetryCollector:
                 self._seen_match_ids.add(mid)
             self.matches_observed += 1
 
+            bg_by_pid = _extract_bg_loadout_by_pid(match.get("matchhistoryitems"))
             utc_hour = datetime.fromtimestamp(ct, tz=timezone.utc).hour
-            for pid, team_id, race_id, res_type, elo, alias, ctry in participants:
+            for pid, team_id, race_id, res_type, elo, alias, ctry, raw_counters in participants:
                 if alias:
                     self.pid_aliases[pid] = alias
                 if ctry != "br" and pid not in br_set:
                     # Ainda registra se jogou no mesmo time de um BR (candidato smurf sem bandeira BR)
                     if not any(
                         (op_ctry == "br" or op_pid in br_set) and op_team == team_id and team_id >= 0
-                        for op_pid, op_team, _, _, _, _, op_ctry in participants
+                        for op_pid, op_team, _, _, _, _, op_ctry, _ in participants
                         if op_pid != pid
                     ):
                         continue
@@ -193,7 +516,16 @@ class SmurfTelemetryCollector:
                 if len(tel.intervals) < self.max_intervals_per_player:
                     tel.intervals.append((st, ct, mid))
 
-                for op_pid, op_team, _, _, _, _, _ in participants:
+                apm, abil_pm = _parse_counters_biometrics(raw_counters)
+                tel.record_biometrics(
+                    mode=mode,
+                    race_id=race_id,
+                    apm=apm,
+                    abil_pm=abil_pm,
+                    bg_loadout_items=bg_by_pid.get(pid),
+                )
+
+                for op_pid, op_team, _, _, _, _, _, _ in participants:
                     if op_pid == pid:
                         continue
                     tel.co_played_with.add(op_pid)
@@ -205,7 +537,7 @@ class SmurfTelemetryCollector:
     def observe_relic_match_history(self, target_pid: int, data: dict[str, Any] | None) -> int:
         """
         Incorpora o histórico completo recente retornado por `getRecentMatchHistoryByProfileId`
-        para `target_pid` (deduplicando partidas já vistas no Open Data).
+        para `target_pid` (incluindo APM, abil/min e loadouts de Battlegroup `eslot 0–2`).
         """
         pid = int(target_pid or 0)
         if pid <= 0 or not isinstance(data, dict):
@@ -274,6 +606,16 @@ class SmurfTelemetryCollector:
                 tel.seen_aliases.add(self.pid_aliases[pid])
             if len(tel.intervals) < self.max_intervals_per_player:
                 tel.intervals.append((st, ct, mid))
+
+            apm, abil_pm = _parse_counters_biometrics(my_row.get("counters"))
+            bg_by_pid = _extract_bg_loadout_by_pid(match.get("matchhistoryitems"))
+            tel.record_biometrics(
+                mode=mode,
+                race_id=my_race,
+                apm=apm,
+                abil_pm=abil_pm,
+                bg_loadout_items=bg_by_pid.get(pid),
+            )
 
             for rep in results:
                 op_pid = int(rep.get("profile_id", 0) or 0)
@@ -350,6 +692,57 @@ def extract_confirmed_independent_roster_pids(
             if pid > 0:
                 out.add(pid)
     return out
+
+
+def extract_main_family_map(
+    roster_rows: list[dict[str, Any]] | None = None,
+) -> dict[int, set[int]]:
+    """
+    Mapeia cada `main_profile_id` para o conjunto de `profile_id` da sua família de contas conhecidas
+    (conta principal + smurfs catalogadas). Se uma candidata jogou na mesma partida que qualquer smurf
+    conhecida daquela família, ela é desqualificada imediatamente como smurf daquela pessoa.
+    """
+    rows = roster_rows if roster_rows is not None else (list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS))
+    families: dict[int, set[int]] = defaultdict(set)
+    for bench in MODEL_SMURF_BENCHMARKS:
+        mpid = int(bench["main_profile_id"])
+        families[mpid].add(mpid)
+        for sp in bench["smurf_profile_ids"]:
+            families[mpid].add(int(sp))
+
+    main_by_name: dict[str, int] = {}
+    for row in rows:
+        pid = int(row.get("profile_id", 0) or 0)
+        if pid <= 0 or is_known_smurf_roster_entry(row):
+            continue
+        alias = str(row.get("original_alias") or row.get("alias") or "").strip()
+        m = _PAREN_TAG_RE.match(alias)
+        base = m.group(1).strip() if (m and m.group(2).strip().casefold() in ("principal", "main")) else alias
+        if base:
+            main_by_name[base.casefold()] = pid
+            families[pid].add(pid)
+
+    for row in rows:
+        pid = int(row.get("profile_id", 0) or 0)
+        if pid <= 0 or not is_known_smurf_roster_entry(row):
+            continue
+        alias = str(row.get("original_alias") or row.get("alias") or "").strip()
+        m = _PAREN_TAG_RE.match(alias)
+        if not m:
+            continue
+        outer = m.group(1).strip()
+        inner = m.group(2).strip()
+        owner_guess = ""
+        if inner.casefold().startswith("smurf:"):
+            owner_guess = inner.split(":", 1)[1].strip()
+        elif inner.casefold().startswith("smurf"):
+            owner_guess = outer
+        else:
+            owner_guess = inner
+        mpid = main_by_name.get(owner_guess.casefold())
+        if mpid:
+            families[mpid].add(pid)
+    return dict(families)
 
 
 def _pinned_roster_alias_map() -> dict[int, str]:
@@ -501,6 +894,134 @@ def _alias_similarity_bonus(cand_alias: str, main_alias: str, cand_seen: set[str
     return 0, ""
 
 
+def _compare_apm_biometrics(
+    cand_tel: PlayerMatchTelemetry | None,
+    main_tel: PlayerMatchTelemetry | None,
+) -> dict[str, Any]:
+    """
+    Compara a assinatura biométrica de APM (`totalcmds * 60 / gt`) e cadência de habilidades (`abil/min`)
+    entre candidata e conta principal, priorizando comparação no mesmo modo (1v1/2v2/3v3/4v4).
+    """
+    res: dict[str, Any] = {
+        "valid": False,
+        "cand_apm": 0.0,
+        "main_apm": 0.0,
+        "delta_apm": 999.0,
+        "mode_matched": False,
+        "modes_used": [],
+        "cand_abil_pm": 0.0,
+        "main_abil_pm": 0.0,
+        "delta_abil_pm": 999.0,
+    }
+    if not cand_tel or not main_tel:
+        return res
+
+    # Prioriza comparação no(s) mesmo(s) modo(s) para evitar distorção entre 1v1 e 4v4
+    weighted_delta = 0.0
+    weighted_cand = 0.0
+    weighted_main = 0.0
+    weight_sum = 0.0
+    modes_used: list[str] = []
+    for mode in ("1v1", "2v2", "3v3", "4v4"):
+        ca = cand_tel.median_apm_for_mode(mode, min_samples=3)
+        ma = main_tel.median_apm_for_mode(mode, min_samples=3)
+        if ca > 0.0 and ma > 0.0:
+            w = float(min(len(cand_tel.apm_by_mode[mode]), len(main_tel.apm_by_mode[mode])))
+            weighted_delta += abs(ca - ma) * w
+            weighted_cand += ca * w
+            weighted_main += ma * w
+            weight_sum += w
+            modes_used.append(mode)
+
+    overall_ca = cand_tel.median_apm(min_samples=4)
+    overall_ma = main_tel.median_apm(min_samples=4)
+    overall_valid = overall_ca > 0.0 and overall_ma > 0.0
+    overall_delta = abs(overall_ca - overall_ma) if overall_valid else 999.0
+
+    mode_valid = weight_sum > 0.0
+    mode_delta = (weighted_delta / weight_sum) if mode_valid else 999.0
+
+    # Usa comparação por modo quando há >=2 modos em comum e erro igual/menor, ou quando geral não está disponível;
+    # caso contrário usa mediana geral (amostra maior e menos sujeita a variância de um único modo 4v4)
+    if mode_valid and (not overall_valid or (len(modes_used) >= 2 and mode_delta <= overall_delta) or mode_delta < overall_delta):
+        res["valid"] = True
+        res["mode_matched"] = True
+        res["modes_used"] = modes_used
+        res["cand_apm"] = round(weighted_cand / weight_sum, 1)
+        res["main_apm"] = round(weighted_main / weight_sum, 1)
+        res["delta_apm"] = round(mode_delta, 1)
+    elif overall_valid:
+        res["valid"] = True
+        res["cand_apm"] = round(overall_ca, 1)
+        res["main_apm"] = round(overall_ma, 1)
+        res["delta_apm"] = round(overall_delta, 1)
+
+    cab = cand_tel.median_abil_per_min(min_samples=4)
+    mab = main_tel.median_abil_per_min(min_samples=4)
+    if cab > 0.0 and mab > 0.0:
+        res["cand_abil_pm"] = round(cab, 2)
+        res["main_abil_pm"] = round(mab, 2)
+        res["delta_abil_pm"] = round(abs(cab - mab), 2)
+    return res
+
+
+def _compare_battlegroup_signatures(
+    cand_tel: PlayerMatchTelemetry | None,
+    main_tel: PlayerMatchTelemetry | None,
+) -> dict[str, Any]:
+    """
+    Compara a escolha de Battlegroups em dupla camada:
+    1) Loadout equipado na Relic (`matchhistoryitems` slots `eslot 0–2` por facção compartilhada).
+    2) Battlegroups efetivamente escolhidos em partida no `cohdb.com`.
+    """
+    res: dict[str, Any] = {
+        "loadout_sim": 0.0,
+        "loadout_races_compared": 0,
+        "cohdb_sim": 0.0,
+        "cohdb_cand_replays": 0,
+        "cohdb_main_replays": 0,
+        "shared_cohdb_bgs": [],
+    }
+    if not cand_tel or not main_tel:
+        return res
+
+    # Camada 1: Loadout de Battlegroups equipados na Relic por facção compartilhada
+    common_races = set(cand_tel.bg_loadout_by_race.keys()) & set(main_tel.bg_loadout_by_race.keys())
+    w_sim = 0.0
+    w_tot = 0.0
+    races_compared = 0
+    for rid in common_races:
+        cc = cand_tel.bg_loadout_by_race[rid]
+        mc = main_tel.bg_loadout_by_race[rid]
+        # Cada partida equipa até 3 slots -> >=9 itens equivale a >=3 partidas naquela facção
+        if sum(cc.values()) >= 9 and sum(mc.values()) >= 9:
+            sim = _cosine_similarity(cc, mc)
+            w = float(min(sum(cc.values()), sum(mc.values())))
+            w_sim += sim * w
+            w_tot += w
+            races_compared += 1
+    if w_tot > 0.0:
+        res["loadout_sim"] = round(w_sim / w_tot, 3)
+        res["loadout_races_compared"] = races_compared
+
+    # Camada 2: Battlegroups efetivamente escolhidos em replays do cohdb
+    cb = cand_tel.cohdb_battlegroups
+    mb = main_tel.cohdb_battlegroups
+    c_tot = sum(cb.values())
+    m_tot = sum(mb.values())
+    res["cohdb_cand_replays"] = c_tot
+    res["cohdb_main_replays"] = m_tot
+    if c_tot >= 3 and m_tot >= 3:
+        res["cohdb_sim"] = round(_cosine_similarity(cb, mb), 3)
+        shared = sorted(
+            (set(cb.keys()) & set(mb.keys())),
+            key=lambda name: -(cb[name] + mb[name]),
+        )
+        res["shared_cohdb_bgs"] = shared[:5]
+
+    return res
+
+
 def score_smurf_pair(
     cand: dict[str, Any],
     main: dict[str, Any],
@@ -510,11 +1031,12 @@ def score_smurf_pair(
     ally_popularity: Counter[int] | None = None,
     pid_aliases: dict[int, str] | None = None,
     steam_friends_by_pid: dict[int, set[str]] | None = None,
+    main_family_pids: set[int] | frozenset[int] | None = None,
 ) -> dict[str, Any]:
     """
     Calcula a probabilidade forense (`0..99%`) de `cand` ser uma smurf de `main`, com evidências detalhadas em português.
-    Retorna `probability_pct = 0` se houver qualquer desqualificador absoluto (mesma partida, sobreposição simultânea
-    ou conta estrangeira sem vínculo social/identitário com o jogador brasileiro).
+    Calibrado pelos 4 modelos reais brasileiros (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`),
+    incluindo biometria de APM e escolha de Battlegroups (Relic + cohdb).
     """
     cand_pid = int(cand.get("profile_id", 0) or 0)
     main_pid = int(main.get("profile_id", 0) or 0)
@@ -531,6 +1053,7 @@ def score_smurf_pair(
         "probability_pct": 0,
         "confidence_tier": "Descartada",
         "behavioral_signals": 0,
+        "identity_anchor_signals": 0,
         "disqualified_reason": "",
         "evidence": [],
         "metrics": {},
@@ -546,9 +1069,13 @@ def score_smurf_pair(
         empty_res["disqualified_reason"] = "candidata_mais_antiga_que_principal"
         return empty_res
 
-    # Desqualificador absoluto #1: já estiveram na mesma partida (aliados ou adversários)
-    if cand_tel and main_pid in cand_tel.co_played_with:
-        empty_res["disqualified_reason"] = "jogaram_mesma_partida"
+    # Desqualificador absoluto #1: já estiveram na mesma partida (com a principal OU com qualquer smurf conhecida dela!)
+    family_set = {int(p) for p in (main_family_pids or (main_pid,)) if int(p or 0) > 0 and int(p) != cand_pid}
+    family_set.add(main_pid)
+    if cand_tel and (cand_tel.co_played_with & family_set):
+        empty_res["disqualified_reason"] = (
+            "jogaram_mesma_partida" if main_pid in cand_tel.co_played_with else "jogaram_mesma_partida_familia"
+        )
         return empty_res
     if main_tel and cand_pid in main_tel.co_played_with:
         empty_res["disqualified_reason"] = "jogaram_mesma_partida"
@@ -594,15 +1121,22 @@ def score_smurf_pair(
                 same_steam_friend_penalty = True
             shared_steam_friends = len(cf & mf)
 
-    # Guarda de bandeira estrangeira: conta explicitamente não-BR (de/cn/us/pt/ru/...) precisa ter
-    # vínculo social/identitário concreto (squad recorrente em comum, nick igual/similar ou amigos Steam)
+    # Guarda de bandeira estrangeira: conta explicitamente não-BR (ar/bo/de/cn/us/pt/...) precisa ter
+    # vínculo social/identitário sólido (>=2 aliados recorrentes em comum OU >=3x com mesmo aliado BR, nick ou Steam)
     is_explicit_foreign = bool(cand_ctry and cand_ctry not in ("br", "??", "unknown"))
-    if is_explicit_foreign and not shared_allies_info and alias_pts == 0 and shared_steam_friends < 3:
+    has_strong_foreign_squad = len(shared_allies_info) >= 2 or any(
+        ca >= 3 and ma >= 3 for _, ca, ma, _ in shared_allies_info
+    )
+    if is_explicit_foreign and not has_strong_foreign_squad and alias_pts == 0 and shared_steam_friends < 3:
         empty_res["disqualified_reason"] = "estrangeiro_sem_vinculo_social_br"
         return empty_res
 
+    apm_info = _compare_apm_biometrics(cand_tel, main_tel)
+    bg_info = _compare_battlegroup_signatures(cand_tel, main_tel)
+
     score = 0.0
     behavioral_signals = 0
+    identity_anchor_signals = 0
     evidence: list[str] = []
 
     cand_elo = int(cand.get("max_elo", 0) or 0)
@@ -634,33 +1168,38 @@ def score_smurf_pair(
         score += min(18.0, youth_pts)
         evidence.append("Anomalia de conta nova/smurf: " + ", ".join(youth_notes) + ".")
 
-    # Sinal 2: Trocas rápidas de conta (handoffs <=25 min sem sobreposição)
+    # Sinal 2: Trocas rápidas de conta (handoffs <=25 min sem sobreposição — âncora temporal forte)
     if handoff_cnt >= 4:
         score += 22.0
         behavioral_signals += 1
+        identity_anchor_signals += 1
         evidence.append(
             f"{handoff_cnt} trocas rápidas de conta sem sobreposição (intervalos: {', '.join(f'{g}m' for g in handoff_gaps[:5])})."
         )
     elif handoff_cnt == 3:
         score += 18.0
         behavioral_signals += 1
+        identity_anchor_signals += 1
         evidence.append(
             f"3 trocas rápidas de conta sem sobreposição (intervalos: {', '.join(f'{g}m' for g in handoff_gaps)})."
         )
     elif handoff_cnt == 2:
         score += 12.0
         behavioral_signals += 1
+        identity_anchor_signals += 1
         evidence.append(f"2 trocas rápidas de conta sem sobreposição ({', '.join(f'{g}m' for g in handoff_gaps)}).")
     elif handoff_cnt == 1 and handoff_gaps and handoff_gaps[0] <= 15:
         score += 6.0
+        identity_anchor_signals += 1
         evidence.append(f"1 troca rápida de conta sem sobreposição (intervalo de {handoff_gaps[0]} min).")
 
-    # Sinal 3: Aliados recorrentes compartilhados (squad / panelinha — sinal forense mais forte em team games)
+    # Sinal 3: Aliados recorrentes compartilhados (squad / panelinha — modelos Chacineiro, General Winter e SKOBADARK)
     if shared_allies_info:
         weighted_squad = sum(min(15.0, 10.0 + 8.0 * r) for _, _, _, r in shared_allies_info[:4])
         squad_pts = min(35.0, weighted_squad)
         score += squad_pts
         behavioral_signals += 1
+        identity_anchor_signals += 1
         names_map = pid_aliases or {}
         top_names = [
             f"{names_map.get(apid, f'#{apid}')} ({ca}x / {ma}x)"
@@ -670,8 +1209,13 @@ def score_smurf_pair(
             f"{len(shared_allies_info)} aliado(s) recorrente(s) em comum no mesmo squad: {', '.join(top_names)}."
         )
 
-    # Sinal 4: Assinatura de modo + facção (similaridade cosseno)
+    # Sinal 4: Assinatura de modo + facção (com tolerância cross-faction dos modelos SKOBADARK e Alekel)
     mf_sim = 0.0
+    hour_sim_pre = (
+        _cosine_similarity(cand_tel.hour_counts, main_tel.hour_counts)
+        if (cand_tel and main_tel and cand_tel.games >= 6 and main_tel.games >= 6)
+        else 0.0
+    )
     if cand_tel and main_tel and cand_tel.games >= 6 and main_tel.games >= 6:
         mf_sim = _cosine_similarity(cand_tel.mode_faction_counts, main_tel.mode_faction_counts)
         if mf_sim >= 0.85:
@@ -685,7 +1229,14 @@ def score_smurf_pair(
         elif mf_sim >= 0.55:
             score += 5.0
         elif mf_sim < 0.25:
-            score -= 12.0
+            # Modelos SKOBADARK e Alekel mostram smurfs treinando outra facção com mesmo squad/APM/horário
+            has_cross_faction_corroboration = (
+                bool(shared_allies_info)
+                or (apm_info["valid"] and apm_info["delta_apm"] <= 8.0)
+                or hour_sim_pre >= 0.75
+            )
+            if not has_cross_faction_corroboration:
+                score -= 12.0
 
     # Sinal 5: Mesma faixa de ELO alto (>=1350, ±150) no mesmo modo com 0 confrontos diretos
     same_bracket_modes: list[str] = []
@@ -700,21 +1251,23 @@ def score_smurf_pair(
     if same_bracket_modes:
         score += 11.0 if len(same_bracket_modes) >= 2 else 8.0
         behavioral_signals += 1
+        identity_anchor_signals += 1
         evidence.append(
             f"0 confrontos diretos na mesma faixa de ELO/modo ({', '.join(same_bracket_modes)})."
         )
 
-    # Sinal 6: Correlação de horários de atividade (UTC 0..23) — excelente separador empírico
-    hour_sim = 0.0
+    # Sinal 6: Correlação de horários de atividade (UTC 0..23) — excelente separador empírico (79–87% nos modelos)
+    hour_sim = hour_sim_pre
     if cand_tel and main_tel and cand_tel.games >= 6 and main_tel.games >= 6:
-        hour_sim = _cosine_similarity(cand_tel.hour_counts, main_tel.hour_counts)
         if hour_sim >= 0.78:
             score += 14.0
             behavioral_signals += 1
+            identity_anchor_signals += 1
             evidence.append(f"Horários de jogo altamente correlacionados ({hour_sim * 100:.0f}%).")
         elif hour_sim >= 0.68:
             score += 8.0
             behavioral_signals += 1
+            identity_anchor_signals += 1
             evidence.append(f"Horários de jogo compatíveis ({hour_sim * 100:.0f}%).")
         elif cand_tel.games >= 10 and main_tel.games >= 10 and hour_sim < 0.30:
             score -= 14.0
@@ -723,6 +1276,7 @@ def score_smurf_pair(
     if alias_pts > 0:
         score += float(alias_pts)
         behavioral_signals += 1
+        identity_anchor_signals += 1
         evidence.append(alias_note + ".")
 
     if same_steam_friend_penalty:
@@ -730,7 +1284,86 @@ def score_smurf_pair(
     if shared_steam_friends >= 3:
         score += min(16.0, 6.0 + shared_steam_friends * 2.0)
         behavioral_signals += 1
+        identity_anchor_signals += 1
         evidence.append(f"{shared_steam_friends} amigo(s) Steam em comum entre as contas.")
+
+    # Sinal 8: Biometria de APM (`totalcmds / gt`) + cadência de habilidades (`abil/min`)
+    # Calibrado pelos modelos SKOBADARK (Δ=0.0), Alekel (Δ=2.6), Chacineiro (Δ=1.4..11.1) e General Winter (Δ=15..25)
+    apm_strong_match = False
+    if apm_info["valid"]:
+        d_apm = float(apm_info["delta_apm"])
+        c_apm = float(apm_info["cand_apm"])
+        m_apm = float(apm_info["main_apm"])
+        mode_lbl = f" em {'/'.join(apm_info['modes_used'])}" if apm_info["mode_matched"] else " geral"
+        if d_apm <= 6.0:
+            apm_pts = 14.0
+            apm_strong_match = True
+            abil_note = ""
+            if float(apm_info["delta_abil_pm"]) <= 0.65:
+                apm_pts += 3.0
+                abil_note = f" + uso de habilidades similar ({apm_info['cand_abil_pm']:.1f} vs {apm_info['main_abil_pm']:.1f}/min)"
+            score += apm_pts
+            behavioral_signals += 1
+            evidence.append(
+                f"Biometria de APM quase idêntica{mode_lbl} ({c_apm:.1f} vs {m_apm:.1f} APM; Δ={d_apm:.1f}){abil_note}."
+            )
+        elif d_apm <= 12.0:
+            score += 8.0
+            behavioral_signals += 1
+            evidence.append(
+                f"Biometria de APM compatível{mode_lbl} ({c_apm:.1f} vs {m_apm:.1f} APM; Δ={d_apm:.1f})."
+            )
+        elif d_apm <= 20.0:
+            score += 3.0
+        elif d_apm >= 45.0:
+            score -= 25.0
+        elif d_apm >= 35.0:
+            score -= 14.0
+
+    # Sinal 9: Escolha de Battlegroups (Dupla camada: Loadout Relic `eslot 0–2` + BGs escolhidos no `cohdb.com`)
+    bg_pts = 0.0
+    bg_loadout_sim = float(bg_info["loadout_sim"])
+    cohdb_bg_sim = float(bg_info["cohdb_sim"])
+    shared_bgs: list[str] = list(bg_info["shared_cohdb_bgs"])
+
+    if bg_info["cohdb_cand_replays"] >= 3 and bg_info["cohdb_main_replays"] >= 3:
+        if cohdb_bg_sim >= 0.70 or (len(shared_bgs) >= 3 and cohdb_bg_sim >= 0.45):
+            bg_pts += 14.0
+            behavioral_signals += 1
+            evidence.append(
+                f"Escolha de Battlegroups no cohdb muito próxima ({cohdb_bg_sim * 100:.0f}% — em comum: {', '.join(shared_bgs[:4])})."
+            )
+        elif cohdb_bg_sim >= 0.45 or len(shared_bgs) >= 2:
+            bg_pts += 8.0
+            behavioral_signals += 1
+            evidence.append(
+                f"Escolha de Battlegroups no cohdb compatível ({cohdb_bg_sim * 100:.0f}% — em comum: {', '.join(shared_bgs[:4])})."
+            )
+        elif (
+            mf_sim >= 0.70
+            and bg_info["cohdb_cand_replays"] >= 4
+            and bg_info["cohdb_main_replays"] >= 4
+            and not shared_bgs
+        ):
+            score -= 8.0
+
+    if bg_info["loadout_races_compared"] >= 1:
+        if bg_loadout_sim >= 0.82:
+            # Evita somar peso excessivo se o cohdb já deu +14 pts
+            add_loadout = 6.0 if bg_pts >= 10.0 else 10.0
+            bg_pts += add_loadout
+            if bg_pts == add_loadout:
+                behavioral_signals += 1
+            evidence.append(
+                f"Loadout de Battlegroups equipado na Relic altamente compatível ({bg_loadout_sim * 100:.0f}% em {bg_info['loadout_races_compared']} facção(ões))."
+            )
+        elif bg_loadout_sim >= 0.68:
+            add_loadout = 4.0 if bg_pts >= 8.0 else 6.0
+            bg_pts += add_loadout
+            evidence.append(
+                f"Loadout de Battlegroups equipado na Relic compatível ({bg_loadout_sim * 100:.0f}%)."
+            )
+    score += min(20.0, bg_pts)
 
     # Deduções por contra-evidência
     if elo_diff > 350:
@@ -744,15 +1377,27 @@ def score_smurf_pair(
     if cand_elo > 0 and cand_elo < 1200 and cand_total >= 100:
         score -= 15.0
 
-    if cand_tel and main_tel and not shared_allies_info and handoff_cnt == 0 and alias_pts == 0:
+    if (
+        cand_tel
+        and main_tel
+        and not shared_allies_info
+        and handoff_cnt == 0
+        and alias_pts == 0
+        and not (apm_strong_match and bg_pts >= 6.0)
+    ):
         cand_team_games = cand_tel.games - cand_tel.mode_counts.get("1v1", 0)
         main_team_games = main_tel.games - main_tel.mode_counts.get("1v1", 0)
         if cand_team_games >= 10 and main_team_games >= 10:
             score -= 12.0
 
-    # Exige ao menos 2 sinais comportamentais independentes (impede falso positivo só por "poucos jogos + ELO alto")
+    # Guarda Anti-Ruído Meta:
+    # Exige ao menos 2 sinais comportamentais independentes E ao menos 1 âncora de identidade/tempo/rede
+    # (squad em comum, handoff <=25m, horários UTC >=68%, 0 confrontos no mesmo ELO alto, nick ou amigos Steam).
+    # Impede que dois desconhecidos com mesmo APM + mesmos BGs meta sejam acusados sem vínculo real!
     if behavioral_signals < 2:
         score = min(score, 34.0)
+    elif identity_anchor_signals < 1:
+        score = min(score, 38.0)
 
     prob_pct = max(0, min(99, int(round(score))))
     if prob_pct >= 80:
@@ -775,6 +1420,7 @@ def score_smurf_pair(
         "probability_pct": prob_pct,
         "confidence_tier": tier,
         "behavioral_signals": behavioral_signals,
+        "identity_anchor_signals": identity_anchor_signals,
         "disqualified_reason": "",
         "evidence": evidence,
         "metrics": {
@@ -784,6 +1430,12 @@ def score_smurf_pair(
             "mode_faction_similarity": round(mf_sim, 3),
             "hour_similarity": round(hour_sim, 3),
             "shared_steam_friends": shared_steam_friends,
+            "cand_apm": apm_info["cand_apm"],
+            "main_apm": apm_info["main_apm"],
+            "delta_apm": apm_info["delta_apm"] if apm_info["valid"] else None,
+            "bg_loadout_similarity": bg_loadout_sim,
+            "cohdb_bg_similarity": cohdb_bg_sim,
+            "shared_battlegroups": shared_bgs,
         },
     }
 
@@ -874,6 +1526,7 @@ def detect_top50_br_smurfs(
                 )
 
     ally_pop = telemetry.build_ally_popularity()
+    family_map = extract_main_family_map()
 
     # Pool de candidatas: BRs + candidatos não-BR com vínculo forte de squad BR (arranged team ou >=5 parceiros BR)
     candidate_pool: dict[int, dict[str, Any]] = {}
@@ -917,6 +1570,7 @@ def detect_top50_br_smurfs(
                 ally_popularity=ally_pop,
                 pid_aliases=telemetry.pid_aliases,
                 steam_friends_by_pid=steam_friends_by_pid,
+                main_family_pids=family_map.get(mpid),
             )
             if int(scored["probability_pct"]) >= min_probability_pct:
                 top50_scores.append(scored)
@@ -941,6 +1595,7 @@ def detect_top50_br_smurfs(
                 ally_popularity=ally_pop,
                 pid_aliases=telemetry.pid_aliases,
                 steam_friends_by_pid=steam_friends_by_pid,
+                main_family_pids=family_map.get(ompid),
             )
             if int(out_scored["probability_pct"]) > best_outside_prob:
                 best_outside_prob = int(out_scored["probability_pct"])
@@ -951,6 +1606,7 @@ def detect_top50_br_smurfs(
             ignored_outside_top50 += 1
             continue
 
+        cand_med_apm = round(cand_tel.median_apm(min_samples=3), 1) if cand_tel else 0.0
         suspects.append(
             {
                 "candidate": {
@@ -962,6 +1618,8 @@ def detect_top50_br_smurfs(
                     "total_matches": max(0, int(cand.get("total_matches", 0) or 0)),
                     "recent_games": cand_tel.games if cand_tel else 0,
                     "recent_winrate_pct": round((cand_tel.winrate() * 100.0), 1) if (cand_tel and cand_tel.games > 0) else 0.0,
+                    "median_apm": cand_med_apm,
+                    "top_battlegroups": [bg for bg, _ in cand_tel.cohdb_battlegroups.most_common(4)] if cand_tel else [],
                     "relic_br_rank": rank_by_pid.get(cpid, 0),
                     "in_top50": cpid in top50_pids,
                 },
@@ -993,6 +1651,7 @@ def detect_top50_br_smurfs(
         "known_smurfs_skipped": len(known_smurfs) if not include_known_smurfs else 0,
         "ignored_outside_top50_count": ignored_outside_top50,
         "relic_verified": False,
+        "cohdb_verified": False,
         "suspects": suspects,
     }
 
@@ -1012,17 +1671,22 @@ def verify_suspects_with_relic(
     min_probability_pct: int = DEFAULT_MIN_PROBABILITY_PCT,
     include_known_smurfs: bool = False,
     max_verify_candidates: int = 35,
+    cohdb_client: Any = None,
+    enable_cohdb: bool = True,
 ) -> dict[str, Any]:
     """
-    Estágio 2 (Verificação Autoritativa na Relic API):
-    Para as suspeitas pré-selecionadas no Estágio 1, consulta `getPersonalStat` (total real de jogos,
-    país oficial, ELO real) e `getRecentMatchHistoryByProfileId` (histórico completo recente das duas contas)
-    para eliminar falsos positivos por sobreposição não vista no Open Data e consolidar evidências reais.
+    Estágio 2 (Verificação Autoritativa na Relic API + cohdb.com):
+    Para as suspeitas pré-selecionadas no Estágio 1:
+    1. Consulta `getPersonalStat` (total real de jogos, país oficial, ELO real).
+    2. Consulta `getRecentMatchHistoryByProfileId` (histórico completo recente das duas contas,
+       incluindo APM exato `totalcmds / gt` e loadouts de Battlegroup `eslot 0–2`).
+    3. Consulta `cohdb.com` (quando habilitado) para os Battlegroups efetivamente escolhidos em partida.
     """
     stage1_suspects = list(stage1_report.get("suspects") or [])
     if not stage1_suspects:
         out = dict(stage1_report)
         out["relic_verified"] = True
+        out["cohdb_verified"] = bool(enable_cohdb)
         out["stage1_shortlist_count"] = 0
         return out
 
@@ -1069,7 +1733,7 @@ def verify_suspects_with_relic(
         if str(st.get("alias") or "").strip():
             row["alias"] = str(st["alias"]).strip()
 
-    # 2. Busca histórico completo recente (`getRecentMatchHistoryByProfileId`) de cada candidata e possível dono Top 50
+    # 2. Busca histórico completo recente (`getRecentMatchHistoryByProfileId`) — APM + BG loadout + sobreposições
     for pid in pids_to_verify:
         try:
             _, raw_hist = relic_client._fetch_one_match_history_raw(pid)
@@ -1079,7 +1743,24 @@ def verify_suspects_with_relic(
             logger.debug("[SMURF STAGE 2] Falha em histórico Relic pid=%d: %s", pid, redact_secrets(exc))
         time.sleep(0.05)
 
-    # 3. Reavalia a shortlist com telemetria completa e estatísticas oficiais da Relic
+    # 3. Coleta Battlegroups escolhidos em partida no `cohdb.com` (apenas cliente real ou injetado)
+    active_cohdb = cohdb_client
+    if active_cohdb is None and enable_cohdb and isinstance(relic_client, RelicActivityClient):
+        active_cohdb = CohDBBattlegroupClient(pace_delay_sec=0.10, max_replays_per_player=8)
+
+    cohdb_used = False
+    if active_cohdb is not None and hasattr(active_cohdb, "fetch_player_battlegroups"):
+        cohdb_used = True
+        for pid in pids_to_verify[:40]:
+            try:
+                bgs = active_cohdb.fetch_player_battlegroups(pid)
+                if bgs:
+                    tel = telemetry._get(pid)
+                    tel.cohdb_battlegroups.update(bgs)
+            except Exception as exc:
+                logger.debug("[SMURF STAGE 2] Falha em cohdb pid=%d: %s", pid, redact_secrets(exc))
+
+    # 4. Reavalia a shortlist com telemetria completa (APM + Battlegroups + estatísticas oficiais Relic)
     verified = detect_top50_br_smurfs(
         all_br_players=enriched_br,
         telemetry=telemetry,
@@ -1100,13 +1781,99 @@ def verify_suspects_with_relic(
     )
     verified["stage1_shortlist_count"] = len(shortlist)
     verified["relic_verified"] = True
+    verified["cohdb_verified"] = cohdb_used
     return verified
+
+
+def evaluate_model_benchmarks(
+    *,
+    relic_client: Any,
+    cohdb_client: Any = None,
+    enable_cohdb: bool = True,
+) -> list[dict[str, Any]]:
+    """
+    Executa avaliação forense direta sobre os 4 modelos reais de referência
+    (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`) usando Relic + cohdb.
+    """
+    all_pids = sorted(
+        {
+            int(b["main_profile_id"])
+            for b in MODEL_SMURF_BENCHMARKS
+        }
+        | {
+            int(sp)
+            for b in MODEL_SMURF_BENCHMARKS
+            for sp in b["smurf_profile_ids"]
+        }
+    )
+    stats = relic_client.fetch_profile_stats_batch(all_pids, pace_delay_sec=0.06)
+    col = SmurfTelemetryCollector()
+    for pid in all_pids:
+        _, raw_hist = relic_client._fetch_one_match_history_raw(pid)
+        if raw_hist:
+            col.observe_relic_match_history(pid, raw_hist)
+        time.sleep(0.05)
+
+    active_cohdb = cohdb_client
+    if active_cohdb is None and enable_cohdb and isinstance(relic_client, RelicActivityClient):
+        active_cohdb = CohDBBattlegroupClient(pace_delay_sec=0.10, max_replays_per_player=10)
+    if active_cohdb is not None and hasattr(active_cohdb, "fetch_player_battlegroups"):
+        for pid in all_pids:
+            bgs = active_cohdb.fetch_player_battlegroups(pid)
+            if bgs:
+                col._get(pid).cohdb_battlegroups.update(bgs)
+
+    ally_pop = col.build_ally_popularity()
+    pinned = _pinned_roster_alias_map()
+    rows: list[dict[str, Any]] = []
+    for bench in MODEL_SMURF_BENCHMARKS:
+        mpid = int(bench["main_profile_id"])
+        mst = dict(stats.get(mpid) or {"profile_id": mpid, "alias": bench["model_name"], "country": "br"})
+        mst["profile_id"] = mpid
+        raw_main_alias = str(mst.get("alias") or col.pid_aliases.get(mpid) or bench["model_name"])
+        mst["alias"] = raw_main_alias
+        mst["relic_br_rank"] = 1
+        for spid in bench["smurf_profile_ids"]:
+            spid_i = int(spid)
+            sst = dict(stats.get(spid_i) or {"profile_id": spid_i, "alias": str(spid_i), "country": "br"})
+            sst["profile_id"] = spid_i
+            # Avaliação 100% cega: usa o nick real da Relic (sem o rótulo manual '(Chacineiro)'/'(Smurf: ...)' do roster)
+            sst["alias"] = str(sst.get("alias") or col.pid_aliases.get(spid_i) or str(spid_i))
+            scored = score_smurf_pair(
+                sst,
+                mst,
+                col.players.get(spid_i),
+                col.players.get(mpid),
+                ally_popularity=ally_pop,
+                pid_aliases=col.pid_aliases,
+            )
+            rows.append(
+                {
+                    "model": bench["model_name"],
+                    "archetype": bench["archetype"],
+                    "main_profile_id": mpid,
+                    "main_alias": pinned.get(mpid) or raw_main_alias,
+                    "smurf_profile_id": spid_i,
+                    "smurf_alias": pinned.get(spid_i) or sst["alias"],
+                    "relic_smurf_alias": sst["alias"],
+                    "probability_pct": scored["probability_pct"],
+                    "confidence_tier": scored["confidence_tier"],
+                    "metrics": scored["metrics"],
+                    "evidence": scored["evidence"],
+                }
+            )
+    return rows
 
 
 def format_smurf_report_text(report: dict[str, Any]) -> str:
     """Formata relatório legível em português para exibição direta no Antigravity."""
     lines: list[str] = []
-    ver_tag = " | Verificação Relic Direta: OK" if report.get("relic_verified") else ""
+    if report.get("relic_verified") and report.get("cohdb_verified"):
+        ver_tag = " | Verificação Relic + cohdb (APM/BG): OK"
+    elif report.get("relic_verified"):
+        ver_tag = " | Verificação Relic Direta (APM/BG): OK"
+    else:
+        ver_tag = ""
     lines.append(
         f"[DETECÇÃO DE SMURFS — TOP {report.get('top_n', 50)} BR RELIC] "
         f"Monitorados: {report.get('top50_count', 0)} (ELO {report.get('top50_min_elo', 0)}..{report.get('top50_max_elo', 0)}) | "
@@ -1132,9 +1899,10 @@ def format_smurf_report_text(report: dict[str, Any]) -> str:
     for idx, item in enumerate(suspects, 1):
         c = item["candidate"]
         best = item["top_matches"][0]
+        apm_str = f" | APM {c['median_apm']:.1f}" if float(c.get("median_apm", 0) or 0) > 0 else ""
         lines.append(
             f"  #{idx:02d} | {c['alias']} (pid={c['profile_id']} | Steam {c['steam_id'] or 'N/D'} | "
-            f"país={c.get('country', '??')} | ELO {c['max_elo']} | {c['total_matches']} jogos | WR rec {c['recent_winrate_pct']:.0f}%)"
+            f"país={c.get('country', '??')} | ELO {c['max_elo']} | {c['total_matches']} jogos | WR rec {c['recent_winrate_pct']:.0f}%{apm_str})"
         )
         lines.append(
             f"       -> Provável Smurf de #{best['main_relic_br_rank']} {best['main_alias']} (pid={best['main_profile_id']}, "
@@ -1152,20 +1920,38 @@ def format_smurf_report_text(report: dict[str, Any]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Detecção forense sob demanda de contas Smurf do Top 50 brasileiro na Relic API."
+        description="Detecção forense sob demanda de contas Smurf do Top 50 brasileiro na Relic API (com APM + Battlegroups)."
     )
     parser.add_argument("--days", type=int, default=DEFAULT_MATCH_DAYS, help="Dias de Open Data Matches (1..30)")
     parser.add_argument("--top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado (padrão: 50)")
     parser.add_argument("--min-prob", type=int, default=DEFAULT_MIN_PROBABILITY_PCT, help="Probabilidade mínima em %% (padrão: 45)")
     parser.add_argument("--include-known", action="store_true", help="Incluir smurfs já catalogadas no players_roster.json")
     parser.add_argument("--no-relic-verify", action="store_true", help="Pular Estágio 2 de verificação direta na Relic API")
+    parser.add_argument("--no-cohdb", action="store_true", help="Pular coleta de Battlegroups escolhidos no cohdb.com")
+    parser.add_argument("--evaluate-models", action="store_true", help="Avaliar calibração nos 4 modelos (Chacineiro, General Winter, Alekel, Skobadark)")
     parser.add_argument("--out", type=Path, default=None, help="Arquivo JSON opcional para salvar o relatório estruturado")
     args = parser.parse_args()
 
     from lobby_radar import DEFAULT_COMMUNITY_CACHE_PATH, load_community_cache
 
-    now = int(time.time())
     r_client = RelicActivityClient()
+    if args.evaluate_models:
+        bench_rows = evaluate_model_benchmarks(relic_client=r_client, enable_cohdb=not bool(args.no_cohdb))
+        print("[CALIBRAÇÃO NOS 4 MODELOS DE REFERÊNCIA (APM + BATTLEGROUPS + SQUAD + HORÁRIO)]")
+        for row in bench_rows:
+            m = row["metrics"]
+            print(
+                f"  • {row['model']:<15} | {row['smurf_alias']:<34} -> {row['probability_pct']:2d}% ({row['confidence_tier']}) | "
+                f"APM {m.get('cand_apm', 0)} vs {m.get('main_apm', 0)} (Δ={m.get('delta_apm')}) | "
+                f"BG loadout={m.get('bg_loadout_similarity', 0):.2f} cohdb={m.get('cohdb_bg_similarity', 0):.2f} {m.get('shared_battlegroups') or []}"
+            )
+            for ev in row["evidence"]:
+                print(f"      - {ev}")
+        if args.out is not None:
+            atomic_write_text(args.out, json.dumps({"models": bench_rows}, ensure_ascii=False, indent=2) + "\n")
+        return 0
+
+    now = int(time.time())
     cache = load_community_cache(DEFAULT_COMMUNITY_CACHE_PATH)
     prev_top50 = cache.get("top50_br_pids") if isinstance(cache.get("top50_br_pids"), list) else []
 
@@ -1244,6 +2030,7 @@ def main() -> int:
             top_n=max(1, int(args.top_n)),
             min_probability_pct=min_prob,
             include_known_smurfs=bool(args.include_known),
+            enable_cohdb=not bool(args.no_cohdb),
         )
     print(format_smurf_report_text(report))
     if args.out is not None:
