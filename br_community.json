@@ -3398,11 +3398,11 @@
       "alias": "jrcervi",
       "br_source": "open_data_matches",
       "last_match_date": 1795004002,
-      "last_seen_online_ts": 1795398795,
+      "last_seen_online_ts": 1795477495,
       "max_elo": 1000,
       "profile_id": 123784,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795355849,
+      "steam_gd_checked_ts": 1795477495,
       "steam_id": "76561198020093174",
       "total_matches": 185
     },
@@ -3422,7 +3422,7 @@
       "alias": "LeoCoSi",
       "br_source": "open_data_lb",
       "last_match_date": 1795403994,
-      "last_seen_online_ts": 1795429203,
+      "last_seen_online_ts": 1795477495,
       "max_elo": 1000,
       "profile_id": 1242273,
       "steam_games_hidden": true,
@@ -3472,7 +3472,7 @@
       "alias": "Sr.doTourogordo",
       "br_source": "open_data_matches",
       "last_match_date": 1795476506,
-      "last_seen_online_ts": 1795475396,
+      "last_seen_online_ts": 1795477495,
       "max_elo": 1000,
       "profile_id": 1246298,
       "steam_games_hidden": true,
@@ -4023,7 +4023,7 @@
     "1295461": {
       "alias": "matklug",
       "br_source": "open_data_matches",
-      "last_match_date": 1795312098,
+      "last_match_date": 1795477048,
       "last_seen_ingame_ts": 1795188956,
       "last_seen_ingame_webapi_ts": 1795475396,
       "last_seen_online_ts": 1795476596,
@@ -4032,7 +4032,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795198463,
       "steam_id": "76561198057769056",
-      "total_matches": 21
+      "total_matches": 22
     },
     "1297284": {
       "alias": "NSG_S2",
@@ -5306,7 +5306,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1795402259,
       "last_seen_ingame_ts": 1795180445,
-      "last_seen_ingame_webapi_ts": 1795393286,
+      "last_seen_ingame_webapi_ts": 1795477495,
       "last_seen_online_ts": 1795475995,
       "max_elo": 1000,
       "profile_id": 1434825,
@@ -5412,14 +5412,14 @@
     "1438656": {
       "alias": "guridocafe",
       "br_source": "open_data_lb",
-      "last_match_date": 1795474568,
+      "last_match_date": 1795477092,
       "last_seen_online_ts": 1795476596,
       "max_elo": 1117,
       "profile_id": 1438656,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795396950,
       "steam_id": "76561198870731987",
-      "total_matches": 114
+      "total_matches": 115
     },
     "1438814": {
       "alias": "Ninguem Skins",
@@ -5948,7 +5948,7 @@
       "current_alias": "⚡😘💙 ☢ hnrjogos",
       "last_match_date": 1794597624,
       "last_seen_ingame_ts": 1795197263,
-      "last_seen_ingame_webapi_ts": 1795455795,
+      "last_seen_ingame_webapi_ts": 1795477495,
       "last_seen_online_ts": 1795477196,
       "max_elo": 1000,
       "profile_id": 1447630,
@@ -7099,7 +7099,7 @@
       "alias": "THEGUARDSMAN",
       "br_source": "open_data_matches",
       "last_match_date": 1794805139,
-      "last_seen_online_ts": 1795472559,
+      "last_seen_online_ts": 1795477495,
       "max_elo": 989,
       "profile_id": 1467000,
       "steam_games_hidden": true,
@@ -7893,7 +7893,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794853649,
       "last_seen_ingame_ts": 1795181045,
-      "last_seen_ingame_webapi_ts": 1795455795,
+      "last_seen_ingame_webapi_ts": 1795477495,
       "last_seen_online_ts": 1795476596,
       "max_elo": 1000,
       "profile_id": 1481396,
@@ -7981,7 +7981,7 @@
     "1483034": {
       "alias": "vitor_piovan",
       "br_source": "open_data_matches",
-      "last_match_date": 1795466443,
+      "last_match_date": 1795477516,
       "last_seen_online_ts": 1795475995,
       "max_elo": 908,
       "profile_id": 1483034,
@@ -10105,7 +10105,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1795231680,
       "last_seen_ingame_ts": 1795134557,
-      "last_seen_ingame_webapi_ts": 1795449973,
+      "last_seen_ingame_webapi_ts": 1795477495,
       "last_seen_online_ts": 1795476596,
       "max_elo": 1312,
       "profile_id": 6696,
@@ -10666,12 +10666,12 @@
     "765837": {
       "alias": "Southland",
       "br_source": "open_data_lb",
-      "last_match_date": 1795476440,
+      "last_match_date": 1795477408,
       "last_seen_online_ts": 0,
       "max_elo": 1489,
       "profile_id": 765837,
       "steam_id": "76561197990946349",
-      "total_matches": 1758
+      "total_matches": 1759
     },
     "766623": {
       "alias": "AkuMA",
