@@ -795,10 +795,10 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
             other_br_players=other_roster,
             other_presence_by_steam=pres,
         )
-        # 1) Chacineiro manteve nick anterior + '*' + current_alias
+        # 1) Chacineiro manteve mudança de nick com a conta original entre parênteses
         vet_coh3 = snap["veteranos"]["in_coh3"]
         self.assertEqual([p["profile_id"] for p in vet_coh3], [79327])
-        self.assertEqual(vet_coh3[0]["alias"], "Chacineiro*")
+        self.assertEqual(vet_coh3[0]["alias"], "ChacineiroDisfarce (Chacineiro)")
         self.assertTrue(vet_coh3[0]["nick_changed"])
         self.assertEqual(vet_coh3[0]["previous_alias"], "Chacineiro")
         self.assertEqual(vet_coh3[0]["current_alias"], "ChacineiroDisfarce")
@@ -813,12 +813,12 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         self.assertFalse(vet_on[1005730]["nick_changed"])
         self.assertTrue(vet_on[1005730]["is_busy"])
 
-        # 3) Outros Brasileiros: 16867 -> Golden Cobra; 999123 -> AntigoBR*
+        # 3) Outros Brasileiros: 16867 -> Golden Cobra; 999123 -> NovoNickBR (AntigoBR)
         oth_coh3 = snap["outros_brasileiros"]["in_coh3"]
         self.assertEqual(oth_coh3[0]["alias"], "Golden Cobra")
         self.assertFalse(oth_coh3[0]["nick_changed"])
         oth_on = snap["outros_brasileiros"]["online_steam"]
-        self.assertEqual(oth_on[0]["alias"], "AntigoBR*")
+        self.assertEqual(oth_on[0]["alias"], "NovoNickBR (AntigoBR)")
         self.assertTrue(oth_on[0]["nick_changed"])
         self.assertEqual(oth_on[0]["current_alias"], "NovoNickBR")
 

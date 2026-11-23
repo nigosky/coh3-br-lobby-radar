@@ -196,10 +196,11 @@ def _format_discord_player_link(
     player: dict[str, Any],
     *,
     bold: bool = True,
-    max_len: int = 44,
+    max_len: int = 48,
 ) -> tuple[str, str]:
     """
-    Formata o link Markdown do jogador preservando o nick anterior com `*` em caso de troca de nick.
+    Formata o link Markdown do jogador preservando a convenção `<NovoNick> (<NomeOriginal>)`
+    (ou `<NovoNick> (Smurf: <NomeOriginal>)` em smurfs) sem truncar o parêntese.
     Retorna `(link_markdown, nick_change_suffix)`.
     """
     raw_alias = str(player.get("alias") or "")
@@ -207,17 +208,15 @@ def _format_discord_player_link(
     nick_changed = bool(player.get("nick_changed")) or raw_alias.endswith("*")
     cur_alias = strip_unsafe_chars(str(player.get("current_alias") or ""))[:max_len]
 
-    if nick_changed:
-        base_raw = str(player.get("previous_alias") or raw_alias.rstrip("*")).strip() or raw_alias
-        nm = sanitize_discord_text(base_raw, max_len)
-        if bold:
-            link_txt = f"[**{nm}**\\* ↗]({surl})" if surl else f"**{nm}**\\*"
+    display_raw = raw_alias
+    if nick_changed and raw_alias.endswith("*"):
+        base_raw = str(player.get("previous_alias") or raw_alias.rstrip("*")).strip() or raw_alias.rstrip("*")
+        if cur_alias and base_raw and cur_alias.casefold() != base_raw.casefold():
+            display_raw = f"{cur_alias} ({base_raw})"
         else:
-            link_txt = f"[{nm}\\* ↗]({surl})" if surl else f"{nm}\\*"
-        nick_suffix = f" *(agora: {sanitize_discord_text(cur_alias, max_len)})*" if cur_alias else ""
-        return link_txt, nick_suffix
+            display_raw = base_raw
 
-    nm = sanitize_discord_text(raw_alias, max_len)
+    nm = sanitize_discord_text(display_raw, max_len)
     if bold:
         link_txt = f"[**{nm}** ↗]({surl})" if surl else f"**{nm}**"
     else:
@@ -265,7 +264,7 @@ def _format_category_vertical_description(
         if prom_coh3:
             coh3_lines: list[str] = []
             for pl in prom_coh3[:coh3_cap]:
-                link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=44)
+                link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=48)
                 flag_tag = _format_player_flag_badge(pl)
                 age_m = pl.get("last_age_min")
                 tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
@@ -330,15 +329,15 @@ def _format_category_vertical_description(
                 tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 if tier == "high":
-                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=44)
+                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=48)
                     elo_txt = f" — **{elo_val} ELO**" if elo_val > 0 else ""
                     on_lines.append(f"• ⭐ {link_txt}{flag_tag}{nick_suffix}{elo_txt}{rec_tag}")
                 else:
-                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=False, max_len=44)
+                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=False, max_len=48)
                     elo_txt = f" — {elo_val} ELO" if elo_val > 0 else ""
                     on_lines.append(f"• {link_txt}{flag_tag}{nick_suffix}{elo_txt}{rec_tag}")
             else:
-                link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=44)
+                link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=48)
                 on_lines.append(f"• {link_txt}{flag_tag}{nick_suffix}{rec_tag}")
         if len(free_online) > free_cap:
             on_lines.append(f"• _...e mais {len(free_online) - free_cap} online livres_")
@@ -352,7 +351,7 @@ def _format_category_vertical_description(
     if busy_online:
         bz_lines: list[str] = []
         for pl in busy_online[:busy_cap]:
-            link_txt, nick_suffix = _format_discord_player_link(pl, bold=False, max_len=44)
+            link_txt, nick_suffix = _format_discord_player_link(pl, bold=False, max_len=48)
             flag_tag = _format_player_flag_badge(pl)
             og = _format_presence_status_label(pl)
             if not is_veteranos:
@@ -391,10 +390,10 @@ def _format_category_vertical_description(
                     elo_val = int(pl.get("max_elo", 0) or 0)
                     star = "⭐ " if tier == "high" else ""
                     elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
-                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=(tier == "high"), max_len=44)
+                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=(tier == "high"), max_len=48)
                     rec_lines.append(f"• {star}{link_txt}{flag_tag}{nick_suffix}{elo_txt} *(há {age_m}m)*")
                 else:
-                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=44)
+                    link_txt, nick_suffix = _format_discord_player_link(pl, bold=True, max_len=48)
                     rec_lines.append(f"• {link_txt}{flag_tag}{nick_suffix} *(há {age_m}m)*")
             if len(prom_recent) > recent_cap:
                 rec_lines.append(f"• _...e mais {len(prom_recent) - recent_cap} invisíveis ativos_")
@@ -409,7 +408,7 @@ def _format_category_vertical_description(
     if not is_veteranos and low_entries and rem >= 90:
         low_lines: list[str] = []
         for pl, detail in low_entries[:low_cap]:
-            link_txt, nick_suffix = _format_discord_player_link(pl, bold=False, max_len=40)
+            link_txt, nick_suffix = _format_discord_player_link(pl, bold=False, max_len=44)
             flag_tag = _format_player_flag_badge(pl)
             elo_val = int(pl.get("max_elo", 0) or 0)
             meta_parts: list[str] = []
@@ -484,14 +483,6 @@ def build_lobby_radar_links_payload(
         else (COLOR_OTHER_BR_ONLINE if (oth["online_steam"] or oth["recent_relic"]) else COLOR_OTHER_BR_IDLE)
     )
 
-    any_nick_changed = any(
-        bool(pl.get("nick_changed")) or str(pl.get("alias") or "").endswith("*")
-        for cat in (vet, oth)
-        for sec in ("in_coh3", "online_steam", "recent_relic")
-        for pl in (cat.get(sec) or [])
-    )
-    nick_legend = "* = mudou de nick (mantendo nick anterior) • " if any_nick_changed else ""
-
     vet_embed = {
         "title": "🎖️ VETERANOS — LINKS RÁPIDOS DA STEAM",
         "description": vet_desc,
@@ -505,7 +496,7 @@ def build_lobby_radar_links_payload(
             "text": (
                 f"Veteranos: {len(vet['in_coh3'])} CoH3 / {len(vet['online_steam'])} Steam • "
                 f"Outros BR ativos ≤{oth_days} dias: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam (⭐ = ELO alto + ativo) • "
-                f"{nick_legend}Atualizado a cada 5 min"
+                "Atualizado a cada 5 min"
             )
         },
         "timestamp": datetime.now(tz=timezone.utc).isoformat(),
@@ -536,13 +527,13 @@ def build_lobby_alert_payload(
         raw_alias = str(pl.get("alias") or "")
         surl = build_safe_steam_profile_url(pl.get("steam_id"))
         nick_changed = bool(pl.get("nick_changed")) or raw_alias.endswith("*")
-        if nick_changed:
-            base_raw = str(pl.get("previous_alias") or raw_alias.rstrip("*")).strip() or raw_alias
-            nm = sanitize_discord_text(base_raw, 44)
-            linked_names.append(f"[**{nm}**\\*](<{surl}>)" if surl else f"**{nm}**\\*")
-        else:
-            nm = sanitize_discord_text(raw_alias, 44)
-            linked_names.append(f"[**{nm}**](<{surl}>)" if surl else f"**{nm}**")
+        display_raw = raw_alias
+        if nick_changed and raw_alias.endswith("*"):
+            base_raw = str(pl.get("previous_alias") or raw_alias.rstrip("*")).strip() or raw_alias.rstrip("*")
+            cur_raw = strip_unsafe_chars(str(pl.get("current_alias") or ""))[:48]
+            display_raw = f"{cur_raw} ({base_raw})" if (cur_raw and base_raw and cur_raw.casefold() != base_raw.casefold()) else base_raw
+        nm = sanitize_discord_text(display_raw, 48)
+        linked_names.append(f"[**{nm}**](<{surl}>)" if surl else f"**{nm}**")
 
     extra_coh3 = f" +{len(in_coh3) - 8}" if len(in_coh3) > 8 else ""
     free_cnt = sum(

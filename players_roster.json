@@ -2,8 +2,9 @@
   "schema_version": 1,
   "description": "Base unica compartilhada de jogadores CoH3 Brasil (Radar, Scheduler, Tracker e Ranking). Alteracoes aqui refletem automaticamente nos 4 sistemas; o Ranking consome exclusivamente os veteranos com in_ranking=true.",
   "naming_convention": {
-    "same_name_multi_account": "<NomeOriginal> (Principal) / <NomeOriginal> (Smurf 1) / <NomeOriginal> (Smurf 2) com pin_alias=true",
-    "distinct_name_smurf": "<NickDaSmurf> (Smurf: <NomeOriginal>) com pin_alias=true"
+    "main_account": "<NomeOriginal> (sem indicacao '(Principal)')",
+    "smurf_account": "<NickAtualDaSmurf> (Smurf: <NomeOriginal>) com smurf_of=<NomeOriginal>",
+    "nick_change": "<NovoNick> (<NomeOriginal>) para conta principal; <NovoNick> (Smurf: <NomeOriginal>) para conta smurf"
   },
   "veteranos": [
     {
@@ -17,9 +18,9 @@
       "profile_id": 1333418,
       "steam_id": "76561198698969876",
       "original_alias": "Charles Bronson (Smurf: Chacineiro)",
+      "smurf_of": "Chacineiro",
       "country": "br",
       "in_ranking": true,
-      "pin_alias": true,
       "known_aliases": [
         "Charles Bronson",
         "Lord Charles Bronson",
@@ -203,9 +204,9 @@
       "profile_id": 557890,
       "steam_id": "76561199538846112",
       "original_alias": "gabe44arg (Smurf: Gabe)",
+      "smurf_of": "Gabe",
       "country": "br",
       "in_ranking": true,
-      "pin_alias": true,
       "known_aliases": [
         "gabe44arg",
         "gabe444arg",
@@ -246,9 +247,9 @@
       "profile_id": 1423426,
       "steam_id": "76561199482388323",
       "original_alias": "geladeira velha (Smurf: arc)",
+      "smurf_of": "arc",
       "country": "br",
       "in_ranking": true,
-      "pin_alias": true,
       "known_aliases": [
         "geladeira velha",
         "dibas",
@@ -335,9 +336,9 @@
       "profile_id": 1390350,
       "steam_id": "76561198089278659",
       "original_alias": "TearsInTheRain (Smurf: Chacineiro)",
+      "smurf_of": "Chacineiro",
       "country": "br",
       "in_ranking": true,
-      "pin_alias": true,
       "known_aliases": [
         "TearsInTheRain",
         "TearsInTheRain (Chacineiro)",
@@ -348,9 +349,9 @@
       "profile_id": 1076221,
       "steam_id": "76561198815935562",
       "original_alias": "Lucielle (Smurf: Colossus)",
+      "smurf_of": "Colossus",
       "country": "br",
       "in_ranking": true,
-      "pin_alias": true,
       "known_aliases": [
         "Lucielle",
         "Lucifer",
@@ -413,9 +414,8 @@
     {
       "profile_id": 462597,
       "steam_id": "76561198133760614",
-      "original_alias": "General Winter (Principal)",
+      "original_alias": "General Winter",
       "country": "br",
-      "pin_alias": true,
       "known_aliases": [
         "General Winter",
         "General Winter (Principal)"
@@ -424,25 +424,27 @@
     {
       "profile_id": 1297821,
       "steam_id": "76561198722284920",
-      "original_alias": "General Winter (Smurf 1)",
+      "original_alias": "General Winter (Smurf: General Winter)",
+      "smurf_of": "General Winter",
       "country": "br",
-      "pin_alias": true,
       "known_aliases": [
         "General Winter",
         "Dick of the Galaxies",
-        "General Winter (Smurf 1)"
+        "General Winter (Smurf 1)",
+        "General Winter (Smurf: General Winter)"
       ]
     },
     {
       "profile_id": 1318162,
       "steam_id": "76561198708550887",
-      "original_alias": "General Winter (Smurf 2)",
+      "original_alias": "General Winter (Smurf: General Winter)",
+      "smurf_of": "General Winter",
       "country": "br",
-      "pin_alias": true,
       "known_aliases": [
         "General Winter",
         ".",
-        "General Winter (Smurf 2)"
+        "General Winter (Smurf 2)",
+        "General Winter (Smurf: General Winter)"
       ]
     },
     {
@@ -461,8 +463,8 @@
       "profile_id": 1297853,
       "steam_id": "76561198721980631",
       "original_alias": "Shadow (Smurf: Alekel)",
+      "smurf_of": "Alekel",
       "country": "br",
-      "pin_alias": true,
       "known_aliases": [
         "Shadow",
         "Zé da manga",
@@ -485,8 +487,8 @@
       "profile_id": 1297804,
       "steam_id": "76561198723667226",
       "original_alias": "Leite Moço (Smurf: 『V』SKOBADARK)",
+      "smurf_of": "『V』SKOBADARK",
       "country": "br",
-      "pin_alias": true,
       "known_aliases": [
         "Leite Moço",
         "『V』SKOBADARK (Smurf: Leite Moço)",
@@ -497,8 +499,8 @@
       "profile_id": 164152,
       "steam_id": "76561198029749621",
       "original_alias": "seu pai (Smurf: Sgt.Yoda)",
+      "smurf_of": "Sgt.Yoda",
       "country": "br",
-      "pin_alias": true,
       "known_aliases": [
         "seu pai",
         "Sgt.Yoda",
