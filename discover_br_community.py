@@ -49,8 +49,10 @@ from smurf_detector import (
     DEFAULT_TOP_N_BR,
     SmurfTelemetryCollector,
     detect_top50_br_smurfs,
+    extract_confirmed_independent_roster_pids,
     extract_known_smurf_pids,
     format_smurf_report_text,
+    verify_suspects_with_relic,
 )
 from steam_presence import (
     BRAZILIAN_COH_STEAM_GROUPS,
@@ -622,16 +624,36 @@ def run_deep_br_discovery(
             except Exception as exc:
                 logger.warning("[STAGE 7 — SMURF TOP 50] Falha ao enriquecer ELO de Veteranos: %s", redact_secrets(exc))
 
-        known_smurf_pids = extract_known_smurf_pids(list(vet_roster) + list(MANUAL_OTHER_BR_PLAYERS))
+        roster_rows = list(vet_roster) + list(MANUAL_OTHER_BR_PLAYERS)
+        known_smurf_pids = extract_known_smurf_pids(roster_rows)
+        excluded_roster_pids = extract_confirmed_independent_roster_pids(roster_rows)
+        can_verify_relic = hasattr(r_client, "fetch_profile_stats_batch") and hasattr(
+            r_client, "_fetch_one_match_history_raw"
+        )
+        stage1_min_prob = max(35, smurf_min_prob - 8) if can_verify_relic else smurf_min_prob
         smurf_analysis = detect_top50_br_smurfs(
             all_br_players=all_br_for_top50,
             telemetry=smurf_collector,
             extra_candidates=cand_pool,
             known_smurf_pids=known_smurf_pids,
+            excluded_roster_pids=excluded_roster_pids,
             previous_top50_pids=prev_top50_br_pids,
             top_n=smurf_top_n,
-            min_probability_pct=smurf_min_prob,
+            min_probability_pct=stage1_min_prob,
         )
+        if can_verify_relic:
+            smurf_analysis = verify_suspects_with_relic(
+                smurf_analysis,
+                all_br_players=all_br_for_top50,
+                telemetry=smurf_collector,
+                relic_client=r_client,
+                extra_candidates=cand_pool,
+                known_smurf_pids=known_smurf_pids,
+                excluded_roster_pids=excluded_roster_pids,
+                previous_top50_pids=prev_top50_br_pids,
+                top_n=smurf_top_n,
+                min_probability_pct=smurf_min_prob,
+            )
         if smurf_analysis.get("top50_br_pids"):
             top50_br_pids_to_save = list(smurf_analysis["top50_br_pids"])
         for line in format_smurf_report_text(smurf_analysis).splitlines():
@@ -828,7 +850,7 @@ def main() -> int:
     parser.add_argument("--relic-sa-pages", type=int, default=DEFAULT_RELIC_SA_PAGES, help="Páginas por leaderboard SA na Relic (1..15)")
     parser.add_argument("--no-smurf-check", action="store_true", help="Desativa a verificação forense de Smurfs do Top 50 BR")
     parser.add_argument("--smurf-top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado para smurfs (padrão: 50)")
-    parser.add_argument("--smurf-min-prob", type=int, default=DEFAULT_MIN_PROBABILITY_PCT, help="Probabilidade mínima em %% para listar suspeitas (padrão: 40)")
+    parser.add_argument("--smurf-min-prob", type=int, default=DEFAULT_MIN_PROBABILITY_PCT, help="Probabilidade mínima em %% para listar suspeitas (padrão: 45)")
     parser.add_argument("--smurf-report", type=Path, default=None, help="Arquivo JSON opcional para salvar o relatório de smurfs do Top 50 BR")
     parser.add_argument("--dry-run", action="store_true", help="Apenas exibe o diagnóstico sem gravar br_community.json")
     args = parser.parse_args()

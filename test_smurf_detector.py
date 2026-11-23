@@ -323,6 +323,80 @@ class TestTop50SmurfDetector(unittest.TestCase):
             self.assertIn(50001, saved_cache["top50_br_pids"])
             self.assertTrue(report_p.is_file())
 
+    def test_foreign_flag_requires_social_link(self) -> None:
+        collector = sd.SmurfTelemetryCollector()
+        base_t = 1_799_000_000
+        matches = []
+        for k in range(6):
+            t0 = base_t + k * 86400
+            matches.append(_make_match(300 + k * 2, t0, t0 + 1200, [(1001, "MainBR", "br", 0, 1600, 1)], [(9100 + k, "O1", "us", 1, 1600, 0)], matchtype_id=1))
+            matches.append(_make_match(301 + k * 2, t0 + 1600, t0 + 2800, [(1_900_009, "RandomDE", "de", 0, 1580, 1)], [(9200 + k, "O2", "gb", 1, 1580, 0)], matchtype_id=1))
+        collector.observe_matches_payload({"matches": matches}, known_br_pids={1001, 1_900_009})
+        res = sd.score_smurf_pair(
+            {"profile_id": 1_900_009, "steam_id": "76561199900000009", "alias": "RandomDE", "country": "de", "max_elo": 1580, "total_matches": 120},
+            {"profile_id": 1001, "steam_id": "76561198000001001", "alias": "MainBR", "country": "br", "max_elo": 1600, "total_matches": 1800, "relic_br_rank": 1},
+            collector.players[1_900_009],
+            collector.players[1001],
+        )
+        self.assertEqual(res["probability_pct"], 0)
+        self.assertEqual(res["disqualified_reason"], "estrangeiro_sem_vinculo_social_br")
+
+    def test_stage2_relic_verification_eliminates_false_positives_and_keeps_real_smurfs(self) -> None:
+        base_t = 1_799_500_000
+        all_br = {
+            1001: {"profile_id": 1001, "steam_id": "76561198000001001", "alias": "TopMain", "country": "br", "max_elo": 1750, "total_matches": 2000},
+            1002: {"profile_id": 1002, "steam_id": "76561198000001002", "alias": "SquadMate", "country": "br", "max_elo": 1300, "total_matches": 1500},
+            1_700_001: {"profile_id": 1_700_001, "steam_id": "76561199700000001", "alias": "RealSmurf", "country": "br", "max_elo": 1700, "total_matches": 90},
+            1_700_002: {"profile_id": 1_700_002, "steam_id": "76561199700000002", "alias": "FakeVeteran", "country": "br", "max_elo": 1710, "total_matches": 110},
+        }
+        collector = sd.SmurfTelemetryCollector()
+        ms = []
+        for k in range(6):
+            t0 = base_t + k * 86400
+            ms.append(_make_match(500 + k * 3, t0, t0 + 1200, [(1001, "TopMain", "br", 0, 1750, 1), (1002, "SquadMate", "br", 1, 1300, 1)], [(9301 + k, "E1", "us", 2, 1600, 0), (9311 + k, "E2", "gb", 3, 1600, 0)], matchtype_id=2))
+            ms.append(_make_match(501 + k * 3, t0 + 1800, t0 + 3000, [(1_700_001, "RealSmurf", "br", 0, 1700, 1), (1002, "SquadMate", "br", 1, 1300, 1)], [(9321 + k, "E3", "us", 2, 1600, 0), (9331 + k, "E4", "gb", 3, 1600, 0)], matchtype_id=2))
+            ms.append(_make_match(502 + k * 3, t0 + 1900, t0 + 3100, [(1_700_002, "FakeVeteran", "br", 0, 1710, 1), (1002, "SquadMate", "br", 1, 1300, 1)], [(9341 + k, "E5", "us", 2, 1600, 0), (9351 + k, "E6", "gb", 3, 1600, 0)], matchtype_id=2))
+        collector.observe_matches_payload({"matches": ms}, known_br_pids=set(all_br.keys()))
+
+        stage1 = sd.detect_top50_br_smurfs(
+            all_br_players=all_br,
+            telemetry=collector,
+            known_smurf_pids=set(),
+            excluded_roster_pids=set(),
+            top_n=50,
+            min_probability_pct=45,
+        )
+        s1_pids = {s["candidate"]["profile_id"] for s in stage1["suspects"]}
+        self.assertIn(1_700_001, s1_pids)
+        self.assertIn(1_700_002, s1_pids)
+
+        class _FakeRelicVerifier:
+            def fetch_profile_stats_batch(self, pids: list[int], pace_delay_sec: float = 0.08) -> dict[int, dict[str, Any]]:
+                _ = pids, pace_delay_sec
+                return {
+                    1_700_001: {"profile_id": 1_700_001, "alias": "RealSmurf", "country": "br", "max_elo": 1700, "total_matches": 90},
+                    # Relic revela que FakeVeteran na verdade tem 1.850 jogos totais!
+                    1_700_002: {"profile_id": 1_700_002, "alias": "FakeVeteran", "country": "br", "max_elo": 1710, "total_matches": 1850},
+                }
+
+            def _fetch_one_match_history_raw(self, pid: int) -> tuple[int, dict[str, Any] | None]:
+                return pid, {"profiles": [], "matchHistoryStats": []}
+
+        stage2 = sd.verify_suspects_with_relic(
+            stage1,
+            all_br_players=all_br,
+            telemetry=collector,
+            relic_client=_FakeRelicVerifier(),
+            known_smurf_pids=set(),
+            excluded_roster_pids=set(),
+            top_n=50,
+            min_probability_pct=45,
+        )
+        self.assertTrue(stage2["relic_verified"])
+        s2_pids = {s["candidate"]["profile_id"] for s in stage2["suspects"]}
+        self.assertIn(1_700_001, s2_pids)
+        self.assertNotIn(1_700_002, s2_pids)
+
 
 if __name__ == "__main__":
     unittest.main()
