@@ -627,6 +627,11 @@ def run_deep_br_discovery(
         roster_rows = list(vet_roster) + list(MANUAL_OTHER_BR_PLAYERS)
         known_smurf_pids = extract_known_smurf_pids(roster_rows)
         excluded_roster_pids = extract_confirmed_independent_roster_pids(roster_rows)
+        steam_aliases_by_sid = {
+            sid: str(sp.get("steam_alias") or "").strip()
+            for sid, sp in steam_pres_map.items()
+            if isinstance(sp, dict) and str(sp.get("steam_alias") or "").strip()
+        }
         can_verify_relic = hasattr(r_client, "fetch_profile_stats_batch") and hasattr(
             r_client, "_fetch_one_match_history_raw"
         )
@@ -638,6 +643,8 @@ def run_deep_br_discovery(
             known_smurf_pids=known_smurf_pids,
             excluded_roster_pids=excluded_roster_pids,
             previous_top50_pids=prev_top50_br_pids,
+            roster_rows=roster_rows,
+            steam_aliases_by_sid=steam_aliases_by_sid,
             top_n=smurf_top_n,
             min_probability_pct=stage1_min_prob,
         )
@@ -651,6 +658,8 @@ def run_deep_br_discovery(
                 known_smurf_pids=known_smurf_pids,
                 excluded_roster_pids=excluded_roster_pids,
                 previous_top50_pids=prev_top50_br_pids,
+                roster_rows=roster_rows,
+                steam_aliases_by_sid=steam_aliases_by_sid,
                 top_n=smurf_top_n,
                 min_probability_pct=smurf_min_prob,
             )

@@ -57,14 +57,33 @@ def _make_match(
 
 class TestTop50SmurfDetector(unittest.TestCase):
     def test_known_smurf_classification_distinguishes_principal_vs_smurfs(self) -> None:
+        self.assertFalse(sd.is_known_smurf_roster_entry({"profile_id": 462597, "original_alias": "General Winter"}))
         self.assertFalse(sd.is_known_smurf_roster_entry({"profile_id": 462597, "original_alias": "General Winter (Principal)"}))
         self.assertFalse(sd.is_known_smurf_roster_entry({"profile_id": 509690, "original_alias": "Alekel"}))
         self.assertFalse(sd.is_known_smurf_roster_entry({"profile_id": 991764, "original_alias": "SaNgar [BR]"}))
-        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1297821, "original_alias": "General Winter (Smurf 1)"}))
-        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1297853, "original_alias": "Shadow (Smurf: Alekel)"}))
-        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1297804, "original_alias": "Leite Moço (Smurf: 『V』SKOBADARK)"}))
-        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1333418, "original_alias": "Charles Bronson (Smurf: Chacineiro)"}))
-        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 164152, "original_alias": "seu pai (Smurf: Sgt.Yoda)"}))
+        self.assertTrue(
+            sd.is_known_smurf_roster_entry(
+                {"profile_id": 1297821, "original_alias": "General Winter (Smurf: General Winter)", "smurf_of": "General Winter"}
+            )
+        )
+        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1318162, "original_alias": "QualquerNick", "smurf_of": "General Winter"}))
+        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1297853, "original_alias": "Shadow (Smurf: Alekel)", "smurf_of": "Alekel"}))
+        self.assertTrue(
+            sd.is_known_smurf_roster_entry(
+                {"profile_id": 1297804, "original_alias": "Leite Moço (Smurf: 『V』SKOBADARK)", "smurf_of": "『V』SKOBADARK"}
+            )
+        )
+        self.assertTrue(
+            sd.is_known_smurf_roster_entry(
+                {"profile_id": 1333418, "original_alias": "Charles Bronson (Smurf: Chacineiro)", "smurf_of": "Chacineiro"}
+            )
+        )
+        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 164152, "original_alias": "seu pai (Smurf: Sgt.Yoda)", "smurf_of": "Sgt.Yoda"}))
+
+        family_map = sd.extract_main_family_map()
+        self.assertEqual(family_map.get(462597), {462597, 1297821, 1318162})
+        self.assertIn(1333418, family_map.get(79327, set()))
+        self.assertIn(1390350, family_map.get(79327, set()))
 
     def test_dynamic_top50_tracks_new_entrants_and_ignores_outside_top50_smurfs(self) -> None:
         # Cria 60 jogadores BR principais (#1..#50 no Top 50 e #51..#60 fora do Top 50)
@@ -463,17 +482,181 @@ class TestTop50SmurfDetector(unittest.TestCase):
     def test_family_coplay_disqualifies_squadmate_of_known_smurf(self) -> None:
         # Ex.: parceiro de squad jogou na mesma partida da smurf conhecida #1297821 de General Winter (#462597)
         t_cand = sd.PlayerMatchTelemetry(profile_id=1_317_093, games=15, wins=11)
-        t_cand.co_played_with.add(1_297_821)  # Jogou com General Winter (Smurf 1)!
+        t_cand.co_played_with.add(1_297_821)  # Jogou com General Winter (Smurf: General Winter)!
         t_main = sd.PlayerMatchTelemetry(profile_id=462_597, games=20, wins=14)
         res = sd.score_smurf_pair(
             {"profile_id": 1_317_093, "steam_id": "76561198706956909", "alias": "SquadMateAR", "country": "ar", "max_elo": 1850, "total_matches": 500},
-            {"profile_id": 462_597, "steam_id": "76561198133760614", "alias": "General Winter (Principal)", "country": "br", "max_elo": 1890, "total_matches": 5500, "relic_br_rank": 1},
+            {"profile_id": 462_597, "steam_id": "76561198133760614", "alias": "General Winter", "country": "br", "max_elo": 1890, "total_matches": 5500, "relic_br_rank": 1},
             t_cand,
             t_main,
             main_family_pids={462_597, 1_297_821, 1_318_162},
         )
         self.assertEqual(res["probability_pct"], 0)
         self.assertEqual(res["disqualified_reason"], "jogaram_mesma_partida_familia")
+
+    def test_detect_nick_changes_handles_principal_smurf_pinned_and_top50_br(self) -> None:
+        roster = [
+            {"profile_id": 79327, "steam_id": "76561198014114284", "original_alias": "Chacineiro", "scope": "veterano"},
+            {
+                "profile_id": 1333418,
+                "steam_id": "76561199863274133",
+                "original_alias": "Charles Bronson (Smurf: Chacineiro)",
+                "smurf_of": "Chacineiro",
+                "scope": "veterano",
+            },
+            {"profile_id": 462597, "steam_id": "76561198133760614", "original_alias": "General Winter", "scope": "manual_other_br"},
+            {
+                "profile_id": 1297821,
+                "steam_id": "76561198722284920",
+                "original_alias": "General Winter (Smurf: General Winter)",
+                "smurf_of": "General Winter",
+                "scope": "manual_other_br",
+            },
+            {
+                "profile_id": 1318162,
+                "steam_id": "76561198708550887",
+                "original_alias": "General Winter (Smurf: General Winter)",
+                "smurf_of": "General Winter",
+                "scope": "manual_other_br",
+            },
+            {
+                "profile_id": 1005730,
+                "steam_id": "76561199386058240",
+                "original_alias": "arc",
+                "pin_alias": True,
+                "scope": "veterano",
+            },
+        ]
+        all_br = {
+            79327: {"profile_id": 79327, "steam_id": "76561198014114284", "alias": "Chacineiro", "country": "br", "max_elo": 1820},
+            1333418: {"profile_id": 1333418, "steam_id": "76561199863274133", "alias": "Charles Bronson", "country": "br", "max_elo": 1680},
+            462597: {"profile_id": 462597, "steam_id": "76561198133760614", "alias": "General Winter", "country": "br", "max_elo": 1910},
+            1297821: {"profile_id": 1297821, "steam_id": "76561198722284920", "alias": "General Winter", "country": "br", "max_elo": 1760},
+            1318162: {"profile_id": 1318162, "steam_id": "76561198708550887", "alias": "General Winter", "country": "br", "max_elo": 1740},
+            1005730: {"profile_id": 1005730, "steam_id": "76561199386058240", "alias": "OutroArc", "country": "br", "max_elo": 1550},
+            70001: {"profile_id": 70001, "steam_id": "76561198000070001", "alias": "NewTopBR", "country": "br", "max_elo": 1700},
+            70002: {"profile_id": 70002, "steam_id": "76561198000070002", "alias": "Fulano (BR)", "country": "br", "max_elo": 1650},
+        }
+        collector = sd.SmurfTelemetryCollector()
+        base_t = 1_799_000_000
+        collector.observe_matches_payload(
+            {
+                "matches": [
+                    _make_match(801, base_t, base_t + 1200, [(70001, "OldTopBR", "br", 0, 1690, 1)], [(9801, "Opp1", "us", 1, 1690, 0)], matchtype_id=1),
+                    _make_match(802, base_t + 86400, base_t + 87600, [(70001, "NewTopBR", "br", 0, 1700, 1)], [(9802, "Opp2", "us", 1, 1700, 0)], matchtype_id=1),
+                    _make_match(803, base_t + 86500, base_t + 87700, [(70002, "Fulano (BR)", "br", 0, 1650, 1)], [(9803, "Opp3", "us", 1, 1650, 0)], matchtype_id=1),
+                ]
+            },
+            known_br_pids=set(all_br.keys()),
+        )
+        live_stats = {
+            79327: {"profile_id": 79327, "alias": "ChacineiroNovo", "max_elo": 1825},
+            1333418: {"profile_id": 1333418, "alias": "CharlesNovo", "max_elo": 1690},
+            462597: {"profile_id": 462597, "alias": "General Winter", "max_elo": 1910},
+            1297821: {"profile_id": 1297821, "alias": "Dick of the Galaxies", "max_elo": 1765},
+            1318162: {"profile_id": 1318162, "alias": "General Winter", "max_elo": 1740},
+            1005730: {"profile_id": 1005730, "alias": "QualquerArc", "max_elo": 1550},
+            70001: {"profile_id": 70001, "alias": "NewTopBR", "max_elo": 1700},
+            70002: {"profile_id": 70002, "alias": "Fulano (BR)", "max_elo": 1650},
+        }
+        report = sd.detect_top50_br_smurfs(
+            all_br_players=all_br,
+            telemetry=collector,
+            roster_rows=roster,
+            live_stats_by_pid=live_stats,
+            top_n=50,
+            min_probability_pct=45,
+        )
+        by_pid = {c["profile_id"]: c for c in report["nick_changes"]}
+
+        # Principal renomeado: mantém novo nick e coloca conta original entre parênteses
+        self.assertIn(79327, by_pid)
+        self.assertEqual(by_pid[79327]["account_type"], "principal")
+        self.assertEqual(by_pid[79327]["display_alias"], "ChacineiroNovo (Chacineiro)")
+        self.assertEqual(by_pid[79327]["source"], "relic_live")
+
+        # Smurf de Chacineiro renomeada: mantém novo nick e preserva "(Smurf: Chacineiro)"
+        self.assertIn(1333418, by_pid)
+        self.assertEqual(by_pid[1333418]["account_type"], "smurf")
+        self.assertEqual(by_pid[1333418]["display_alias"], "CharlesNovo (Smurf: Chacineiro)")
+        self.assertEqual(by_pid[1333418]["original_account"], "Chacineiro")
+
+        # Smurf 1 de General Winter renomeada: mantém novo nick e preserva "(Smurf: General Winter)"
+        self.assertIn(1297821, by_pid)
+        self.assertEqual(by_pid[1297821]["account_type"], "smurf")
+        self.assertEqual(by_pid[1297821]["display_alias"], "Dick of the Galaxies (Smurf: General Winter)")
+
+        # Top 50 BR fora do roster com mudança na janela de partidas
+        self.assertIn(70001, by_pid)
+        self.assertEqual(by_pid[70001]["scope"], "top50_br")
+        self.assertEqual(by_pid[70001]["display_alias"], "NewTopBR (OldTopBR)")
+        self.assertEqual(by_pid[70001]["seen_aliases"], ["OldTopBR", "NewTopBR"])
+
+        # Sem falsos positivos: General Winter principal inalterado, Smurf 2 inalterada, arc pinado, Fulano (BR) estável
+        self.assertNotIn(462597, by_pid)
+        self.assertNotIn(1318162, by_pid)
+        self.assertNotIn(1005730, by_pid)
+        self.assertNotIn(70002, by_pid)
+
+        txt = sd.format_smurf_report_text(report)
+        self.assertIn("MUDANÇAS DE NICK / NOME DE USUÁRIO DETECTADAS (4)", txt)
+        self.assertIn("ChacineiroNovo (Chacineiro)", txt)
+        self.assertIn("CharlesNovo (Smurf: Chacineiro)", txt)
+        self.assertIn("Dick of the Galaxies (Smurf: General Winter)", txt)
+        self.assertIn("NewTopBR (OldTopBR)", txt)
+
+    def test_verify_suspects_with_relic_runs_nick_change_check_even_with_zero_suspects(self) -> None:
+        roster = [
+            {"profile_id": 462597, "steam_id": "76561198133760614", "original_alias": "General Winter", "scope": "manual_other_br"},
+            {
+                "profile_id": 1297821,
+                "steam_id": "76561198722284920",
+                "original_alias": "General Winter (Smurf: General Winter)",
+                "smurf_of": "General Winter",
+                "scope": "manual_other_br",
+            },
+        ]
+        all_br = {
+            462597: {"profile_id": 462597, "steam_id": "76561198133760614", "alias": "General Winter", "country": "br", "max_elo": 1900, "total_matches": 5500},
+            1297821: {"profile_id": 1297821, "steam_id": "76561198722284920", "alias": "General Winter", "country": "br", "max_elo": 1750, "total_matches": 400},
+        }
+        collector = sd.SmurfTelemetryCollector()
+        stage1 = sd.detect_top50_br_smurfs(
+            all_br_players=all_br,
+            telemetry=collector,
+            roster_rows=roster,
+            top_n=50,
+            min_probability_pct=45,
+        )
+        self.assertEqual(stage1["suspects"], [])
+        self.assertEqual(stage1["nick_changes"], [])
+
+        class _FakeRelicNickOnly:
+            def fetch_profile_stats_batch(self, pids: list[int], pace_delay_sec: float = 0.08) -> dict[int, dict[str, Any]]:
+                _ = pace_delay_sec
+                assert 462597 in pids and 1297821 in pids
+                return {
+                    462597: {"profile_id": 462597, "alias": "WinterKing", "country": "br", "max_elo": 1915, "total_matches": 5510},
+                    1297821: {"profile_id": 1297821, "alias": "FrozenSmurf", "country": "br", "max_elo": 1760, "total_matches": 410},
+                }
+
+        stage2 = sd.verify_suspects_with_relic(
+            stage1,
+            all_br_players=all_br,
+            telemetry=collector,
+            relic_client=_FakeRelicNickOnly(),
+            roster_rows=roster,
+            top_n=50,
+            min_probability_pct=45,
+        )
+        self.assertTrue(stage2["relic_verified"])
+        self.assertEqual(stage2["nick_changes_count"], 2)
+        displays = {c["profile_id"]: c["display_alias"] for c in stage2["nick_changes"]}
+        self.assertEqual(displays[462597], "WinterKing (General Winter)")
+        self.assertEqual(displays[1297821], "FrozenSmurf (Smurf: General Winter)")
+        txt = sd.format_smurf_report_text(stage2)
+        self.assertIn("WinterKing (General Winter)", txt)
+        self.assertIn("FrozenSmurf (Smurf: General Winter)", txt)
 
 
 if __name__ == "__main__":

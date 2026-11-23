@@ -12,7 +12,10 @@ Regras de negócio:
 4. **Calibrado pelos 4 modelos reais brasileiros** (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`),
    combinando sinais temporais/sociais com biometria de **APM** (`totalcmds / gt`), cadência de habilidades
    e **escolha de Battlegroups** (loadout Relic `eslot 0–2` + Battlegroups escolhidos no `cohdb.com`).
-5. **Zero spam público**: nunca publica alertas no Discord nem abre Issues automáticas — retorna
+5. **Rotina de Mudança de Nick / Nome de Usuário (`detect_nick_changes`)**: monitora todo o elenco
+   (`players_roster.json`, contas principais e smurfs) e o Top 50 BR dinâmico, mantendo o novo nick e
+   indicando entre parênteses a conta original (`<NovoNick> (<NomeOriginal>)` ou `<NovoNick> (Smurf: <NomeOriginal>)`).
+6. **Zero spam público**: nunca publica alertas no Discord nem abre Issues automáticas — retorna
    relatório estruturado (stdout / JSON opcional) exclusivamente para consulta sob demanda no Antigravity.
 """
 
@@ -49,7 +52,9 @@ from steam_presence import (
     MANUAL_OTHER_BR_PLAYERS,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
+    extract_smurf_owner_and_nick,
     extract_steam_id_from_relic_name,
+    resolve_nick_change_display,
 )
 
 configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
@@ -354,6 +359,9 @@ class PlayerMatchTelemetry:
     wins: int = 0
     games: int = 0
     seen_aliases: set[str] = field(default_factory=set)
+    alias_timeline: dict[str, tuple[str, int, int]] = field(default_factory=dict)  # alias_cf -> (alias, first_ts, last_ts)
+    latest_alias: str = ""
+    latest_alias_ts: int = 0
     seen_match_ids: set[int] = field(default_factory=set)
     apm_values: list[float] = field(default_factory=list)
     apm_by_mode: dict[str, list[float]] = field(default_factory=lambda: defaultdict(list))
@@ -363,6 +371,32 @@ class PlayerMatchTelemetry:
 
     def winrate(self) -> float:
         return (self.wins / self.games) if self.games > 0 else 0.0
+
+    def record_alias(self, alias: str, ts: int = 0) -> None:
+        clean = strip_unsafe_chars(alias)[:48]
+        if not clean or clean.startswith("Jogador "):
+            return
+        self.seen_aliases.add(clean)
+        cf = clean.casefold()
+        ts_val = max(0, int(ts or 0))
+        prev = self.alias_timeline.get(cf)
+        if prev is None:
+            self.alias_timeline[cf] = (clean, ts_val, ts_val)
+        else:
+            prev_lbl, first_ts, last_ts = prev
+            new_first = min(first_ts, ts_val) if (first_ts > 0 and ts_val > 0) else (first_ts or ts_val)
+            new_last = max(last_ts, ts_val)
+            lbl = clean if ts_val >= last_ts else prev_lbl
+            self.alias_timeline[cf] = (lbl, new_first, new_last)
+        if ts_val >= self.latest_alias_ts:
+            self.latest_alias = clean
+            self.latest_alias_ts = ts_val
+
+    def ordered_seen_aliases(self) -> list[str]:
+        if self.alias_timeline:
+            rows = sorted(self.alias_timeline.values(), key=lambda x: (x[1], x[2], x[0].casefold()))
+            return [r[0] for r in rows]
+        return sorted(self.seen_aliases, key=str.casefold)
 
     def record_biometrics(
         self,
@@ -462,7 +496,7 @@ class SmurfTelemetryCollector:
                 if pid <= 0:
                     continue
                 ctry = str(prof.get("country") or "").strip().lower()
-                alias = strip_unsafe_chars(prof.get("alias") or "")[:40]
+                alias = strip_unsafe_chars(prof.get("alias") or "")[:48]
                 team_id = int(rep.get("teamid", -1) if rep.get("teamid") is not None else -1)
                 race_id = int(rep.get("race_id", -1) if rep.get("race_id") is not None else -1)
                 res_type = int(rep.get("resulttype", 0) or 0)
@@ -512,7 +546,7 @@ class SmurfTelemetryCollector:
                 if elo > tel.mode_elo_max.get(mode, 0):
                     tel.mode_elo_max[mode] = elo
                 if alias:
-                    tel.seen_aliases.add(alias)
+                    tel.record_alias(alias, ct)
                 if len(tel.intervals) < self.max_intervals_per_player:
                     tel.intervals.append((st, ct, mid))
 
@@ -547,7 +581,7 @@ class SmurfTelemetryCollector:
             if not isinstance(prof, dict):
                 continue
             pp = int(prof.get("profile_id", 0) or 0)
-            al = strip_unsafe_chars(prof.get("alias") or "")[:40]
+            al = strip_unsafe_chars(prof.get("alias") or "")[:48]
             if pp > 0 and al:
                 self.pid_aliases[pp] = al
 
@@ -603,7 +637,7 @@ class SmurfTelemetryCollector:
             if elo > tel.mode_elo_max.get(mode, 0):
                 tel.mode_elo_max[mode] = elo
             if pid in self.pid_aliases:
-                tel.seen_aliases.add(self.pid_aliases[pid])
+                tel.record_alias(self.pid_aliases[pid], ct)
             if len(tel.intervals) < self.max_intervals_per_player:
                 tel.intervals.append((st, ct, mid))
 
@@ -643,12 +677,15 @@ class SmurfTelemetryCollector:
 def is_known_smurf_roster_entry(entry: dict[str, Any]) -> bool:
     """
     Identifica contas já catalogadas como smurf em `players_roster.json`:
+    - `smurf_of` não vazio
     - `merged_into_profile_id > 0`
     - `is_known_smurf == True`
-    - `original_alias` no formato `<X> (Smurf...)` ou `<Smurf> (<Original>)`, exceto `<X> (Principal)`.
+    - `original_alias` no formato `<Nick> (Smurf: <Original>)` ou `<Smurf> (<Original>)`, exceto `<X> (Principal)`.
     """
     if not isinstance(entry, dict):
         return False
+    if str(entry.get("smurf_of") or "").strip():
+        return True
     if bool(entry.get("is_known_smurf")):
         return True
     if int(entry.get("merged_into_profile_id", 0) or 0) > 0:
@@ -726,19 +763,20 @@ def extract_main_family_map(
         pid = int(row.get("profile_id", 0) or 0)
         if pid <= 0 or not is_known_smurf_roster_entry(row):
             continue
-        alias = str(row.get("original_alias") or row.get("alias") or "").strip()
-        m = _PAREN_TAG_RE.match(alias)
-        if not m:
-            continue
-        outer = m.group(1).strip()
-        inner = m.group(2).strip()
-        owner_guess = ""
-        if inner.casefold().startswith("smurf:"):
-            owner_guess = inner.split(":", 1)[1].strip()
-        elif inner.casefold().startswith("smurf"):
-            owner_guess = outer
-        else:
-            owner_guess = inner
+        owner_guess = str(row.get("smurf_of") or "").strip()
+        if not owner_guess:
+            alias = str(row.get("original_alias") or row.get("alias") or "").strip()
+            m = _PAREN_TAG_RE.match(alias)
+            if not m:
+                continue
+            outer = m.group(1).strip()
+            inner = m.group(2).strip()
+            if inner.casefold().startswith("smurf:"):
+                owner_guess = inner.split(":", 1)[1].strip()
+            elif inner.casefold().startswith("smurf"):
+                owner_guess = outer
+            else:
+                owner_guess = inner
         mpid = main_by_name.get(owner_guess.casefold())
         if mpid:
             families[mpid].add(pid)
@@ -750,7 +788,7 @@ def _pinned_roster_alias_map() -> dict[int, str]:
     for row in list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS):
         if bool(row.get("pin_alias")):
             pid = int(row.get("profile_id", 0) or 0)
-            alias = strip_unsafe_chars(row.get("original_alias") or "")[:40]
+            alias = strip_unsafe_chars(row.get("original_alias") or "")[:48]
             if pid > 0 and alias:
                 out[pid] = alias
     return out
@@ -1475,6 +1513,248 @@ def _is_smurf_candidate(
     return is_young_or_low_games
 
 
+def _is_placeholder_alias(alias: str) -> bool:
+    clean = strip_unsafe_chars(alias).strip()
+    if not clean:
+        return True
+    low = clean.casefold()
+    return low.startswith("jogador ") or low.startswith("player ")
+
+
+def detect_nick_changes(
+    *,
+    all_br_players: dict[int, dict[str, Any]],
+    telemetry: SmurfTelemetryCollector | None = None,
+    roster_rows: list[dict[str, Any]] | None = None,
+    top50_br: list[dict[str, Any]] | None = None,
+    live_stats_by_pid: dict[int, dict[str, Any]] | None = None,
+    steam_aliases_by_sid: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Rotina dedicada de detecção de mudança de nick / nome de usuário:
+    - Monitora todo o elenco cadastrado (`players_roster.json`: Veteranos + `manual_other_br`,
+      contas principais e smurfs) e também o Top 50 BR dinâmico da Relic API.
+    - Em caso de mudança de nick, mantém o novo nick e coloca entre parênteses a conta original:
+      - Conta principal / normal: `<NovoNick> (<NomeOriginal>)`
+      - Conta smurf (`smurf_of`): `<NovoNick> (Smurf: <NomeOriginal>)`
+    """
+    vet_pid_set = {
+        int(r.get("profile_id", 0) or 0)
+        for r in CORE_BR_ROSTER
+        if int(r.get("profile_id", 0) or 0) > 0
+    }
+    roster_by_pid: dict[int, tuple[str, dict[str, Any]]] = {}
+    if roster_rows is None:
+        for row in CORE_BR_ROSTER:
+            pid = int(row.get("profile_id", 0) or 0)
+            if pid > 0:
+                roster_by_pid[pid] = ("veterano", row)
+        for row in MANUAL_OTHER_BR_PLAYERS:
+            pid = int(row.get("profile_id", 0) or 0)
+            if pid > 0 and pid not in roster_by_pid:
+                roster_by_pid[pid] = ("manual_other_br", row)
+    else:
+        for row in roster_rows:
+            if not isinstance(row, dict):
+                continue
+            pid = int(row.get("profile_id", 0) or 0)
+            if pid > 0 and pid not in roster_by_pid:
+                scope = str(row.get("scope") or "").strip() or (
+                    "veterano" if pid in vet_pid_set else "manual_other_br"
+                )
+                roster_by_pid[pid] = (scope, row)
+
+    top50_by_pid: dict[int, dict[str, Any]] = {}
+    for row in top50_br or []:
+        if isinstance(row, dict):
+            pid = int(row.get("profile_id", 0) or 0)
+            if pid > 0:
+                top50_by_pid[pid] = row
+
+    live_stats = live_stats_by_pid or {}
+    steam_aliases = steam_aliases_by_sid or {}
+    tel_players = telemetry.players if telemetry is not None else {}
+
+    def _resolve_live_nick(pid: int, sid: str) -> tuple[str, str]:
+        st = live_stats.get(pid)
+        if isinstance(st, dict):
+            al = strip_unsafe_chars(st.get("alias") or "")[:48]
+            if al and not _is_placeholder_alias(al):
+                return al, "relic_live"
+        if sid:
+            sa = strip_unsafe_chars(steam_aliases.get(sid) or "")[:48]
+            if sa and not _is_placeholder_alias(sa):
+                return sa, "steam_live"
+        tel = tel_players.get(pid)
+        if tel is not None and tel.latest_alias and not _is_placeholder_alias(tel.latest_alias):
+            return strip_unsafe_chars(tel.latest_alias)[:48], "open_data_matches"
+        br_row = all_br_players.get(pid)
+        if isinstance(br_row, dict):
+            for key in ("current_alias", "alias"):
+                al = strip_unsafe_chars(br_row.get(key) or "")[:48]
+                if al and not _is_placeholder_alias(al):
+                    return al, "catalog_cache"
+        return "", ""
+
+    def _collect_seen_aliases(pid: int, live_nick: str, baseline_nick: str = "") -> list[str]:
+        ordered: list[str] = []
+        seen_cf: set[str] = set()
+
+        def _add(val: str) -> None:
+            clean = strip_unsafe_chars(val)[:48]
+            if clean and not _is_placeholder_alias(clean):
+                cf = clean.casefold()
+                if cf not in seen_cf:
+                    seen_cf.add(cf)
+                    ordered.append(clean)
+
+        tel = tel_players.get(pid)
+        if tel is not None:
+            for al in tel.ordered_seen_aliases():
+                _add(al)
+        if baseline_nick and not ordered:
+            _add(baseline_nick)
+        if live_nick:
+            _add(live_nick)
+        return ordered
+
+    changes: list[dict[str, Any]] = []
+    handled_pids: set[int] = set()
+
+    # 1. Todo o elenco cadastrado (Veteranos + manual_other_br: contas principais e smurfs)
+    for pid, (scope, rrow) in roster_by_pid.items():
+        handled_pids.add(pid)
+        br_row = all_br_players.get(pid) or {}
+        top_row = top50_by_pid.get(pid) or {}
+        st_row = live_stats.get(pid) if isinstance(live_stats.get(pid), dict) else {}
+        sid = (
+            str(rrow.get("steam_id") or br_row.get("steam_id") or st_row.get("steam_id") or "")
+            .replace("/steam/", "")
+            .strip()
+        )
+        live_nick, source = _resolve_live_nick(pid, sid)
+        if not live_nick:
+            continue
+        stable_alias = strip_unsafe_chars(rrow.get("original_alias") or rrow.get("alias") or "")[:48]
+        if not stable_alias or _is_placeholder_alias(stable_alias):
+            continue
+        smurf_of = strip_unsafe_chars(rrow.get("smurf_of") or "")[:40] or None
+        display_alias, nick_changed, new_nick = resolve_nick_change_display(
+            stable_alias,
+            live_nick,
+            rrow.get("known_aliases") or (),
+            pin_alias=bool(rrow.get("pin_alias")),
+            smurf_of=smurf_of,
+        )
+        if not nick_changed or not new_nick:
+            continue
+
+        outer_smurf_nick, smurf_owner = extract_smurf_owner_and_nick(stable_alias, smurf_of=smurf_of)
+        if smurf_owner:
+            account_type = "smurf"
+            original_account = smurf_owner
+            previous_nick = outer_smurf_nick
+        else:
+            account_type = "principal"
+            original_account = stable_alias.rstrip("*").rstrip() or stable_alias
+            previous_nick = original_account
+
+        changes.append(
+            {
+                "profile_id": pid,
+                "steam_id": sid,
+                "account_type": account_type,
+                "scope": scope,
+                "in_top50": pid in top50_by_pid,
+                "relic_br_rank": int(top_row.get("relic_br_rank", 0) or 0),
+                "max_elo": max(
+                    int(st_row.get("max_elo", 0) or 0),
+                    int(br_row.get("max_elo", 0) or 0),
+                    int(top_row.get("max_elo", 0) or 0),
+                ),
+                "original_account": original_account,
+                "previous_nick": previous_nick,
+                "new_nick": new_nick,
+                "display_alias": display_alias,
+                "seen_aliases": _collect_seen_aliases(pid, new_nick, previous_nick),
+                "source": source,
+            }
+        )
+
+    # 2. Jogadores do Top 50 BR fora do elenco estático (detecta mudança entre cache/janela 30d e nick atual)
+    for pid, top_row in top50_by_pid.items():
+        if pid in handled_pids:
+            continue
+        br_row = all_br_players.get(pid) or {}
+        st_row = live_stats.get(pid) if isinstance(live_stats.get(pid), dict) else {}
+        sid = (
+            str(br_row.get("steam_id") or top_row.get("steam_id") or st_row.get("steam_id") or "")
+            .replace("/steam/", "")
+            .strip()
+        )
+        live_nick, source = _resolve_live_nick(pid, sid)
+        if not live_nick:
+            continue
+
+        original_account = ""
+        raw_orig = strip_unsafe_chars(br_row.get("original_alias") or "")[:48]
+        if raw_orig and not _is_placeholder_alias(raw_orig) and raw_orig.casefold() != live_nick.casefold():
+            original_account = raw_orig
+        else:
+            tel = tel_players.get(pid)
+            tel_ordered = tel.ordered_seen_aliases() if tel is not None else []
+            if len(tel_ordered) >= 2 and not _is_placeholder_alias(tel_ordered[0]) and tel_ordered[0].casefold() != live_nick.casefold():
+                original_account = tel_ordered[0]
+            else:
+                raw_cached = strip_unsafe_chars(br_row.get("alias") or "")[:48]
+                if raw_cached and not _is_placeholder_alias(raw_cached) and raw_cached.casefold() != live_nick.casefold():
+                    m_paren = _PAREN_TAG_RE.match(raw_cached)
+                    if m_paren and m_paren.group(1).strip().casefold() == live_nick.casefold():
+                        inner = m_paren.group(2).strip()
+                        if inner and inner.casefold() != live_nick.casefold():
+                            original_account = inner
+                    else:
+                        original_account = raw_cached
+        if not original_account:
+            continue
+
+        display_alias, nick_changed, new_nick = resolve_nick_change_display(original_account, live_nick)
+        if not nick_changed or not new_nick:
+            continue
+        changes.append(
+            {
+                "profile_id": pid,
+                "steam_id": sid,
+                "account_type": "principal",
+                "scope": "top50_br",
+                "in_top50": True,
+                "relic_br_rank": int(top_row.get("relic_br_rank", 0) or 0),
+                "max_elo": max(
+                    int(st_row.get("max_elo", 0) or 0),
+                    int(br_row.get("max_elo", 0) or 0),
+                    int(top_row.get("max_elo", 0) or 0),
+                ),
+                "original_account": original_account,
+                "previous_nick": original_account,
+                "new_nick": new_nick,
+                "display_alias": display_alias,
+                "seen_aliases": _collect_seen_aliases(pid, new_nick, original_account),
+                "source": source,
+            }
+        )
+
+    changes.sort(
+        key=lambda c: (
+            0 if c["scope"] in ("veterano", "manual_other_br") else 1,
+            0 if c["in_top50"] else 1,
+            int(c["relic_br_rank"]) if int(c["relic_br_rank"]) > 0 else 9999,
+            -int(c["max_elo"]),
+            int(c["profile_id"]),
+        )
+    )
+    return changes
+
+
 def detect_top50_br_smurfs(
     *,
     all_br_players: dict[int, dict[str, Any]],
@@ -1484,21 +1764,25 @@ def detect_top50_br_smurfs(
     excluded_roster_pids: set[int] | frozenset[int] | None = None,
     previous_top50_pids: list[int] | set[int] | None = None,
     steam_friends_by_pid: dict[int, set[str]] | None = None,
+    roster_rows: list[dict[str, Any]] | None = None,
+    live_stats_by_pid: dict[int, dict[str, Any]] | None = None,
+    steam_aliases_by_sid: dict[str, str] | None = None,
     top_n: int = DEFAULT_TOP_N_BR,
     min_probability_pct: int = DEFAULT_MIN_PROBABILITY_PCT,
     include_known_smurfs: bool = False,
     restrict_candidate_pids: set[int] | frozenset[int] | None = None,
 ) -> dict[str, Any]:
     """
-    Executa a detecção forense de contas smurf exclusivamente para o Top 50 BR da Relic API.
+    Executa a detecção forense de contas smurf exclusivamente para o Top 50 BR da Relic API
+    e a rotina complementar de detecção de mudança de nick / nome de usuário.
     - Monitora automaticamente novos brasileiros que entrarem no Top 50.
     - Ignora candidatas cujo vínculo mais provável pertença a jogadores fora do Top 50 (`#51+`).
     """
-    known_smurfs = set(known_smurf_pids) if known_smurf_pids is not None else extract_known_smurf_pids()
+    known_smurfs = set(known_smurf_pids) if known_smurf_pids is not None else extract_known_smurf_pids(roster_rows)
     excluded_roster = (
         set(excluded_roster_pids)
         if excluded_roster_pids is not None
-        else (set() if include_known_smurfs else extract_confirmed_independent_roster_pids())
+        else (set() if include_known_smurfs else extract_confirmed_independent_roster_pids(roster_rows))
     )
     top_list, rank_by_pid, newly_entered, dropped = select_relic_top50_br(
         all_br_players,
@@ -1518,7 +1802,7 @@ def detect_top50_br_smurfs(
                     {
                         "profile_id": pid,
                         "steam_id": str(row.get("steam_id") or "").replace("/steam/", "").strip(),
-                        "alias": strip_unsafe_chars(row.get("alias") or row.get("original_alias") or f"Player {pid}")[:40],
+                        "alias": strip_unsafe_chars(row.get("alias") or row.get("original_alias") or f"Player {pid}")[:48],
                         "max_elo": int(row.get("max_elo", 0) or 0),
                         "total_matches": max(0, int(row.get("total_matches", 0) or 0)),
                         "relic_br_rank": rank,
@@ -1526,7 +1810,7 @@ def detect_top50_br_smurfs(
                 )
 
     ally_pop = telemetry.build_ally_popularity()
-    family_map = extract_main_family_map()
+    family_map = extract_main_family_map(roster_rows)
 
     # Pool de candidatas: BRs + candidatos não-BR com vínculo forte de squad BR (arranged team ou >=5 parceiros BR)
     candidate_pool: dict[int, dict[str, Any]] = {}
@@ -1607,12 +1891,13 @@ def detect_top50_br_smurfs(
             continue
 
         cand_med_apm = round(cand_tel.median_apm(min_samples=3), 1) if cand_tel else 0.0
+        cand_seen_aliases = cand_tel.ordered_seen_aliases() if cand_tel else []
         suspects.append(
             {
                 "candidate": {
                     "profile_id": cpid,
                     "steam_id": str(cand.get("steam_id") or "").replace("/steam/", "").strip(),
-                    "alias": strip_unsafe_chars(cand.get("alias") or cand.get("original_alias") or f"Player {cpid}")[:40],
+                    "alias": strip_unsafe_chars(cand.get("alias") or cand.get("original_alias") or f"Player {cpid}")[:48],
                     "country": str(cand.get("country") or "").strip().lower() or "??",
                     "max_elo": int(cand.get("max_elo", 0) or 0),
                     "total_matches": max(0, int(cand.get("total_matches", 0) or 0)),
@@ -1620,6 +1905,8 @@ def detect_top50_br_smurfs(
                     "recent_winrate_pct": round((cand_tel.winrate() * 100.0), 1) if (cand_tel and cand_tel.games > 0) else 0.0,
                     "median_apm": cand_med_apm,
                     "top_battlegroups": [bg for bg, _ in cand_tel.cohdb_battlegroups.most_common(4)] if cand_tel else [],
+                    "seen_aliases": cand_seen_aliases,
+                    "nick_changed_recently": len({a.casefold() for a in cand_seen_aliases}) >= 2,
                     "relic_br_rank": rank_by_pid.get(cpid, 0),
                     "in_top50": cpid in top50_pids,
                 },
@@ -1637,6 +1924,15 @@ def detect_top50_br_smurfs(
         )
     )
 
+    nick_changes = detect_nick_changes(
+        all_br_players=all_br_players,
+        telemetry=telemetry,
+        roster_rows=roster_rows,
+        top50_br=top_list,
+        live_stats_by_pid=live_stats_by_pid,
+        steam_aliases_by_sid=steam_aliases_by_sid,
+    )
+
     return {
         "top_n": int(top_n),
         "top50_count": len(top_list),
@@ -1652,6 +1948,8 @@ def detect_top50_br_smurfs(
         "ignored_outside_top50_count": ignored_outside_top50,
         "relic_verified": False,
         "cohdb_verified": False,
+        "nick_changes_count": len(nick_changes),
+        "nick_changes": nick_changes,
         "suspects": suspects,
     }
 
@@ -1667,6 +1965,8 @@ def verify_suspects_with_relic(
     excluded_roster_pids: set[int] | frozenset[int] | None = None,
     previous_top50_pids: list[int] | set[int] | None = None,
     steam_friends_by_pid: dict[int, set[str]] | None = None,
+    roster_rows: list[dict[str, Any]] | None = None,
+    steam_aliases_by_sid: dict[str, str] | None = None,
     top_n: int = DEFAULT_TOP_N_BR,
     min_probability_pct: int = DEFAULT_MIN_PROBABILITY_PCT,
     include_known_smurfs: bool = False,
@@ -1676,15 +1976,44 @@ def verify_suspects_with_relic(
 ) -> dict[str, Any]:
     """
     Estágio 2 (Verificação Autoritativa na Relic API + cohdb.com):
-    Para as suspeitas pré-selecionadas no Estágio 1:
-    1. Consulta `getPersonalStat` (total real de jogos, país oficial, ELO real).
-    2. Consulta `getRecentMatchHistoryByProfileId` (histórico completo recente das duas contas,
-       incluindo APM exato `totalcmds / gt` e loadouts de Battlegroup `eslot 0–2`).
+    1. Consulta `getPersonalStat` em lote para o elenco + Top 50 BR (rotina de mudança de nick)
+       e para as suspeitas pré-selecionadas no Estágio 1 (total real de jogos, país, ELO, nick atual).
+    2. Consulta `getRecentMatchHistoryByProfileId` para a shortlist de suspeitas (APM + BG loadout).
     3. Consulta `cohdb.com` (quando habilitado) para os Battlegroups efetivamente escolhidos em partida.
     """
+    active_roster = (
+        list(roster_rows)
+        if roster_rows is not None
+        else (list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS))
+    )
+    nick_check_pids = sorted(
+        {
+            int(r.get("profile_id", 0) or 0)
+            for r in active_roster
+            if isinstance(r, dict) and int(r.get("profile_id", 0) or 0) > 0
+        }
+        | {int(p) for p in (stage1_report.get("top50_br_pids") or []) if int(p or 0) > 0}
+    )
+
     stage1_suspects = list(stage1_report.get("suspects") or [])
     if not stage1_suspects:
         out = dict(stage1_report)
+        live_nick_stats: dict[int, dict[str, Any]] = {}
+        if hasattr(relic_client, "fetch_profile_stats_batch") and nick_check_pids:
+            try:
+                live_nick_stats = relic_client.fetch_profile_stats_batch(nick_check_pids, pace_delay_sec=0.08)
+            except Exception as exc:
+                logger.warning("[SMURF STAGE 2] Falha em getPersonalStat (rotina de nicks): %s", redact_secrets(exc))
+        nick_changes = detect_nick_changes(
+            all_br_players=all_br_players,
+            telemetry=telemetry,
+            roster_rows=roster_rows,
+            top50_br=stage1_report.get("top50_br") or [],
+            live_stats_by_pid=live_nick_stats,
+            steam_aliases_by_sid=steam_aliases_by_sid,
+        )
+        out["nick_changes"] = nick_changes
+        out["nick_changes_count"] = len(nick_changes)
         out["relic_verified"] = True
         out["cohdb_verified"] = bool(enable_cohdb)
         out["stage1_shortlist_count"] = 0
@@ -1709,8 +2038,10 @@ def verify_suspects_with_relic(
         return stage1_report
 
     # 1. Atualiza `total_matches`, `country`, `max_elo` e `alias` oficiais via `getPersonalStat`
+    #    (inclui também elenco + Top 50 BR para a rotina de mudança de nick)
+    stats_batch_pids = sorted(set(pids_to_verify) | set(nick_check_pids))
     try:
-        live_stats = relic_client.fetch_profile_stats_batch(pids_to_verify, pace_delay_sec=0.08)
+        live_stats = relic_client.fetch_profile_stats_batch(stats_batch_pids, pace_delay_sec=0.08)
     except Exception as exc:
         logger.warning("[SMURF STAGE 2] Falha em getPersonalStat: %s", redact_secrets(exc))
         live_stats = {}
@@ -1731,7 +2062,11 @@ def verify_suspects_with_relic(
         if str(st.get("country") or "").strip():
             row["country"] = str(st["country"]).strip().lower()
         if str(st.get("alias") or "").strip():
-            row["alias"] = str(st["alias"]).strip()
+            prev_al = str(row.get("alias") or "").strip()
+            new_al = str(st["alias"]).strip()
+            if prev_al and not str(row.get("original_alias") or "").strip():
+                row["original_alias"] = prev_al
+            row["alias"] = new_al
 
     # 2. Busca histórico completo recente (`getRecentMatchHistoryByProfileId`) — APM + BG loadout + sobreposições
     for pid in pids_to_verify:
@@ -1760,7 +2095,7 @@ def verify_suspects_with_relic(
             except Exception as exc:
                 logger.debug("[SMURF STAGE 2] Falha em cohdb pid=%d: %s", pid, redact_secrets(exc))
 
-    # 4. Reavalia a shortlist com telemetria completa (APM + Battlegroups + estatísticas oficiais Relic)
+    # 4. Reavalia a shortlist com telemetria completa (APM + Battlegroups + estatísticas oficiais Relic + nicks atuais)
     verified = detect_top50_br_smurfs(
         all_br_players=enriched_br,
         telemetry=telemetry,
@@ -1769,6 +2104,9 @@ def verify_suspects_with_relic(
         excluded_roster_pids=excluded_roster_pids,
         previous_top50_pids=previous_top50_pids,
         steam_friends_by_pid=steam_friends_by_pid,
+        roster_rows=roster_rows,
+        live_stats_by_pid=live_stats,
+        steam_aliases_by_sid=steam_aliases_by_sid,
         top_n=top_n,
         min_probability_pct=min_probability_pct,
         include_known_smurfs=include_known_smurfs,
@@ -1824,7 +2162,11 @@ def evaluate_model_benchmarks(
                 col._get(pid).cohdb_battlegroups.update(bgs)
 
     ally_pop = col.build_ally_popularity()
-    pinned = _pinned_roster_alias_map()
+    roster_by_pid = {
+        int(r.get("profile_id", 0) or 0): r
+        for r in list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS)
+        if int(r.get("profile_id", 0) or 0) > 0
+    }
     rows: list[dict[str, Any]] = []
     for bench in MODEL_SMURF_BENCHMARKS:
         mpid = int(bench["main_profile_id"])
@@ -1833,11 +2175,22 @@ def evaluate_model_benchmarks(
         raw_main_alias = str(mst.get("alias") or col.pid_aliases.get(mpid) or bench["model_name"])
         mst["alias"] = raw_main_alias
         mst["relic_br_rank"] = 1
+        main_roster = roster_by_pid.get(mpid)
+        if main_roster:
+            main_display_alias, _, _ = resolve_nick_change_display(
+                str(main_roster.get("original_alias") or raw_main_alias),
+                raw_main_alias,
+                main_roster.get("known_aliases"),
+                pin_alias=bool(main_roster.get("pin_alias")),
+                smurf_of=main_roster.get("smurf_of"),
+            )
+        else:
+            main_display_alias = raw_main_alias
         for spid in bench["smurf_profile_ids"]:
             spid_i = int(spid)
             sst = dict(stats.get(spid_i) or {"profile_id": spid_i, "alias": str(spid_i), "country": "br"})
             sst["profile_id"] = spid_i
-            # Avaliação 100% cega: usa o nick real da Relic (sem o rótulo manual '(Chacineiro)'/'(Smurf: ...)' do roster)
+            # Avaliação 100% cega: usa o nick real da Relic (sem o rótulo manual '(Smurf: ...)' do roster)
             sst["alias"] = str(sst.get("alias") or col.pid_aliases.get(spid_i) or str(spid_i))
             scored = score_smurf_pair(
                 sst,
@@ -1847,14 +2200,25 @@ def evaluate_model_benchmarks(
                 ally_popularity=ally_pop,
                 pid_aliases=col.pid_aliases,
             )
+            smurf_roster = roster_by_pid.get(spid_i)
+            if smurf_roster:
+                smurf_display_alias, _, _ = resolve_nick_change_display(
+                    str(smurf_roster.get("original_alias") or sst["alias"]),
+                    sst["alias"],
+                    smurf_roster.get("known_aliases"),
+                    pin_alias=bool(smurf_roster.get("pin_alias")),
+                    smurf_of=smurf_roster.get("smurf_of"),
+                )
+            else:
+                smurf_display_alias = sst["alias"]
             rows.append(
                 {
                     "model": bench["model_name"],
                     "archetype": bench["archetype"],
                     "main_profile_id": mpid,
-                    "main_alias": pinned.get(mpid) or raw_main_alias,
+                    "main_alias": main_display_alias,
                     "smurf_profile_id": spid_i,
-                    "smurf_alias": pinned.get(spid_i) or sst["alias"],
+                    "smurf_alias": smurf_display_alias,
                     "relic_smurf_alias": sst["alias"],
                     "probability_pct": scored["probability_pct"],
                     "confidence_tier": scored["confidence_tier"],
@@ -1874,12 +2238,14 @@ def format_smurf_report_text(report: dict[str, Any]) -> str:
         ver_tag = " | Verificação Relic Direta (APM/BG): OK"
     else:
         ver_tag = ""
+    nick_changes = report.get("nick_changes") or []
     lines.append(
         f"[DETECÇÃO DE SMURFS — TOP {report.get('top_n', 50)} BR RELIC] "
         f"Monitorados: {report.get('top50_count', 0)} (ELO {report.get('top50_min_elo', 0)}..{report.get('top50_max_elo', 0)}) | "
         f"Partidas analisadas: {report.get('matches_observed', 0)} | "
         f"Candidatas avaliadas: {report.get('candidates_evaluated', 0)} | "
-        f"Ignoradas (fora do Top 50): {report.get('ignored_outside_top50_count', 0)}{ver_tag}"
+        f"Ignoradas (fora do Top 50): {report.get('ignored_outside_top50_count', 0)} | "
+        f"Mudanças de nick: {len(nick_changes)}{ver_tag}"
     )
 
     newly = report.get("newly_entered_top50") or []
@@ -1889,6 +2255,20 @@ def format_smurf_report_text(report: dict[str, Any]) -> str:
             for p in newly[:15]
         )
         lines.append(f"[NOVOS NO TOP 50 BR (+{len(newly)}) -> monitoramento de smurfs ativado]: {entered_lbl}")
+
+    if nick_changes:
+        lines.append(f"[MUDANÇAS DE NICK / NOME DE USUÁRIO DETECTADAS ({len(nick_changes)})]:")
+        for item in nick_changes:
+            acc_tag = "SMURF" if item.get("account_type") == "smurf" else "PRINCIPAL"
+            rank_val = int(item.get("relic_br_rank", 0) or 0)
+            rank_tag = f" | #{rank_val} BR" if rank_val > 0 else ""
+            lines.append(
+                f"  • [{acc_tag} | {item.get('scope', 'roster')}{rank_tag}] {item['display_alias']} "
+                f"(antes: {item['previous_nick']} -> agora: {item['new_nick']} | "
+                f"pid={item['profile_id']} | Steam {item.get('steam_id') or 'N/D'} | fonte={item.get('source') or 'relic'})"
+            )
+    else:
+        lines.append("Nenhuma mudança de nick/nome de usuário detectada nesta rodada.")
 
     suspects = report.get("suspects") or []
     if not suspects:
@@ -1900,9 +2280,12 @@ def format_smurf_report_text(report: dict[str, Any]) -> str:
         c = item["candidate"]
         best = item["top_matches"][0]
         apm_str = f" | APM {c['median_apm']:.1f}" if float(c.get("median_apm", 0) or 0) > 0 else ""
+        nick_hist = ""
+        if c.get("nick_changed_recently") and c.get("seen_aliases"):
+            nick_hist = f" | Nicks vistos: {' -> '.join(str(a) for a in c['seen_aliases'][-4:])}"
         lines.append(
             f"  #{idx:02d} | {c['alias']} (pid={c['profile_id']} | Steam {c['steam_id'] or 'N/D'} | "
-            f"país={c.get('country', '??')} | ELO {c['max_elo']} | {c['total_matches']} jogos | WR rec {c['recent_winrate_pct']:.0f}%{apm_str})"
+            f"país={c.get('country', '??')} | ELO {c['max_elo']} | {c['total_matches']} jogos | WR rec {c['recent_winrate_pct']:.0f}%{apm_str}{nick_hist})"
         )
         lines.append(
             f"       -> Provável Smurf de #{best['main_relic_br_rank']} {best['main_alias']} (pid={best['main_profile_id']}, "
@@ -1920,7 +2303,7 @@ def format_smurf_report_text(report: dict[str, Any]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Detecção forense sob demanda de contas Smurf do Top 50 brasileiro na Relic API (com APM + Battlegroups)."
+        description="Detecção forense sob demanda de contas Smurf do Top 50 brasileiro na Relic API (com APM, Battlegroups e Mudança de Nick)."
     )
     parser.add_argument("--days", type=int, default=DEFAULT_MATCH_DAYS, help="Dias de Open Data Matches (1..30)")
     parser.add_argument("--top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado (padrão: 50)")
@@ -1978,11 +2361,16 @@ def main() -> int:
     for pid, item in sa_br.items():
         prev = all_br.get(pid)
         if prev is None or int(item.get("max_elo", 0) or 0) >= int(prev.get("max_elo", 0) or 0):
-            all_br[pid] = {**(prev or {}), **item}
+            merged = {**(prev or {}), **item}
+            if prev and str(prev.get("alias") or "").strip() and not str(merged.get("original_alias") or "").strip():
+                merged["original_alias"] = str(prev["alias"]).strip()
+            all_br[pid] = merged
 
     need_stats = [pid for pid, row in all_br.items() if int(row.get("max_elo", 0) or 0) <= 0]
+    live_stats_initial: dict[int, dict[str, Any]] = {}
     if need_stats:
         fetched_stats = r_client.fetch_profile_stats_batch(need_stats[:200], pace_delay_sec=0.15)
+        live_stats_initial.update(fetched_stats)
         for pid, st in fetched_stats.items():
             if pid in all_br:
                 all_br[pid].update(
@@ -2015,6 +2403,7 @@ def main() -> int:
         telemetry=collector,
         extra_candidates=extra_cands,
         previous_top50_pids=prev_top50,
+        live_stats_by_pid=live_stats_initial,
         top_n=max(1, int(args.top_n)),
         min_probability_pct=stage1_min_prob,
         include_known_smurfs=bool(args.include_known),

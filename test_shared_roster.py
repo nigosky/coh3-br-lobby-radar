@@ -66,7 +66,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertTrue(all(not r.get("merged_into_profile_id") for r in CORE_BR_ROSTER))
         self.assertTrue(all(not r.get("merged_into_steam_id") for r in CORE_BR_ROSTER))
 
-        # Contas principais preservadas + 3 desmembradas + 2 smurfs em Veteranos (todas com pin_alias=True)
+        # Contas principais preservadas + 5 smurfs em Veteranos (com smurf_of e sem pin_alias)
         self.assertEqual(vet_by_pid[79327]["original_alias"], "Chacineiro")
         self.assertEqual(vet_by_pid[55693]["original_alias"], "Alface aka BinhoBiceps")
         self.assertIn("BinhoBiceps", vet_by_pid[55693].get("known_aliases") or [])
@@ -75,17 +75,18 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertTrue(vet_by_pid[1005730].get("pin_alias"))
 
         expected_vet_smurfs = {
-            1333418: ("76561198698969876", "Charles Bronson (Smurf: Chacineiro)"),
-            557890: ("76561199538846112", "gabe44arg (Smurf: Gabe)"),
-            1423426: ("76561199482388323", "geladeira velha (Smurf: arc)"),
-            1390350: ("76561198089278659", "TearsInTheRain (Smurf: Chacineiro)"),
-            1076221: ("76561198815935562", "Lucielle (Smurf: Colossus)"),
+            1333418: ("76561198698969876", "Charles Bronson (Smurf: Chacineiro)", "Chacineiro"),
+            557890: ("76561199538846112", "gabe44arg (Smurf: Gabe)", "Gabe"),
+            1423426: ("76561199482388323", "geladeira velha (Smurf: arc)", "arc"),
+            1390350: ("76561198089278659", "TearsInTheRain (Smurf: Chacineiro)", "Chacineiro"),
+            1076221: ("76561198815935562", "Lucielle (Smurf: Colossus)", "Colossus"),
         }
-        for spid, (expected_sid, expected_alias) in expected_vet_smurfs.items():
+        for spid, (expected_sid, expected_alias, expected_owner) in expected_vet_smurfs.items():
             self.assertIn(spid, vet_by_pid)
             self.assertEqual(vet_by_pid[spid]["steam_id"], expected_sid)
             self.assertEqual(vet_by_pid[spid]["original_alias"], expected_alias)
-            self.assertTrue(vet_by_pid[spid].get("pin_alias"))
+            self.assertEqual(vet_by_pid[spid].get("smurf_of"), expected_owner)
+            self.assertFalse(vet_by_pid[spid].get("pin_alias"))
             self.assertNotIn("merged_into_profile_id", vet_by_pid[spid])
             self.assertNotIn("merged_into_steam_id", vet_by_pid[spid])
 
@@ -124,22 +125,33 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertIn("COHBRAMACHINE", oth_by_pid[16867].get("known_aliases") or [])
         self.assertIn("Nargoth de Bebbanburg", oth_by_pid[23250].get("known_aliases") or [])
 
-        expected_pinned_other = {
-            462597: ("76561198133760614", "General Winter (Principal)"),
-            1297821: ("76561198722284920", "General Winter (Smurf 1)"),
-            1318162: ("76561198708550887", "General Winter (Smurf 2)"),
-            509690: ("76561198053226112", "Alekel"),
-            1297853: ("76561198721980631", "Shadow (Smurf: Alekel)"),
-            844225: ("76561198009000654", "『V』SKOBADARK"),
-            1297804: ("76561198723667226", "Leite Moço (Smurf: 『V』SKOBADARK)"),
-            164152: ("76561198029749621", "seu pai (Smurf: Sgt.Yoda)"),
+        # Conta principal General Winter: só nome original (sem '(Principal)'); Alekel/SKOBADARK com pin_alias=True
+        self.assertEqual(oth_by_pid[462597]["steam_id"], "76561198133760614")
+        self.assertEqual(oth_by_pid[462597]["original_alias"], "General Winter")
+        self.assertFalse(oth_by_pid[462597].get("smurf_of"))
+        self.assertFalse(oth_by_pid[462597].get("pin_alias"))
+        for ppid, psid, palias in (
+            (509690, "76561198053226112", "Alekel"),
+            (844225, "76561198009000654", "『V』SKOBADARK"),
+        ):
+            self.assertEqual(oth_by_pid[ppid]["steam_id"], psid)
+            self.assertEqual(oth_by_pid[ppid]["original_alias"], palias)
+            self.assertTrue(oth_by_pid[ppid].get("pin_alias"))
+
+        expected_other_smurfs = {
+            1297821: ("76561198722284920", "General Winter (Smurf: General Winter)", "General Winter"),
+            1318162: ("76561198708550887", "General Winter (Smurf: General Winter)", "General Winter"),
+            1297853: ("76561198721980631", "Shadow (Smurf: Alekel)", "Alekel"),
+            1297804: ("76561198723667226", "Leite Moço (Smurf: 『V』SKOBADARK)", "『V』SKOBADARK"),
+            164152: ("76561198029749621", "seu pai (Smurf: Sgt.Yoda)", "Sgt.Yoda"),
         }
-        for gpid, (gsid, galias) in expected_pinned_other.items():
+        for gpid, (gsid, galias, gowner) in expected_other_smurfs.items():
             self.assertEqual(oth_by_pid[gpid]["steam_id"], gsid)
             self.assertEqual(oth_by_pid[gpid]["original_alias"], galias)
-            self.assertTrue(oth_by_pid[gpid].get("pin_alias"))
+            self.assertEqual(oth_by_pid[gpid].get("smurf_of"), gowner)
+            self.assertFalse(oth_by_pid[gpid].get("pin_alias"))
 
-        # Smurf desmembrada aparece independente em Veteranos; General Winter, Alekel, SKOBADARK e seu pai em Outros BR
+        # Mudança de nick mantém o novo nick fora e coloca a conta original entre parênteses!
         from steam_presence import build_lobby_radar_snapshot
 
         now = 1_800_000_000
@@ -279,21 +291,26 @@ class TestSharedPlayersRoster(unittest.TestCase):
                 },
             ],
         )
+        # Smurf 1333418 mudou nick para 'QualquerNickNovo' -> mantém mudança + (Smurf: Chacineiro)
         self.assertEqual([p["profile_id"] for p in snap["veteranos"]["in_coh3"]], [1333418])
-        self.assertEqual(snap["veteranos"]["in_coh3"][0]["alias"], "Charles Bronson (Smurf: Chacineiro)")
-        self.assertFalse(snap["veteranos"]["in_coh3"][0]["nick_changed"])
+        self.assertEqual(snap["veteranos"]["in_coh3"][0]["alias"], "QualquerNickNovo (Smurf: Chacineiro)")
+        self.assertTrue(snap["veteranos"]["in_coh3"][0]["nick_changed"])
 
         outros_in_coh3 = {int(p["profile_id"]): p for p in snap["outros_brasileiros"]["in_coh3"]}
         self.assertNotIn(1333418, outros_in_coh3)
-        self.assertEqual(outros_in_coh3[462597]["alias"], "General Winter (Principal)")
-        self.assertEqual(outros_in_coh3[1297821]["alias"], "General Winter (Smurf 1)")
-        self.assertEqual(outros_in_coh3[1318162]["alias"], "General Winter (Smurf 2)")
+        # Principal sem '(Principal)'! Smurfs sempre indicam conta original; troca de nick preserva novo nick!
+        self.assertEqual(outros_in_coh3[462597]["alias"], "General Winter")
+        self.assertFalse(outros_in_coh3[462597]["nick_changed"])
+        self.assertEqual(outros_in_coh3[1297821]["alias"], "General Winter (Smurf: General Winter)")
+        self.assertFalse(outros_in_coh3[1297821]["nick_changed"])
+        self.assertEqual(outros_in_coh3[1318162]["alias"], "OutroNickQualquer (Smurf: General Winter)")
+        self.assertTrue(outros_in_coh3[1318162]["nick_changed"])
         self.assertEqual(outros_in_coh3[509690]["alias"], "Alekel")
         self.assertEqual(outros_in_coh3[1297853]["alias"], "Shadow (Smurf: Alekel)")
         self.assertEqual(outros_in_coh3[1297804]["alias"], "Leite Moço (Smurf: 『V』SKOBADARK)")
         self.assertEqual(outros_in_coh3[164152]["alias"], "seu pai (Smurf: Sgt.Yoda)")
         self.assertTrue(
-            all(not outros_in_coh3[pid]["nick_changed"] for pid in (462597, 1297821, 1318162, 509690, 1297853, 1297804, 164152))
+            all(not outros_in_coh3[pid]["nick_changed"] for pid in (462597, 1297821, 509690, 1297853, 1297804, 164152))
         )
 
     def test_manage_roster_add_update_promote_and_remove(self) -> None:

@@ -48,6 +48,7 @@ from steam_presence import (
     build_lobby_radar_snapshot,
     classify_other_br_prominence,
     compute_lobby_state_digest,
+    extract_smurf_owner_and_nick,
     get_manual_other_br_override,
     normalize_flag_country,
     steam_presence_hides_coh3_game,
@@ -276,7 +277,7 @@ def _build_veteranos_privacy_diagnostics(
 def _record_community_alias_update(rec: dict[str, Any], incoming_alias: str, *, pid: int) -> bool:
     """
     Preserva o nick anterior em `rec['alias']` e registra eventual novo nick em `rec['current_alias']`,
-    respeitando `known_aliases` / `pin_alias` de `MANUAL_OTHER_BR_PLAYERS` (ex.: `Golden Cobra`).
+    respeitando `known_aliases`, `pin_alias` e `smurf_of` de `MANUAL_OTHER_BR_PLAYERS`.
     """
     al = strip_unsafe_chars(incoming_alias)[:48]
     if not al or al.startswith("Jogador "):
@@ -285,12 +286,14 @@ def _record_community_alias_update(rec: dict[str, Any], incoming_alias: str, *, 
     manual_ov = get_manual_other_br_override(pid)
     known_cf: set[str] = set()
     pin_alias = False
+    smurf_of = ""
     if manual_ov:
         pin_alias = bool(manual_ov.get("pin_alias"))
+        smurf_of = strip_unsafe_chars(manual_ov.get("smurf_of") or "")[:40]
         ov_known = [strip_unsafe_chars(k)[:48] for k in (manual_ov.get("known_aliases") or []) if strip_unsafe_chars(k)]
         known_cf = {k.casefold() for k in ov_known}
         ov_alias = strip_unsafe_chars(manual_ov.get("original_alias") or "")[:48]
-        if ov_alias and (pin_alias or ov_known) and rec.get("alias") != ov_alias:
+        if ov_alias and (pin_alias or smurf_of or ov_known) and rec.get("alias") != ov_alias:
             rec["alias"] = ov_alias
             changed = True
 
@@ -300,6 +303,19 @@ def _record_community_alias_update(rec: dict[str, Any], incoming_alias: str, *, 
         if rec.pop("current_alias", None) is not None:
             changed = True
         return True
+
+    if smurf_of:
+        outer_base, _ = extract_smurf_owner_and_nick(base_alias, smurf_of=smurf_of)
+        al_outer, _ = extract_smurf_owner_and_nick(al)
+        al_clean = (al_outer or al).strip()
+        if not al_clean or al_clean.casefold() in (base_alias.casefold(), outer_base.casefold()):
+            if rec.pop("current_alias", None) is not None:
+                changed = True
+            return changed
+        if rec.get("current_alias") != al_clean:
+            rec["current_alias"] = al_clean
+            changed = True
+        return changed
 
     if pin_alias or al.casefold() == base_alias.casefold() or al.casefold() in known_cf:
         if rec.pop("current_alias", None) is not None:
@@ -345,7 +361,8 @@ def _merge_player_into_community(
     if manual_ov:
         ov_alias = strip_unsafe_chars(manual_ov.get("original_alias") or "")[:48]
         ov_known = manual_ov.get("known_aliases") or []
-        if ov_alias and (manual_ov.get("pin_alias") or ov_known):
+        ov_smurf = strip_unsafe_chars(manual_ov.get("smurf_of") or "")[:40]
+        if ov_alias and (manual_ov.get("pin_alias") or ov_smurf or ov_known):
             if alias.casefold() != ov_alias.casefold() and not cur_alias:
                 cur_alias = alias
             alias = ov_alias
@@ -578,6 +595,7 @@ def resolve_manual_other_br_entries(
             "flag_country": normalize_flag_country(row.get("flag_country") or row.get("country")),
             "known_aliases": [strip_unsafe_chars(k)[:48] for k in (row.get("known_aliases") or []) if strip_unsafe_chars(k)],
             "pin_alias": bool(row.get("pin_alias")),
+            "smurf_of": strip_unsafe_chars(row.get("smurf_of") or "")[:40],
         }
     if not targets:
         return {}
@@ -613,7 +631,15 @@ def resolve_manual_other_br_entries(
         lm = latest_map.get(pid) or {}
         sid = str(st.get("steam_id") or base["steam_id"] or "").replace("/steam/", "").strip()
         live_relic_alias = str(st.get("alias") or "").strip()
-        if base["alias"] and (base["pin_alias"] or base["known_aliases"]):
+        if base["alias"] and base["smurf_of"]:
+            alias = base["alias"]
+            outer_base, _ = extract_smurf_owner_and_nick(alias, smurf_of=base["smurf_of"])
+            cur_alias = (
+                live_relic_alias
+                if (live_relic_alias and live_relic_alias.casefold() not in (alias.casefold(), outer_base.casefold()))
+                else ""
+            )
+        elif base["alias"] and (base["pin_alias"] or base["known_aliases"]):
             alias = base["alias"]
             known_cf = {k.casefold() for k in base["known_aliases"]} | {alias.casefold()}
             cur_alias = (
@@ -1221,7 +1247,7 @@ def run_lobby_radar_sync(
                 community_dirty = True
             m_alias = strip_unsafe_chars(m_row.get("original_alias") or "")[:48]
             m_known = m_row.get("known_aliases") or []
-            if m_alias and (m_row.get("pin_alias") or m_known):
+            if m_alias and (m_row.get("pin_alias") or m_row.get("smurf_of") or m_known):
                 if existing_rec.get("alias") != m_alias:
                     old_al = str(existing_rec.get("alias") or "").strip()
                     existing_rec["alias"] = m_alias

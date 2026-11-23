@@ -1229,7 +1229,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertEqual(players["16867"]["alias"], "Golden Cobra")
         self.assertNotIn("current_alias", players["16867"])
 
-        # 3. Discord links e Cards PNG exibem Ausente zZz, Ocupado e NickAnterior* *(agora: NovoNick)*
+        # 3. Discord links e Cards PNG exibem Ausente zZz, Ocupado e <NovoNick> (<NomeOriginal>)
         snap = {
             "timestamp": 1_800_000_000,
             "veteranos": {
@@ -1238,7 +1238,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                     {
                         "profile_id": 79327,
                         "steam_id": "76561197963172584",
-                        "alias": "Chacineiro*",
+                        "alias": "Chacineiro2 (Chacineiro)",
                         "previous_alias": "Chacineiro",
                         "current_alias": "Chacineiro2",
                         "nick_changed": True,
@@ -1310,15 +1310,15 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         oth_desc = payload["embeds"][1]["description"]
         footer_txt = payload["embeds"][1]["footer"]["text"]
 
-        self.assertIn("[**Chacineiro**\\* ↗]", vet_desc)
-        self.assertIn("*(agora: Chacineiro2)*", vet_desc)
+        self.assertIn("[**Chacineiro2 \\(Chacineiro\\)** ↗]", vet_desc)
+        self.assertNotIn("*(agora:", vet_desc)
         self.assertIn("*(💤 Ausente na Steam (zZz))*", vet_desc)
         self.assertIn("*(⛔ Ocupado)*", vet_desc)
         self.assertIn("Golden Cobra", oth_desc)
-        self.assertIn("[SoldadoBR\\* ↗]", oth_desc)
-        self.assertIn("*(agora: SoldadoTrocado)*", oth_desc)
+        # Mesmo entrada legada com '*' é convertida automaticamente para <NovoNick> (<NomeOriginal>)
+        self.assertIn("[SoldadoTrocado \\(SoldadoBR\\) ↗]", oth_desc)
         self.assertIn("*(💤 Ausente na Steam (zZz))*", oth_desc)
-        self.assertIn("* = mudou de nick", footer_txt)
+        self.assertNotIn("* = mudou de nick", footer_txt)
 
         vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
         for png_b in (vet_png, oth_png):
@@ -1860,7 +1860,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             {
                 "profile_id": 462597,
                 "steam_id": "76561198133760614",
-                "alias": "General Winter (Principal)",
+                "alias": "General Winter",
                 "max_elo": 1890,
                 "prominence_tier": "high",
                 "status_note": "No CoH3 agora",
@@ -1886,7 +1886,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             {
                 "profile_id": 1297821,
                 "steam_id": "76561198722284920",
-                "alias": "General Winter (Smurf 1)",
+                "alias": "General Winter (Smurf: General Winter)",
                 "max_elo": 1100,
                 "prominence_tier": "low",
                 "other_game": "",

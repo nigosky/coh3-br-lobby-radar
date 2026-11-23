@@ -167,7 +167,7 @@ def fit_alias_to_px(
     max_px: int,
     size: int,
     *,
-    min_size: int = 12,
+    min_size: int = 11,
     bold: bool = True,
 ) -> tuple[str, Any, int]:
     """
@@ -406,7 +406,7 @@ def _split_prominent_and_low(
 
 
 def _format_low_player_token(pl: dict[str, Any], *, show_age_min: bool = False) -> str:
-    alias = strip_unsafe_chars(str(pl.get("alias") or "BR"))[:40] or "BR"
+    alias = strip_unsafe_chars(str(pl.get("alias") or "BR"))[:48] or "BR"
     elo = int(pl.get("max_elo", 0) or 0)
     parts: list[str] = []
     if elo > 0:
@@ -549,13 +549,14 @@ def _draw_status_pill(
 def _bucket_has_nick_change(bucket: dict[str, Any]) -> bool:
     for sec in ("in_coh3", "online_steam", "recent_relic"):
         for pl in (bucket.get(sec) or []):
-            if pl.get("nick_changed") or str(pl.get("alias") or "").endswith("*"):
+            if str(pl.get("alias") or "").endswith("*"):
                 return True
     return False
 
 
 def _append_nick_change_note(note: str, pl: dict[str, Any]) -> str:
-    if pl.get("nick_changed") and pl.get("current_alias"):
+    alias = str(pl.get("alias") or "")
+    if pl.get("nick_changed") and pl.get("current_alias") and alias.endswith("*"):
         cur = strip_unsafe_chars(str(pl["current_alias"]))[:26]
         if cur and f"agora: {cur}" not in note:
             compact = note.replace("Com Company of Heroes 3 aberto agora", "No CoH3")
