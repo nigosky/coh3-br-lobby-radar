@@ -49,6 +49,7 @@ from security import (
 )
 from steam_presence import (
     CORE_BR_ROSTER,
+    EN_MONTH_NUM,
     MANUAL_OTHER_BR_PLAYERS,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
@@ -232,11 +233,18 @@ def _extract_bg_loadout_by_pid(match_items: Any) -> dict[int, list[int]]:
 class CohDBBattlegroupClient:
     """
     Cliente HTTPS endurecido (somente-leitura, respeitando robots.txt) para coletar
-    os Battlegroups efetivamente escolhidos em partida nas páginas canônicas do `cohdb.com`.
+    os Battlegroups escolhidos em partida e o histórico de nicks observados nos replays do `cohdb.com`.
     """
 
-    _ROW_RE = re.compile(r'<tr[^>]*data-href="/replays/(\d{1,12})"[^>]*>', re.I)
+    _ROW_FULL_RE = re.compile(r'<tr[^>]*data-href="/replays/(\d{1,12})"[^>]*>(.*?)</tr>', re.I | re.S)
+    _TITLE_ALIAS_RE = re.compile(r"<title[^>]*>\s*cohdb\s*[–-]\s*([^<\n]{1,80}?)\s*[—-]\s*Matches\s*</title>", re.I)
+    _UTC_TITLE_RE = re.compile(
+        r'title="([A-Za-z]{3,9})\s+(\d{1,2}),\s+(20\d{2}),\s+(\d{1,2}):(\d{2})\s+([AP]M)\s+UTC"',
+        re.I,
+    )
+    _REPLAY_DATE_RE = re.compile(r"\b([A-Za-z]{3,9})\s+(\d{1,2}),\s+(20\d{2})\b")
     _PLAYER_LINK_RE = re.compile(r'href="/players/(\d{1,12})"')
+    _PLAYER_LINK_TEXT_RE = re.compile(r'href="/players/(\d{1,12})"[^>]*>([^<]{1,80})</a>', re.I)
     _BG_ICON_RE = re.compile(r'/assets/races/[^/"]+/battlegroups/([a-z0-9_]+?)(?:-[0-9a-f]+)?\.webp', re.I)
     _BG_NAME_RE = re.compile(r"Battlegroup</div>\s*<div[^>]*>([^<]{1,80})</div>", re.I)
 
@@ -245,6 +253,8 @@ class CohDBBattlegroupClient:
         self.max_replays_per_player = max(1, min(15, int(max_replays_per_player)))
         self._opener = build_no_redirect_https_opener()
         self._replay_cache: dict[int, dict[int, str]] = {}
+        self._replay_aliases_cache: dict[int, tuple[dict[int, str], int]] = {}
+        self._matches_meta_cache: dict[int, tuple[str, list[tuple[int, int]]]] = {}
         self._player_cache: dict[int, Counter[str]] = {}
         self._consecutive_errors = 0
         self._circuit_open = False
@@ -293,6 +303,81 @@ class CohDBBattlegroupClient:
             return None
 
     @classmethod
+    def _parse_utc_datetime_parts(
+        cls,
+        month_str: str,
+        day_str: str,
+        year_str: str,
+        hour_str: str = "12",
+        minute_str: str = "0",
+        ampm: str = "",
+    ) -> int:
+        month = EN_MONTH_NUM.get(month_str.strip().lower(), 0)
+        if not month:
+            return 0
+        try:
+            day = int(day_str)
+            year = int(year_str)
+            hour = int(hour_str)
+            minute = int(minute_str)
+            if ampm:
+                ap = ampm.strip().upper()
+                if ap == "PM" and hour != 12:
+                    hour += 12
+                elif ap == "AM" and hour == 12:
+                    hour = 0
+            return int(datetime(year, month, day, hour, minute, tzinfo=timezone.utc).timestamp())
+        except ValueError:
+            return 0
+
+    @classmethod
+    def parse_matches_page_metadata(cls, html_body: str) -> tuple[str, list[tuple[int, int]]]:
+        """Extrai `(alias_atual_cohdb, [(replay_id, utc_ts), ...])` de `/players/<id>/matches`."""
+        current_alias = ""
+        tm = cls._TITLE_ALIAS_RE.search(html_body or "")
+        if tm:
+            clean = strip_unsafe_chars(html.unescape(tm.group(1)))[:48]
+            if clean and not _is_placeholder_alias(clean):
+                current_alias = clean
+
+        rows: list[tuple[int, int]] = []
+        seen_rids: set[int] = set()
+        for rm in cls._ROW_FULL_RE.finditer(html_body or ""):
+            rid = int(rm.group(1))
+            if rid <= 0 or rid in seen_rids:
+                continue
+            seen_rids.add(rid)
+            body = rm.group(2)
+            ts = 0
+            um = cls._UTC_TITLE_RE.search(body)
+            if um:
+                ts = cls._parse_utc_datetime_parts(
+                    um.group(1), um.group(2), um.group(3), um.group(4), um.group(5), um.group(6)
+                )
+            rows.append((rid, ts))
+        return current_alias, rows
+
+    @classmethod
+    def parse_replay_player_aliases(cls, html_body: str) -> tuple[dict[int, str], int]:
+        """Extrai `({profile_id: alias_no_replay}, replay_ts_utc)` de uma página `/replays/<id>` do cohdb."""
+        out: dict[int, str] = {}
+        replay_ts = 0
+        dm = cls._REPLAY_DATE_RE.search(html_body or "")
+        if dm:
+            replay_ts = cls._parse_utc_datetime_parts(dm.group(1), dm.group(2), dm.group(3))
+        for card in (html_body or "").split("<div data-player-card")[1:]:
+            pm = cls._PLAYER_LINK_TEXT_RE.search(card)
+            if not pm:
+                continue
+            pid = int(pm.group(1))
+            if pid <= 0:
+                continue
+            alias = strip_unsafe_chars(html.unescape(pm.group(2)))[:48]
+            if alias and not _is_placeholder_alias(alias):
+                out[pid] = alias
+        return out, replay_ts
+
+    @classmethod
     def parse_replay_battlegroups(cls, html_body: str) -> dict[int, str]:
         """Extrai `{profile_id: official_bg_name}` de uma página `/replays/<id>` do cohdb."""
         out: dict[int, str] = {}
@@ -313,6 +398,35 @@ class CohDBBattlegroupClient:
                 out[pid] = lbl
         return out
 
+    def _get_matches_meta(self, pid: int) -> tuple[str, list[tuple[int, int]]]:
+        if pid in self._matches_meta_cache:
+            return self._matches_meta_cache[pid]
+        if self._circuit_open:
+            return "", []
+        matches_html = self._fetch_html(f"/players/{pid}/matches", COHDB_PLAYER_MATCHES_PATH_RE)
+        if not matches_html:
+            self._matches_meta_cache[pid] = ("", [])
+            return "", []
+        meta = self.parse_matches_page_metadata(matches_html)
+        self._matches_meta_cache[pid] = meta
+        return meta
+
+    def _fetch_replay_details(self, rid: int) -> tuple[dict[int, str], dict[int, str], int]:
+        if rid in self._replay_cache and rid in self._replay_aliases_cache:
+            alias_map, replay_ts = self._replay_aliases_cache[rid]
+            return self._replay_cache[rid], alias_map, replay_ts
+        time.sleep(self.pace_delay_sec)
+        rhtml = self._fetch_html(f"/replays/{rid}", COHDB_REPLAY_PATH_RE)
+        if not rhtml:
+            self._replay_cache[rid] = {}
+            self._replay_aliases_cache[rid] = ({}, 0)
+            return {}, {}, 0
+        bg_map = self.parse_replay_battlegroups(rhtml)
+        alias_map, replay_ts = self.parse_replay_player_aliases(rhtml)
+        self._replay_cache[rid] = bg_map
+        self._replay_aliases_cache[rid] = (alias_map, replay_ts)
+        return bg_map, alias_map, replay_ts
+
     def fetch_player_battlegroups(self, profile_id: int) -> Counter[str]:
         """Coleta contagem dos Battlegroups efetivamente escolhidos em replays recentes no cohdb."""
         pid = int(profile_id or 0)
@@ -323,29 +437,60 @@ class CohDBBattlegroupClient:
         if self._circuit_open:
             return Counter()
 
-        matches_html = self._fetch_html(f"/players/{pid}/matches", COHDB_PLAYER_MATCHES_PATH_RE)
-        if not matches_html:
+        _, replay_rows = self._get_matches_meta(pid)
+        if not replay_rows:
             self._player_cache[pid] = Counter()
             return Counter()
 
-        replay_ids = list(dict.fromkeys(int(r) for r in self._ROW_RE.findall(matches_html)))[: self.max_replays_per_player]
         bgs: Counter[str] = Counter()
-        for rid in replay_ids:
+        for rid, _ in replay_rows[: self.max_replays_per_player]:
             if self._circuit_open:
                 break
-            if rid in self._replay_cache:
-                bg_map = self._replay_cache[rid]
-            else:
-                time.sleep(self.pace_delay_sec)
-                rhtml = self._fetch_html(f"/replays/{rid}", COHDB_REPLAY_PATH_RE)
-                bg_map = self.parse_replay_battlegroups(rhtml) if rhtml else {}
-                self._replay_cache[rid] = bg_map
+            bg_map, _, _ = self._fetch_replay_details(rid)
             lbl = bg_map.get(pid)
             if lbl:
                 bgs[lbl] += 1
 
         self._player_cache[pid] = Counter(bgs)
         return bgs
+
+    def fetch_player_alias_observations(
+        self,
+        profile_id: int,
+        *,
+        sample_replays: int = 3,
+    ) -> list[tuple[str, int]]:
+        """
+        Coleta o nick atual no `cohdb.com` e amostra replays espaçados (mais recente, meio, mais antigo)
+        para recuperar nicks históricos efetivamente gravados nos replays do jogador.
+        """
+        pid = int(profile_id or 0)
+        if pid <= 0 or self._circuit_open:
+            return []
+        current_alias, replay_rows = self._get_matches_meta(pid)
+        observations: list[tuple[str, int]] = []
+        newest_ts = replay_rows[0][1] if replay_rows else 0
+        if current_alias:
+            observations.append((current_alias, newest_ts))
+
+        cap = max(0, min(int(sample_replays), 6))
+        if not replay_rows or cap <= 0:
+            return observations
+
+        if len(replay_rows) <= cap:
+            chosen = replay_rows
+        else:
+            indices = sorted({0, len(replay_rows) - 1} | {round(i * (len(replay_rows) - 1) / (cap - 1)) for i in range(cap)})
+            chosen = [replay_rows[i] for i in indices[:cap]]
+
+        for rid, row_ts in chosen:
+            if self._circuit_open:
+                break
+            _, alias_map, page_ts = self._fetch_replay_details(rid)
+            al = alias_map.get(pid)
+            if al:
+                observations.append((al, row_ts or page_ts))
+        return observations
 
 
 @dataclass
@@ -1564,6 +1709,7 @@ def detect_nick_changes(
     top50_br: list[dict[str, Any]] | None = None,
     live_stats_by_pid: dict[int, dict[str, Any]] | None = None,
     steam_aliases_by_sid: dict[str, str] | None = None,
+    alias_history_doc: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Rotina dedicada de detecção de mudança de nick / nome de usuário:
@@ -1609,6 +1755,7 @@ def detect_nick_changes(
     live_stats = live_stats_by_pid or {}
     steam_aliases = steam_aliases_by_sid or {}
     tel_players = telemetry.players if telemetry is not None else {}
+    hist_players = alias_history_doc.get("players") if isinstance(alias_history_doc, dict) else None
 
     def _resolve_live_nick(pid: int, sid: str) -> tuple[str, str]:
         st = live_stats.get(pid)
@@ -1643,6 +1790,12 @@ def detect_nick_changes(
                     seen_cf.add(cf)
                     ordered.append(clean)
 
+        if isinstance(hist_players, dict):
+            hrec = hist_players.get(str(pid))
+            if isinstance(hrec, dict):
+                for item in hrec.get("aliases") or []:
+                    if isinstance(item, dict):
+                        _add(str(item.get("alias") or ""))
         tel = tel_players.get(pid)
         if tel is not None:
             for al in tel.ordered_seen_aliases():
@@ -1802,6 +1955,7 @@ def detect_top50_br_smurfs(
     roster_rows: list[dict[str, Any]] | None = None,
     live_stats_by_pid: dict[int, dict[str, Any]] | None = None,
     steam_aliases_by_sid: dict[str, str] | None = None,
+    alias_history_doc: dict[str, Any] | None = None,
     top_n: int = DEFAULT_TOP_N_BR,
     min_probability_pct: int = DEFAULT_MIN_PROBABILITY_PCT,
     include_known_smurfs: bool = False,
@@ -1967,6 +2121,7 @@ def detect_top50_br_smurfs(
         top50_br=top_list,
         live_stats_by_pid=live_stats_by_pid,
         steam_aliases_by_sid=steam_aliases_by_sid,
+        alias_history_doc=alias_history_doc,
     )
 
     return {
@@ -2003,6 +2158,8 @@ def verify_suspects_with_relic(
     steam_friends_by_pid: dict[int, set[str]] | None = None,
     roster_rows: list[dict[str, Any]] | None = None,
     steam_aliases_by_sid: dict[str, str] | None = None,
+    alias_history_doc: dict[str, Any] | None = None,
+    live_stats_out: dict[int, dict[str, Any]] | None = None,
     top_n: int = DEFAULT_TOP_N_BR,
     min_probability_pct: int = DEFAULT_MIN_PROBABILITY_PCT,
     include_known_smurfs: bool = False,
@@ -2040,6 +2197,8 @@ def verify_suspects_with_relic(
             try:
                 live_nick_stats = relic_client.fetch_profile_stats_batch(nick_check_pids, pace_delay_sec=0.08)
                 relic_ok = True
+                if live_stats_out is not None and isinstance(live_nick_stats, dict):
+                    live_stats_out.update(live_nick_stats)
             except Exception as exc:
                 logger.warning("[SMURF STAGE 2] Falha em getPersonalStat (rotina de nicks): %s", redact_secrets(exc))
         nick_changes = detect_nick_changes(
@@ -2049,6 +2208,7 @@ def verify_suspects_with_relic(
             top50_br=stage1_report.get("top50_br") or [],
             live_stats_by_pid=live_nick_stats,
             steam_aliases_by_sid=steam_aliases_by_sid,
+            alias_history_doc=alias_history_doc,
         )
         out["nick_changes"] = nick_changes
         out["nick_changes_count"] = len(nick_changes)
@@ -2080,6 +2240,8 @@ def verify_suspects_with_relic(
     stats_batch_pids = sorted(set(pids_to_verify) | set(nick_check_pids))
     try:
         live_stats = relic_client.fetch_profile_stats_batch(stats_batch_pids, pace_delay_sec=0.08)
+        if live_stats_out is not None and isinstance(live_stats, dict):
+            live_stats_out.update(live_stats)
     except Exception as exc:
         logger.warning("[SMURF STAGE 2] Falha em getPersonalStat: %s", redact_secrets(exc))
         live_stats = {}
@@ -2145,6 +2307,7 @@ def verify_suspects_with_relic(
         roster_rows=roster_rows,
         live_stats_by_pid=live_stats,
         steam_aliases_by_sid=steam_aliases_by_sid,
+        alias_history_doc=alias_history_doc,
         top_n=top_n,
         min_probability_pct=min_probability_pct,
         include_known_smurfs=include_known_smurfs,

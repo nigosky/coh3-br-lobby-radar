@@ -88,6 +88,7 @@ STEAM_ID64_VALID_RE = re.compile(r"^7656119\d{10}$")
 STEAM_API_KEY_VALID_RE = re.compile(r"^[A-Za-z0-9]{16,64}$")
 STEAM_API_SUMMARIES_PATH_RE = re.compile(r"^/ISteamUser/GetPlayerSummaries/v0*2/?$")
 STEAM_PROFILE_XML_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/?$")
+STEAM_AJAX_ALIASES_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/ajaxaliases/?$")
 STEAM_GROUP_MEMBERS_PATH_RE = re.compile(r"^/groups/[A-Za-z0-9_-]{2,64}/memberslistxml/?$")
 STEAM_REDIRECT_PATH_RE = re.compile(r"^/(?:profiles/7656119\d{10}|id/[A-Za-z0-9_-]{1,64})/?$")
 COH3STATS_LEADERBOARD_PATH_RE = re.compile(
@@ -104,6 +105,7 @@ _EXPLICIT_BR_TAG_RE = re.compile(
 )
 
 MAX_STEAM_PRESENCE_XML_BYTES = 131_072  # 128 KB (cobre <groups> completos com folga segura)
+MAX_STEAM_ALIASES_BYTES = 65_536        # 64 KB (endpoint público ajaxaliases ~ 2 KB)
 MAX_STEAM_API_RESPONSE_BYTES = 524_288  # 512 KB (100 perfis GetPlayerSummaries ~ 40 KB)
 MAX_STEAM_GROUP_XML_BYTES = 2 * 1024 * 1024  # 2 MB
 MAX_RELIC_RESPONSE_BYTES = 8 * 1024 * 1024  # 8 MB (cobre históricos Relic > 2 MB de jogadores ativos com proteção anti-Gzip-bomb)
@@ -1745,6 +1747,153 @@ class SteamPresenceClient:
                 break
 
         return all_sids
+
+    def fetch_steam_alias_history(
+        self,
+        steam_id: str,
+        *,
+        now_ts: int | None = None,
+    ) -> list[tuple[str, int]] | None:
+        """
+        Consulta o histórico público recente de nicks da Steam (`steamcommunity.com/profiles/<SteamID64>/ajaxaliases`)
+        com allowlist estrita, bloqueio de redirecionamentos, `allow_query=False` e limite de 64 KB.
+        Retorna `[(alias, changed_ts_utc), ...]`, `[]` quando sem histórico público ou `None` em erro/rate-limit.
+        """
+        sid = str(steam_id or "").replace("/steam/", "").strip()
+        if not STEAM_ID64_VALID_RE.fullmatch(sid):
+            return []
+        url = f"https://steamcommunity.com/profiles/{sid}/ajaxaliases"
+        validate_https_endpoint(
+            url,
+            ALLOWED_STEAM_COMMUNITY_HOSTS,
+            path_prefix="/profiles/",
+            path_regex=STEAM_AJAX_ALIASES_PATH_RE,
+            allow_query=False,
+        )
+        req = urllib.request.Request(url, headers=_RELIC_JSON_HEADERS, method="GET")
+        try:
+            with _get_relic_opener().open(req, timeout=10) as resp:
+                raw = read_bounded_http_body(resp, MAX_STEAM_ALIASES_BYTES)
+            payload = json.loads(raw.decode("utf-8", errors="ignore"))
+            return parse_steam_ajax_aliases_payload(payload, now_ts=now_ts)
+        except urllib.error.HTTPError as exc:
+            if exc.code in (429, 403):
+                return None
+            if exc.code in (404, 302):
+                return []
+            logger.debug("Steam ajaxaliases retornou HTTP %d (%s).", exc.code, sid)
+            return None
+        except Exception as exc:
+            logger.debug("Falha ao consultar Steam ajaxaliases (%s): %s", sid, redact_secrets(exc))
+            return None
+
+    def fetch_batch_steam_alias_history(
+        self,
+        steam_ids: list[str],
+        *,
+        pace_delay_sec: float = 0.22,
+        rate_limit_threshold: int = 3,
+        now_ts: int | None = None,
+    ) -> dict[str, list[tuple[str, int]]]:
+        """Consulta em lote o histórico público `ajaxaliases` da Steam com pacing e circuit-breaker anti-429."""
+        valid_sids = list(
+            dict.fromkeys(
+                str(s).replace("/steam/", "").strip()
+                for s in steam_ids
+                if STEAM_ID64_VALID_RE.fullmatch(str(s or "").replace("/steam/", "").strip())
+            )
+        )
+        if not valid_sids:
+            return {}
+        pace = max(0.0, min(float(pace_delay_sec), 1.0))
+        rl_limit = max(1, int(rate_limit_threshold))
+        out: dict[str, list[tuple[str, int]]] = {}
+        consecutive_errors = 0
+
+        for idx, sid in enumerate(valid_sids):
+            if idx > 0 and pace > 0.0:
+                time.sleep(pace)
+            rows = self.fetch_steam_alias_history(sid, now_ts=now_ts)
+            if rows is None:
+                consecutive_errors += 1
+                if consecutive_errors >= rl_limit:
+                    logger.warning(
+                        "Circuit-breaker Steam ajaxaliases ativado após %d falhas consecutivas; encerrando lote.",
+                        consecutive_errors,
+                    )
+                    break
+                continue
+            consecutive_errors = 0
+            out[sid] = rows
+        return out
+
+
+_STEAM_ALIAS_DATE_RE = re.compile(
+    r"^\s*([A-Za-z]{3,9})\s+(\d{1,2})(?:,\s*(20\d{2}))?\s*@\s*(\d{1,2}):(\d{2})\s*([ap]m)\s*$",
+    re.IGNORECASE,
+)
+EN_MONTH_NUM: dict[str, int] = {
+    "jan": 1, "january": 1,
+    "feb": 2, "february": 2,
+    "mar": 3, "march": 3,
+    "apr": 4, "april": 4,
+    "may": 5,
+    "jun": 6, "june": 6,
+    "jul": 7, "july": 7,
+    "aug": 8, "august": 8,
+    "sep": 9, "sept": 9, "september": 9,
+    "oct": 10, "october": 10,
+    "nov": 11, "november": 11,
+    "dec": 12, "december": 12,
+}
+
+
+def parse_steam_ajax_aliases_payload(
+    raw_json: Any,
+    *,
+    now_ts: int | None = None,
+) -> list[tuple[str, int]]:
+    """
+    Faz parse seguro e independente de locale do payload JSON de `steamcommunity.com/profiles/<sid>/ajaxaliases`.
+    Retorna lista `[(alias, timestamp_utc), ...]` ordenada do mais antigo para o mais recente.
+    """
+    if not isinstance(raw_json, list):
+        return []
+    now = int(now_ts) if now_ts is not None else int(time.time())
+    now_year = datetime.fromtimestamp(now, tz=timezone.utc).year
+    parsed_rows: list[tuple[str, int]] = []
+    for item in raw_json[:30]:
+        if not isinstance(item, dict):
+            continue
+        alias = strip_unsafe_chars(html.unescape(str(item.get("newname") or "")))[:48]
+        if not alias:
+            continue
+        ts = 0
+        raw_time = str(item.get("timechanged") or "").strip()
+        m = _STEAM_ALIAS_DATE_RE.match(raw_time)
+        if m:
+            month = EN_MONTH_NUM.get(m.group(1).lower(), 0)
+            if month:
+                day = int(m.group(2))
+                year_explicit = int(m.group(3)) if m.group(3) else None
+                hour = int(m.group(4))
+                minute = int(m.group(5))
+                ampm = m.group(6).lower()
+                if ampm == "pm" and hour != 12:
+                    hour += 12
+                elif ampm == "am" and hour == 12:
+                    hour = 0
+                year = year_explicit if year_explicit is not None else now_year
+                try:
+                    dt_ts = int(datetime(year, month, day, hour, minute, tzinfo=timezone.utc).timestamp())
+                    if year_explicit is None and dt_ts > now + 2 * 86400:
+                        dt_ts = int(datetime(year - 1, month, day, hour, minute, tzinfo=timezone.utc).timestamp())
+                    ts = max(0, dt_ts)
+                except ValueError:
+                    ts = 0
+        parsed_rows.append((alias, ts))
+    parsed_rows.sort(key=lambda r: (r[1] if r[1] > 0 else 9_999_999_999, r[0].casefold()))
+    return parsed_rows
 
 
 class RelicActivityClient:
