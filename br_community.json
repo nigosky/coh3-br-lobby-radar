@@ -1743,7 +1743,7 @@
       "alias": "j0r3L",
       "br_source": "open_data_lb",
       "last_match_date": 1794532430,
-      "last_seen_online_ts": 1795470720,
+      "last_seen_online_ts": 1795474760,
       "max_elo": 1000,
       "profile_id": 1020192,
       "steam_games_hidden": true,
@@ -10208,14 +10208,14 @@
     "703133": {
       "alias": "Turles",
       "br_source": "open_data_lb",
-      "last_match_date": 1795352590,
+      "last_match_date": 1795474760,
       "last_seen_online_ts": 1795474624,
       "max_elo": 1044,
       "profile_id": 703133,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795470419,
       "steam_id": "76561199036457538",
-      "total_matches": 448
+      "total_matches": 449
     },
     "703146": {
       "alias": "viperking",
