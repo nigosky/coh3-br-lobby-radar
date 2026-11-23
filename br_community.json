@@ -8518,7 +8518,7 @@
       "last_match_date": 1795360340,
       "last_seen_ingame_ts": 1795153124,
       "last_seen_ingame_webapi_ts": 1795399996,
-      "last_seen_online_ts": 1795416734,
+      "last_seen_online_ts": 1795418534,
       "max_elo": 1112,
       "profile_id": 26373,
       "steam_id": "76561198941629351",
@@ -10483,12 +10483,12 @@
     "766623": {
       "alias": "AkuMA",
       "br_source": "open_data_matches",
-      "last_match_date": 1795355062,
+      "last_match_date": 1795400496,
       "last_seen_online_ts": 0,
       "max_elo": 1056,
       "profile_id": 766623,
       "steam_id": "76561198108515897",
-      "total_matches": 3191
+      "total_matches": 3195
     },
     "766635": {
       "alias": "Terr0rRJ",
@@ -11627,7 +11627,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1794877442,
       "last_seen_ingame_ts": 1795190456,
-      "last_seen_ingame_webapi_ts": 1795396649,
+      "last_seen_ingame_webapi_ts": 1795418534,
       "last_seen_online_ts": 1795417034,
       "max_elo": 1055,
       "profile_id": 944737,
