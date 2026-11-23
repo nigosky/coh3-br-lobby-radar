@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import errno
+import json
 import logging
 import os
 import re
@@ -186,10 +188,19 @@ def validate_https_endpoint(
         raise ValueError("Porta inválida na URL.") from exc
     if port not in (None, 443):
         raise ValueError(f"Porta não autorizada bloqueada: {port}")
+    if parsed.fragment:
+        raise ValueError("Fragmentos (#...) em URLs de API são bloqueados por segurança.")
     raw_path = parsed.path or ""
-    decoded_path = urllib.parse.unquote(raw_path)
-    if ".." in raw_path.split("/") or ".." in decoded_path.split("/") or "\\" in decoded_path:
+    if ".." in raw_path.split("/") or "\\" in raw_path:
         raise ValueError("Path traversal detectado e bloqueado na URL.")
+    decoded = raw_path
+    for _ in range(3):
+        next_decoded = urllib.parse.unquote(decoded)
+        if ".." in next_decoded.split("/") or "\\" in next_decoded or "\x00" in next_decoded:
+            raise ValueError("Path traversal detectado e bloqueado na URL.")
+        if next_decoded == decoded:
+            break
+        decoded = next_decoded
     if path_prefix and not raw_path.startswith(path_prefix):
         raise ValueError("Caminho da URL fora do escopo permitido.")
     if path_regex is not None and not path_regex.fullmatch(raw_path):
@@ -247,6 +258,40 @@ def read_bounded_http_body(resp: Any, max_bytes: int) -> bytes:
         return b"".join(out_chunks)
 
     return raw
+
+
+def read_bounded_json_file(path: Path, max_bytes: int = 8 * 1024 * 1024) -> Any:
+    """
+    Lê e faz parse de arquivo JSON local com proteção anti-symlink (CWE-59 / `O_NOFOLLOW`),
+    verificação de arquivo regular e limite rígido de tamanho (anti-DoS de memória / TOCTOU).
+    """
+    limit = max(1, int(max_bytes))
+    if path.is_symlink():
+        raise ValueError(f"Leitura JSON bloqueada em symlink não confiável: {path}")
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(str(path), flags)
+    except OSError as exc:
+        if exc.errno == errno.ENOENT:
+            raise FileNotFoundError(f"Arquivo JSON não encontrado: {path}") from exc
+        if exc.errno in (errno.ELOOP, errno.EMLINK):
+            raise ValueError(f"Leitura JSON bloqueada em symlink não confiável: {path}") from exc
+        raise
+    try:
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            raise ValueError(f"Arquivo JSON deve ser um arquivo regular: {path}")
+        if st.st_size > limit:
+            raise ValueError(f"Arquivo JSON excedeu o limite máximo seguro ({limit} bytes): {path}")
+        with os.fdopen(fd, "rb") as fh:
+            fd = -1
+            raw = fh.read(limit + 1)
+    finally:
+        if fd >= 0:
+            os.close(fd)
+    if len(raw) > limit:
+        raise ValueError(f"Arquivo JSON excedeu o limite máximo seguro ({limit} bytes): {path}")
+    return json.loads(raw.decode("utf-8"))
 
 
 def read_local_secret_webhook(base_dir: Path, key_name: str = "DISCORD_LOBBY_WEBHOOK_URL") -> str:

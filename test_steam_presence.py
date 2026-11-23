@@ -955,6 +955,25 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         self.assertEqual([p["alias"] for p in snap["outros_brasileiros"]["online_steam"]], ["Ativo14d"])
         self.assertEqual([p["alias"] for p in snap["outros_brasileiros"]["in_coh3"]], ["Retornando20d"])
 
+    def test_extract_roster_id_sets_and_format_coh3_recency_age(self) -> None:
+        from steam_presence import extract_roster_id_sets, format_coh3_recency_age
+
+        pids, sids = extract_roster_id_sets(
+            [
+                {"profile_id": 79327, "steam_id": "/steam/76561197963172584"},
+                {"profile_id": 0, "steam_id": "  76561198000000001  "},
+                {"profile_id": 123, "steam_id": ""},
+            ]
+        )
+        self.assertEqual(pids, {79327, 123})
+        self.assertEqual(sids, {"76561197963172584", "76561198000000001"})
+
+        self.assertEqual(format_coh3_recency_age({}), "")
+        self.assertEqual(format_coh3_recency_age({"last_coh3_age_hours": 0}), "<1h")
+        self.assertEqual(format_coh3_recency_age({"last_coh3_age_hours": 5}), "5h")
+        self.assertEqual(format_coh3_recency_age({"last_coh3_age_hours": 48}), "2d")
+        self.assertEqual(format_coh3_recency_age({"last_coh3_age_hours": 30, "last_coh3_age_days": 2}), "2d")
+
 
 if __name__ == "__main__":
     unittest.main()

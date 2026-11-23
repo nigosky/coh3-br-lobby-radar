@@ -79,6 +79,9 @@ class SecurityPrimitivesTests(unittest.TestCase):
             "https://discord.com/api/v10/resource\r\nX-Injected: 1",
             "https://discord.com/api/../admin",
             "https://discord.com/api/%2e%2e/admin",
+            "https://discord.com/api/%252e%252e/admin",
+            "https://discord.com/api/v10/resource%00.png",
+            "https://discord.com/api/v10/resource#frag",
             "https://discord.com/api\\admin",
         ):
             with self.assertRaises(ValueError, msg=f"URL insegura não bloqueada: {bad!r}"):
@@ -147,6 +150,59 @@ class SecurityPrimitivesTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 atomic_write_text(link_path, "overwritten")
             self.assertEqual(real_file.read_text(encoding="utf-8"), "original")
+
+    def test_read_bounded_json_file_and_loaders_block_symlinks_and_oversized(self) -> None:
+        from lobby_radar import load_community_cache, load_state
+        from security import read_bounded_json_file
+
+        with tempfile.TemporaryDirectory() as td:
+            valid_json = Path(td) / "state.json"
+            valid_json.write_text('{"ok": true, "players": {"1": {}}}', encoding="utf-8")
+            self.assertEqual(read_bounded_json_file(valid_json, max_bytes=1024)["ok"], True)
+
+            with self.assertRaises(FileNotFoundError):
+                read_bounded_json_file(Path(td) / "missing.json", max_bytes=1024)
+
+            # Symlink bloqueado (CWE-59)
+            link_json = Path(td) / "link.json"
+            os.symlink(valid_json, link_json)
+            with self.assertRaises(ValueError):
+                read_bounded_json_file(link_json, max_bytes=1024)
+
+            # load_state e load_community_cache nunca seguem symlink
+            self.assertEqual(load_state(link_json), {})
+            self.assertEqual(load_community_cache(link_json)["players"], {})
+
+            # Arquivo acima do limite seguro é bloqueado (anti-DoS)
+            big_json = Path(td) / "big.json"
+            big_json.write_text('{"pad": "' + ("A" * 4096) + '"}', encoding="utf-8")
+            with self.assertRaises(ValueError):
+                read_bounded_json_file(big_json, max_bytes=512)
+
+    def test_multipart_mime_avatar_query_and_font_unicode_regex(self) -> None:
+        from card_renderer import NEEDS_DEJAVU_RE, SteamAvatarProvider
+        from discord_lobby import _encode_multipart_formdata
+
+        for bad_mime in ("image/png/extra", "image/png\r\nX: 1", "invalidmime", "image/png; charset=utf-8"):
+            with self.assertRaises(ValueError, msg=f"MIME inseguro não bloqueado: {bad_mime!r}"):
+                _encode_multipart_formdata({"content": ""}, [("card.png", b"\x89PNG", bad_mime)])
+
+        body, content_type = _encode_multipart_formdata({"content": ""}, [("card.png", b"\x89PNG", "image/png")])
+        self.assertIn("multipart/form-data; boundary=", content_type)
+        self.assertIn(b"Content-Type: image/png", body)
+
+        # Avatar URL com query string ou fragmento é rejeitada antes de qualquer I/O de rede
+        prov = SteamAvatarProvider(allow_network=True)
+        self.assertIsNone(prov._download_avatar("https://avatars.steamstatic.com/abc_medium.jpg?token=1"))
+        self.assertIsNone(prov._download_avatar("https://avatars.steamstatic.com/abc_medium.jpg#frag"))
+
+        # NEEDS_DEJAVU_RE permite ASCII / Latin Extended (Roboto) e ativa DejaVu apenas fora de U+0000..U+024F
+        self.assertIsNone(NEEDS_DEJAVU_RE.search("General Winter"))
+        self.assertIsNone(NEEDS_DEJAVU_RE.search("nigo_br"))
+        self.assertIsNone(NEEDS_DEJAVU_RE.search("João Café (Smurf: Alface)"))
+        self.assertIsNotNone(NEEDS_DEJAVU_RE.search("『V』SKOBADARK"))
+        self.assertIsNotNone(NEEDS_DEJAVU_RE.search("★ 1500 ELO"))
+        self.assertIsNotNone(NEEDS_DEJAVU_RE.search("Уилла"))
 
 
 if __name__ == "__main__":

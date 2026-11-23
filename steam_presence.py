@@ -36,6 +36,7 @@ from security import (
     build_no_redirect_https_opener,
     create_hardened_ssl_context,
     read_bounded_http_body,
+    read_bounded_json_file,
     redact_secrets,
     strip_unsafe_chars,
     validate_https_endpoint,
@@ -52,6 +53,11 @@ RELIC_BASE_URL = "https://coh3-api.reliclink.com/community/leaderboard"
 STEAM_API_SUMMARIES_URL = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
 COH3STATS_LEADERBOARDS_BASE = "https://storage.coh3stats.com/leaderboards"
 COH3STATS_MATCHES_BASE = "https://storage.coh3stats.com/matches"
+_RELIC_JSON_HEADERS: dict[str, str] = {
+    "User-Agent": "CoH3-BR-Lobby-Radar/1.2",
+    "Accept": "application/json",
+    "Accept-Encoding": "gzip",
+}
 
 SOUTH_AMERICA_REGION_ID = 2074438
 BRAZILIAN_COH_STEAM_GROUPS: tuple[str, ...] = ("CoH2BR", "companybr")
@@ -401,27 +407,59 @@ def load_shared_players_roster(
     Retorna `(veteranos, manual_other_br)`, fazendo fallback seguro em caso de ausência/erro de leitura.
     """
     try:
-        if roster_path.is_file() and not roster_path.is_symlink() and roster_path.stat().st_size <= 262_144:
-            parsed = json.loads(roster_path.read_text(encoding="utf-8"))
-            if isinstance(parsed, dict) and isinstance(parsed.get("veteranos"), list):
-                vets: list[dict[str, Any]] = []
-                seen_pids: set[int] = set()
-                for row in parsed["veteranos"]:
-                    norm = _normalize_shared_roster_entry(row, default_in_ranking=True)
-                    if norm and norm["profile_id"] not in seen_pids:
-                        seen_pids.add(norm["profile_id"])
-                        vets.append(norm)
-                others: list[dict[str, Any]] = []
-                for row in (parsed.get("manual_other_br") or []):
-                    norm = _normalize_shared_roster_entry(row, default_in_ranking=False)
-                    if norm and norm["profile_id"] not in seen_pids:
-                        seen_pids.add(norm["profile_id"])
-                        others.append(norm)
-                if vets:
-                    return vets, others
+        parsed = read_bounded_json_file(roster_path, max_bytes=262_144)
+        if isinstance(parsed, dict) and isinstance(parsed.get("veteranos"), list):
+            vets: list[dict[str, Any]] = []
+            seen_pids: set[int] = set()
+            for row in parsed["veteranos"]:
+                norm = _normalize_shared_roster_entry(row, default_in_ranking=True)
+                if norm and norm["profile_id"] not in seen_pids:
+                    seen_pids.add(norm["profile_id"])
+                    vets.append(norm)
+            others: list[dict[str, Any]] = []
+            for row in (parsed.get("manual_other_br") or []):
+                norm = _normalize_shared_roster_entry(row, default_in_ranking=False)
+                if norm and norm["profile_id"] not in seen_pids:
+                    seen_pids.add(norm["profile_id"])
+                    others.append(norm)
+            if vets:
+                return vets, others
+    except FileNotFoundError:
+        pass
     except Exception as exc:
         logger.warning("Falha ao carregar %s; usando fallback embutido: %s", roster_path.name, redact_secrets(exc))
     return [dict(r) for r in _FALLBACK_CORE_BR_ROSTER], [dict(r) for r in _FALLBACK_MANUAL_OTHER_BR_PLAYERS]
+
+
+def extract_roster_id_sets(roster: list[dict[str, Any]]) -> tuple[set[int], set[str]]:
+    """Extrai conjuntos normalizados `(profile_ids, steam_ids)` de uma lista de entradas de roster."""
+    pids: set[int] = set()
+    sids: set[str] = set()
+    for row in roster:
+        if not isinstance(row, dict):
+            continue
+        pid = int(row.get("profile_id", 0) or 0)
+        if pid > 0:
+            pids.add(pid)
+        sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+        if sid:
+            sids.add(sid)
+    return pids, sids
+
+
+def format_coh3_recency_age(pl: dict[str, Any]) -> str:
+    """Formata a idade da última atividade CoH3 (`<1h`, `Xh`, `Yd`) ou string vazia se ausente."""
+    hrs = pl.get("last_coh3_age_hours")
+    days = pl.get("last_coh3_age_days")
+    if hrs is None:
+        return ""
+    h_int = max(0, int(hrs))
+    if h_int < 1:
+        return "<1h"
+    if h_int < 24:
+        return f"{h_int}h"
+    d_int = max(1, int(days if days is not None else (h_int // 24)))
+    return f"{d_int}d"
 
 
 # Elenco compartilhado carregado de `players_roster.json` (Veteranos + Brasileiros manuais no exterior)
@@ -1044,6 +1082,52 @@ def _merge_discovered_br_player(
         existing["flag_country"] = f_ctry
 
 
+def _route_leaderboard_member(
+    br_found: dict[int, dict[str, Any]],
+    candidates: dict[int, dict[str, Any]],
+    member: dict[str, Any],
+    *,
+    rating: int,
+    last_match_date: int,
+    total_matches: int,
+    br_source: str,
+    default_region_id: int = 0,
+) -> None:
+    """Direciona um membro de leaderboard para `br_found` (`country == 'br'`) ou `candidates` (SA / tag BR)."""
+    ctry = str(member.get("country") or "").strip().lower()
+    reg = int(member.get("leaderboardregion_id", 0) or default_region_id or 0)
+    pid = int(member.get("profile_id", 0) or 0)
+    sid = extract_steam_id_from_relic_name(member.get("name"))
+    alias = str(member.get("alias") or "")
+    if ctry == "br":
+        _merge_discovered_br_player(
+            br_found,
+            profile_id=pid,
+            steam_id=sid,
+            alias=alias,
+            max_elo=rating,
+            last_match_date=last_match_date,
+            total_matches=total_matches,
+            accumulate_matches=True,
+            country="br",
+            region_id=reg,
+            br_source=br_source,
+        )
+    elif reg == SOUTH_AMERICA_REGION_ID or has_explicit_br_alias_tag(alias):
+        _merge_discovered_br_player(
+            candidates,
+            profile_id=pid,
+            steam_id=sid,
+            alias=alias,
+            max_elo=rating,
+            last_match_date=last_match_date,
+            total_matches=total_matches,
+            accumulate_matches=True,
+            country=ctry,
+            region_id=reg,
+        )
+
+
 def extract_br_and_candidates_from_opendata_payload(
     data: dict[str, Any],
 ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
@@ -1068,38 +1152,15 @@ def extract_br_and_candidates_from_opendata_payload(
         for member in row.get("members") or []:
             if not isinstance(member, dict):
                 continue
-            ctry = str(member.get("country") or "").strip().lower()
-            reg = int(member.get("leaderboardregion_id", 0) or 0)
-            pid = int(member.get("profile_id", 0) or 0)
-            sid = extract_steam_id_from_relic_name(member.get("name"))
-            alias = str(member.get("alias") or "")
-            if ctry == "br":
-                _merge_discovered_br_player(
-                    br_found,
-                    profile_id=pid,
-                    steam_id=sid,
-                    alias=alias,
-                    max_elo=rating,
-                    last_match_date=lmd,
-                    total_matches=matches_in_row,
-                    accumulate_matches=True,
-                    country="br",
-                    region_id=reg,
-                    br_source="open_data_lb",
-                )
-            elif reg == SOUTH_AMERICA_REGION_ID or has_explicit_br_alias_tag(alias):
-                _merge_discovered_br_player(
-                    candidates,
-                    profile_id=pid,
-                    steam_id=sid,
-                    alias=alias,
-                    max_elo=rating,
-                    last_match_date=lmd,
-                    total_matches=matches_in_row,
-                    accumulate_matches=True,
-                    country=ctry,
-                    region_id=reg,
-                )
+            _route_leaderboard_member(
+                br_found,
+                candidates,
+                member,
+                rating=rating,
+                last_match_date=lmd,
+                total_matches=matches_in_row,
+                br_source="open_data_lb",
+            )
     return br_found, candidates
 
 
@@ -1366,38 +1427,16 @@ def extract_br_and_candidates_from_relic_leaderboard_payload(
         for member in sg.get("members") or []:
             if not isinstance(member, dict):
                 continue
-            ctry = str(member.get("country") or "").strip().lower()
-            reg = int(member.get("leaderboardregion_id", 0) or default_region_id or 0)
-            pid = int(member.get("profile_id", 0) or 0)
-            sid = extract_steam_id_from_relic_name(member.get("name"))
-            alias = str(member.get("alias") or "")
-            if ctry == "br":
-                _merge_discovered_br_player(
-                    br_found,
-                    profile_id=pid,
-                    steam_id=sid,
-                    alias=alias,
-                    max_elo=rating,
-                    last_match_date=lmd,
-                    total_matches=m_cnt,
-                    accumulate_matches=True,
-                    country="br",
-                    region_id=reg,
-                    br_source="relic_sa_lb",
-                )
-            elif reg == SOUTH_AMERICA_REGION_ID or has_explicit_br_alias_tag(alias):
-                _merge_discovered_br_player(
-                    candidates,
-                    profile_id=pid,
-                    steam_id=sid,
-                    alias=alias,
-                    max_elo=rating,
-                    last_match_date=lmd,
-                    total_matches=m_cnt,
-                    accumulate_matches=True,
-                    country=ctry,
-                    region_id=reg,
-                )
+            _route_leaderboard_member(
+                br_found,
+                candidates,
+                member,
+                rating=rating,
+                last_match_date=lmd,
+                total_matches=m_cnt,
+                br_source="relic_sa_lb",
+                default_region_id=default_region_id,
+            )
     return br_found, candidates
 
 
@@ -1718,11 +1757,7 @@ class RelicActivityClient:
         qs = urllib.parse.urlencode({"title": "coh3", "profile_id": str(pid)})
         url = f"{RELIC_BASE_URL}/getRecentMatchHistoryByProfileId?{qs}"
         validate_https_endpoint(url, ALLOWED_RELIC_HOSTS, path_prefix="/community/leaderboard/")
-        headers = {
-            "User-Agent": "CoH3-BR-Lobby-Radar/1.2",
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-        }
+        headers = _RELIC_JSON_HEADERS
         for attempt in range(2):
             req = urllib.request.Request(url, headers=headers, method="GET")
             try:
@@ -1936,11 +1971,7 @@ class RelicActivityClient:
         valid_pids = list(dict.fromkeys(int(p) for p in profile_ids if int(p or 0) > 0))
         stats_map: dict[int, dict[str, Any]] = {}
         chunk_size = 10
-        headers = {
-            "User-Agent": "CoH3-BR-Lobby-Radar/1.2",
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-        }
+        headers = _RELIC_JSON_HEADERS
         pace = max(0.0, min(float(pace_delay_sec), 1.0))
 
         for i in range(0, len(valid_pids), chunk_size):
@@ -1982,11 +2013,7 @@ class RelicActivityClient:
         )
         stats_map: dict[int, dict[str, Any]] = {}
         chunk_size = 10
-        headers = {
-            "User-Agent": "CoH3-BR-Lobby-Radar/1.2",
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-        }
+        headers = _RELIC_JSON_HEADERS
         pace = max(0.0, min(float(pace_delay_sec), 1.0))
 
         for i in range(0, len(valid_sids), chunk_size):
@@ -2015,11 +2042,7 @@ class RelicActivityClient:
         qs = urllib.parse.urlencode({"title": "coh3"})
         url = f"{RELIC_BASE_URL}/getAvailableLeaderboards?{qs}"
         validate_https_endpoint(url, ALLOWED_RELIC_HOSTS, path_prefix="/community/leaderboard/")
-        headers = {
-            "User-Agent": "CoH3-BR-Lobby-Radar/1.2",
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-        }
+        headers = _RELIC_JSON_HEADERS
         lb_ids: list[int] = list(RELIC_LEADERBOARD_MODES.keys())
         seen: set[int] = set(lb_ids)
         try:
@@ -2061,11 +2084,7 @@ class RelicActivityClient:
         candidate_days.append(int((base_day - timedelta(days=1)).timestamp()))
         candidate_days.append(int((base_day - timedelta(days=2)).timestamp()))
 
-        headers = {
-            "User-Agent": "CoH3-BR-Lobby-Radar/1.2",
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-        }
+        headers = _RELIC_JSON_HEADERS
 
         def _fetch_one_file(
             day_ts: int,
@@ -2194,11 +2213,7 @@ class RelicActivityClient:
             for i in range(days_clamped)
         ]
 
-        headers = {
-            "User-Agent": "CoH3-BR-Lobby-Radar/1.2",
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-        }
+        headers = _RELIC_JSON_HEADERS
         br_catalog: dict[int, dict[str, Any]] = {}
         cand_catalog: dict[int, dict[str, Any]] = {}
         arranged_agg: dict[tuple[str, str, tuple[int, ...]], dict[str, Any]] = {}
@@ -2332,11 +2347,7 @@ class RelicActivityClient:
         """
         br_catalog: dict[int, dict[str, Any]] = {}
         cand_catalog: dict[int, dict[str, Any]] = {}
-        headers = {
-            "User-Agent": "CoH3-BR-Lobby-Radar/1.2",
-            "Accept": "application/json",
-            "Accept-Encoding": "gzip",
-        }
+        headers = _RELIC_JSON_HEADERS
         pages_cap = max(1, min(int(max_pages_per_board), 15))
         page_size = 200
         lb_ids = self.fetch_available_pc_leaderboards() if use_dynamic_boards else list(RELIC_LEADERBOARD_MODES.keys())
@@ -2854,12 +2865,7 @@ def build_lobby_radar_snapshot(
     )
 
     # Garante separação estrita: nenhum Veterano (nem conta secundária) pode aparecer em "Outros Brasileiros"
-    vet_pids = {int(r.get("profile_id", 0) or 0) for r in vet_roster if int(r.get("profile_id", 0) or 0) > 0}
-    vet_sids = {
-        str(r.get("steam_id") or "").replace("/steam/", "").strip()
-        for r in vet_roster
-        if str(r.get("steam_id") or "").strip()
-    }
+    vet_pids, vet_sids = extract_roster_id_sets(vet_roster)
     filtered_others = [
         row
         for row in (other_br_players or [])

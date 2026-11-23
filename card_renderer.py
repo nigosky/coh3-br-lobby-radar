@@ -24,6 +24,7 @@ from security import (
 from steam_presence import (
     OTHER_BR_ACTIVE_COH3_DAYS,
     extract_snapshot_category,
+    format_coh3_recency_age,
     get_unique_veteranos_count,
     resolve_prominence_tier,
 )
@@ -52,7 +53,7 @@ ALLOWED_DECODER_FORMATS: frozenset[str] = frozenset({"JPEG", "PNG", "WEBP", "GIF
 MAX_STEAM_AVATAR_BYTES = 524_288  # 512 KB
 
 HAS_CJK_RE = re.compile(r"[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\u3040-\u30ff]")
-NEEDS_DEJAVU_RE = re.compile(r"[^\x00-\x024f]")
+NEEDS_DEJAVU_RE = re.compile(r"[^\u0000-\u024f]")
 
 _NO_REDIRECT_OPENER = build_no_redirect_https_opener()
 _FONT_CACHE: dict[tuple[str, int], ImageFont.FreeTypeFont | ImageFont.ImageFont] = {}
@@ -310,7 +311,7 @@ class SteamAvatarProvider:
             return cached
         try:
             parsed = validate_https_endpoint(avatar_url, ALLOWED_STEAM_AVATAR_HOSTS)
-            if not SAFE_AVATAR_EXT_RE.search(parsed.path or ""):
+            if parsed.query or not SAFE_AVATAR_EXT_RE.search(parsed.path or ""):
                 return None
             req = urllib.request.Request(avatar_url, headers={"User-Agent": "CoH3-BR-Lobby-Radar/1.0"})
             with _NO_REDIRECT_OPENER.open(req, timeout=6) as resp:
@@ -374,17 +375,8 @@ class SteamAvatarProvider:
 
 
 def _format_coh3_recency_short(pl: dict[str, Any]) -> str:
-    hrs = pl.get("last_coh3_age_hours")
-    days = pl.get("last_coh3_age_days")
-    if hrs is None:
-        return ""
-    h_int = max(0, int(hrs))
-    if h_int < 1:
-        return "CoH3 há <1h"
-    if h_int < 24:
-        return f"CoH3 há {h_int}h"
-    d_int = max(1, int(days if days is not None else (h_int // 24)))
-    return f"CoH3 há {d_int}d"
+    age = format_coh3_recency_age(pl)
+    return f"CoH3 há {age}" if age else ""
 
 
 def _split_prominent_and_low(
@@ -544,6 +536,48 @@ def _draw_status_pill(
     )
     draw.text((x + pad_x, top_y + 2), text, font=fnt, fill=text_color)
     return pill_w
+
+
+def _draw_presence_badge_pill(
+    draw: ImageDraw.ImageDraw,
+    *,
+    x: int,
+    top_y: int,
+    badge: tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]],
+    font_size: int = 13,
+) -> int:
+    """Desenha um badge retornado por `_resolve_presence_badge` sem repetir o desempacotamento da tupla."""
+    return _draw_status_pill(
+        draw,
+        x=x,
+        top_y=top_y,
+        text=badge[0],
+        fill=badge[1],
+        outline=badge[2],
+        text_color=badge[3],
+        font_size=font_size,
+    )
+
+
+def _compute_2col_cell_geometry(
+    idx: int,
+    *,
+    y: int,
+    mid_x: int,
+    rail_w: int,
+    width: int,
+    row_h: int,
+    top_pad: int = 4,
+) -> tuple[int, int, int, int, int, int, int]:
+    """Calcula `(row_i, col_i, cx0, cx_limit, cell_x0, cell_x1, ry)` para uma célula de grade 2 colunas."""
+    row_i = idx // 2
+    col_i = idx % 2
+    cx0 = 24 if col_i == 0 else (mid_x + 16)
+    cx_limit = (mid_x - 14) if col_i == 0 else (width - 18)
+    cell_x0 = (rail_w + 4) if col_i == 0 else (mid_x + 4)
+    cell_x1 = (mid_x - 4) if col_i == 0 else (width - 6)
+    ry = y + top_pad + row_i * row_h
+    return row_i, col_i, cx0, cx_limit, cell_x0, cell_x1, ry
 
 
 def _draw_low_prominence_strip(
@@ -754,13 +788,15 @@ def _draw_category_block(
                     draw.rectangle((rail_w, y, width, y + grid_h), fill=(18, 28, 23, 255))
                     draw.line([(mid_x, y + 4), (mid_x, y + grid_h - 4)], fill=(32, 48, 39, 255), width=1)
                     for idx, pl in enumerate(vis_coh3):
-                        row_i = idx // 2
-                        col_i = idx % 2
-                        cx0 = 24 if col_i == 0 else (mid_x + 16)
-                        cx_limit = (mid_x - 14) if col_i == 0 else (width - 18)
-                        cell_x0 = (rail_w + 4) if col_i == 0 else (mid_x + 4)
-                        cell_x1 = (mid_x - 4) if col_i == 0 else (width - 6)
-                        ry = y + 3 + row_i * coh3_row_h
+                        row_i, col_i, cx0, cx_limit, cell_x0, cell_x1, ry = _compute_2col_cell_geometry(
+                            idx,
+                            y=y,
+                            mid_x=mid_x,
+                            rail_w=rail_w,
+                            width=width,
+                            row_h=coh3_row_h,
+                            top_pad=3,
+                        )
                         if col_i == 0 and row_i > 0:
                             draw.line([(20, ry), (width - 18, ry)], fill=(28, 42, 34, 255), width=1)
 
@@ -819,16 +855,7 @@ def _draw_category_block(
                             img.paste(vet_xs, (next_x, ry + 8), vet_xs)
                             next_x += 24
                         if pres_badge:
-                            _draw_status_pill(
-                                draw,
-                                x=next_x + 2,
-                                top_y=ry + 7,
-                                text=pres_badge[0],
-                                fill=pres_badge[1],
-                                outline=pres_badge[2],
-                                text_color=pres_badge[3],
-                                font_size=13,
-                            )
+                            _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 7, badge=pres_badge, font_size=13)
 
                         note_raw = str(pl.get("status_note") or "No CoH3 agora")
                         st_disp, st_fnt = truncate_to_px(
@@ -909,16 +936,7 @@ def _draw_category_block(
                             img.paste(vet_sm, (next_x, y + 18), vet_sm)
                             next_x += 29
                         if pres_badge:
-                            _draw_status_pill(
-                                draw,
-                                x=next_x + 2,
-                                top_y=y + 18,
-                                text=pres_badge[0],
-                                fill=pres_badge[1],
-                                outline=pres_badge[2],
-                                text_color=pres_badge[3],
-                                font_size=14,
-                            )
+                            _draw_presence_badge_pill(draw, x=next_x + 2, top_y=y + 18, badge=pres_badge, font_size=14)
 
                         y += coh3_row_h
 
@@ -984,13 +1002,15 @@ def _draw_category_block(
                 draw.line([(mid_x, y + 6), (mid_x, y + grid_h - 6)], fill=(36, 44, 58, 255), width=1)
 
                 for idx, pl in enumerate(vis_online):
-                    row_i = idx // 2
-                    col_i = idx % 2
-                    cx0 = 24 if col_i == 0 else (mid_x + 16)
-                    cx_limit = (mid_x - 14) if col_i == 0 else (width - 18)
-                    cell_x0 = (rail_w + 4) if col_i == 0 else (mid_x + 4)
-                    cell_x1 = (mid_x - 4) if col_i == 0 else (width - 6)
-                    ry = y + 4 + row_i * online_row_h
+                    row_i, col_i, cx0, cx_limit, cell_x0, cell_x1, ry = _compute_2col_cell_geometry(
+                        idx,
+                        y=y,
+                        mid_x=mid_x,
+                        rail_w=rail_w,
+                        width=width,
+                        row_h=online_row_h,
+                        top_pad=4,
+                    )
 
                     if col_i == 0 and row_i > 0:
                         draw.line([(20, ry), (width - 18, ry)], fill=(29, 35, 46, 255), width=1)
@@ -1078,16 +1098,7 @@ def _draw_category_block(
                         img.paste(vet_xs, (next_x, ry + 8), vet_xs)
                         next_x += 24
                     if pres_badge:
-                        _draw_status_pill(
-                            draw,
-                            x=next_x + 2,
-                            top_y=ry + 7,
-                            text=pres_badge[0],
-                            fill=pres_badge[1],
-                            outline=pres_badge[2],
-                            text_color=pres_badge[3],
-                            font_size=13,
-                        )
+                        _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 7, badge=pres_badge, font_size=13)
 
                     rec_tag = _format_coh3_recency_short(pl) if not is_veteranos else ""
                     if has_other:
@@ -1164,13 +1175,15 @@ def _draw_category_block(
                 draw.rectangle((rail_w, y, width, y + grid_h), fill=(24, 21, 16, 255))
                 draw.line([(mid_x, y + 4), (mid_x, y + grid_h - 4)], fill=(54, 45, 28, 255), width=1)
                 for idx, pl in enumerate(vis_recent):
-                    row_i = idx // 2
-                    col_i = idx % 2
-                    cx0 = 24 if col_i == 0 else (mid_x + 16)
-                    cx_limit = (mid_x - 14) if col_i == 0 else (width - 18)
-                    cell_x0 = (rail_w + 4) if col_i == 0 else (mid_x + 4)
-                    cell_x1 = (mid_x - 4) if col_i == 0 else (width - 6)
-                    ry = y + 4 + row_i * recent_row_h
+                    row_i, col_i, cx0, cx_limit, cell_x0, cell_x1, ry = _compute_2col_cell_geometry(
+                        idx,
+                        y=y,
+                        mid_x=mid_x,
+                        rail_w=rail_w,
+                        width=width,
+                        row_h=recent_row_h,
+                        top_pad=4,
+                    )
                     if col_i == 0 and row_i > 0:
                         draw.line([(20, ry), (width - 18, ry)], fill=(45, 38, 25, 255), width=1)
 

@@ -25,6 +25,7 @@ from steam_presence import (
     OTHER_BR_ACTIVE_COH3_DAYS,
     STEAM_ID64_VALID_RE,
     extract_snapshot_category,
+    format_coh3_recency_age,
     resolve_prominence_tier,
 )
 
@@ -39,6 +40,7 @@ BOT_AVATAR_URL = "https://coh3stats.com/logo/android-icon-192x192.png"
 SNOWFLAKE_ID_RE = re.compile(r"^\d{15,25}$")
 DISCORD_MD_ESCAPE_RE = re.compile(r"([\\*_~`|\[\]()<>@#])")
 SAFE_ATTACHMENT_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
+SAFE_MIME_TYPE_RE = re.compile(r"^[a-z0-9][a-z0-9.+-]{0,31}/[a-z0-9][a-z0-9.+-]{0,63}$", re.IGNORECASE)
 MAX_DISCORD_RESPONSE_BYTES = 262_144
 MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024
 
@@ -82,7 +84,7 @@ def _encode_multipart_formdata(
     for idx, (fname, file_bytes, mime_type) in enumerate(files):
         if not SAFE_ATTACHMENT_NAME_RE.fullmatch(fname):
             raise ValueError(f"Nome de anexo inválido bloqueado: {fname}")
-        if not SAFE_ATTACHMENT_NAME_RE.fullmatch(mime_type.replace("/", "_")):
+        if not SAFE_MIME_TYPE_RE.fullmatch(mime_type):
             raise ValueError("MIME type de anexo inválido bloqueado.")
         if len(file_bytes) > MAX_ATTACHMENT_BYTES:
             raise ValueError(f"Anexo {fname} excede o tamanho máximo seguro.")
@@ -118,31 +120,12 @@ COLOR_OTHER_BR_IDLE = 0x64748B    # Ardósia neutro
 
 
 def _format_coh3_recency_tag(pl: dict[str, Any]) -> str:
-    hrs = pl.get("last_coh3_age_hours")
-    days = pl.get("last_coh3_age_days")
-    if hrs is None:
-        return ""
-    h_int = max(0, int(hrs))
-    if h_int < 1:
-        return " *(CoH3 há <1h)*"
-    if h_int < 24:
-        return f" *(CoH3 há {h_int}h)*"
-    d_int = max(1, int(days if days is not None else (h_int // 24)))
-    return f" *(CoH3 há {d_int}d)*"
+    age = format_coh3_recency_age(pl)
+    return f" *(CoH3 há {age})*" if age else ""
 
 
 def _format_coh3_recency_compact(pl: dict[str, Any]) -> str:
-    hrs = pl.get("last_coh3_age_hours")
-    days = pl.get("last_coh3_age_days")
-    if hrs is None:
-        return ""
-    h_int = max(0, int(hrs))
-    if h_int < 1:
-        return "<1h"
-    if h_int < 24:
-        return f"{h_int}h"
-    d_int = max(1, int(days if days is not None else (h_int // 24)))
-    return f"{d_int}d"
+    return format_coh3_recency_age(pl)
 
 
 def _append_vertical_section(
