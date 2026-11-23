@@ -1624,7 +1624,7 @@
       "alias": "JeDi",
       "br_source": "open_data_matches",
       "last_match_date": 1794846484,
-      "last_seen_online_ts": 1795446033,
+      "last_seen_online_ts": 1795459450,
       "max_elo": 1080,
       "profile_id": 1021415,
       "steam_games_hidden": true,
@@ -1818,7 +1818,7 @@
       "max_elo": 1050,
       "profile_id": 1042204,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795372888,
+      "steam_gd_checked_ts": 1795459450,
       "steam_id": "76561198252921023",
       "total_matches": 41
     },
@@ -2210,7 +2210,7 @@
       "max_elo": 1110,
       "profile_id": 110317,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795372888,
+      "steam_gd_checked_ts": 1795459450,
       "steam_id": "76561198402942105",
       "total_matches": 892
     },
@@ -2341,7 +2341,7 @@
       "last_match_date": 1795372410,
       "last_seen_ingame_ts": 1795189556,
       "last_seen_ingame_webapi_ts": 1795458194,
-      "last_seen_online_ts": 1795457594,
+      "last_seen_online_ts": 1795459450,
       "max_elo": 1049,
       "profile_id": 1123905,
       "steam_id": "76561198020133377",
@@ -2813,14 +2813,14 @@
     "1200197": {
       "alias": "Spotlight",
       "br_source": "open_data_lb",
-      "last_match_date": 1795393023,
+      "last_match_date": 1795459308,
       "last_seen_online_ts": 1795456994,
       "max_elo": 1133,
       "profile_id": 1200197,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795389617,
       "steam_id": "76561198132799158",
-      "total_matches": 722
+      "total_matches": 723
     },
     "1201885": {
       "alias": "Parafuso",
@@ -3540,7 +3540,7 @@
       "alias": "Dods",
       "br_source": "open_data_matches",
       "last_match_date": 1794757905,
-      "last_seen_online_ts": 1795457594,
+      "last_seen_online_ts": 1795459450,
       "max_elo": 1000,
       "profile_id": 1270428,
       "steam_games_hidden": true,
@@ -3947,14 +3947,14 @@
     "1304125": {
       "alias": "LordBaconBR",
       "br_source": "open_data_lb",
-      "last_match_date": 1795372410,
+      "last_match_date": 1795459248,
       "last_seen_online_ts": 1795458794,
       "max_elo": 1012,
       "profile_id": 1304125,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795453031,
       "steam_id": "76561199482244877",
-      "total_matches": 814
+      "total_matches": 815
     },
     "1304518": {
       "alias": "B4NDEIRA",
@@ -5182,7 +5182,7 @@
     "1436158": {
       "alias": "luannmarcel",
       "br_source": "open_data_lb",
-      "last_match_date": 1795456772,
+      "last_match_date": 1795456773,
       "last_seen_online_ts": 1795458194,
       "max_elo": 1067,
       "profile_id": 1436158,
@@ -5306,7 +5306,7 @@
       "last_match_date": 1794520383,
       "last_seen_ingame_ts": 1795126020,
       "last_seen_ingame_webapi_ts": 1795380488,
-      "last_seen_online_ts": 1795383527,
+      "last_seen_online_ts": 1795459450,
       "max_elo": 1000,
       "profile_id": 1439371,
       "steam_games_hidden": false,
@@ -5623,6 +5623,7 @@
     "1441520": {
       "alias": "acolavite",
       "br_source": "open_data_matches",
+      "current_alias": "corolla XEI 2008 prata",
       "last_match_date": 1794613740,
       "last_seen_ingame_ts": 1795126020,
       "last_seen_ingame_webapi_ts": 1795231703,
@@ -7225,7 +7226,7 @@
       "alias": "SD.Emanuel",
       "br_source": "open_data_matches",
       "last_match_date": 1794785252,
-      "last_seen_online_ts": 1795418234,
+      "last_seen_online_ts": 1795459450,
       "max_elo": 1000,
       "profile_id": 1474708,
       "steam_games_hidden": false,
@@ -8461,7 +8462,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794794364,
       "last_seen_ingame_webapi_ts": 1795457895,
-      "last_seen_online_ts": 1795457594,
+      "last_seen_online_ts": 1795459450,
       "max_elo": 1087,
       "profile_id": 242,
       "steam_games_hidden": false,
