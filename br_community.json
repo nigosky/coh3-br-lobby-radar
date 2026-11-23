@@ -1739,7 +1739,7 @@
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795387467,
       "steam_id": "76561198961247689",
-      "total_matches": 529
+      "total_matches": 530
     },
     "1056763": {
       "alias": "FeralZ",
@@ -2140,7 +2140,7 @@
       "last_match_date": 1795220814,
       "last_seen_ingame_ts": 1795194799,
       "last_seen_ingame_webapi_ts": 1795220092,
-      "last_seen_online_ts": 1795229863,
+      "last_seen_online_ts": 1795434739,
       "max_elo": 1083,
       "profile_id": 1107913,
       "steam_id": "76561198205024009",
@@ -2433,12 +2433,12 @@
     "1157401": {
       "alias": "F.E.B_BRASIL_COH",
       "br_source": "open_data_lb",
-      "last_match_date": 1795430428,
+      "last_match_date": 1795434591,
       "last_seen_online_ts": 0,
       "max_elo": 1073,
       "profile_id": 1157401,
       "steam_id": "76561198096999667",
-      "total_matches": 131
+      "total_matches": 132
     },
     "1158074": {
       "alias": "Noriaki",
@@ -6702,8 +6702,8 @@
       "alias": "butao",
       "br_source": "open_data_matches",
       "last_match_date": 1794690048,
-      "last_seen_ingame_webapi_ts": 1795378688,
-      "last_seen_online_ts": 1795379888,
+      "last_seen_ingame_webapi_ts": 1795434739,
+      "last_seen_online_ts": 1795434739,
       "max_elo": 960,
       "profile_id": 1464919,
       "steam_games_hidden": false,
@@ -9003,7 +9003,7 @@
       "alias": "aldivx",
       "br_source": "open_data_lb",
       "last_match_date": 1795382818,
-      "last_seen_online_ts": 1795391118,
+      "last_seen_online_ts": 1795434739,
       "max_elo": 1187,
       "profile_id": 351821,
       "steam_games_hidden": true,
@@ -9039,7 +9039,7 @@
       "max_elo": 1067,
       "profile_id": 36473,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795348178,
+      "steam_gd_checked_ts": 1795434739,
       "steam_id": "76561199216452802",
       "total_matches": 4613
     },
@@ -10518,7 +10518,7 @@
       "alias": "Ritalino",
       "br_source": "open_data_lb",
       "last_match_date": 1795376091,
-      "last_seen_online_ts": 1795396649,
+      "last_seen_online_ts": 1795434739,
       "max_elo": 1018,
       "profile_id": 767932,
       "steam_games_hidden": true,
