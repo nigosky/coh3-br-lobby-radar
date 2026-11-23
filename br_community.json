@@ -2468,12 +2468,12 @@
     "1157401": {
       "alias": "F.E.B_BRASIL_COH",
       "br_source": "open_data_lb",
-      "last_match_date": 1795439741,
+      "last_match_date": 1795446144,
       "last_seen_online_ts": 0,
       "max_elo": 1073,
       "profile_id": 1157401,
       "steam_id": "76561198096999667",
-      "total_matches": 134
+      "total_matches": 135
     },
     "1158074": {
       "alias": "Noriaki",
@@ -2612,14 +2612,14 @@
     "1180172": {
       "alias": "Micaelzudo",
       "br_source": "open_data_lb",
-      "last_match_date": 1795445467,
+      "last_match_date": 1795446312,
       "last_seen_online_ts": 1795445390,
       "max_elo": 1000,
       "profile_id": 1180172,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795394186,
       "steam_id": "76561198430566960",
-      "total_matches": 1099
+      "total_matches": 1100
     },
     "1180699": {
       "alias": "Der Professor",
@@ -4735,7 +4735,7 @@
       "last_match_date": 1795444768,
       "last_seen_ingame_ts": 1795180445,
       "last_seen_ingame_webapi_ts": 1795436896,
-      "last_seen_online_ts": 1795444189,
+      "last_seen_online_ts": 1795446332,
       "max_elo": 1000,
       "profile_id": 1427900,
       "steam_games_hidden": true,
@@ -5875,6 +5875,7 @@
     "1449348": {
       "alias": "ES BRIEB CSGOSKINS.GG",
       "br_source": "open_data_matches",
+      "current_alias": "BESON",
       "last_match_date": 1794602764,
       "last_seen_ingame_ts": 1795184990,
       "last_seen_ingame_webapi_ts": 1795277439,
@@ -6929,7 +6930,7 @@
       "last_match_date": 1794709125,
       "last_seen_ingame_ts": 1795119280,
       "last_seen_ingame_webapi_ts": 1795444489,
-      "last_seen_online_ts": 1795444489,
+      "last_seen_online_ts": 1795446332,
       "max_elo": 1044,
       "profile_id": 1467296,
       "steam_games_hidden": false,
@@ -8571,7 +8572,7 @@
       "alias": "ronaldo.luis",
       "br_source": "open_data_matches",
       "last_match_date": 1795360336,
-      "last_seen_online_ts": 1795444489,
+      "last_seen_online_ts": 1795446332,
       "max_elo": 1000,
       "profile_id": 268967,
       "steam_games_hidden": true,
@@ -9061,7 +9062,7 @@
       "alias": "LGER77",
       "br_source": "open_data_matches",
       "last_match_date": 1795097537,
-      "last_seen_online_ts": 1795437797,
+      "last_seen_online_ts": 1795446332,
       "max_elo": 1000,
       "profile_id": 369117,
       "steam_games_hidden": true,
@@ -9548,7 +9549,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1795281636,
       "last_seen_ingame_webapi_ts": 1795444489,
-      "last_seen_online_ts": 1795444489,
+      "last_seen_online_ts": 1795446332,
       "max_elo": 1000,
       "profile_id": 568788,
       "steam_id": "76561198354293129",
@@ -11349,7 +11350,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794262194,
       "last_seen_ingame_webapi_ts": 1795384428,
-      "last_seen_online_ts": 1795444489,
+      "last_seen_online_ts": 1795446332,
       "max_elo": 1048,
       "profile_id": 900961,
       "steam_games_hidden": false,
