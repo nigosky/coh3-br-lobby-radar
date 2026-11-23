@@ -7228,7 +7228,6 @@
     "1475296": {
       "alias": "wIIIa",
       "br_source": "open_data_matches",
-      "current_alias": "Уилла",
       "last_match_date": 1794771844,
       "last_seen_ingame_ts": 1795197198,
       "last_seen_ingame_webapi_ts": 1795398795,
@@ -9345,7 +9344,7 @@
       "max_elo": 1223,
       "profile_id": 4517,
       "steam_id": "76561198033317439",
-      "total_matches": 4089
+      "total_matches": 4090
     },
     "455713": {
       "alias": "Biliko",
@@ -11764,14 +11763,14 @@
     "956645": {
       "alias": "Magraiver",
       "br_source": "open_data_lb",
-      "last_match_date": 1795403654,
+      "last_match_date": 1795408165,
       "last_seen_ingame_ts": 1795195999,
       "last_seen_ingame_webapi_ts": 1795402452,
       "last_seen_online_ts": 1795407901,
       "max_elo": 1172,
       "profile_id": 956645,
       "steam_id": "76561198119663404",
-      "total_matches": 574
+      "total_matches": 577
     },
     "957597": {
       "alias": "Tavinho",
