@@ -228,19 +228,23 @@ def validate_https_endpoint(
 
 
 def validate_discord_webhook_url(url: str, allow_message_subpath: bool = False) -> bool:
-    """Valida estritamente URLs de Webhook do Discord (HTTPS, host oficial, porta 443, sem query/fragmento e token válido)."""
+    """Valida estritamente URLs de Webhook do Discord (HTTPS, host oficial, porta 443, token válido e somente `?wait=true` em requisições)."""
     raw = (url or "").strip().rstrip("/")
     if not raw:
         return False
     pattern = WEBHOOK_REQUEST_PATH_RE if allow_message_subpath else WEBHOOK_PATH_RE
     try:
-        validate_https_endpoint(
+        parsed = validate_https_endpoint(
             raw,
             ALLOWED_DISCORD_HOSTS,
             path_prefix="/api/",
             path_regex=pattern,
-            allow_query=False,
+            allow_query=allow_message_subpath,
         )
+        if parsed.query:
+            q_pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+            if not q_pairs or any(k != "wait" or v != "true" for k, v in q_pairs):
+                return False
         return True
     except ValueError:
         return False
