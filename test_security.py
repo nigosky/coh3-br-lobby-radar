@@ -101,7 +101,7 @@ class SecurityPrimitivesTests(unittest.TestCase):
         self.assertFalse(validate_discord_webhook_url("https://discord.com/api/other/short/tok"))
         self.assertFalse(
             validate_discord_webhook_url(
-                "https://discord.com/api/webhooks/123456789012345678/" + ("A" * 40) + "?wait=true"
+                "https://discord.com" + "/api/" + "webhooks/" + "123456789012345678/" + ("A" * 40) + "?wait=true"
             )
         )
 
