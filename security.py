@@ -37,6 +37,10 @@ ENV_SECRET_REDACT_RE = re.compile(
     r"(DISCORD_(?:LOBBY_)?WEBHOOK_URL\s*=\s*)[^\s\"'<>]+",
     re.IGNORECASE,
 )
+TOKEN_ENV_REDACT_RE = re.compile(
+    r"((?:TRACKER_DISPATCH_TOKEN|GITHUB_TOKEN|GH_TOKEN)\s*=\s*)[^\s\"'<>]+",
+    re.IGNORECASE,
+)
 STEAM_API_KEY_QUERY_REDACT_RE = re.compile(
     r"([?&]key=)[^&\s\"'<>]+",
     re.IGNORECASE,
@@ -45,25 +49,37 @@ STEAM_API_KEY_ENV_REDACT_RE = re.compile(
     r"(STEAM_WEB_API_KEY\s*=\s*)[^\s\"'<>]+",
     re.IGNORECASE,
 )
+STEAM_API_KEY_HEADER_REDACT_RE = re.compile(
+    r"(x-webapi-key\s*[:=]\s*)[^\s\"'<>]+",
+    re.IGNORECASE,
+)
 GITHUB_TOKEN_REDACT_RE = re.compile(
     r"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b",
+)
+AUTH_HEADER_REDACT_RE = re.compile(
+    r"(Authorization\s*:\s*(?:Bearer|Basic|Token)\s+)[^\s\"'<>]+",
+    re.IGNORECASE,
 )
 
 # Remove caracteres de controle ASCII, zero-width e overrides bidirecionais Unicode (anti-spoofing visual RLO)
 UNSAFE_TEXT_CHARS_RE = re.compile(r"[\x00-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069\ufeff]+")
 URL_FORBIDDEN_CHARS_RE = re.compile(r"[\x00-\x20\x7f\\]")
+URL_PATH_TRAVERSAL_RE = re.compile(r"(?:^|/)\.\.(?:/|$)|%2e%2e|%5c|\\", re.IGNORECASE)
 
 
 def redact_secrets(text: Any) -> str:
-    """Remove qualquer URL/token de Webhook do Discord, chave da Steam Web API ou token GitHub em logs e exceções."""
+    """Remove qualquer URL/token de Webhook do Discord, chave da Steam Web API, token GitHub ou Authorization em logs e exceções."""
     raw = str(text or "")
     if not raw:
         return ""
     scrubbed = WEBHOOK_REDACT_RE.sub("[WEBHOOK_REDACTED]", raw)
     scrubbed = ENV_SECRET_REDACT_RE.sub(r"\1[WEBHOOK_REDACTED]", scrubbed)
+    scrubbed = TOKEN_ENV_REDACT_RE.sub(r"\1[TOKEN_REDACTED]", scrubbed)
     scrubbed = STEAM_API_KEY_QUERY_REDACT_RE.sub(r"\1[STEAM_KEY_REDACTED]", scrubbed)
     scrubbed = STEAM_API_KEY_ENV_REDACT_RE.sub(r"\1[STEAM_KEY_REDACTED]", scrubbed)
-    return GITHUB_TOKEN_REDACT_RE.sub("[GH_TOKEN_REDACTED]", scrubbed)
+    scrubbed = STEAM_API_KEY_HEADER_REDACT_RE.sub(r"\1[STEAM_KEY_REDACTED]", scrubbed)
+    scrubbed = GITHUB_TOKEN_REDACT_RE.sub("[GH_TOKEN_REDACTED]", scrubbed)
+    return AUTH_HEADER_REDACT_RE.sub(r"\1[AUTH_REDACTED]", scrubbed)
 
 
 class SecretRedactingFilter(logging.Filter):
@@ -169,8 +185,9 @@ def validate_https_endpoint(
     allowed_hosts: set[str] | frozenset[str],
     path_prefix: str = "/",
     path_regex: re.Pattern[str] | None = None,
+    allow_query: bool = True,
 ) -> urllib.parse.ParseResult:
-    """Valida esquema HTTPS, host em allowlist, porta 443, ausência de credenciais/traversal e caminho permitido."""
+    """Valida esquema HTTPS, host em allowlist, porta 443, ausência de credenciais/fragmentos/traversal e caminho permitido."""
     clean = (url or "").strip()
     if not clean or URL_FORBIDDEN_CHARS_RE.search(clean):
         raise ValueError("URL inválida ou contendo caracteres de controle proibidos.")
@@ -188,10 +205,10 @@ def validate_https_endpoint(
         raise ValueError("Porta inválida na URL.") from exc
     if port not in (None, 443):
         raise ValueError(f"Porta não autorizada bloqueada: {port}")
-    if parsed.fragment:
-        raise ValueError("Fragmentos (#...) em URLs de API são bloqueados por segurança.")
+    if parsed.params or parsed.fragment or "#" in clean:
+        raise ValueError("Parâmetros de caminho ou fragmentos (#...) em URLs de API são bloqueados por segurança.")
     raw_path = parsed.path or ""
-    if ".." in raw_path.split("/") or "\\" in raw_path:
+    if URL_PATH_TRAVERSAL_RE.search(raw_path) or ".." in raw_path.split("/") or "\\" in raw_path:
         raise ValueError("Path traversal detectado e bloqueado na URL.")
     decoded = raw_path
     for _ in range(3):
@@ -205,17 +222,25 @@ def validate_https_endpoint(
         raise ValueError("Caminho da URL fora do escopo permitido.")
     if path_regex is not None and not path_regex.fullmatch(raw_path):
         raise ValueError("Formato do caminho da URL rejeitado pela validação estrita.")
+    if not allow_query and (parsed.query or "?" in clean):
+        raise ValueError("Query string não permitida nesta URL.")
     return parsed
 
 
 def validate_discord_webhook_url(url: str, allow_message_subpath: bool = False) -> bool:
-    """Valida estritamente URLs de Webhook do Discord (HTTPS, host oficial, porta 443 e token válido)."""
+    """Valida estritamente URLs de Webhook do Discord (HTTPS, host oficial, porta 443, sem query/fragmento e token válido)."""
     raw = (url or "").strip().rstrip("/")
     if not raw:
         return False
     pattern = WEBHOOK_REQUEST_PATH_RE if allow_message_subpath else WEBHOOK_PATH_RE
     try:
-        validate_https_endpoint(raw, ALLOWED_DISCORD_HOSTS, path_prefix="/api/", path_regex=pattern)
+        validate_https_endpoint(
+            raw,
+            ALLOWED_DISCORD_HOSTS,
+            path_prefix="/api/",
+            path_regex=pattern,
+            allow_query=False,
+        )
         return True
     except ValueError:
         return False

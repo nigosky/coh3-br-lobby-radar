@@ -43,7 +43,7 @@ jobs:
       contents: write
       actions: write
     env:
-      SECRET_PATTERN: "(ptb\\.|canary\\.)?discord(app)?\\.com/api/(v[0-9]+/)?webhooks/[0-9]+|STEAM_WEB_API_KEY=[A-Za-z0-9]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+      SECRET_PATTERN: "(ptb\\.|canary\\.)?discord(app)?\\.com/api/(v[0-9]+/)?webhooks/[0-9]+|STEAM_WEB_API_KEY=[A-Za-z0-9]{16,}|x-webapi-key[:=][[:space:]]*[A-Za-z0-9]{16,}|[?&]key=[A-Za-z0-9]{16,}|TRACKER_DISPATCH_TOKEN=[A-Za-z0-9_.-]{16,}|Authorization:[[:space:]]*(Bearer|Basic|Token)[[:space:]]+[A-Za-z0-9._-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
 
     steps:
       - name: Checkout seguro (SHA imutavel)
@@ -122,7 +122,7 @@ jobs:
             python3 lobby_radar.py "${ARGS[@]}"
 
             # Bloqueia imediatamente qualquer vazamento de Webhook/token/chave privada em arquivos rastreados
-            if git ls-files -z | xargs -0 grep -InE "${SECRET_PATTERN}" 2>/dev/null; then
+            if git ls-files -z | xargs -0 grep -InEi "${SECRET_PATTERN}" 2>/dev/null; then
               echo "::error::Bloqueio de seguranca acionado: segredo/Webhook detectado em arquivo rastreado!"
               exit 1
             fi
@@ -132,6 +132,10 @@ jobs:
                 git add -- "${f}"
               fi
             done
+            if git diff --cached --name-only | grep -Ei "(^\.env|\.secret$)" >/dev/null 2>&1; then
+              echo "::error::Bloqueio de seguranca acionado: arquivo de segredo staged!"
+              exit 1
+            fi
             if ! git diff --cached --quiet; then
               git commit -m "chore(lobby-state): atualizar estado do Radar de Lobby [skip ci]"
               git pull --rebase -X theirs origin main || git rebase --abort 2>/dev/null || true
@@ -155,8 +159,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Bloqueia qualquer URL de Webhook, token GitHub ou chave privada em TODOS os arquivos rastreados
-          if git ls-files -z | xargs -0 grep -InE "${SECRET_PATTERN}" 2>/dev/null; then
+          # Bloqueia qualquer URL de Webhook, chave Steam, token GitHub/dispatch ou chave privada em TODOS os arquivos rastreados
+          if git ls-files -z | xargs -0 grep -InEi "${SECRET_PATTERN}" 2>/dev/null; then
             echo "::error::Bloqueio de seguranca acionado: padrao de segredo/Webhook detectado em arquivo rastreado!"
             exit 1
           fi
@@ -166,6 +170,11 @@ jobs:
               git add -- "${f}"
             fi
           done
+
+          if git diff --cached --name-only | grep -Ei "(^\.env|\.secret$)" >/dev/null 2>&1; then
+            echo "::error::Bloqueio de seguranca acionado: arquivo de segredo staged!"
+            exit 1
+          fi
 
           if git diff --cached --quiet; then
             echo "Nenhuma alteracao em state.json / br_community.json nesta sessao."
