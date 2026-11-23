@@ -255,7 +255,13 @@ class CohDBBattlegroupClient:
         if not path or "?" in path or "#" in path or not path_regex.fullmatch(path):
             raise ValueError(f"Caminho cohdb bloqueado: {path!r}")
         url = f"{COHDB_BASE_URL}{path}"
-        validate_https_endpoint(url, ALLOWED_COHDB_HOSTS, path_prefix="/", path_regex=path_regex)
+        validate_https_endpoint(
+            url,
+            ALLOWED_COHDB_HOSTS,
+            path_prefix="/",
+            path_regex=path_regex,
+            allow_query=False,
+        )
         req = urllib.request.Request(
             url,
             headers={
@@ -466,6 +472,62 @@ class SmurfTelemetryCollector:
             self.players[pid] = tel
         return tel
 
+    def _record_player_match_sample(
+        self,
+        tel: PlayerMatchTelemetry,
+        *,
+        mid: int,
+        mode: str,
+        st: int,
+        ct: int,
+        utc_hour: int,
+        team_id: int,
+        race_id: int,
+        res_type: int,
+        elo: int,
+        raw_counters: Any,
+        bg_loadout_items: list[int] | None,
+        co_players: list[tuple[int, int]],
+        alias: str = "",
+    ) -> bool:
+        """Registra uma única observação deduplicada de partida na telemetria de `tel`."""
+        if mid > 0 and mid in tel.seen_match_ids:
+            return False
+        if mid > 0:
+            tel.seen_match_ids.add(mid)
+        tel.games += 1
+        if res_type == 1:
+            tel.wins += 1
+        tel.mode_counts[mode] += 1
+        if race_id >= 0:
+            tel.mode_faction_counts[(mode, race_id)] += 1
+        tel.hour_counts[utc_hour] += 1
+        if elo > tel.mode_elo_max.get(mode, 0):
+            tel.mode_elo_max[mode] = elo
+        if alias:
+            tel.record_alias(alias, ct)
+        if len(tel.intervals) < self.max_intervals_per_player:
+            tel.intervals.append((st, ct, mid))
+
+        apm, abil_pm = _parse_counters_biometrics(raw_counters)
+        tel.record_biometrics(
+            mode=mode,
+            race_id=race_id,
+            apm=apm,
+            abil_pm=abil_pm,
+            bg_loadout_items=bg_loadout_items,
+        )
+
+        for op_pid, op_team in co_players:
+            if op_pid <= 0 or op_pid == tel.profile_id:
+                continue
+            tel.co_played_with.add(op_pid)
+            if team_id >= 0 and op_team == team_id:
+                tel.ally_counts[op_pid] += 1
+            else:
+                tel.opp_counts[op_pid] += 1
+        return True
+
     def observe_matches_payload(self, data: dict[str, Any], known_br_pids: set[int] | frozenset[int] | None = None) -> None:
         """Processa um payload diário de partidas, armazenando apenas partidas envolvendo jogadores BR/candidatos."""
         if not isinstance(data, dict):
@@ -527,6 +589,7 @@ class SmurfTelemetryCollector:
 
             bg_by_pid = _extract_bg_loadout_by_pid(match.get("matchhistoryitems"))
             utc_hour = datetime.fromtimestamp(ct, tz=timezone.utc).hour
+            co_players = [(op_pid, op_team) for op_pid, op_team, *_ in participants]
             for pid, team_id, race_id, res_type, elo, alias, ctry, raw_counters in participants:
                 if alias:
                     self.pid_aliases[pid] = alias
@@ -539,42 +602,22 @@ class SmurfTelemetryCollector:
                     ):
                         continue
 
-                tel = self._get(pid)
-                if mid > 0 and mid in tel.seen_match_ids:
-                    continue
-                if mid > 0:
-                    tel.seen_match_ids.add(mid)
-                tel.games += 1
-                if res_type == 1:
-                    tel.wins += 1
-                tel.mode_counts[mode] += 1
-                if race_id >= 0:
-                    tel.mode_faction_counts[(mode, race_id)] += 1
-                tel.hour_counts[utc_hour] += 1
-                if elo > tel.mode_elo_max.get(mode, 0):
-                    tel.mode_elo_max[mode] = elo
-                if alias:
-                    tel.record_alias(alias, ct)
-                if len(tel.intervals) < self.max_intervals_per_player:
-                    tel.intervals.append((st, ct, mid))
-
-                apm, abil_pm = _parse_counters_biometrics(raw_counters)
-                tel.record_biometrics(
+                self._record_player_match_sample(
+                    self._get(pid),
+                    mid=mid,
                     mode=mode,
+                    st=st,
+                    ct=ct,
+                    utc_hour=utc_hour,
+                    team_id=team_id,
                     race_id=race_id,
-                    apm=apm,
-                    abil_pm=abil_pm,
+                    res_type=res_type,
+                    elo=elo,
+                    raw_counters=raw_counters,
                     bg_loadout_items=bg_by_pid.get(pid),
+                    co_players=co_players,
+                    alias=alias,
                 )
-
-                for op_pid, op_team, _, _, _, _, _, _ in participants:
-                    if op_pid == pid:
-                        continue
-                    tel.co_played_with.add(op_pid)
-                    if team_id >= 0 and op_team == team_id:
-                        tel.ally_counts[op_pid] += 1
-                    else:
-                        tel.opp_counts[op_pid] += 1
 
     def observe_relic_match_history(self, target_pid: int, data: dict[str, Any] | None) -> int:
         """
@@ -627,45 +670,30 @@ class SmurfTelemetryCollector:
                 0,
             )
 
-            my_team = int(my_row.get("teamid", -1) if my_row.get("teamid") is not None else -1)
-            my_race = int(my_row.get("race_id", -1) if my_row.get("race_id") is not None else -1)
-            my_res = int(my_row.get("resulttype", 0) or 0)
-
-            if mid > 0:
-                tel.seen_match_ids.add(mid)
-            tel.games += 1
-            added += 1
-            if my_res == 1:
-                tel.wins += 1
-            tel.mode_counts[mode] += 1
-            if my_race >= 0:
-                tel.mode_faction_counts[(mode, my_race)] += 1
-            tel.hour_counts[datetime.fromtimestamp(ct, tz=timezone.utc).hour] += 1
-            if elo > tel.mode_elo_max.get(mode, 0):
-                tel.mode_elo_max[mode] = elo
-            if len(tel.intervals) < self.max_intervals_per_player:
-                tel.intervals.append((st, ct, mid))
-
-            apm, abil_pm = _parse_counters_biometrics(my_row.get("counters"))
             bg_by_pid = _extract_bg_loadout_by_pid(match.get("matchhistoryitems"))
-            tel.record_biometrics(
+            co_players = [
+                (
+                    int(rep.get("profile_id", 0) or 0),
+                    int(rep.get("teamid", -1) if rep.get("teamid") is not None else -1),
+                )
+                for rep in results
+            ]
+            if self._record_player_match_sample(
+                tel,
+                mid=mid,
                 mode=mode,
-                race_id=my_race,
-                apm=apm,
-                abil_pm=abil_pm,
+                st=st,
+                ct=ct,
+                utc_hour=datetime.fromtimestamp(ct, tz=timezone.utc).hour,
+                team_id=int(my_row.get("teamid", -1) if my_row.get("teamid") is not None else -1),
+                race_id=int(my_row.get("race_id", -1) if my_row.get("race_id") is not None else -1),
+                res_type=int(my_row.get("resulttype", 0) or 0),
+                elo=elo,
+                raw_counters=my_row.get("counters"),
                 bg_loadout_items=bg_by_pid.get(pid),
-            )
-
-            for rep in results:
-                op_pid = int(rep.get("profile_id", 0) or 0)
-                if op_pid <= 0 or op_pid == pid:
-                    continue
-                tel.co_played_with.add(op_pid)
-                op_team = int(rep.get("teamid", -1) if rep.get("teamid") is not None else -1)
-                if my_team >= 0 and op_team == my_team:
-                    tel.ally_counts[op_pid] += 1
-                else:
-                    tel.opp_counts[op_pid] += 1
+                co_players=co_players,
+            ):
+                added += 1
 
         # `profiles` em getRecentMatchHistoryByProfileId sempre traz o nick ATUAL da conta,
         # nunca o nick histórico de partidas antigas — registra uma única vez no timestamp mais recente

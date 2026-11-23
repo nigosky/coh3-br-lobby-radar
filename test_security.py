@@ -80,34 +80,55 @@ class SecurityPrimitivesTests(unittest.TestCase):
             "https://discord.com/api/../admin",
             "https://discord.com/api/%2e%2e/admin",
             "https://discord.com/api/%252e%252e/admin",
+            "https://discord.com/api/%5cadmin",
             "https://discord.com/api/v10/resource%00.png",
             "https://discord.com/api/v10/resource#frag",
+            "https://discord.com/api/v10/resource;param=1",
             "https://discord.com/api\\admin",
         ):
             with self.assertRaises(ValueError, msg=f"URL insegura não bloqueada: {bad!r}"):
                 validate_https_endpoint(bad, ALLOWED_DISCORD_HOSTS, path_prefix="/api/")
 
+        with self.assertRaises(ValueError):
+            validate_https_endpoint(
+                "https://discord.com/api/v10/resource?foo=1",
+                ALLOWED_DISCORD_HOSTS,
+                path_prefix="/api/",
+                allow_query=False,
+            )
+
         self.assertFalse(validate_discord_webhook_url("https://evil.example/api/webhooks/123456789012345678/tok"))
         self.assertFalse(validate_discord_webhook_url("https://discord.com/api/other/short/tok"))
+        self.assertFalse(
+            validate_discord_webhook_url(
+                "https://discord.com/api/webhooks/123456789012345678/" + ("A" * 40) + "?wait=true"
+            )
+        )
 
     def test_redact_secrets_and_strip_bidi_spoofing(self) -> None:
         fake_host = "https://discord.com"
         fake_path = "/api/" + "webhooks/" + "999999999999999999/" + ("A" * 40)
         fake_steam_key = "ABCDEF1234567890ABCDEF1234567890"
         fake_gh_token = "ghp_" + ("X" * 36)
+        fake_bearer = "SuperSecretBearerToken123456"
         leaked = (
             f"Erro ao chamar {fake_host}{fake_path} com DISCORD_LOBBY_WEBHOOK_URL=secret123 "
             f"e https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={fake_steam_key}&steamids=76561197963172584 "
-            f"STEAM_WEB_API_KEY={fake_steam_key} token={fake_gh_token}"
+            f"STEAM_WEB_API_KEY={fake_steam_key} x-webapi-key: {fake_steam_key} "
+            f"TRACKER_DISPATCH_TOKEN=disp_secret_999 Authorization: Bearer {fake_bearer} token={fake_gh_token}"
         )
         scrubbed = redact_secrets(leaked)
         self.assertNotIn("999999999999999999", scrubbed)
         self.assertNotIn("secret123", scrubbed)
         self.assertNotIn(fake_steam_key, scrubbed)
         self.assertNotIn(fake_gh_token, scrubbed)
+        self.assertNotIn("disp_secret_999", scrubbed)
+        self.assertNotIn(fake_bearer, scrubbed)
         self.assertIn("[WEBHOOK_REDACTED]", scrubbed)
         self.assertIn("[STEAM_KEY_REDACTED]", scrubbed)
         self.assertIn("[GH_TOKEN_REDACTED]", scrubbed)
+        self.assertIn("[TOKEN_REDACTED]", scrubbed)
+        self.assertIn("[AUTH_REDACTED]", scrubbed)
 
         # Remove RLO (U+202E) e caracteres de controle
         spoofed = "Jogador\u202e\x00\x07Test"
