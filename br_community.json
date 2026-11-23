@@ -3121,14 +3121,14 @@
     "1242418": {
       "alias": "faveri.filho",
       "br_source": "open_data_lb",
-      "last_match_date": 1795399909,
+      "last_match_date": 1795400909,
       "last_seen_online_ts": 1795400595,
       "max_elo": 1005,
       "profile_id": 1242418,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795399395,
       "steam_id": "76561198103034149",
-      "total_matches": 197
+      "total_matches": 198
     },
     "1242455": {
       "alias": "joevertepb",
@@ -3306,7 +3306,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1794257021,
       "last_seen_ingame_ts": 1795185291,
-      "last_seen_ingame_webapi_ts": 1795379588,
+      "last_seen_ingame_webapi_ts": 1795401195,
       "last_seen_online_ts": 1795399695,
       "max_elo": 1000,
       "profile_id": 1257730,
@@ -4146,7 +4146,7 @@
       "alias": "Cabo Minimerda",
       "br_source": "open_data_matches",
       "last_match_date": 1795045723,
-      "last_seen_online_ts": 1795398795,
+      "last_seen_online_ts": 1795401195,
       "max_elo": 1000,
       "profile_id": 1352142,
       "steam_games_hidden": true,
@@ -5735,7 +5735,7 @@
       "last_match_date": 1794588404,
       "last_seen_ingame_ts": 1795136171,
       "last_seen_ingame_webapi_ts": 1795367088,
-      "last_seen_online_ts": 1795399395,
+      "last_seen_online_ts": 1795401195,
       "max_elo": 1000,
       "profile_id": 1447954,
       "steam_games_hidden": false,
@@ -5914,7 +5914,7 @@
       "alias": "QueiroZ",
       "br_source": "open_data_matches",
       "last_match_date": 1794608694,
-      "last_seen_online_ts": 1795399395,
+      "last_seen_online_ts": 1795401195,
       "max_elo": 1000,
       "profile_id": 1451709,
       "steam_games_hidden": true,
@@ -8027,14 +8027,14 @@
     "18414": {
       "alias": "pipiku",
       "br_source": "relic_sa_lb",
-      "last_match_date": 1795398932,
+      "last_match_date": 1795401094,
       "last_seen_online_ts": 1795399695,
       "max_elo": 1516,
       "profile_id": 18414,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795383227,
       "steam_id": "76561198027958034",
-      "total_matches": 2448
+      "total_matches": 2449
     },
     "18699": {
       "alias": "RoG",
@@ -8182,14 +8182,14 @@
     "21255": {
       "alias": "Blue Six",
       "br_source": "open_data_matches",
-      "last_match_date": 1795399839,
+      "last_match_date": 1795401027,
       "last_seen_online_ts": 1795399996,
       "max_elo": 1047,
       "profile_id": 21255,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795399395,
       "steam_id": "76561198007696647",
-      "total_matches": 886
+      "total_matches": 887
     },
     "214408": {
       "alias": "arturaga",
@@ -9230,7 +9230,7 @@
     "4138": {
       "alias": "pdf1234300",
       "br_source": "open_data_lb",
-      "last_match_date": 1795399257,
+      "last_match_date": 1795400962,
       "last_seen_ingame_ts": 1795135757,
       "last_seen_ingame_webapi_ts": 1795398449,
       "last_seen_online_ts": 1795399996,
@@ -9993,7 +9993,7 @@
       "max_elo": 1212,
       "profile_id": 703146,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795314664,
+      "steam_gd_checked_ts": 1795401195,
       "steam_id": "76561198217753836",
       "total_matches": 2542
     },
@@ -10259,7 +10259,7 @@
       "alias": "SoyoSid",
       "br_source": "open_data_matches",
       "last_match_date": 1795190404,
-      "last_seen_online_ts": 1795399395,
+      "last_seen_online_ts": 1795401195,
       "max_elo": 1000,
       "profile_id": 741277,
       "steam_games_hidden": true,
@@ -10911,14 +10911,14 @@
     "844225": {
       "alias": "『V』SKOBADARK",
       "br_source": "open_data_lb",
-      "last_match_date": 1795189461,
+      "last_match_date": 1795401094,
       "last_seen_online_ts": 1795399996,
       "max_elo": 1525,
       "profile_id": 844225,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795394486,
       "steam_id": "76561198009000654",
-      "total_matches": 1915
+      "total_matches": 1916
     },
     "844292": {
       "alias": "Ziuder",
