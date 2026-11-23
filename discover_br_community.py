@@ -28,6 +28,20 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+from alias_history import (
+    COHDB_ALIASES_TTL_SEC,
+    DEFAULT_ALIAS_HISTORY_PATH,
+    STEAM_ALIASES_TTL_SEC,
+    ingest_coh3stats_opendata,
+    ingest_cohdb_observations,
+    ingest_local_database,
+    ingest_relic_stats,
+    ingest_steam_alias_histories,
+    ingest_steam_presence,
+    load_alias_history,
+    save_alias_history,
+    select_stale_pids_for_source,
+)
 from lobby_radar import (
     COMMUNITY_SCHEMA_VERSION,
     DEFAULT_COMMUNITY_CACHE_PATH,
@@ -48,6 +62,7 @@ from smurf_detector import (
     DEFAULT_MATCH_DAYS,
     DEFAULT_MIN_PROBABILITY_PCT,
     DEFAULT_TOP_N_BR,
+    CohDBBattlegroupClient,
     SmurfTelemetryCollector,
     detect_top50_br_smurfs,
     extract_confirmed_independent_roster_pids,
@@ -154,8 +169,10 @@ def run_deep_br_discovery(
     *,
     community_cache_path: Path = DEFAULT_COMMUNITY_CACHE_PATH,
     state_path: Path = DEFAULT_STATE_PATH,
+    alias_history_path: Path | None = None,
     relic_client: RelicActivityClient | None = None,
     presence_client: SteamPresenceClient | None = None,
+    cohdb_client: Any = None,
     match_days: int = DEFAULT_MATCH_DAYS,
     max_steam_verify: int = DEFAULT_MAX_STEAM_VERIFY,
     relic_sa_pages: int = DEFAULT_RELIC_SA_PAGES,
@@ -166,10 +183,12 @@ def run_deep_br_discovery(
     smurf_top_n: int = DEFAULT_TOP_N_BR,
     smurf_min_prob: int = DEFAULT_MIN_PROBABILITY_PCT,
     smurf_report_path: Path | None = None,
+    enable_external_alias_enrichment: bool | None = None,
 ) -> dict[str, Any]:
     """
-    Executa a varredura profunda e convergente em 4 fontes oficiais/abertas, atualiza `br_community.json`
-    e (quando `smurf_check=True`) roda a verificação forense de contas Smurf focada no Top 50 BR na Relic API.
+    Executa a varredura profunda e convergente em 4 fontes oficiais/abertas, atualiza `br_community.json`,
+    consolida o histórico persistente multi-fonte de nicks (`alias_history.json`: Relic + Steam Key API/ajaxaliases
+    + COH3 Stats Open Data + CoHDB + base local) e roda a verificação forense de contas Smurf do Top 50 BR.
     """
     now = int(now_ts) if now_ts is not None else int(time.time())
     active_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
@@ -177,6 +196,13 @@ def run_deep_br_discovery(
 
     r_client = relic_client if relic_client is not None else RelicActivityClient()
     p_client = presence_client if presence_client is not None else SteamPresenceClient()
+    hist_path = (
+        alias_history_path
+        if alias_history_path is not None
+        else (community_cache_path.parent / DEFAULT_ALIAS_HISTORY_PATH.name)
+    )
+    alias_history_doc = load_alias_history(hist_path)
+    relic_stats_collected: dict[int, dict[str, Any]] = {}
 
     state = load_state(state_path)
     vet_roster, _ = _resolve_veteranos_roster(state, r_client)
@@ -492,6 +518,8 @@ def run_deep_br_discovery(
         )
         enrich_slice = need_enrich_pids[:1500]
         enriched = r_client.fetch_profile_stats_batch(enrich_slice, pace_delay_sec=0.22)
+        if isinstance(enriched, dict):
+            relic_stats_collected.update(enriched)
         for pid, st in enriched.items():
             if pid not in br_pool:
                 continue
@@ -603,6 +631,8 @@ def run_deep_br_discovery(
         if missing_vet_elo_pids and hasattr(r_client, "fetch_profile_stats_batch"):
             try:
                 vet_stats = r_client.fetch_profile_stats_batch(missing_vet_elo_pids[:100], pace_delay_sec=0.15)
+                if isinstance(vet_stats, dict):
+                    relic_stats_collected.update(vet_stats)
                 for vpid, st in vet_stats.items():
                     if vpid in all_br_for_top50:
                         all_br_for_top50[vpid]["max_elo"] = max(
@@ -631,6 +661,9 @@ def run_deep_br_discovery(
         can_verify_relic = hasattr(r_client, "fetch_profile_stats_batch") and hasattr(
             r_client, "_fetch_one_match_history_raw"
         )
+        shared_cohdb = cohdb_client
+        if shared_cohdb is None and isinstance(r_client, RelicActivityClient):
+            shared_cohdb = CohDBBattlegroupClient(pace_delay_sec=0.12, max_replays_per_player=8)
         stage1_min_prob = max(35, smurf_min_prob - 8) if can_verify_relic else smurf_min_prob
         smurf_analysis = detect_top50_br_smurfs(
             all_br_players=all_br_for_top50,
@@ -641,6 +674,7 @@ def run_deep_br_discovery(
             previous_top50_pids=prev_top50_br_pids,
             roster_rows=roster_rows,
             steam_aliases_by_sid=steam_aliases_by_sid,
+            alias_history_doc=alias_history_doc,
             top_n=smurf_top_n,
             min_probability_pct=stage1_min_prob,
         )
@@ -656,6 +690,9 @@ def run_deep_br_discovery(
                 previous_top50_pids=prev_top50_br_pids,
                 roster_rows=roster_rows,
                 steam_aliases_by_sid=steam_aliases_by_sid,
+                alias_history_doc=alias_history_doc,
+                live_stats_out=relic_stats_collected,
+                cohdb_client=shared_cohdb,
                 top_n=smurf_top_n,
                 min_probability_pct=smurf_min_prob,
             )
@@ -665,19 +702,135 @@ def run_deep_br_discovery(
             logger.info("%s", line)
         if smurf_report_path is not None:
             atomic_write_text(smurf_report_path, json.dumps(smurf_analysis, ensure_ascii=False, indent=2) + "\n")
+    else:
+        shared_cohdb = cohdb_client
+
+    out_cache_snapshot: dict[str, Any] = {
+        "schema_version": COMMUNITY_SCHEMA_VERSION,
+        "updated_at": now,
+        "deep_discovery_at": now,
+        "source": "+".join(dict.fromkeys(sources_used)) or "deep_discovery",
+        "players": final_players,
+        "dormant_players": final_dormant,
+    }
+    if top50_br_pids_to_save:
+        out_cache_snapshot["top50_br_pids"] = top50_br_pids_to_save
 
     if not dry_run and final_players:
-        out_cache: dict[str, Any] = {
-            "schema_version": COMMUNITY_SCHEMA_VERSION,
-            "updated_at": now,
-            "deep_discovery_at": now,
-            "source": "+".join(dict.fromkeys(sources_used)) or "deep_discovery",
-            "players": final_players,
-            "dormant_players": final_dormant,
-        }
-        if top50_br_pids_to_save:
-            out_cache["top50_br_pids"] = top50_br_pids_to_save
-        save_community_cache(community_cache_path, out_cache)
+        save_community_cache(community_cache_path, out_cache_snapshot)
+
+    # 8. Consolidação do Histórico Persistente Multi-Fonte de Nicks (`alias_history.json`)
+    #    Cruza: Base local + Relic API + Steam Key API/XML + Steam ajaxaliases + COH3 Stats Open Data + CoHDB
+    try:
+        hist_dirty = ingest_local_database(
+            alias_history_doc,
+            roster_rows=vet_roster,
+            manual_other_rows=MANUAL_OTHER_BR_PLAYERS,
+            community_cache=out_cache_snapshot,
+            now_ts=now,
+        )
+        all_known_hist_pids = {int(k) for k in (alias_history_doc.get("players") or {}) if str(k).isdigit()} | set(vet_pids) | set(manual_pids) | set(br_pool.keys())
+        if ingest_coh3stats_opendata(
+            alias_history_doc,
+            catalog_players=br_pool,
+            telemetry=smurf_collector,
+            allowed_pids=all_known_hist_pids,
+            now_ts=now,
+        ):
+            hist_dirty = True
+        if ingest_relic_stats(alias_history_doc, relic_stats_collected, now_ts=now):
+            hist_dirty = True
+
+        pid_by_steam: dict[str, int] = {}
+        for rec in (alias_history_doc.get("players") or {}).values():
+            if not isinstance(rec, dict):
+                continue
+            rpid = int(rec.get("profile_id", 0) or 0)
+            rsid = str(rec.get("steam_id") or "").strip()
+            if rpid > 0 and STEAM_ID64_VALID_RE.fullmatch(rsid):
+                pid_by_steam[rsid] = rpid
+
+        if ingest_steam_presence(alias_history_doc, steam_pres_map, pid_by_steam=pid_by_steam, now_ts=now):
+            hist_dirty = True
+
+        focus_hist_pids = list(
+            dict.fromkeys(
+                [int(r["profile_id"]) for r in (list(vet_roster) + list(MANUAL_OTHER_BR_PLAYERS)) if int(r.get("profile_id", 0) or 0) > 0]
+                + [int(p) for p in top50_br_pids_to_save if int(p or 0) > 0]
+            )
+        )
+        do_ext = (
+            bool(enable_external_alias_enrichment)
+            if enable_external_alias_enrichment is not None
+            else (
+                (isinstance(r_client, RelicActivityClient) and isinstance(p_client, SteamPresenceClient))
+                or cohdb_client is not None
+            )
+        )
+        if do_ext and focus_hist_pids:
+            # Steam Key API em lote (quando STEAM_WEB_API_KEY estiver ativa) para o elenco + Top 50 BR
+            if getattr(p_client, "has_web_api", False) and hasattr(p_client, "fetch_web_api_presence_batch"):
+                focus_sids_all = [
+                    str((alias_history_doc.get("players") or {}).get(str(pid), {}).get("steam_id") or "").strip()
+                    for pid in focus_hist_pids
+                ]
+                focus_sids_all = [s for s in dict.fromkeys(focus_sids_all) if STEAM_ID64_VALID_RE.fullmatch(s)]
+                if focus_sids_all:
+                    web_pres = p_client.fetch_web_api_presence_batch(focus_sids_all, enrich_free_online_xml=False)
+                    if web_pres and ingest_steam_presence(alias_history_doc, web_pres, pid_by_steam=pid_by_steam, now_ts=now):
+                        hist_dirty = True
+
+            # Steam ajaxaliases (TTL 24h por conta)
+            if hasattr(p_client, "fetch_batch_steam_alias_history"):
+                stale_steam_pids = select_stale_pids_for_source(
+                    alias_history_doc,
+                    focus_hist_pids,
+                    timestamp_field="last_steam_aliases_at",
+                    ttl_sec=STEAM_ALIASES_TTL_SEC,
+                    now_ts=now,
+                )
+                stale_sids = [
+                    str((alias_history_doc.get("players") or {}).get(str(pid), {}).get("steam_id") or "").strip()
+                    for pid in stale_steam_pids
+                ]
+                stale_sids = [s for s in dict.fromkeys(stale_sids) if STEAM_ID64_VALID_RE.fullmatch(s)]
+                if stale_sids:
+                    steam_hist = p_client.fetch_batch_steam_alias_history(stale_sids, pace_delay_sec=0.20, now_ts=now)
+                    if ingest_steam_alias_histories(alias_history_doc, steam_hist, pid_by_steam=pid_by_steam, now_ts=now):
+                        hist_dirty = True
+
+            # CoHDB replays/matches (TTL 24h por conta)
+            if shared_cohdb is not None and hasattr(shared_cohdb, "fetch_player_alias_observations"):
+                stale_cohdb_pids = select_stale_pids_for_source(
+                    alias_history_doc,
+                    focus_hist_pids,
+                    timestamp_field="last_cohdb_at",
+                    ttl_sec=COHDB_ALIASES_TTL_SEC,
+                    now_ts=now,
+                )
+                if stale_cohdb_pids:
+                    cohdb_obs: dict[int, list[tuple[str, int]]] = {}
+                    for pid in stale_cohdb_pids:
+                        if getattr(shared_cohdb, "_circuit_open", False):
+                            break
+                        cohdb_obs[pid] = shared_cohdb.fetch_player_alias_observations(pid, sample_replays=3)
+                    if ingest_cohdb_observations(alias_history_doc, cohdb_obs, now_ts=now):
+                        hist_dirty = True
+
+        if hist_dirty and not dry_run:
+            save_alias_history(hist_path, alias_history_doc, now_ts=now)
+        logger.info(
+            "[STAGE 8 — HISTÓRICO PERSISTENTE DE NICKS] Jogadores: %d | Com >=2 nicks: %d | Fontes: %s",
+            len(alias_history_doc.get("players") or {}),
+            sum(
+                1
+                for r in (alias_history_doc.get("players") or {}).values()
+                if isinstance(r, dict) and len(r.get("aliases") or []) >= 2
+            ),
+            alias_history_doc.get("sources_summary") or {},
+        )
+    except Exception as exc:
+        logger.warning("[STAGE 8 — HISTÓRICO DE NICKS] Falha não fatal ao consolidar alias_history.json: %s", redact_secrets(exc))
 
     logger.info(
         "[RESUMO CONVERGÊNCIA BR] Ativos <=%dd: %d (%d ELO>=1300) -> %d (%d ELO>=1300) | Novos ativos: +%d | Vigília 16-%dd: %d | Por fonte: %s",

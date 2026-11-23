@@ -128,7 +128,7 @@ jobs:
               exit 1
             fi
 
-            for f in state.json br_community.json; do
+            for f in state.json br_community.json alias_history.json; do
               if [ -f "${f}" ]; then
                 git add -- "${f}"
               fi
@@ -155,7 +155,7 @@ jobs:
             fi
           done
 
-      - name: Auditoria anti-vazamento e persistencia de estado (state.json + br_community.json)
+      - name: Auditoria anti-vazamento e persistencia de estado (state.json + br_community.json + alias_history.json)
         if: always()
         run: |
           set -euo pipefail
@@ -166,7 +166,7 @@ jobs:
             exit 1
           fi
 
-          for f in state.json br_community.json; do
+          for f in state.json br_community.json alias_history.json; do
             if [ -f "${f}" ]; then
               git add -- "${f}"
             fi
@@ -178,7 +178,7 @@ jobs:
           fi
 
           if git diff --cached --quiet; then
-            echo "Nenhuma alteracao em state.json / br_community.json nesta sessao."
+            echo "Nenhuma alteracao em state.json / br_community.json / alias_history.json nesta sessao."
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

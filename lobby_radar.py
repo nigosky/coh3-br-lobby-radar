@@ -27,6 +27,13 @@ import time
 from pathlib import Path
 from typing import Any
 
+from alias_history import (
+    DEFAULT_ALIAS_HISTORY_PATH,
+    ingest_local_database,
+    ingest_steam_presence,
+    load_alias_history,
+    save_alias_history,
+)
 from discord_lobby import DiscordLobbyWebhookClient
 from security import (
     atomic_write_text,
@@ -690,6 +697,7 @@ def resolve_manual_other_br_entries(
 def run_lobby_radar_sync(
     state_path: Path = DEFAULT_STATE_PATH,
     community_cache_path: Path | None = None,
+    alias_history_path: Path | None = None,
     webhook_url: str | None = None,
     presence_client: SteamPresenceClient | None = None,
     relic_client: RelicActivityClient | None = None,
@@ -705,6 +713,7 @@ def run_lobby_radar_sync(
     state = load_state(state_path)
     state_dirty = False
     comm_path = community_cache_path if community_cache_path is not None else (state_path.parent / DEFAULT_COMMUNITY_CACHE_PATH.name)
+    hist_path = alias_history_path if alias_history_path is not None else (state_path.parent / DEFAULT_ALIAS_HISTORY_PATH.name)
 
     effective_wh = webhook_url if webhook_url is not None else resolve_lobby_webhook_url(state_path.parent)
     discord = discord_client if discord_client is not None else DiscordLobbyWebhookClient(webhook_url=effective_wh)
@@ -1769,6 +1778,38 @@ def run_lobby_radar_sync(
                     cur_alert_id,
                     redact_secrets(exc),
                 )
+
+    # 6. Histórico persistente passivo de nicks (sem chamadas extras de rede; só grava se houver mudança real)
+    try:
+        hist_doc = load_alias_history(hist_path)
+        hist_dirty = ingest_local_database(
+            hist_doc,
+            roster_rows=vet_roster,
+            manual_other_rows=MANUAL_OTHER_BR_PLAYERS,
+            community_cache=community_cache,
+            now_ts=now,
+        )
+        pid_by_steam: dict[str, int] = {}
+        for row in vet_roster:
+            pid_i = int(row.get("profile_id", 0) or 0)
+            sid_s = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+            if pid_i > 0 and STEAM_ID64_VALID_RE.fullmatch(sid_s):
+                pid_by_steam[sid_s] = pid_i
+        for row in community_players.values():
+            if not isinstance(row, dict):
+                continue
+            pid_i = int(row.get("profile_id", 0) or 0)
+            sid_s = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+            if pid_i > 0 and STEAM_ID64_VALID_RE.fullmatch(sid_s) and sid_s not in pid_by_steam:
+                pid_by_steam[sid_s] = pid_i
+        merged_live_pres = dict(vet_presence_map)
+        merged_live_pres.update(other_presence_map)
+        if ingest_steam_presence(hist_doc, merged_live_pres, pid_by_steam=pid_by_steam, now_ts=now):
+            hist_dirty = True
+        if hist_dirty:
+            save_alias_history(hist_path, hist_doc, now_ts=now)
+    except Exception as exc:
+        logger.debug("Atualização passiva de alias_history.json ignorada: %s", redact_secrets(exc))
 
     if state_dirty:
         save_state(state_path, state)
