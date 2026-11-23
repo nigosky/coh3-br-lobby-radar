@@ -1815,6 +1815,143 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(s3["other_br_in_coh3"], 0)
             self.assertEqual(s3["other_br_online_steam"], 3)
 
+    def test_smurf_long_names_never_truncated_in_cards_links_or_alerts(self) -> None:
+        from PIL import ImageDraw
+        from card_renderer import _format_low_player_token, fit_alias_to_px
+
+        vet_smurfs = [
+            {
+                "profile_id": 1333418,
+                "steam_id": "76561198698969876",
+                "alias": "Charles Bronson (Smurf: Chacineiro)",
+                "max_elo": 1680,
+                "status_note": "Com Company of Heroes 3 aberto agora",
+            },
+            {
+                "profile_id": 1390350,
+                "steam_id": "76561198089278659",
+                "alias": "TearsInTheRain (Smurf: Chacineiro)",
+                "max_elo": 1590,
+                "status_note": "Com Company of Heroes 3 aberto agora",
+            },
+            {
+                "profile_id": 1423426,
+                "steam_id": "76561199482388323",
+                "alias": "geladeira velha (Smurf: arc)",
+                "max_elo": 1640,
+                "status_note": "Com Company of Heroes 3 aberto agora",
+            },
+            {
+                "profile_id": 1076221,
+                "steam_id": "76561198815935562",
+                "alias": "Lucielle (Smurf: Colossus)",
+                "max_elo": 1520,
+                "status_note": "Com Company of Heroes 3 aberto agora",
+            },
+            {
+                "profile_id": 557890,
+                "steam_id": "76561199538846112",
+                "alias": "gabe44arg (Smurf: Gabe)",
+                "max_elo": 1550,
+                "status_note": "Com Company of Heroes 3 aberto agora",
+            },
+        ]
+        oth_smurfs_high = [
+            {
+                "profile_id": 462597,
+                "steam_id": "76561198133760614",
+                "alias": "General Winter (Principal)",
+                "max_elo": 1890,
+                "prominence_tier": "high",
+                "status_note": "No CoH3 agora",
+            },
+            {
+                "profile_id": 1297804,
+                "steam_id": "76561198723667226",
+                "alias": "Leite Moço (Smurf: 『V』SKOBADARK)",
+                "max_elo": 1519,
+                "prominence_tier": "high",
+                "status_note": "No CoH3 agora",
+            },
+            {
+                "profile_id": 1297853,
+                "steam_id": "76561198721980631",
+                "alias": "Shadow (Smurf: Alekel)",
+                "max_elo": 1427,
+                "prominence_tier": "high",
+                "status_note": "No CoH3 agora",
+            },
+        ]
+        oth_smurfs_low = [
+            {
+                "profile_id": 1297821,
+                "steam_id": "76561198722284920",
+                "alias": "General Winter (Smurf 1)",
+                "max_elo": 1100,
+                "prominence_tier": "low",
+                "other_game": "",
+                "is_away": False,
+            },
+            {
+                "profile_id": 164152,
+                "steam_id": "76561198029749621",
+                "alias": "seu pai (Smurf: Sgt.Yoda)",
+                "max_elo": 1150,
+                "prominence_tier": "low",
+                "other_game": "",
+                "is_away": False,
+            },
+        ]
+        snap = {
+            "timestamp": 1_800_000_000,
+            "in_coh3": vet_smurfs,
+            "online_steam": [],
+            "recent_relic": [],
+            "veteranos": {
+                "total_monitored": 43,
+                "in_coh3": vet_smurfs,
+                "online_steam": [],
+                "recent_relic": [],
+            },
+            "outros_brasileiros": {
+                "total_monitored": 50,
+                "in_coh3": oth_smurfs_high,
+                "online_steam": oth_smurfs_low,
+                "recent_relic": [],
+            },
+        }
+
+        from discord_lobby import build_lobby_alert_payload, sanitize_discord_text
+
+        # 1. Links Steam no Discord preservam 100% dos nomes completos de Smurf (inclusive em baixa evidência)
+        links_payload = build_lobby_radar_links_payload(snap)
+        vet_desc = links_payload["embeds"][0]["description"]
+        oth_desc = links_payload["embeds"][1]["description"]
+        for row in vet_smurfs:
+            self.assertIn(sanitize_discord_text(row["alias"], 48), vet_desc)
+        for row in oth_smurfs_high + oth_smurfs_low:
+            self.assertIn(sanitize_discord_text(row["alias"], 48), oth_desc)
+
+        # 2. Aviso curto de movimentação também preserva nomes completos sem exceder 2000 caracteres
+        alert_payload = build_lobby_alert_payload(snap)
+        self.assertLessEqual(len(alert_payload["content"]), 2000)
+        for row in vet_smurfs:
+            self.assertIn(sanitize_discord_text(row["alias"], 48), alert_payload["content"])
+
+        # 3. Card PNG ajusta fonte/condensado sem truncar nenhum nome de Smurf mesmo em largura apertada (290px)
+        draw = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+        for row in vet_smurfs + oth_smurfs_high + oth_smurfs_low:
+            fitted, _, _ = fit_alias_to_px(draw, row["alias"], max_px=290, size=20, bold=True)
+            self.assertEqual(fitted, row["alias"], f"Nome de smurf não deveria ser cortado: {fitted!r}")
+            self.assertIn(row["alias"], _format_low_player_token(row))
+
+        vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for card_bytes in (vet_png, oth_png):
+            self.assertTrue(card_bytes.startswith(b"\x89PNG\r\n\x1a\n"))
+            with Image.open(io.BytesIO(card_bytes)) as im:
+                self.assertEqual(im.width, 1100)
+                self.assertLess(im.width * im.height, Image.MAX_IMAGE_PIXELS)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -61,10 +61,10 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertFalse(sd.is_known_smurf_roster_entry({"profile_id": 509690, "original_alias": "Alekel"}))
         self.assertFalse(sd.is_known_smurf_roster_entry({"profile_id": 991764, "original_alias": "SaNgar [BR]"}))
         self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1297821, "original_alias": "General Winter (Smurf 1)"}))
-        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1297853, "original_alias": "Alekel (Smurf: Shadow)"}))
-        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1297804, "original_alias": "『V』SKOBADARK (Smurf: Leite Moço)"}))
-        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1333418, "original_alias": "Charles Bronson (Chacineiro)"}))
-        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 164152, "original_alias": "seu pai (Sgt.Yoda)"}))
+        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1297853, "original_alias": "Shadow (Smurf: Alekel)"}))
+        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1297804, "original_alias": "Leite Moço (Smurf: 『V』SKOBADARK)"}))
+        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 1333418, "original_alias": "Charles Bronson (Smurf: Chacineiro)"}))
+        self.assertTrue(sd.is_known_smurf_roster_entry({"profile_id": 164152, "original_alias": "seu pai (Smurf: Sgt.Yoda)"}))
 
     def test_dynamic_top50_tracks_new_entrants_and_ignores_outside_top50_smurfs(self) -> None:
         # Cria 60 jogadores BR principais (#1..#50 no Top 50 e #51..#60 fora do Top 50)

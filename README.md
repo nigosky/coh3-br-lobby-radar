@@ -6,7 +6,7 @@ Projeto dedicado e independente para monitorar **quem está jogando Company of H
 
 ### Convenção de Nomes para Contas Smurf (`players_roster.json`)
 - **Múltiplas contas com o mesmo nome**: `<NomeOriginal> (Principal)`, `<NomeOriginal> (Smurf 1)`, `<NomeOriginal> (Smurf 2)`... com `pin_alias: true` (ex.: `General Winter`).
-- **Smurf com nick distinto**: `<NomeOriginal> (Smurf: <NomeDaSmurf>)` ou `<NomeDaSmurf> (<NomeOriginal>)` com `pin_alias: true` (ex.: `Alekel (Smurf: Shadow)`, `『V』SKOBADARK (Smurf: Leite Moço)`, `Charles Bronson (Chacineiro)`, `seu pai (Sgt.Yoda)`).
+- **Smurf com nick distinto**: `<NickDaSmurf> (Smurf: <NomeOriginal>)` com `pin_alias: true` (ex.: `Charles Bronson (Smurf: Chacineiro)`, `TearsInTheRain (Smurf: Chacineiro)`, `Shadow (Smurf: Alekel)`, `Leite Moço (Smurf: 『V』SKOBADARK)`, `seu pai (Smurf: Sgt.Yoda)`).
 
 ### Detecção de Smurfs do Top 50 BR (`smurf_detector.py`)
 - Executada automaticamente durante `discover_br_community.py` (ou sob demanda via `python3 smurf_detector.py`), monitorando dinamicamente o **Top 50 brasileiros na Relic API** (incluindo novos brasileiros que entrarem no Top 50 e ignorando smurfs de jogadores fora do Top 50). Usa verificação em **2 estágios** (triagem em passagem única sobre o Open Data + confirmação autoritativa direta na Relic API via `getPersonalStat` e `getRecentMatchHistoryByProfileId`). Os resultados ficam apenas no relatório local/stdout (sem alertas públicos no Discord nem Issues automáticas).

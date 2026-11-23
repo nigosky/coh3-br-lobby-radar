@@ -183,7 +183,7 @@ def resolve_player_via_relic(
     if resolved_pid <= 0 or not STEAM_ID64_VALID_RE.fullmatch(resolved_sid):
         raise RuntimeError(f"Não foi possível resolver profile_id + SteamID64 válidos na API da Relic para '{target}'.")
 
-    alias = strip_unsafe_chars(override_alias or stat.get("alias") or "")[:40] or f"Jogador {resolved_pid}"
+    alias = strip_unsafe_chars(override_alias or stat.get("alias") or "")[:48] or f"Jogador {resolved_pid}"
     country = normalize_flag_country(override_country or stat.get("country") or "br", default="br")
     return {
         "profile_id": resolved_pid,

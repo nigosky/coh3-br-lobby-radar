@@ -278,7 +278,7 @@ def _record_community_alias_update(rec: dict[str, Any], incoming_alias: str, *, 
     Preserva o nick anterior em `rec['alias']` e registra eventual novo nick em `rec['current_alias']`,
     respeitando `known_aliases` / `pin_alias` de `MANUAL_OTHER_BR_PLAYERS` (ex.: `Golden Cobra`).
     """
-    al = strip_unsafe_chars(incoming_alias)[:40]
+    al = strip_unsafe_chars(incoming_alias)[:48]
     if not al or al.startswith("Jogador "):
         return False
     changed = False
@@ -287,9 +287,9 @@ def _record_community_alias_update(rec: dict[str, Any], incoming_alias: str, *, 
     pin_alias = False
     if manual_ov:
         pin_alias = bool(manual_ov.get("pin_alias"))
-        ov_known = [strip_unsafe_chars(k)[:40] for k in (manual_ov.get("known_aliases") or []) if strip_unsafe_chars(k)]
+        ov_known = [strip_unsafe_chars(k)[:48] for k in (manual_ov.get("known_aliases") or []) if strip_unsafe_chars(k)]
         known_cf = {k.casefold() for k in ov_known}
-        ov_alias = strip_unsafe_chars(manual_ov.get("original_alias") or "")[:40]
+        ov_alias = strip_unsafe_chars(manual_ov.get("original_alias") or "")[:48]
         if ov_alias and (pin_alias or ov_known) and rec.get("alias") != ov_alias:
             rec["alias"] = ov_alias
             changed = True
@@ -327,8 +327,8 @@ def _merge_player_into_community(
         return False
 
     key = str(pid)
-    alias = strip_unsafe_chars(entry.get("alias") or "")[:40] or f"Jogador {pid}"
-    cur_alias = strip_unsafe_chars(entry.get("current_alias") or "")[:40]
+    alias = strip_unsafe_chars(entry.get("alias") or "")[:48] or f"Jogador {pid}"
+    cur_alias = strip_unsafe_chars(entry.get("current_alias") or "")[:48]
     max_elo = max(0, int(entry.get("max_elo", 0) or 0))
     last_md = max(0, int(entry.get("last_match_date", 0) or 0))
     total_matches = max(0, int(entry.get("total_matches", 0) or 0))
@@ -343,7 +343,7 @@ def _merge_player_into_community(
 
     manual_ov = get_manual_other_br_override(pid)
     if manual_ov:
-        ov_alias = strip_unsafe_chars(manual_ov.get("original_alias") or "")[:40]
+        ov_alias = strip_unsafe_chars(manual_ov.get("original_alias") or "")[:48]
         ov_known = manual_ov.get("known_aliases") or []
         if ov_alias and (manual_ov.get("pin_alias") or ov_known):
             if alias.casefold() != ov_alias.casefold() and not cur_alias:
@@ -576,7 +576,7 @@ def resolve_manual_other_br_entries(
             "steam_id": sid if STEAM_ID64_VALID_RE.fullmatch(sid) else "",
             "alias": str(row.get("original_alias") or row.get("alias") or "").strip(),
             "flag_country": normalize_flag_country(row.get("flag_country") or row.get("country")),
-            "known_aliases": [strip_unsafe_chars(k)[:40] for k in (row.get("known_aliases") or []) if strip_unsafe_chars(k)],
+            "known_aliases": [strip_unsafe_chars(k)[:48] for k in (row.get("known_aliases") or []) if strip_unsafe_chars(k)],
             "pin_alias": bool(row.get("pin_alias")),
         }
     if not targets:
@@ -1219,7 +1219,7 @@ def run_lobby_radar_sync(
             if m_flag and m_flag != "br" and existing_rec.get("flag_country") != m_flag:
                 existing_rec["flag_country"] = m_flag
                 community_dirty = True
-            m_alias = strip_unsafe_chars(m_row.get("original_alias") or "")[:40]
+            m_alias = strip_unsafe_chars(m_row.get("original_alias") or "")[:48]
             m_known = m_row.get("known_aliases") or []
             if m_alias and (m_row.get("pin_alias") or m_known):
                 if existing_rec.get("alias") != m_alias:
