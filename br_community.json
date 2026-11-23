@@ -3672,7 +3672,7 @@
       "max_elo": 1048,
       "profile_id": 1289707,
       "steam_id": "76561198021257353",
-      "total_matches": 246
+      "total_matches": 253
     },
     "1290028": {
       "alias": "Sonneiko",
@@ -7055,7 +7055,7 @@
       "alias": "bmbreno67",
       "br_source": "open_data_matches",
       "last_match_date": 1794752531,
-      "last_seen_online_ts": 1795419772,
+      "last_seen_online_ts": 1795421573,
       "max_elo": 950,
       "profile_id": 1472632,
       "steam_games_hidden": true,
