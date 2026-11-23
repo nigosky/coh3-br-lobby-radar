@@ -119,7 +119,7 @@ FALLBACK_MATCH_TYPES: dict[int, str] = {
 PLAYERS_ROSTER_PATH = Path(__file__).resolve().parent / "players_roster.json"
 _VALID_FLAG_COUNTRY_RE = re.compile(r"^[a-z]{2}$")
 
-# Fallback embutido caso players_roster.json esteja ausente (48 contas Steam / 48 Veteranos únicos)
+# Fallback embutido caso players_roster.json esteja ausente (46 contas Steam / 46 Veteranos únicos)
 _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 79327, "steam_id": "76561197963172584", "original_alias": "Chacineiro"},
     {
@@ -229,20 +229,6 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
         "known_aliases": ["Leite Moço", "Leite Moço (『V』SKOBADARK)"],
     },
     {
-        "profile_id": 1297821,
-        "steam_id": "76561198722284920",
-        "original_alias": "Smurf 1 (General Winter)",
-        "pin_alias": True,
-        "known_aliases": ["General Winter", "Dick of the Galaxies", "Smurf 1 (General Winter)"],
-    },
-    {
-        "profile_id": 1318162,
-        "steam_id": "76561198708550887",
-        "original_alias": "Smurf 2 (General Winter)",
-        "pin_alias": True,
-        "known_aliases": ["General Winter", ".", "Smurf 2 (General Winter)"],
-    },
-    {
         "profile_id": 1076221,
         "steam_id": "76561198815935562",
         "original_alias": "Lucielle (Colossus)",
@@ -271,6 +257,30 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 28937, "steam_id": "76561198089948995", "original_alias": "Mjr Bruno", "country": "br"},
     {"profile_id": 81751, "steam_id": "76561198080023560", "original_alias": "Razi", "country": "br"},
     {"profile_id": 3895, "steam_id": "76561198054318813", "original_alias": "Liquid", "country": "br"},
+    {
+        "profile_id": 462597,
+        "steam_id": "76561198133760614",
+        "original_alias": "General Winter (Principal)",
+        "country": "br",
+        "pin_alias": True,
+        "known_aliases": ["General Winter", "General Winter (Principal)"],
+    },
+    {
+        "profile_id": 1297821,
+        "steam_id": "76561198722284920",
+        "original_alias": "General Winter (Smurf 1)",
+        "country": "br",
+        "pin_alias": True,
+        "known_aliases": ["General Winter", "Dick of the Galaxies", "General Winter (Smurf 1)"],
+    },
+    {
+        "profile_id": 1318162,
+        "steam_id": "76561198708550887",
+        "original_alias": "General Winter (Smurf 2)",
+        "country": "br",
+        "pin_alias": True,
+        "known_aliases": ["General Winter", ".", "General Winter (Smurf 2)"],
+    },
 ]
 
 
