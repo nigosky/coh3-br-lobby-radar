@@ -1,12 +1,15 @@
 # 📡 CoH3 Brasil — Radar de Lobby Ao Vivo (`coh3-br-lobby-radar`)
 
 Projeto dedicado e independente para monitorar **quem está jogando Company of Heroes 3 agora**, **online na Steam pronto para convite** ou **invisível / Steam privada ativo recentemente** em duas categorias separadas no Discord:
-- **Veteranos (sempre acima)**: os 46 jogadores (46 contas independentes) monitorados no tracker de partidas — **sempre exibidos integralmente**, independente de ELO ou atividade recente.
+- **Veteranos (sempre acima)**: os 43 jogadores (43 contas independentes) monitorados no tracker de partidas — **sempre exibidos integralmente**, independente de ELO ou atividade recente.
 - **Outros Brasileiros (sempre abaixo)**: somente jogadores brasileiros **ativos no CoH3** (`country == "br"` com partida no CoH3 nos últimos **30 dias**, descartando automaticamente inativos), com **destaque (`★` / `⭐`) para maior ELO (em qualquer modo ou facção) + maior atividade**, e **baixa evidência compacta/discreta** para ELO mais baixo e pouca atividade.
 
 ### Convenção de Nomes para Contas Smurf (`players_roster.json`)
-- **Smurf com nick diferente da conta principal**: `<NomeDaSmurf> (<NomeOriginal>)` com `pin_alias: true` (ex.: `Charles Bronson (Chacineiro)`, `Shadow (Alekel)`).
-- **Múltiplas contas com o mesmo nome**: `<NomeOriginal> (Principal)`, `<NomeOriginal> (Smurf 1)`, `<NomeOriginal> (Smurf 2)`... com `pin_alias: true` (ex.: as 3 contas do `General Winter`).
+- **Múltiplas contas com o mesmo nome**: `<NomeOriginal> (Principal)`, `<NomeOriginal> (Smurf 1)`, `<NomeOriginal> (Smurf 2)`... com `pin_alias: true` (ex.: `General Winter`).
+- **Smurf com nick distinto**: `<NomeOriginal> (Smurf: <NomeDaSmurf>)` ou `<NomeDaSmurf> (<NomeOriginal>)` com `pin_alias: true` (ex.: `Alekel (Smurf: Shadow)`, `『V』SKOBADARK (Smurf: Leite Moço)`, `Charles Bronson (Chacineiro)`, `seu pai (Sgt.Yoda)`).
+
+### Detecção de Smurfs do Top 50 BR (`smurf_detector.py`)
+- Executada automaticamente durante `discover_br_community.py` (ou sob demanda via `python3 smurf_detector.py`), monitorando dinamicamente o **Top 50 brasileiros na Relic API** (incluindo novos brasileiros que entrarem no Top 50 e ignorando smurfs de jogadores fora do Top 50). Os resultados ficam apenas no relatório local/stdout (sem alertas públicos no Discord).
 
 ## Arquitetura (Zero Chaves da Steam • 100% Gratuito)
 

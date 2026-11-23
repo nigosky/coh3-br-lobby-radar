@@ -119,7 +119,7 @@ FALLBACK_MATCH_TYPES: dict[int, str] = {
 PLAYERS_ROSTER_PATH = Path(__file__).resolve().parent / "players_roster.json"
 _VALID_FLAG_COUNTRY_RE = re.compile(r"^[a-z]{2}$")
 
-# Fallback embutido caso players_roster.json esteja ausente (46 contas Steam / 46 Veteranos únicos)
+# Fallback embutido caso players_roster.json esteja ausente (43 contas Steam / 43 Veteranos únicos)
 _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 79327, "steam_id": "76561197963172584", "original_alias": "Chacineiro"},
     {
@@ -152,12 +152,6 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 13450, "steam_id": "76561198284234077", "original_alias": "7 DIVISAO PHANTOM"},
     {"profile_id": 944488, "steam_id": "76561198063124280", "original_alias": "gbytes™"},
     {"profile_id": 21206, "steam_id": "76561198061434984", "original_alias": "hjax"},
-    {
-        "profile_id": 509690,
-        "steam_id": "76561198053226112",
-        "original_alias": "Alekel",
-        "known_aliases": ["Minhoca de ferro!", "Minhoca de ferro", "Alekel"],
-    },
     {"profile_id": 1114404, "steam_id": "76561198024118058", "original_alias": "Vikitor"},
     {"profile_id": 366826, "steam_id": "76561198014985380", "original_alias": "Lem22", "country": "us", "flag_country": "us"},
     {"profile_id": 1282592, "steam_id": "76561198028644178", "original_alias": "SapoBoi_BR"},
@@ -208,25 +202,11 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     },
     {"profile_id": 975688, "steam_id": "76561197994245218", "original_alias": "Kefbr"},
     {
-        "profile_id": 1297853,
-        "steam_id": "76561198721980631",
-        "original_alias": "Shadow (Alekel)",
-        "pin_alias": True,
-        "known_aliases": ["Shadow", "Zé da manga", "Shadow (Alekel)"],
-    },
-    {
         "profile_id": 1390350,
         "steam_id": "76561198089278659",
         "original_alias": "TearsInTheRain (Chacineiro)",
         "pin_alias": True,
         "known_aliases": ["TearsInTheRain", "TearsInTheRain (Chacineiro)"],
-    },
-    {
-        "profile_id": 1297804,
-        "steam_id": "76561198723667226",
-        "original_alias": "Leite Moço (『V』SKOBADARK)",
-        "pin_alias": True,
-        "known_aliases": ["Leite Moço", "Leite Moço (『V』SKOBADARK)"],
     },
     {
         "profile_id": 1076221,
@@ -280,6 +260,46 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
         "country": "br",
         "pin_alias": True,
         "known_aliases": ["General Winter", ".", "General Winter (Smurf 2)"],
+    },
+    {
+        "profile_id": 509690,
+        "steam_id": "76561198053226112",
+        "original_alias": "Alekel",
+        "country": "br",
+        "pin_alias": True,
+        "known_aliases": ["Minhoca de ferro!", "Minhoca de ferro", "Alekel"],
+    },
+    {
+        "profile_id": 1297853,
+        "steam_id": "76561198721980631",
+        "original_alias": "Alekel (Smurf: Shadow)",
+        "country": "br",
+        "pin_alias": True,
+        "known_aliases": ["Shadow", "Zé da manga", "Alekel (Smurf: Shadow)"],
+    },
+    {
+        "profile_id": 844225,
+        "steam_id": "76561198009000654",
+        "original_alias": "『V』SKOBADARK",
+        "country": "br",
+        "pin_alias": True,
+        "known_aliases": ["『V』SKOBADARK", "SKOBADARK"],
+    },
+    {
+        "profile_id": 1297804,
+        "steam_id": "76561198723667226",
+        "original_alias": "『V』SKOBADARK (Smurf: Leite Moço)",
+        "country": "br",
+        "pin_alias": True,
+        "known_aliases": ["Leite Moço", "『V』SKOBADARK (Smurf: Leite Moço)"],
+    },
+    {
+        "profile_id": 164152,
+        "steam_id": "76561198029749621",
+        "original_alias": "seu pai (Sgt.Yoda)",
+        "country": "br",
+        "pin_alias": True,
+        "known_aliases": ["seu pai", "Sgt.Yoda", "seu pai (Sgt.Yoda)"],
     },
 ]
 
@@ -2094,14 +2114,16 @@ class RelicActivityClient:
         now_ts: int | None = None,
         days: int = 14,
         seed_br_pids: set[int] | frozenset[int] | None = None,
+        match_observer: Any = None,
     ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[str, Any]]:
         """
         Varre os dumps diários oficiais de partidas do COH3 Stats Open Data (`storage.coh3stats.com/matches/matches-{day}.json`)
         nos últimos `days` dias (processando 1 dia por vez para manter memória enxuta):
-        - Captura jogadores `country == 'br'` que jogaram qualquer modo (placements < 10, smurfs, Custom, vs IA)
+        - Captura jogadores `country == 'br'` que jogaram qualquer modo (incluindo <10 placements, smurfs, Custom e Co-Op vs IA)
           e atualiza `last_match_date` de jogadores de ELO alto cuja tabela principal ficou > 30d.
         - Constrói grafo de co-participação na mesma equipe (`br_teammate_count`) para encontrar brasileiros
           com país vazio/trocado na Steam.
+        - Aceita `match_observer(payload, known_br_pids)` opcional para telemetria em passagem única (ex.: detector de smurfs).
         """
         now_dt = datetime.fromtimestamp(int(now_ts) if now_ts is not None else int(time.time()), tz=timezone.utc)
         base_day = datetime(now_dt.year, now_dt.month, now_dt.day, tzinfo=timezone.utc)
@@ -2160,6 +2182,11 @@ class RelicActivityClient:
                 known_br.add(pid)
                 _merge_discovered_br_player(br_catalog, accumulate_matches=False, **item)
             day_teams = extract_br_arranged_teams_from_matches_payload(data, seed_br_pids=known_br)
+            if callable(match_observer):
+                try:
+                    match_observer(data, known_br)
+                except Exception as exc:
+                    logger.warning("Observador de partidas (day=%s) falhou: %s", day_ts, redact_secrets(exc))
             del data
             for item in cand_part.values():
                 _merge_discovered_br_player(cand_catalog, accumulate_matches=False, **item)
