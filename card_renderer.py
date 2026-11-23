@@ -546,24 +546,6 @@ def _draw_status_pill(
     return pill_w
 
 
-def _bucket_has_nick_change(bucket: dict[str, Any]) -> bool:
-    for sec in ("in_coh3", "online_steam", "recent_relic"):
-        for pl in (bucket.get(sec) or []):
-            if str(pl.get("alias") or "").endswith("*"):
-                return True
-    return False
-
-
-def _append_nick_change_note(note: str, pl: dict[str, Any]) -> str:
-    alias = str(pl.get("alias") or "")
-    if pl.get("nick_changed") and pl.get("current_alias") and alias.endswith("*"):
-        cur = strip_unsafe_chars(str(pl["current_alias"]))[:26]
-        if cur and f"agora: {cur}" not in note:
-            compact = note.replace("Com Company of Heroes 3 aberto agora", "No CoH3")
-            return f"{compact} • agora: {cur}" if compact else f"agora: {cur}"
-    return note
-
-
 def _draw_low_prominence_strip(
     draw: ImageDraw.ImageDraw,
     *,
@@ -848,7 +830,7 @@ def _draw_category_block(
                                 font_size=13,
                             )
 
-                        note_raw = _append_nick_change_note(str(pl.get("status_note") or "No CoH3 agora"), pl)
+                        note_raw = str(pl.get("status_note") or "No CoH3 agora")
                         st_disp, st_fnt = truncate_to_px(
                             draw,
                             note_raw,
@@ -886,7 +868,7 @@ def _draw_category_block(
                         img.paste(pl_flag, (82, y + 21), pl_flag)
 
                         elo_val = int(pl.get("max_elo", 0) or 0)
-                        note_raw = _append_nick_change_note(str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora"), pl)
+                        note_raw = str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora")
                         note_disp, n_fnt = truncate_to_px(draw, note_raw, max_px=520, size=18, bold=True)
                         nw = text_width(draw, note_disp, n_fnt)
                         note_x = width - 26 - nw
@@ -1127,7 +1109,6 @@ def _draw_category_block(
                         sub_st = "Livre na Steam para chamar"
                         sub_col = (125, 211, 252, 255)
 
-                    sub_st = _append_nick_change_note(sub_st, pl)
                     st_disp, st_fnt = truncate_to_px(draw, sub_st, max_px=max(100, cx_limit - (cx0 + 48)), size=sub_2col_size, bold=False)
                     draw.text((cx0 + 48, ry + 32), st_disp, font=st_fnt, fill=sub_col)
 
@@ -1239,7 +1220,7 @@ def _draw_category_block(
                     draw.text((name_x, ry + 5 + a_dy), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
                     if is_veteranos:
                         img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 6), vet_xs)
-                    note_r = _append_nick_change_note(str(pl.get("status_note") or "Partida recente na Relic"), pl)
+                    note_r = str(pl.get("status_note") or "Partida recente na Relic")
                     nd, nf = truncate_to_px(draw, note_r, max_px=max(90, cx_limit - (cx0 + 46)), size=max(14, sub_2col_size - 1), bold=False)
                     draw.text((cx0 + 46, ry + 31), nd, font=nf, fill=(253, 230, 138, 255))
                 y += grid_h
@@ -1261,7 +1242,7 @@ def _draw_category_block(
                     pl_flag = get_country_flag(pl.get("flag_country"), w=26, h=18)
                     img.paste(pl_flag, (76, y + 18), pl_flag)
 
-                    note_r = _append_nick_change_note(str(pl.get("status_note") or "Partida recente na Relic"), pl)
+                    note_r = str(pl.get("status_note") or "Partida recente na Relic")
                     nd, nf = truncate_to_px(draw, note_r, max_px=520, size=17, bold=True)
                     nw = text_width(draw, nd, nf)
                     nx = width - 26 - nw
@@ -1534,14 +1515,13 @@ def _render_single_category_card_png(
 
     draw.rectangle((rail_w, y, width, total_h), fill=(15, 18, 24, 255))
     draw.line([(rail_w, y), (width, y)], fill=(42, 48, 60, 255), width=1)
-    nick_note = "  •  * = mudou de nick" if _bucket_has_nick_change(bucket) else ""
     if is_veteranos:
-        foot_txt = f"Veteranos: todos os {total_cat} monitorados exibidos sem filtro{nick_note}  •  Links Steam abaixo"
+        foot_txt = f"Veteranos: todos os {total_cat} monitorados exibidos sem filtro  •  Links Steam abaixo"
     else:
         cat_count_lbl = f" ({total_cat})" if total_cat > 0 else ""
         foot_txt = (
             f"Somente ativos no CoH3 nos últimos {active_days} dias{cat_count_lbl}"
-            f"  •  ★ ELO alto + ativos{nick_note}  •  Links Steam abaixo"
+            "  •  ★ ELO alto + ativos  •  Links Steam abaixo"
         )
     f_fnt = pick_font(foot_txt, size=15, bold=False)
     if text_width(draw, foot_txt, f_fnt) > (width - 52):

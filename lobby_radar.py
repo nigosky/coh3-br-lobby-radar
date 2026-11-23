@@ -50,7 +50,9 @@ from steam_presence import (
     compute_lobby_state_digest,
     extract_smurf_owner_and_nick,
     get_manual_other_br_override,
+    is_legacy_synthetic_alias_label,
     normalize_flag_country,
+    resolve_nick_change_display,
     steam_presence_hides_coh3_game,
 )
 
@@ -277,7 +279,8 @@ def _build_veteranos_privacy_diagnostics(
 def _record_community_alias_update(rec: dict[str, Any], incoming_alias: str, *, pid: int) -> bool:
     """
     Preserva o nick anterior em `rec['alias']` e registra eventual novo nick em `rec['current_alias']`,
-    respeitando `known_aliases`, `pin_alias` e `smurf_of` de `MANUAL_OTHER_BR_PLAYERS`.
+    respeitando `known_aliases`, `pin_alias`, `smurf_of` de `MANUAL_OTHER_BR_PLAYERS` e ignorando
+    rótulos legados sintéticos (`(Principal)`, `(Smurf 1)`, `(Smurf 2)`).
     """
     al = strip_unsafe_chars(incoming_alias)[:48]
     if not al or al.startswith("Jogador "):
@@ -293,9 +296,20 @@ def _record_community_alias_update(rec: dict[str, Any], incoming_alias: str, *, 
         ov_known = [strip_unsafe_chars(k)[:48] for k in (manual_ov.get("known_aliases") or []) if strip_unsafe_chars(k)]
         known_cf = {k.casefold() for k in ov_known}
         ov_alias = strip_unsafe_chars(manual_ov.get("original_alias") or "")[:48]
-        if ov_alias and (pin_alias or smurf_of or ov_known) and rec.get("alias") != ov_alias:
+        cur_rec_alias = str(rec.get("alias") or "")
+        if (
+            ov_alias
+            and (pin_alias or smurf_of or ov_known or is_legacy_synthetic_alias_label(cur_rec_alias))
+            and cur_rec_alias != ov_alias
+        ):
             rec["alias"] = ov_alias
             changed = True
+
+    if is_legacy_synthetic_alias_label(al):
+        if is_legacy_synthetic_alias_label(str(rec.get("current_alias") or "")):
+            rec.pop("current_alias", None)
+            changed = True
+        return changed
 
     base_alias = str(rec.get("alias") or "").strip()
     if not base_alias or base_alias.startswith("Jogador "):
@@ -362,8 +376,10 @@ def _merge_player_into_community(
         ov_alias = strip_unsafe_chars(manual_ov.get("original_alias") or "")[:48]
         ov_known = manual_ov.get("known_aliases") or []
         ov_smurf = strip_unsafe_chars(manual_ov.get("smurf_of") or "")[:40]
-        if ov_alias and (manual_ov.get("pin_alias") or ov_smurf or ov_known):
-            if alias.casefold() != ov_alias.casefold() and not cur_alias:
+        if ov_alias and (
+            manual_ov.get("pin_alias") or ov_smurf or ov_known or is_legacy_synthetic_alias_label(alias)
+        ):
+            if alias.casefold() != ov_alias.casefold() and not cur_alias and not is_legacy_synthetic_alias_label(alias):
                 cur_alias = alias
             alias = ov_alias
 
@@ -631,29 +647,15 @@ def resolve_manual_other_br_entries(
         lm = latest_map.get(pid) or {}
         sid = str(st.get("steam_id") or base["steam_id"] or "").replace("/steam/", "").strip()
         live_relic_alias = str(st.get("alias") or "").strip()
-        if base["alias"] and base["smurf_of"]:
-            alias = base["alias"]
-            outer_base, _ = extract_smurf_owner_and_nick(alias, smurf_of=base["smurf_of"])
-            cur_alias = (
-                live_relic_alias
-                if (live_relic_alias and live_relic_alias.casefold() not in (alias.casefold(), outer_base.casefold()))
-                else ""
-            )
-        elif base["alias"] and (base["pin_alias"] or base["known_aliases"]):
-            alias = base["alias"]
-            known_cf = {k.casefold() for k in base["known_aliases"]} | {alias.casefold()}
-            cur_alias = (
-                live_relic_alias
-                if (live_relic_alias and not base["pin_alias"] and live_relic_alias.casefold() not in known_cf)
-                else ""
-            )
-        else:
-            alias = base["alias"] or live_relic_alias or f"Jogador {pid}"
-            cur_alias = (
-                live_relic_alias
-                if (live_relic_alias and live_relic_alias.casefold() != alias.casefold())
-                else ""
-            )
+        alias = base["alias"] or live_relic_alias or f"Jogador {pid}"
+        _, nick_changed, new_live = resolve_nick_change_display(
+            alias,
+            live_relic_alias,
+            base["known_aliases"],
+            pin_alias=base["pin_alias"],
+            smurf_of=base["smurf_of"] or None,
+        )
+        cur_alias = new_live if nick_changed else ""
         max_elo = max(0, int(st.get("max_elo", 0) or 0))
         total_matches = max(0, int(st.get("total_matches", 0) or 0))
         lmd = max(
@@ -1247,13 +1249,20 @@ def run_lobby_radar_sync(
                 community_dirty = True
             m_alias = strip_unsafe_chars(m_row.get("original_alias") or "")[:48]
             m_known = m_row.get("known_aliases") or []
-            if m_alias and (m_row.get("pin_alias") or m_row.get("smurf_of") or m_known):
-                if existing_rec.get("alias") != m_alias:
-                    old_al = str(existing_rec.get("alias") or "").strip()
+            cur_existing_alias = str(existing_rec.get("alias") or "").strip()
+            if m_alias and (
+                m_row.get("pin_alias")
+                or m_row.get("smurf_of")
+                or m_known
+                or is_legacy_synthetic_alias_label(cur_existing_alias)
+            ):
+                if cur_existing_alias != m_alias:
                     existing_rec["alias"] = m_alias
                     community_dirty = True
-                    if old_al:
-                        _record_community_alias_update(existing_rec, old_al, pid=m_pid)
+                    if cur_existing_alias and not is_legacy_synthetic_alias_label(cur_existing_alias):
+                        _record_community_alias_update(existing_rec, cur_existing_alias, pid=m_pid)
+                    elif is_legacy_synthetic_alias_label(str(existing_rec.get("current_alias") or "")):
+                        existing_rec.pop("current_alias", None)
                 elif existing_rec.get("current_alias"):
                     if _record_community_alias_update(existing_rec, str(existing_rec["current_alias"]), pid=m_pid):
                         community_dirty = True
