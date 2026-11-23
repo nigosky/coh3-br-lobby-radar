@@ -75,11 +75,11 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertTrue(vet_by_pid[1005730].get("pin_alias"))
 
         expected_vet_smurfs = {
-            1333418: ("76561198698969876", "Charles Bronson (Chacineiro)"),
-            557890: ("76561199538846112", "gabe44arg (Gabe)"),
-            1423426: ("76561199482388323", "geladeira velha (arc)"),
-            1390350: ("76561198089278659", "TearsInTheRain (Chacineiro)"),
-            1076221: ("76561198815935562", "Lucielle (Colossus)"),
+            1333418: ("76561198698969876", "Charles Bronson (Smurf: Chacineiro)"),
+            557890: ("76561199538846112", "gabe44arg (Smurf: Gabe)"),
+            1423426: ("76561199482388323", "geladeira velha (Smurf: arc)"),
+            1390350: ("76561198089278659", "TearsInTheRain (Smurf: Chacineiro)"),
+            1076221: ("76561198815935562", "Lucielle (Smurf: Colossus)"),
         }
         for spid, (expected_sid, expected_alias) in expected_vet_smurfs.items():
             self.assertIn(spid, vet_by_pid)
@@ -95,10 +95,11 @@ class TestSharedPlayersRoster(unittest.TestCase):
             "Charles Broson",
             "TacticalForceConcentration",
             "Charles Bronson (Chacineiro)",
+            "Charles Bronson (Smurf: Chacineiro)",
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Outros BR manuais: Generick, Golden Cobra, 5 movidos, 3 General Winter, 2 Alekel, 2 SKOBADARK e seu pai (Sgt.Yoda)
+        # Outros BR manuais: Generick, Golden Cobra, 5 movidos, 3 General Winter, 2 Alekel, 2 SKOBADARK e seu pai (Smurf: Sgt.Yoda)
         oth_by_pid = {int(r["profile_id"]): r for r in MANUAL_OTHER_BR_PLAYERS}
         for other_pid in (
             33487,
@@ -128,10 +129,10 @@ class TestSharedPlayersRoster(unittest.TestCase):
             1297821: ("76561198722284920", "General Winter (Smurf 1)"),
             1318162: ("76561198708550887", "General Winter (Smurf 2)"),
             509690: ("76561198053226112", "Alekel"),
-            1297853: ("76561198721980631", "Alekel (Smurf: Shadow)"),
+            1297853: ("76561198721980631", "Shadow (Smurf: Alekel)"),
             844225: ("76561198009000654", "『V』SKOBADARK"),
-            1297804: ("76561198723667226", "『V』SKOBADARK (Smurf: Leite Moço)"),
-            164152: ("76561198029749621", "seu pai (Sgt.Yoda)"),
+            1297804: ("76561198723667226", "Leite Moço (Smurf: 『V』SKOBADARK)"),
+            164152: ("76561198029749621", "seu pai (Smurf: Sgt.Yoda)"),
         }
         for gpid, (gsid, galias) in expected_pinned_other.items():
             self.assertEqual(oth_by_pid[gpid]["steam_id"], gsid)
@@ -279,7 +280,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
             ],
         )
         self.assertEqual([p["profile_id"] for p in snap["veteranos"]["in_coh3"]], [1333418])
-        self.assertEqual(snap["veteranos"]["in_coh3"][0]["alias"], "Charles Bronson (Chacineiro)")
+        self.assertEqual(snap["veteranos"]["in_coh3"][0]["alias"], "Charles Bronson (Smurf: Chacineiro)")
         self.assertFalse(snap["veteranos"]["in_coh3"][0]["nick_changed"])
 
         outros_in_coh3 = {int(p["profile_id"]): p for p in snap["outros_brasileiros"]["in_coh3"]}
@@ -288,9 +289,9 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertEqual(outros_in_coh3[1297821]["alias"], "General Winter (Smurf 1)")
         self.assertEqual(outros_in_coh3[1318162]["alias"], "General Winter (Smurf 2)")
         self.assertEqual(outros_in_coh3[509690]["alias"], "Alekel")
-        self.assertEqual(outros_in_coh3[1297853]["alias"], "Alekel (Smurf: Shadow)")
-        self.assertEqual(outros_in_coh3[1297804]["alias"], "『V』SKOBADARK (Smurf: Leite Moço)")
-        self.assertEqual(outros_in_coh3[164152]["alias"], "seu pai (Sgt.Yoda)")
+        self.assertEqual(outros_in_coh3[1297853]["alias"], "Shadow (Smurf: Alekel)")
+        self.assertEqual(outros_in_coh3[1297804]["alias"], "Leite Moço (Smurf: 『V』SKOBADARK)")
+        self.assertEqual(outros_in_coh3[164152]["alias"], "seu pai (Smurf: Sgt.Yoda)")
         self.assertTrue(
             all(not outros_in_coh3[pid]["nick_changed"] for pid in (462597, 1297821, 1318162, 509690, 1297853, 1297804, 164152))
         )

@@ -125,7 +125,7 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {
         "profile_id": 1333418,
         "steam_id": "76561198698969876",
-        "original_alias": "Charles Bronson (Chacineiro)",
+        "original_alias": "Charles Bronson (Smurf: Chacineiro)",
         "pin_alias": True,
         "known_aliases": [
             "Charles Bronson",
@@ -133,6 +133,7 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
             "Charles Broson",
             "TacticalForceConcentration",
             "Charles Bronson (Chacineiro)",
+            "Charles Bronson (Smurf: Chacineiro)",
         ],
     },
     {"profile_id": 991764, "steam_id": "76561198115923932", "original_alias": "SaNgar [BR]"},
@@ -171,9 +172,9 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {
         "profile_id": 557890,
         "steam_id": "76561199538846112",
-        "original_alias": "gabe44arg (Gabe)",
+        "original_alias": "gabe44arg (Smurf: Gabe)",
         "pin_alias": True,
-        "known_aliases": ["gabe44arg", "gabe444arg", "gabe44arg (Gabe)"],
+        "known_aliases": ["gabe44arg", "gabe444arg", "gabe44arg (Gabe)", "gabe44arg (Smurf: Gabe)"],
     },
     {"profile_id": 26910, "steam_id": "76561197963741792", "original_alias": "nigo_BR ᵀᴹ"},
     {"profile_id": 6557, "steam_id": "76561198135142137", "original_alias": "Dragoness"},
@@ -182,9 +183,9 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {
         "profile_id": 1423426,
         "steam_id": "76561199482388323",
-        "original_alias": "geladeira velha (arc)",
+        "original_alias": "geladeira velha (Smurf: arc)",
         "pin_alias": True,
-        "known_aliases": ["geladeira velha", "dibas", "uncle hans", "geladeira velha (arc)"],
+        "known_aliases": ["geladeira velha", "dibas", "uncle hans", "geladeira velha (arc)", "geladeira velha (Smurf: arc)"],
     },
     {"profile_id": 31145, "steam_id": "76561197985268629", "original_alias": "vonMises"},
     {"profile_id": 58737, "steam_id": "76561197993922195", "original_alias": "INFIEL"},
@@ -204,16 +205,16 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {
         "profile_id": 1390350,
         "steam_id": "76561198089278659",
-        "original_alias": "TearsInTheRain (Chacineiro)",
+        "original_alias": "TearsInTheRain (Smurf: Chacineiro)",
         "pin_alias": True,
-        "known_aliases": ["TearsInTheRain", "TearsInTheRain (Chacineiro)"],
+        "known_aliases": ["TearsInTheRain", "TearsInTheRain (Chacineiro)", "TearsInTheRain (Smurf: Chacineiro)"],
     },
     {
         "profile_id": 1076221,
         "steam_id": "76561198815935562",
-        "original_alias": "Lucielle (Colossus)",
+        "original_alias": "Lucielle (Smurf: Colossus)",
         "pin_alias": True,
-        "known_aliases": ["Lucielle", "Lucifer", "Lucielle (Colossus)"],
+        "known_aliases": ["Lucielle", "Lucifer", "Lucielle (Colossus)", "Lucielle (Smurf: Colossus)"],
     },
 ]
 
@@ -272,10 +273,10 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
     {
         "profile_id": 1297853,
         "steam_id": "76561198721980631",
-        "original_alias": "Alekel (Smurf: Shadow)",
+        "original_alias": "Shadow (Smurf: Alekel)",
         "country": "br",
         "pin_alias": True,
-        "known_aliases": ["Shadow", "Zé da manga", "Alekel (Smurf: Shadow)"],
+        "known_aliases": ["Shadow", "Zé da manga", "Alekel (Smurf: Shadow)", "Shadow (Smurf: Alekel)"],
     },
     {
         "profile_id": 844225,
@@ -288,18 +289,18 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
     {
         "profile_id": 1297804,
         "steam_id": "76561198723667226",
-        "original_alias": "『V』SKOBADARK (Smurf: Leite Moço)",
+        "original_alias": "Leite Moço (Smurf: 『V』SKOBADARK)",
         "country": "br",
         "pin_alias": True,
-        "known_aliases": ["Leite Moço", "『V』SKOBADARK (Smurf: Leite Moço)"],
+        "known_aliases": ["Leite Moço", "『V』SKOBADARK (Smurf: Leite Moço)", "Leite Moço (Smurf: 『V』SKOBADARK)"],
     },
     {
         "profile_id": 164152,
         "steam_id": "76561198029749621",
-        "original_alias": "seu pai (Sgt.Yoda)",
+        "original_alias": "seu pai (Smurf: Sgt.Yoda)",
         "country": "br",
         "pin_alias": True,
-        "known_aliases": ["seu pai", "Sgt.Yoda", "seu pai (Sgt.Yoda)"],
+        "known_aliases": ["seu pai", "Sgt.Yoda", "seu pai (Sgt.Yoda)", "seu pai (Smurf: Sgt.Yoda)"],
     },
 ]
 
@@ -327,7 +328,7 @@ def _normalize_shared_roster_entry(raw: Any, *, default_in_ranking: bool = True)
         return None
     sid_raw = str(raw.get("steam_id") or "").replace("/steam/", "").strip()
     sid = sid_raw if STEAM_ID64_VALID_RE.fullmatch(sid_raw) else ""
-    alias = strip_unsafe_chars(raw.get("original_alias") or raw.get("alias") or "")[:40] or f"Jogador {pid}"
+    alias = strip_unsafe_chars(raw.get("original_alias") or raw.get("alias") or "")[:48] or f"Jogador {pid}"
     country = normalize_flag_country(raw.get("flag_country") or raw.get("country"))
     entry: dict[str, Any] = {
         "profile_id": pid,
@@ -343,7 +344,7 @@ def _normalize_shared_roster_entry(raw: Any, *, default_in_ranking: bool = True)
         entry["in_ranking"] = True
     if raw.get("pin_alias"):
         entry["pin_alias"] = True
-    known = [strip_unsafe_chars(k)[:40] for k in (raw.get("known_aliases") or []) if strip_unsafe_chars(k)]
+    known = [strip_unsafe_chars(k)[:48] for k in (raw.get("known_aliases") or []) if strip_unsafe_chars(k)]
     if known:
         entry["known_aliases"] = known
     try:
@@ -442,10 +443,10 @@ def resolve_nick_change_display(
       ou a `known_aliases` (case-insensitive), retorna `(stable_alias, False, "")`.
     - Caso contrário, preserva o nick anterior com asterisco `*`: retorna `(f"{stable}*", True, live)`.
     """
-    stable = strip_unsafe_chars(stable_alias)[:40] or "Jogador"
+    stable = strip_unsafe_chars(stable_alias)[:48] or "Jogador"
     if pin_alias:
         return stable, False, ""
-    live = strip_unsafe_chars(live_alias or "")[:40]
+    live = strip_unsafe_chars(live_alias or "")[:48]
     if not live or live.startswith("Jogador "):
         return stable, False, ""
     stable_cf = stable.casefold()
@@ -916,8 +917,8 @@ def _merge_discovered_br_player(
 ) -> None:
     if profile_id <= 0 or not STEAM_ID64_VALID_RE.fullmatch(steam_id):
         return
-    clean_alias = strip_unsafe_chars(alias)[:40] or f"Jogador {profile_id}"
-    clean_cur_alias = strip_unsafe_chars(current_alias)[:40]
+    clean_alias = strip_unsafe_chars(alias)[:48] or f"Jogador {profile_id}"
+    clean_cur_alias = strip_unsafe_chars(current_alias)[:48]
     m_cnt = max(0, int(total_matches or 0))
     ctry = str(country or "").strip().lower()[:8]
     reg = max(0, int(region_id or 0))
@@ -2456,13 +2457,13 @@ def _build_category_lists(
         manual_ov = get_manual_other_br_override(pid) if category == "outros_brasileiros" else None
         raw_alias = str(row.get("alias") or row.get("original_alias") or f"Jogador {pid}")
         known_aliases: list[str] = [
-            strip_unsafe_chars(k)[:40] for k in (row.get("known_aliases") or []) if strip_unsafe_chars(k)
+            strip_unsafe_chars(k)[:48] for k in (row.get("known_aliases") or []) if strip_unsafe_chars(k)
         ]
         pin_alias = bool(row.get("pin_alias"))
         if manual_ov:
             ov_alias = str(manual_ov.get("original_alias") or "").strip()
             ov_known = [
-                strip_unsafe_chars(k)[:40] for k in (manual_ov.get("known_aliases") or []) if strip_unsafe_chars(k)
+                strip_unsafe_chars(k)[:48] for k in (manual_ov.get("known_aliases") or []) if strip_unsafe_chars(k)
             ]
             if ov_known:
                 known_aliases.extend(k for k in ov_known if k not in known_aliases)
@@ -2475,7 +2476,7 @@ def _build_category_lists(
             "profile_id": pid,
             "steam_id": sid,
             "alias": raw_alias,
-            "current_alias": strip_unsafe_chars(row.get("current_alias") or "")[:40],
+            "current_alias": strip_unsafe_chars(row.get("current_alias") or "")[:48],
             "known_aliases": known_aliases,
             "pin_alias": pin_alias,
             "flag_country": flag_ctry,
@@ -2498,7 +2499,7 @@ def _build_category_lists(
             if sec.get("pin_alias"):
                 canonical_entries[target_pid]["pin_alias"] = True
             for ka in (sec.get("known_aliases") or []):
-                clean_ka = strip_unsafe_chars(ka)[:40]
+                clean_ka = strip_unsafe_chars(ka)[:48]
                 if clean_ka and clean_ka not in canonical_entries[target_pid]["known_aliases"]:
                     canonical_entries[target_pid]["known_aliases"].append(clean_ka)
 

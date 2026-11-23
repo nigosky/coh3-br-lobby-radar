@@ -142,9 +142,10 @@ def truncate_to_px(
     max_px: int,
     size: int,
     bold: bool = True,
+    condensed: bool = False,
 ) -> tuple[str, Any]:
     clean = strip_unsafe_chars(raw_text) or "Jogador"
-    fnt = pick_font(clean, size=size, bold=bold)
+    fnt = pick_font(clean, size=size, bold=bold, condensed=condensed)
     if text_width(draw, clean, fnt) <= max_px:
         return clean, fnt
     lo, hi = 1, len(clean)
@@ -158,6 +159,35 @@ def truncate_to_px(
         else:
             hi = mid - 1
     return best, fnt
+
+
+def fit_alias_to_px(
+    draw: ImageDraw.ImageDraw,
+    raw_text: str,
+    max_px: int,
+    size: int,
+    *,
+    min_size: int = 12,
+    bold: bool = True,
+) -> tuple[str, Any, int]:
+    """
+    Ajusta nomes longos (ex.: `<NickDaSmurf> (Smurf: <NomeOriginal>)`) reduzindo fonte/usando fonte
+    condensada antes de recorrer a truncamento com reticências. Retorna `(texto, fonte, y_offset)`.
+    """
+    clean = strip_unsafe_chars(raw_text) or "Jogador"
+    fnt = pick_font(clean, size=size, bold=bold, condensed=False)
+    if text_width(draw, clean, fnt) <= max_px:
+        return clean, fnt, 0
+
+    floor = max(10, min(int(min_size), int(size)))
+    for cand_sz in range(size, floor - 1, -1):
+        for cond in (True, False):
+            cand_fnt = pick_font(clean, size=cand_sz, bold=bold, condensed=cond)
+            if text_width(draw, clean, cand_fnt) <= max_px:
+                return clean, cand_fnt, max(0, (size - cand_sz) // 2)
+
+    trunc_txt, trunc_fnt = truncate_to_px(draw, clean, max_px=max_px, size=floor, bold=bold, condensed=True)
+    return trunc_txt, trunc_fnt, max(0, (size - floor) // 2)
 
 
 def get_br_flag(w: int = 20, h: int = 14) -> Image.Image:
@@ -376,7 +406,7 @@ def _split_prominent_and_low(
 
 
 def _format_low_player_token(pl: dict[str, Any], *, show_age_min: bool = False) -> str:
-    alias = strip_unsafe_chars(str(pl.get("alias") or "BR"))[:18] or "BR"
+    alias = strip_unsafe_chars(str(pl.get("alias") or "BR"))[:40] or "BR"
     elo = int(pl.get("max_elo", 0) or 0)
     parts: list[str] = []
     if elo > 0:
@@ -792,7 +822,7 @@ def _draw_category_block(
                         pres_badge = _resolve_presence_badge(pl)
                         pill_reserve = (_measure_status_pill_width(draw, pres_badge[0], font_size=13) + 6) if pres_badge else 0
                         badge_pad = (26 if is_veteranos else 8) + pill_reserve
-                        disp_alias, a_fnt = truncate_to_px(
+                        disp_alias, a_fnt, a_dy = fit_alias_to_px(
                             draw,
                             str(pl.get("alias") or ""),
                             max_px=max(80, (cx_limit - ew - 10) - name_x - badge_pad),
@@ -800,7 +830,7 @@ def _draw_category_block(
                             bold=True,
                         )
                         nm_col = (254, 249, 195, 255) if is_high else (240, 253, 244, 255)
-                        draw.text((name_x, ry + 6), disp_alias, font=a_fnt, fill=nm_col)
+                        draw.text((name_x, ry + 6 + a_dy), disp_alias, font=a_fnt, fill=nm_col)
                         next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
                         if is_veteranos:
                             img.paste(vet_xs, (next_x, ry + 8), vet_xs)
@@ -883,8 +913,14 @@ def _draw_category_block(
                         max_alias_px = max(110, int(elo_x - 118 - badge_pad))
                         alias_sz = 23 if (is_veteranos or is_high) else 21
                         alias_col = (254, 249, 195, 255) if is_high else (240, 253, 244, 255)
-                        disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_alias_px, size=alias_sz, bold=True)
-                        draw.text((118, y + (15 if alias_sz >= 22 else 17)), disp_alias, font=a_fnt, fill=alias_col)
+                        disp_alias, a_fnt, a_dy = fit_alias_to_px(
+                            draw,
+                            str(pl.get("alias") or ""),
+                            max_px=max_alias_px,
+                            size=alias_sz,
+                            bold=True,
+                        )
+                        draw.text((118, y + (15 if alias_sz >= 22 else 17) + a_dy), disp_alias, font=a_fnt, fill=alias_col)
                         next_x = int(118 + text_width(draw, disp_alias, a_fnt) + 8)
                         if is_veteranos:
                             img.paste(vet_sm, (next_x, y + 18), vet_sm)
@@ -1036,7 +1072,13 @@ def _draw_category_block(
                     pill_reserve = (_measure_status_pill_width(draw, pres_badge[0], font_size=13) + 6) if pres_badge else 0
                     badge_pad = (26 if is_veteranos else 8) + pill_reserve
                     max_nm_px = max(80, (cx_limit - elo_w - 10) - name_x - badge_pad)
-                    disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max_nm_px, size=name_2col_size, bold=True)
+                    disp_alias, a_fnt, a_dy = fit_alias_to_px(
+                        draw,
+                        str(pl.get("alias") or ""),
+                        max_px=max_nm_px,
+                        size=name_2col_size,
+                        bold=True,
+                    )
                     if has_other:
                         nm_col = (248, 240, 198, 255) if is_high else (226, 232, 240, 255)
                     elif is_busy:
@@ -1047,7 +1089,7 @@ def _draw_category_block(
                         nm_col = (254, 249, 195, 255)
                     else:
                         nm_col = (186, 230, 253, 255)
-                    draw.text((name_x, ry + 6), disp_alias, font=a_fnt, fill=nm_col)
+                    draw.text((name_x, ry + 6 + a_dy), disp_alias, font=a_fnt, fill=nm_col)
                     next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
                     if is_veteranos:
                         img.paste(vet_xs, (next_x, ry + 8), vet_xs)
@@ -1186,14 +1228,14 @@ def _draw_category_block(
 
                     name_x = cx0 + 74
                     badge_pad = 24 if is_veteranos else 8
-                    disp_alias, a_fnt = truncate_to_px(
+                    disp_alias, a_fnt, a_dy = fit_alias_to_px(
                         draw,
                         str(pl.get("alias") or ""),
                         max_px=max(80, (cx_limit - ew - 8) - name_x - badge_pad),
                         size=max(18, name_2col_size - 1),
                         bold=True,
                     )
-                    draw.text((name_x, ry + 5), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
+                    draw.text((name_x, ry + 5 + a_dy), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
                     if is_veteranos:
                         img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 6), vet_xs)
                     note_r = _append_nick_change_note(str(pl.get("status_note") or "Partida recente na Relic"), pl)
@@ -1244,8 +1286,14 @@ def _draw_category_block(
                             right_limit_x = elo_x
 
                     badge_pad = 34 if is_veteranos else 10
-                    disp_alias, a_fnt = truncate_to_px(draw, str(pl.get("alias") or ""), max_px=max(100, int(right_limit_x - 112 - badge_pad)), size=20, bold=True)
-                    draw.text((112, y + 15), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
+                    disp_alias, a_fnt, a_dy = fit_alias_to_px(
+                        draw,
+                        str(pl.get("alias") or ""),
+                        max_px=max(100, int(right_limit_x - 112 - badge_pad)),
+                        size=20,
+                        bold=True,
+                    )
+                    draw.text((112, y + 15 + a_dy), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
                     if is_veteranos:
                         img.paste(vet_sm, (int(112 + text_width(draw, disp_alias, a_fnt) + 7), y + 16), vet_sm)
                     y += recent_row_h
