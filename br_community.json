@@ -1680,12 +1680,12 @@
     "1042107": {
       "alias": "Hy",
       "br_source": "open_data_lb",
-      "last_match_date": 1795300042,
+      "last_match_date": 1795408139,
       "last_seen_online_ts": 0,
       "max_elo": 1129,
       "profile_id": 1042107,
       "steam_id": "76561198199845271",
-      "total_matches": 160
+      "total_matches": 162
     },
     "1042204": {
       "alias": "Saker",
@@ -3691,7 +3691,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794699241,
       "last_seen_ingame_ts": 1795159196,
-      "last_seen_ingame_webapi_ts": 1795382028,
+      "last_seen_ingame_webapi_ts": 1795413981,
       "last_seen_online_ts": 1795413382,
       "max_elo": 1000,
       "profile_id": 1292044,
@@ -4269,13 +4269,13 @@
     "1369003": {
       "alias": "KyronCrane",
       "br_source": "open_data_lb",
-      "last_match_date": 1795413075,
+      "last_match_date": 1795413700,
       "last_seen_ingame_webapi_ts": 1795389918,
       "last_seen_online_ts": 1795389918,
       "max_elo": 1150,
       "profile_id": 1369003,
       "steam_id": "76561198155713664",
-      "total_matches": 1500
+      "total_matches": 1501
     },
     "1369418": {
       "alias": "xandaoro",
@@ -7013,7 +7013,7 @@
       "alias": "Manolloz",
       "br_source": "open_data_matches",
       "last_match_date": 1794794399,
-      "last_seen_online_ts": 1795411547,
+      "last_seen_online_ts": 1795413981,
       "max_elo": 1000,
       "profile_id": 1468010,
       "steam_games_hidden": true,
@@ -8908,7 +8908,7 @@
       "max_elo": 1098,
       "profile_id": 33457,
       "steam_id": "76561198103341293",
-      "total_matches": 902
+      "total_matches": 903
     },
     "33487": {
       "alias": "Generick",
@@ -9066,7 +9066,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794654037,
       "last_seen_ingame_ts": 1795149384,
-      "last_seen_ingame_webapi_ts": 1795384727,
+      "last_seen_ingame_webapi_ts": 1795413981,
       "last_seen_online_ts": 1795412481,
       "max_elo": 1157,
       "profile_id": 373952,
