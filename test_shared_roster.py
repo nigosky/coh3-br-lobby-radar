@@ -50,9 +50,9 @@ class TestSharedPlayersRoster(unittest.TestCase):
     def test_canonical_players_roster_integrity_and_parity(self) -> None:
         doc = manage_roster.load_roster_doc(PLAYERS_ROSTER_PATH)
         tot_v, uniq_v, tot_o = manage_roster.validate_roster_doc(doc)
-        self.assertGreaterEqual(tot_v, 47)
+        self.assertGreaterEqual(tot_v, 42)
         self.assertEqual(uniq_v, tot_v - 3)  # 3 contas secundárias mescladas (Chacineiro 1333418->79327, Gabe 557890->559962, arc 1423426->1005730)
-        self.assertGreaterEqual(tot_o, 2)
+        self.assertGreaterEqual(tot_o, 7)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr está presente; Lem22 e Generick têm bandeira US
         vet_by_pid = {int(r["profile_id"]): r for r in CORE_BR_ROSTER}
@@ -91,14 +91,14 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertEqual(vet_by_pid[1423426]["merged_into_profile_id"], 1005730)
         self.assertTrue(vet_by_pid[1423426].get("pin_alias"))
 
-        # Generick (33487) e Golden Cobra (16867) estão em manual_other_br (fora dos Veteranos do Ranking)
+        # Generick (33487), Golden Cobra (16867) e os 5 jogadores movidos estão em manual_other_br (fora dos Veteranos)
         oth_by_pid = {int(r["profile_id"]): r for r in MANUAL_OTHER_BR_PLAYERS}
-        self.assertIn(33487, oth_by_pid)
-        self.assertNotIn(33487, vet_by_pid)
-        self.assertIn(16867, oth_by_pid)
-        self.assertNotIn(16867, vet_by_pid)
+        for other_pid in (33487, 16867, 19747, 23250, 28937, 81751, 3895):
+            self.assertIn(other_pid, oth_by_pid)
+            self.assertNotIn(other_pid, vet_by_pid)
         self.assertEqual(oth_by_pid[16867]["original_alias"], "Golden Cobra")
         self.assertIn("COHBRAMACHINE", oth_by_pid[16867].get("known_aliases") or [])
+        self.assertIn("Nargoth de Bebbanburg", oth_by_pid[23250].get("known_aliases") or [])
 
         # Smurf do Chacineiro no CoH3 aparece unificada como Veterano 'Chacineiro' e nunca duplica em Outros BR
         from steam_presence import build_lobby_radar_snapshot
