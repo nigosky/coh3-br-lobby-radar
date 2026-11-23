@@ -2955,14 +2955,14 @@
     "1214004": {
       "alias": "Major Caveira",
       "br_source": "open_data_lb",
-      "last_match_date": 1795451505,
+      "last_match_date": 1795454667,
       "last_seen_online_ts": 1795453930,
       "max_elo": 1013,
       "profile_id": 1214004,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795406101,
       "steam_id": "76561198854581943",
-      "total_matches": 794
+      "total_matches": 795
     },
     "1215326": {
       "alias": "Buzungo",
@@ -3629,11 +3629,11 @@
       "alias": "彡 vRunz✟彡",
       "br_source": "open_data_matches",
       "last_match_date": 1795204284,
-      "last_seen_online_ts": 1795394186,
+      "last_seen_online_ts": 1795454830,
       "max_elo": 1048,
       "profile_id": 1282670,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795361942,
+      "steam_gd_checked_ts": 1795454830,
       "steam_id": "76561199214579205",
       "total_matches": 27
     },
@@ -3920,7 +3920,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794798006,
       "last_seen_ingame_webapi_ts": 1795367989,
-      "last_seen_online_ts": 1795451473,
+      "last_seen_online_ts": 1795454830,
       "max_elo": 1000,
       "profile_id": 129973,
       "steam_games_hidden": false,
@@ -5764,6 +5764,7 @@
     "1445924": {
       "alias": "Et Bilusca",
       "br_source": "open_data_matches",
+      "current_alias": "Wiz",
       "last_match_date": 1794579345,
       "last_seen_ingame_webapi_ts": 1795393886,
       "last_seen_online_ts": 1795454531,
@@ -6195,7 +6196,7 @@
       "alias": "brunnobatista02",
       "br_source": "open_data_matches",
       "last_match_date": 1794620435,
-      "last_seen_online_ts": 1795449973,
+      "last_seen_online_ts": 1795454830,
       "max_elo": 1000,
       "profile_id": 1453194,
       "steam_games_hidden": true,
@@ -10534,12 +10535,12 @@
     "765837": {
       "alias": "Southland",
       "br_source": "open_data_lb",
-      "last_match_date": 1795453919,
+      "last_match_date": 1795454807,
       "last_seen_online_ts": 0,
       "max_elo": 1489,
       "profile_id": 765837,
       "steam_id": "76561197990946349",
-      "total_matches": 1754
+      "total_matches": 1755
     },
     "766623": {
       "alias": "AkuMA",
@@ -11217,7 +11218,7 @@
     "8764": {
       "alias": "Maverick",
       "br_source": "open_data_lb",
-      "last_match_date": 1795447456,
+      "last_match_date": 1795454011,
       "last_seen_ingame_ts": 1795134857,
       "last_seen_ingame_webapi_ts": 1795451473,
       "last_seen_online_ts": 1795453930,
@@ -11226,7 +11227,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795198463,
       "steam_id": "76561198155662761",
-      "total_matches": 352
+      "total_matches": 357
     },
     "87903": {
       "alias": "Daniloparre",
