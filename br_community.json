@@ -872,6 +872,19 @@
       "steam_id": "76561198975314948",
       "total_matches": 65
     },
+    "27181": {
+      "alias": "Herdeiro Sincero",
+      "br_source": "open_data_lb",
+      "last_match_date": 1794164771,
+      "last_seen_ingame_webapi_ts": 1795396049,
+      "last_seen_online_ts": 1795401796,
+      "max_elo": 1116,
+      "profile_id": 27181,
+      "steam_games_hidden": false,
+      "steam_gd_checked_ts": 1795214934,
+      "steam_id": "76561198063789360",
+      "total_matches": 843
+    },
     "298286": {
       "alias": "MDBDestruidorBR",
       "br_source": "open_data_lb",
@@ -2547,12 +2560,12 @@
     "1157401": {
       "alias": "F.E.B_BRASIL_COH",
       "br_source": "open_data_lb",
-      "last_match_date": 1795452267,
+      "last_match_date": 1795460849,
       "last_seen_online_ts": 0,
       "max_elo": 1073,
       "profile_id": 1157401,
       "steam_id": "76561198096999667",
-      "total_matches": 136
+      "total_matches": 137
     },
     "1158074": {
       "alias": "Noriaki",
@@ -4856,8 +4869,8 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794257118,
       "last_seen_ingame_ts": 1795185890,
-      "last_seen_ingame_webapi_ts": 1795383827,
-      "last_seen_online_ts": 1795402753,
+      "last_seen_ingame_webapi_ts": 1795460950,
+      "last_seen_online_ts": 1795460950,
       "max_elo": 1000,
       "profile_id": 1428548,
       "steam_id": "76561198868479198",
@@ -5907,7 +5920,6 @@
     "1449348": {
       "alias": "ES BRIEB CSGOSKINS.GG",
       "br_source": "open_data_matches",
-      "current_alias": "BESON",
       "last_match_date": 1794602764,
       "last_seen_ingame_ts": 1795184990,
       "last_seen_ingame_webapi_ts": 1795277439,
@@ -7180,7 +7192,7 @@
       "max_elo": 1000,
       "profile_id": 1473530,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795374388,
+      "steam_gd_checked_ts": 1795460950,
       "steam_id": "76561199147550475",
       "total_matches": 2
     },
@@ -7391,7 +7403,7 @@
       "last_match_date": 1794776098,
       "last_seen_ingame_ts": 1795152761,
       "last_seen_ingame_webapi_ts": 1795403352,
-      "last_seen_online_ts": 1795418234,
+      "last_seen_online_ts": 1795460950,
       "max_elo": 954,
       "profile_id": 1475704,
       "steam_id": "76561198846999850",
@@ -8638,19 +8650,6 @@
       "profile_id": 27052,
       "steam_id": "76561199055548856",
       "total_matches": 252
-    },
-    "27181": {
-      "alias": "Herdeiro Sincero",
-      "br_source": "open_data_lb",
-      "last_match_date": 1794164771,
-      "last_seen_ingame_webapi_ts": 1795396049,
-      "last_seen_online_ts": 1795401796,
-      "max_elo": 1116,
-      "profile_id": 27181,
-      "steam_games_hidden": false,
-      "steam_gd_checked_ts": 1795214934,
-      "steam_id": "76561198063789360",
-      "total_matches": 843
     },
     "27356": {
       "alias": "drytron",
@@ -10248,7 +10247,7 @@
       "last_match_date": 1795399703,
       "last_seen_ingame_ts": 1795193832,
       "last_seen_ingame_webapi_ts": 1795390818,
-      "last_seen_online_ts": 1795458794,
+      "last_seen_online_ts": 1795460950,
       "max_elo": 1043,
       "profile_id": 739286,
       "steam_id": "76561198167127970",
@@ -11427,7 +11426,7 @@
       "alias": "rodrigo.eisen895",
       "br_source": "open_data_matches",
       "last_match_date": 1795199012,
-      "last_seen_online_ts": 1795408848,
+      "last_seen_online_ts": 1795460950,
       "max_elo": 1000,
       "profile_id": 906896,
       "steam_games_hidden": true,
