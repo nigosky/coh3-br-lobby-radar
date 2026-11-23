@@ -2,8 +2,9 @@
   "schema_version": 1,
   "description": "Base unica compartilhada de jogadores CoH3 Brasil (Radar, Scheduler, Tracker e Ranking). Alteracoes aqui refletem automaticamente nos 4 sistemas; o Ranking consome exclusivamente os veteranos com in_ranking=true.",
   "naming_convention": {
-    "distinct_name_smurf": "<NomeDaSmurf> (<NomeOriginal>) com pin_alias=true",
-    "same_name_multi_account": "<NomeOriginal> (Principal) / <NomeOriginal> (Smurf 1) / <NomeOriginal> (Smurf 2) com pin_alias=true"
+    "same_name_multi_account": "<NomeOriginal> (Principal) / <NomeOriginal> (Smurf 1) / <NomeOriginal> (Smurf 2) com pin_alias=true",
+    "distinct_name_smurf_owner_first": "<NomeOriginal> (Smurf: <NomeDaSmurf>) com pin_alias=true",
+    "distinct_name_smurf_alias_first": "<NomeDaSmurf> (<NomeOriginal>) com pin_alias=true"
   },
   "veteranos": [
     {
@@ -115,18 +116,6 @@
       "original_alias": "hjax",
       "country": "br",
       "in_ranking": true
-    },
-    {
-      "profile_id": 509690,
-      "steam_id": "76561198053226112",
-      "original_alias": "Alekel",
-      "country": "br",
-      "in_ranking": true,
-      "known_aliases": [
-        "Minhoca de ferro!",
-        "Minhoca de ferro",
-        "Alekel"
-      ]
     },
     {
       "profile_id": 1114404,
@@ -341,19 +330,6 @@
       "in_ranking": true
     },
     {
-      "profile_id": 1297853,
-      "steam_id": "76561198721980631",
-      "original_alias": "Shadow (Alekel)",
-      "country": "br",
-      "in_ranking": true,
-      "pin_alias": true,
-      "known_aliases": [
-        "Shadow",
-        "Zé da manga",
-        "Shadow (Alekel)"
-      ]
-    },
-    {
       "profile_id": 1390350,
       "steam_id": "76561198089278659",
       "original_alias": "TearsInTheRain (Chacineiro)",
@@ -363,18 +339,6 @@
       "known_aliases": [
         "TearsInTheRain",
         "TearsInTheRain (Chacineiro)"
-      ]
-    },
-    {
-      "profile_id": 1297804,
-      "steam_id": "76561198723667226",
-      "original_alias": "Leite Moço (『V』SKOBADARK)",
-      "country": "br",
-      "in_ranking": true,
-      "pin_alias": true,
-      "known_aliases": [
-        "Leite Moço",
-        "Leite Moço (『V』SKOBADARK)"
       ]
     },
     {
@@ -475,6 +439,64 @@
         "General Winter",
         ".",
         "General Winter (Smurf 2)"
+      ]
+    },
+    {
+      "profile_id": 509690,
+      "steam_id": "76561198053226112",
+      "original_alias": "Alekel",
+      "country": "br",
+      "pin_alias": true,
+      "known_aliases": [
+        "Minhoca de ferro!",
+        "Minhoca de ferro",
+        "Alekel"
+      ]
+    },
+    {
+      "profile_id": 1297853,
+      "steam_id": "76561198721980631",
+      "original_alias": "Alekel (Smurf: Shadow)",
+      "country": "br",
+      "pin_alias": true,
+      "known_aliases": [
+        "Shadow",
+        "Zé da manga",
+        "Alekel (Smurf: Shadow)"
+      ]
+    },
+    {
+      "profile_id": 844225,
+      "steam_id": "76561198009000654",
+      "original_alias": "『V』SKOBADARK",
+      "country": "br",
+      "pin_alias": true,
+      "known_aliases": [
+        "『V』SKOBADARK",
+        "SKOBADARK"
+      ]
+    },
+    {
+      "profile_id": 1297804,
+      "steam_id": "76561198723667226",
+      "original_alias": "『V』SKOBADARK (Smurf: Leite Moço)",
+      "country": "br",
+      "pin_alias": true,
+      "known_aliases": [
+        "Leite Moço",
+        "『V』SKOBADARK (Smurf: Leite Moço)"
+      ]
+    },
+    {
+      "profile_id": 164152,
+      "steam_id": "76561198029749621",
+      "original_alias": "seu pai (Sgt.Yoda)",
+      "country": "br",
+      "pin_alias": true,
+      "known_aliases": [
+        "seu pai",
+        "Sgt.Yoda",
+        "seu pai (Sgt.Yoda)"
       ]
     }
   ]

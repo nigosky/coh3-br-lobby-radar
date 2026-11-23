@@ -1,0 +1,970 @@
+#!/usr/bin/env python3
+"""
+Detector forense de contas Smurf focado exclusivamente no Top 50 brasileiro da Relic API.
+
+Regras de negócio:
+1. Determina dinamicamente o **Top 50 BR** atual na Relic API (ordenado por `max_elo` real,
+   excluindo contas já catalogadas como smurfs no `players_roster.json`).
+2. Monitora entradas no Top 50 (`newly_entered_top50`): sempre que um novo brasileiro entra
+   no Top 50 da Relic, passa automaticamente a ser considerado no monitoramento de smurfs.
+3. **Ignora smurfs de jogadores fora do Top 50 BR**: avalia pares contra o Top 50 e descarta
+   candidatas cujo melhor vínculo forense aponte para um jogador ranqueado fora do Top 50 (`#51+`).
+4. **Zero spam público**: nunca publica alertas no Discord nem abre Issues automáticas — retorna
+   relatório estruturado (stdout / JSON opcional) exclusivamente para consulta sob demanda no Antigravity.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import math
+import re
+import sys
+import time
+from collections import Counter
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from security import atomic_write_text, configure_secure_logging, redact_secrets, strip_unsafe_chars
+from steam_presence import (
+    CORE_BR_ROSTER,
+    MANUAL_OTHER_BR_PLAYERS,
+    STEAM_ID64_VALID_RE,
+    RelicActivityClient,
+    extract_steam_id_from_relic_name,
+)
+
+configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
+logger = logging.getLogger("coh3_br.lobby.smurf_detector")
+
+DEFAULT_TOP_N_BR = 50
+DEFAULT_MIN_PROBABILITY_PCT = 40
+DEFAULT_MATCH_DAYS = 30
+STEAM_ID64_BASE = 76561197960265728
+
+_MATCHTYPE_TO_MODE: dict[int, str] = {
+    1: "1v1",
+    2: "2v2",
+    3: "3v3",
+    4: "4v4",
+    20: "1v1",
+    21: "2v2",
+    22: "3v3",
+    23: "4v4",
+}
+
+_PAREN_TAG_RE = re.compile(r"^(.+?)\s+\(([^()]+)\)$")
+
+
+@dataclass
+class PlayerMatchTelemetry:
+    """Telemetria compacta de partidas de um jogador coletada em passagem única do Open Data."""
+
+    profile_id: int
+    intervals: list[tuple[int, int, int]] = field(default_factory=list)  # (start_ts, end_ts, match_id)
+    co_played_with: set[int] = field(default_factory=set)
+    ally_counts: Counter[int] = field(default_factory=Counter)
+    opp_counts: Counter[int] = field(default_factory=Counter)
+    mode_faction_counts: Counter[tuple[str, int]] = field(default_factory=Counter)
+    hour_counts: Counter[int] = field(default_factory=Counter)
+    mode_elo_max: dict[str, int] = field(default_factory=dict)
+    mode_counts: Counter[str] = field(default_factory=Counter)
+    wins: int = 0
+    games: int = 0
+    seen_aliases: set[str] = field(default_factory=set)
+
+    def winrate(self) -> float:
+        return (self.wins / self.games) if self.games > 0 else 0.0
+
+
+class SmurfTelemetryCollector:
+    """Coleta telemetria leve de partidas em passagem única sobre dumps `matches-{day}.json`."""
+
+    def __init__(self, *, max_intervals_per_player: int = 400) -> None:
+        self.players: dict[int, PlayerMatchTelemetry] = {}
+        self.pid_aliases: dict[int, str] = {}
+        self.max_intervals_per_player = max(50, int(max_intervals_per_player))
+        self.matches_observed = 0
+        self._seen_match_ids: set[int] = set()
+
+    def _get(self, pid: int) -> PlayerMatchTelemetry:
+        tel = self.players.get(pid)
+        if tel is None:
+            tel = PlayerMatchTelemetry(profile_id=pid)
+            self.players[pid] = tel
+        return tel
+
+    def observe_matches_payload(self, data: dict[str, Any], known_br_pids: set[int] | frozenset[int] | None = None) -> None:
+        """Processa um payload diário de partidas, armazenando apenas partidas envolvendo jogadores BR/candidatos."""
+        if not isinstance(data, dict):
+            return
+        br_set = known_br_pids or frozenset()
+        for match in data.get("matches") or []:
+            if not isinstance(match, dict):
+                continue
+            mid = int(match.get("id", 0) or match.get("match_id", 0) or 0)
+            if mid > 0 and mid in self._seen_match_ids:
+                continue
+
+            mt_id = int(match.get("matchtype_id", -1))
+            mode = _MATCHTYPE_TO_MODE.get(mt_id)
+            if not mode:
+                continue  # Apenas Automatch 1v1..4v4 para análise estatística limpa
+
+            ct = int(match.get("completiontime", 0) or 0)
+            st = int(match.get("startgametime", 0) or 0)
+            if ct <= 0 and st <= 0:
+                continue
+            if st <= 0 or st > ct:
+                st = max(1, ct - 1200) if ct > 0 else st
+            if ct <= 0:
+                ct = st + 1200
+
+            reports = match.get("matchhistoryreportresults") or []
+            if not isinstance(reports, list) or len(reports) < 2:
+                continue
+
+            participants: list[tuple[int, int, int, int, int, str, str]] = []
+            has_br_interest = False
+            for rep in reports:
+                if not isinstance(rep, dict):
+                    continue
+                prof = rep.get("profile")
+                if not isinstance(prof, dict):
+                    continue
+                pid = int(rep.get("profile_id", 0) or prof.get("profile_id", 0) or 0)
+                if pid <= 0:
+                    continue
+                ctry = str(prof.get("country") or "").strip().lower()
+                alias = strip_unsafe_chars(prof.get("alias") or "")[:40]
+                team_id = int(rep.get("teamid", -1) if rep.get("teamid") is not None else -1)
+                race_id = int(rep.get("race_id", -1) if rep.get("race_id") is not None else -1)
+                res_type = int(rep.get("resulttype", 0) or 0)
+                mhm = rep.get("matchhistorymember") if isinstance(rep.get("matchhistorymember"), dict) else {}
+                elo = max(
+                    int(float(mhm.get("newrating", 0) or 0)),
+                    int(float(mhm.get("oldrating", 0) or 0)),
+                    0,
+                )
+                if ctry == "br" or pid in br_set:
+                    has_br_interest = True
+                participants.append((pid, team_id, race_id, res_type, elo, alias, ctry))
+
+            if not has_br_interest or len(participants) < 2:
+                continue
+
+            if mid > 0:
+                self._seen_match_ids.add(mid)
+            self.matches_observed += 1
+
+            utc_hour = datetime.fromtimestamp(ct, tz=timezone.utc).hour
+            for pid, team_id, race_id, res_type, elo, alias, ctry in participants:
+                if alias:
+                    self.pid_aliases[pid] = alias
+                if ctry != "br" and pid not in br_set:
+                    # Ainda registra se jogou no mesmo time de um BR (candidato smurf sem bandeira BR)
+                    if not any(
+                        (op_ctry == "br" or op_pid in br_set) and op_team == team_id and team_id >= 0
+                        for op_pid, op_team, _, _, _, _, op_ctry in participants
+                        if op_pid != pid
+                    ):
+                        continue
+
+                tel = self._get(pid)
+                tel.games += 1
+                if res_type == 1:
+                    tel.wins += 1
+                tel.mode_counts[mode] += 1
+                if race_id >= 0:
+                    tel.mode_faction_counts[(mode, race_id)] += 1
+                tel.hour_counts[utc_hour] += 1
+                if elo > tel.mode_elo_max.get(mode, 0):
+                    tel.mode_elo_max[mode] = elo
+                if alias:
+                    tel.seen_aliases.add(alias)
+                if len(tel.intervals) < self.max_intervals_per_player:
+                    tel.intervals.append((st, ct, mid))
+
+                for op_pid, op_team, _, _, _, _, _ in participants:
+                    if op_pid == pid:
+                        continue
+                    tel.co_played_with.add(op_pid)
+                    if team_id >= 0 and op_team == team_id:
+                        tel.ally_counts[op_pid] += 1
+                    else:
+                        tel.opp_counts[op_pid] += 1
+
+    def build_ally_popularity(self) -> Counter[int]:
+        """Conta quantos jogadores distintos têm cada `ally_pid` como aliado frequente (>=2 jogos)."""
+        pop: Counter[int] = Counter()
+        for tel in self.players.values():
+            for ally_pid, cnt in tel.ally_counts.items():
+                if cnt >= 2:
+                    pop[ally_pid] += 1
+        return pop
+
+
+def is_known_smurf_roster_entry(entry: dict[str, Any]) -> bool:
+    """
+    Identifica contas já catalogadas como smurf em `players_roster.json`:
+    - `merged_into_profile_id > 0`
+    - `is_known_smurf == True`
+    - `original_alias` no formato `<X> (Smurf...)` ou `<Smurf> (<Original>)`, exceto `<X> (Principal)`.
+    """
+    if not isinstance(entry, dict):
+        return False
+    if bool(entry.get("is_known_smurf")):
+        return True
+    if int(entry.get("merged_into_profile_id", 0) or 0) > 0:
+        return True
+    alias = str(entry.get("original_alias") or entry.get("alias") or "").strip()
+    m = _PAREN_TAG_RE.match(alias)
+    if not m:
+        return False
+    inner = m.group(2).strip().casefold()
+    if inner in ("principal", "main"):
+        return False
+    return True
+
+
+def extract_known_smurf_pids(
+    roster_rows: list[dict[str, Any]] | None = None,
+) -> set[int]:
+    """Retorna todos os `profile_id` já catalogados como smurfs no elenco compartilhado."""
+    rows = roster_rows if roster_rows is not None else (list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS))
+    out: set[int] = set()
+    for row in rows:
+        if is_known_smurf_roster_entry(row):
+            pid = int(row.get("profile_id", 0) or 0)
+            if pid > 0:
+                out.add(pid)
+    return out
+
+
+def select_relic_top50_br(
+    all_br_players: dict[int, dict[str, Any]],
+    *,
+    known_smurf_pids: set[int] | frozenset[int] = frozenset(),
+    previous_top50_pids: list[int] | set[int] | None = None,
+    top_n: int = DEFAULT_TOP_N_BR,
+) -> tuple[list[dict[str, Any]], dict[int, int], list[dict[str, Any]], list[int]]:
+    """
+    Seleciona dinamicamente o Top N (`top_n=50`) jogadores brasileiros principais na Relic API.
+    Retorna `(top_n_list, rank_by_pid_all, newly_entered_top_n, dropped_pids)`.
+    """
+    ranked_mains: list[dict[str, Any]] = []
+    for pid, row in all_br_players.items():
+        pid_i = int(pid or 0)
+        if pid_i <= 0 or pid_i in known_smurf_pids:
+            continue
+        elo = int(row.get("max_elo", 0) or 0)
+        if elo <= 0:
+            continue
+        ranked_mains.append(
+            {
+                "profile_id": pid_i,
+                "steam_id": str(row.get("steam_id") or "").replace("/steam/", "").strip(),
+                "alias": strip_unsafe_chars(row.get("alias") or row.get("original_alias") or f"Player {pid_i}")[:40],
+                "max_elo": elo,
+                "total_matches": max(0, int(row.get("total_matches", 0) or 0)),
+                "last_match_date": max(0, int(row.get("last_match_date", 0) or 0)),
+                "country": str(row.get("country") or "br").strip().lower() or "br",
+            }
+        )
+
+    ranked_mains.sort(key=lambda r: (-int(r["max_elo"]), -int(r["total_matches"]), int(r["profile_id"])))
+    rank_by_pid: dict[int, int] = {}
+    for idx, rec in enumerate(ranked_mains, 1):
+        rec["relic_br_rank"] = idx
+        rank_by_pid[int(rec["profile_id"])] = idx
+
+    cap = max(1, int(top_n))
+    top_list = ranked_mains[:cap]
+    curr_top_pids = {int(r["profile_id"]) for r in top_list}
+
+    prev_set = {int(p) for p in (previous_top50_pids or []) if int(p or 0) > 0}
+    newly_entered: list[dict[str, Any]] = []
+    dropped: list[int] = []
+    if prev_set:
+        newly_entered = [r for r in top_list if int(r["profile_id"]) not in prev_set]
+        dropped = sorted(prev_set - curr_top_pids)
+
+    return top_list, rank_by_pid, newly_entered, dropped
+
+
+def _cosine_similarity(c1: Counter[Any], c2: Counter[Any]) -> float:
+    if not c1 or not c2:
+        return 0.0
+    common = set(c1.keys()) & set(c2.keys())
+    if not common:
+        return 0.0
+    dot = sum(c1[k] * c2[k] for k in common)
+    n1 = math.sqrt(sum(v * v for v in c1.values()))
+    n2 = math.sqrt(sum(v * v for v in c2.values()))
+    if n1 <= 0.0 or n2 <= 0.0:
+        return 0.0
+    return dot / (n1 * n2)
+
+
+def _check_overlap_and_handoffs(
+    intervals_a: list[tuple[int, int, int]],
+    intervals_b: list[tuple[int, int, int]],
+    *,
+    min_handoff_sec: int = 90,
+    max_handoff_sec: int = 2700,
+) -> tuple[bool, int, list[int]]:
+    """
+    Verifica em O(N log N) se há qualquer sobreposição simultânea (desqualificador absoluto)
+    e conta trocas rápidas de conta (`handoffs`: fim de partida em A -> início em B dentro de 1.5–45 min).
+    """
+    if not intervals_a or not intervals_b:
+        return False, 0, []
+
+    a_sorted = sorted(intervals_a, key=lambda x: (x[0], x[1]))
+    b_sorted = sorted(intervals_b, key=lambda x: (x[0], x[1]))
+
+    i = 0
+    j = 0
+    while i < len(a_sorted) and j < len(b_sorted):
+        sa, ea, _ = a_sorted[i]
+        sb, eb, _ = b_sorted[j]
+        # Tolerância de 60s para relógio/latência de fim de partida na Relic
+        if (sa + 60) < eb and (sb + 60) < ea:
+            return True, 0, []
+        if ea <= eb:
+            i += 1
+        else:
+            j += 1
+
+    # Mescla cronológica para detectar trocas rápidas (handoffs) entre A e B
+    events: list[tuple[int, int, str]] = [(s, e, "A") for s, e, _ in a_sorted] + [(s, e, "B") for s, e, _ in b_sorted]
+    events.sort(key=lambda x: (x[0], x[1]))
+    handoff_gaps_min: list[int] = []
+    for k in range(len(events) - 1):
+        _, prev_end, prev_src = events[k]
+        next_start, _, next_src = events[k + 1]
+        if prev_src == next_src:
+            continue
+        gap = next_start - prev_end
+        if min_handoff_sec <= gap <= max_handoff_sec:
+            handoff_gaps_min.append(max(1, round(gap / 60)))
+
+    return False, len(handoff_gaps_min), handoff_gaps_min
+
+
+def _steam_account32(steam_id: str) -> int:
+    sid = str(steam_id or "").replace("/steam/", "").strip()
+    if not STEAM_ID64_VALID_RE.fullmatch(sid):
+        return 0
+    val = int(sid) - STEAM_ID64_BASE
+    return val if val > 0 else 0
+
+
+def _alias_similarity_bonus(cand_alias: str, main_alias: str, cand_seen: set[str], main_seen: set[str]) -> tuple[int, str]:
+    c_all = {a.strip().casefold() for a in ({cand_alias} | set(cand_seen)) if len(a.strip()) >= 3}
+    m_all = {a.strip().casefold() for a in ({main_alias} | set(main_seen)) if len(a.strip()) >= 3}
+    if not c_all or not m_all:
+        return 0, ""
+    if c_all & m_all:
+        hit = sorted(c_all & m_all)[0]
+        return 20, f"Nick idêntico utilizado nas duas contas ('{hit}')"
+    for ca in c_all:
+        for ma in m_all:
+            if len(ca) >= 5 and len(ma) >= 5 and (ca in ma or ma in ca):
+                return 10, f"Similaridade direta de nick ('{ca}' ↔ '{ma}')"
+    return 0, ""
+
+
+def score_smurf_pair(
+    cand: dict[str, Any],
+    main: dict[str, Any],
+    cand_tel: PlayerMatchTelemetry | None,
+    main_tel: PlayerMatchTelemetry | None,
+    *,
+    ally_popularity: Counter[int] | None = None,
+    pid_aliases: dict[int, str] | None = None,
+    steam_friends_by_pid: dict[int, set[str]] | None = None,
+) -> dict[str, Any]:
+    """
+    Calcula a probabilidade forense (`0..99%`) de `cand` ser uma smurf de `main`, com evidências detalhadas em português.
+    Retorna `probability_pct = 0` se houver qualquer desqualificador absoluto (mesma partida ou sobreposição simultânea).
+    """
+    cand_pid = int(cand.get("profile_id", 0) or 0)
+    main_pid = int(main.get("profile_id", 0) or 0)
+    cand_sid = str(cand.get("steam_id") or "").replace("/steam/", "").strip()
+    main_sid = str(main.get("steam_id") or "").replace("/steam/", "").strip()
+
+    empty_res: dict[str, Any] = {
+        "main_profile_id": main_pid,
+        "main_steam_id": main_sid,
+        "main_alias": str(main.get("alias") or main_pid),
+        "main_max_elo": int(main.get("max_elo", 0) or 0),
+        "main_relic_br_rank": int(main.get("relic_br_rank", 0) or 0),
+        "probability_pct": 0,
+        "confidence_tier": "Descartada",
+        "behavioral_signals": 0,
+        "disqualified_reason": "",
+        "evidence": [],
+        "metrics": {},
+    }
+
+    if cand_pid <= 0 or main_pid <= 0 or cand_pid == main_pid or (cand_sid and cand_sid == main_sid):
+        empty_res["disqualified_reason"] = "mesmo_perfil"
+        return empty_res
+
+    cand_total = max(0, int(cand.get("total_matches", 0) or 0))
+    main_total = max(0, int(main.get("total_matches", 0) or 0))
+    if cand_total >= 800 and main_total > 0 and cand_total > int(main_total * 1.5):
+        empty_res["disqualified_reason"] = "candidata_mais_antiga_que_principal"
+        return empty_res
+
+    # Desqualificador absoluto #1: já estiveram na mesma partida (aliados ou adversários)
+    if cand_tel and main_pid in cand_tel.co_played_with:
+        empty_res["disqualified_reason"] = "jogaram_mesma_partida"
+        return empty_res
+    if main_tel and cand_pid in main_tel.co_played_with:
+        empty_res["disqualified_reason"] = "jogaram_mesma_partida"
+        return empty_res
+
+    # Desqualificador absoluto #2: partidas com horários simultâneos sobrepostos
+    has_overlap, handoff_cnt, handoff_gaps = _check_overlap_and_handoffs(
+        cand_tel.intervals if cand_tel else [],
+        main_tel.intervals if main_tel else [],
+    )
+    if has_overlap:
+        empty_res["disqualified_reason"] = "sobreposicao_simultanea"
+        return empty_res
+
+    score = 0.0
+    behavioral_signals = 0
+    evidence: list[str] = []
+
+    cand_elo = int(cand.get("max_elo", 0) or 0)
+    main_elo = int(main.get("max_elo", 0) or 0)
+    elo_diff = abs(cand_elo - main_elo) if (cand_elo > 0 and main_elo > 0) else 999
+
+    # Sinal 1: Perfil jovem / anomalia de smurf (poucos jogos vs ELO alto / WR alto / profile_id recente)
+    youth_pts = 0.0
+    youth_notes: list[str] = []
+    if cand_elo >= 1350 and 0 < cand_total <= 250:
+        youth_pts += 12.0
+        youth_notes.append(f"apenas {cand_total} jogos totais com ELO {cand_elo}")
+    elif cand_elo >= 1350 and 0 < cand_total <= 600:
+        youth_pts += 7.0
+        youth_notes.append(f"{cand_total} jogos totais com ELO {cand_elo}")
+    if cand_pid >= 1_000_000:
+        youth_pts += 4.0
+        youth_notes.append(f"profile_id recente (#{cand_pid})")
+    elif _steam_account32(cand_sid) >= 450_000_000:
+        youth_pts += 3.0
+        youth_notes.append("conta Steam recente")
+    if cand_tel and cand_tel.games >= 8 and cand_tel.winrate() >= 0.65:
+        youth_pts += 6.0
+        youth_notes.append(f"winrate recente de {cand_tel.winrate() * 100:.0f}% ({cand_tel.wins}/{cand_tel.games})")
+    elif cand_tel and cand_tel.games >= 10 and cand_tel.winrate() >= 0.58:
+        youth_pts += 3.0
+        youth_notes.append(f"winrate recente de {cand_tel.winrate() * 100:.0f}%")
+    if youth_pts > 0:
+        score += min(18.0, youth_pts)
+        evidence.append("Anomalia de conta nova/smurf: " + ", ".join(youth_notes) + ".")
+
+    # Sinal 2: Trocas rápidas de conta (handoffs sem sobreposição)
+    if handoff_cnt >= 3:
+        score += 30.0
+        behavioral_signals += 1
+        evidence.append(
+            f"{handoff_cnt} trocas rápidas de conta sem sobreposição (intervalos: {', '.join(f'{g}m' for g in handoff_gaps[:5])})."
+        )
+    elif handoff_cnt == 2:
+        score += 20.0
+        behavioral_signals += 1
+        evidence.append(f"2 trocas rápidas de conta sem sobreposição ({', '.join(f'{g}m' for g in handoff_gaps)}).")
+    elif handoff_cnt == 1:
+        score += 10.0
+        behavioral_signals += 1
+        evidence.append(f"1 troca rápida de conta sem sobreposição (intervalo de {handoff_gaps[0]} min).")
+
+    # Sinal 3: Aliados recorrentes compartilhados (squad / panelinha)
+    shared_allies_info: list[tuple[int, int, int, float]] = []
+    if cand_tel and main_tel:
+        pop = ally_popularity or Counter()
+        common_allies = set(cand_tel.ally_counts.keys()) & set(main_tel.ally_counts.keys())
+        for apid in common_allies:
+            ca = cand_tel.ally_counts[apid]
+            ma = main_tel.ally_counts[apid]
+            if ca >= 2 and ma >= 2:
+                # Peso IDF: aliados exclusivos/de nicho valem mais que jogadores aleatórios comuns
+                rarity = 1.0 / math.log2(2.0 + max(1, pop.get(apid, 1)))
+                shared_allies_info.append((apid, ca, ma, rarity))
+        shared_allies_info.sort(key=lambda x: (-x[3], -(x[1] + x[2])))
+
+    if shared_allies_info:
+        weighted_squad = sum(min(14.0, 9.0 + 7.0 * r) for _, _, _, r in shared_allies_info[:4])
+        squad_pts = min(32.0, weighted_squad)
+        score += squad_pts
+        behavioral_signals += 1
+        names_map = pid_aliases or {}
+        top_names = [
+            f"{names_map.get(apid, f'#{apid}')} ({ca}x / {ma}x)"
+            for apid, ca, ma, _ in shared_allies_info[:4]
+        ]
+        evidence.append(
+            f"{len(shared_allies_info)} aliado(s) recorrente(s) em comum no mesmo squad: {', '.join(top_names)}."
+        )
+
+    # Sinal 4: Assinatura de modo + facção (similaridade cosseno)
+    mf_sim = 0.0
+    if cand_tel and main_tel and cand_tel.games >= 6 and main_tel.games >= 6:
+        mf_sim = _cosine_similarity(cand_tel.mode_faction_counts, main_tel.mode_faction_counts)
+        if mf_sim >= 0.85:
+            score += 15.0
+            behavioral_signals += 1
+            evidence.append(f"Assinatura de modo e facção muito próxima (similaridade {mf_sim * 100:.0f}%).")
+        elif mf_sim >= 0.70:
+            score += 10.0
+            behavioral_signals += 1
+            evidence.append(f"Assinatura de modo e facção compatível (similaridade {mf_sim * 100:.0f}%).")
+        elif mf_sim >= 0.55:
+            score += 5.0
+        elif cand_tel.games >= 12 and main_tel.games >= 12 and mf_sim < 0.25:
+            score -= 12.0
+
+    # Sinal 5: Mesma faixa de ELO no mesmo modo com 0 confrontos diretos
+    same_bracket_modes: list[str] = []
+    if cand_tel and main_tel:
+        for mode in ("1v1", "2v2", "3v3", "4v4"):
+            ce = cand_tel.mode_elo_max.get(mode, 0)
+            me = main_tel.mode_elo_max.get(mode, 0)
+            cg = cand_tel.mode_counts.get(mode, 0)
+            mg = main_tel.mode_counts.get(mode, 0)
+            if ce > 0 and me > 0 and abs(ce - me) <= 200 and cg >= 5 and mg >= 5:
+                same_bracket_modes.append(f"{mode} ({ce} vs {me})")
+    if same_bracket_modes:
+        score += 11.0 if len(same_bracket_modes) >= 2 else 8.0
+        behavioral_signals += 1
+        evidence.append(
+            f"0 confrontos diretos na mesma faixa de ELO/modo ({', '.join(same_bracket_modes)})."
+        )
+
+    # Sinal 6: Correlação de horários de atividade (UTC 0..23)
+    hour_sim = 0.0
+    if cand_tel and main_tel and cand_tel.games >= 8 and main_tel.games >= 8:
+        hour_sim = _cosine_similarity(cand_tel.hour_counts, main_tel.hour_counts)
+        if hour_sim >= 0.78:
+            score += 8.0
+            behavioral_signals += 1
+            evidence.append(f"Horários de jogo altamente correlacionados ({hour_sim * 100:.0f}%).")
+        elif hour_sim >= 0.62:
+            score += 4.0
+
+    # Sinal 7: Similaridade direta de apelido + lista de amigos Steam (se fornecida)
+    alias_pts, alias_note = _alias_similarity_bonus(
+        str(cand.get("alias") or ""),
+        str(main.get("alias") or ""),
+        cand_tel.seen_aliases if cand_tel else set(),
+        main_tel.seen_aliases if main_tel else set(),
+    )
+    if alias_pts > 0:
+        score += float(alias_pts)
+        behavioral_signals += 1
+        evidence.append(alias_note + ".")
+
+    shared_steam_friends = 0
+    if steam_friends_by_pid:
+        cf = steam_friends_by_pid.get(cand_pid) or set()
+        mf = steam_friends_by_pid.get(main_pid) or set()
+        if cf and mf:
+            if main_sid and main_sid in cf:
+                score -= 10.0  # Contas smurf raramente se adicionam, embora aconteça; penalidade leve
+            shared_steam_friends = len(cf & mf)
+            if shared_steam_friends >= 3:
+                score += min(16.0, 6.0 + shared_steam_friends * 2.0)
+                behavioral_signals += 1
+                evidence.append(f"{shared_steam_friends} amigo(s) Steam em comum entre as contas.")
+
+    # Deduções por contra-evidência
+    if elo_diff > 450:
+        score -= 15.0
+    elif elo_diff <= 150 and cand_elo >= 1350:
+        score += 4.0
+
+    if cand_tel and main_tel and not shared_allies_info and handoff_cnt == 0:
+        cand_team_games = cand_tel.games - cand_tel.mode_counts.get("1v1", 0)
+        main_team_games = main_tel.games - main_tel.mode_counts.get("1v1", 0)
+        if cand_team_games >= 15 and main_team_games >= 15:
+            score -= 10.0
+
+    # Exige ao menos 2 sinais comportamentais independentes (impede falso positivo só por "poucos jogos + ELO alto")
+    if behavioral_signals < 2:
+        score = min(score, 34.0)
+
+    prob_pct = max(0, min(99, int(round(score))))
+    if prob_pct >= 80:
+        tier = "Muito Alta"
+    elif prob_pct >= 65:
+        tier = "Alta"
+    elif prob_pct >= 50:
+        tier = "Moderada"
+    elif prob_pct >= 40:
+        tier = "Possível"
+    else:
+        tier = "Baixa"
+
+    return {
+        "main_profile_id": main_pid,
+        "main_steam_id": main_sid,
+        "main_alias": str(main.get("alias") or main_pid),
+        "main_max_elo": main_elo,
+        "main_relic_br_rank": int(main.get("relic_br_rank", 0) or 0),
+        "probability_pct": prob_pct,
+        "confidence_tier": tier,
+        "behavioral_signals": behavioral_signals,
+        "disqualified_reason": "",
+        "evidence": evidence,
+        "metrics": {
+            "elo_diff": elo_diff,
+            "handoffs": handoff_cnt,
+            "shared_regular_allies": len(shared_allies_info),
+            "mode_faction_similarity": round(mf_sim, 3),
+            "hour_similarity": round(hour_sim, 3),
+            "shared_steam_friends": shared_steam_friends,
+        },
+    }
+
+
+def _is_smurf_candidate(
+    player: dict[str, Any],
+    tel: PlayerMatchTelemetry | None,
+    *,
+    known_smurf_pids: set[int] | frozenset[int],
+    include_known_smurfs: bool = False,
+) -> bool:
+    pid = int(player.get("profile_id", 0) or 0)
+    if pid <= 0:
+        return False
+    if not include_known_smurfs and pid in known_smurf_pids:
+        return False
+
+    elo = int(player.get("max_elo", 0) or 0)
+    total = max(0, int(player.get("total_matches", 0) or 0))
+    recent_games = tel.games if tel else 0
+    recent_wr = tel.winrate() if tel else 0.0
+
+    # Precisa ter atividade mínima observada ou ELO expressivo para evitar ruído
+    if elo < 1250 and recent_wr < 0.62:
+        return False
+    if recent_games < 4 and total < 5:
+        return False
+
+    # Contas veteranas consolidadas (>1200 jogos e profile_id antigo) não são candidatas a smurf
+    if total > 1200 and pid < 900_000:
+        return False
+
+    is_young_or_low_games = (total <= 900) or (pid >= 900_000) or (_steam_account32(str(player.get("steam_id") or "")) >= 400_000_000)
+    return is_young_or_low_games
+
+
+def detect_top50_br_smurfs(
+    *,
+    all_br_players: dict[int, dict[str, Any]],
+    telemetry: SmurfTelemetryCollector,
+    extra_candidates: dict[int, dict[str, Any]] | None = None,
+    known_smurf_pids: set[int] | frozenset[int] | None = None,
+    previous_top50_pids: list[int] | set[int] | None = None,
+    steam_friends_by_pid: dict[int, set[str]] | None = None,
+    top_n: int = DEFAULT_TOP_N_BR,
+    min_probability_pct: int = DEFAULT_MIN_PROBABILITY_PCT,
+    include_known_smurfs: bool = False,
+) -> dict[str, Any]:
+    """
+    Executa a detecção forense de contas smurf exclusivamente para o Top 50 BR da Relic API.
+    - Monitora automaticamente novos brasileiros que entrarem no Top 50.
+    - Ignora candidatas cujo vínculo mais provável pertença a jogadores fora do Top 50 (`#51+`).
+    """
+    known_smurfs = set(known_smurf_pids) if known_smurf_pids is not None else extract_known_smurf_pids()
+    top_list, rank_by_pid, newly_entered, dropped = select_relic_top50_br(
+        all_br_players,
+        known_smurf_pids=known_smurfs,
+        previous_top50_pids=previous_top50_pids,
+        top_n=top_n,
+    )
+    top50_pids = {int(r["profile_id"]) for r in top_list}
+
+    # Jogadores #51..#150 usados apenas como guarda para ignorar smurfs de quem está FORA do Top 50
+    outside_top50_mains: list[dict[str, Any]] = []
+    for pid, rank in rank_by_pid.items():
+        if top_n < rank <= max(150, top_n * 3):
+            row = all_br_players.get(pid)
+            if isinstance(row, dict):
+                outside_top50_mains.append(
+                    {
+                        "profile_id": pid,
+                        "steam_id": str(row.get("steam_id") or "").replace("/steam/", "").strip(),
+                        "alias": strip_unsafe_chars(row.get("alias") or row.get("original_alias") or f"Player {pid}")[:40],
+                        "max_elo": int(row.get("max_elo", 0) or 0),
+                        "total_matches": max(0, int(row.get("total_matches", 0) or 0)),
+                        "relic_br_rank": rank,
+                    }
+                )
+
+    ally_pop = telemetry.build_ally_popularity()
+
+    # Pool de candidatas: BRs + candidatos associados a squads BR (ex.: smurf sem bandeira BR na Relic)
+    candidate_pool: dict[int, dict[str, Any]] = {}
+    for pid, row in all_br_players.items():
+        if isinstance(row, dict):
+            candidate_pool[int(pid)] = dict(row)
+    for pid, row in (extra_candidates or {}).items():
+        pid_i = int(pid or 0)
+        if pid_i > 0 and pid_i not in candidate_pool and isinstance(row, dict):
+            if int(row.get("br_teammate_count", 0) or 0) >= 2 or bool(row.get("in_br_arranged_team")):
+                candidate_pool[pid_i] = dict(row)
+
+    suspects: list[dict[str, Any]] = []
+    ignored_outside_top50 = 0
+    candidates_evaluated = 0
+
+    for cpid, cand in candidate_pool.items():
+        cand_tel = telemetry.players.get(cpid)
+        if not _is_smurf_candidate(
+            cand,
+            cand_tel,
+            known_smurf_pids=known_smurfs,
+            include_known_smurfs=include_known_smurfs,
+        ):
+            continue
+        candidates_evaluated += 1
+
+        top50_scores: list[dict[str, Any]] = []
+        for main in top_list:
+            mpid = int(main["profile_id"])
+            if mpid == cpid:
+                continue
+            scored = score_smurf_pair(
+                cand,
+                main,
+                cand_tel,
+                telemetry.players.get(mpid),
+                ally_popularity=ally_pop,
+                pid_aliases=telemetry.pid_aliases,
+                steam_friends_by_pid=steam_friends_by_pid,
+            )
+            if int(scored["probability_pct"]) >= min_probability_pct:
+                top50_scores.append(scored)
+
+        if not top50_scores:
+            continue
+        top50_scores.sort(key=lambda x: (-int(x["probability_pct"]), -int(x["behavioral_signals"]), int(x["main_relic_br_rank"])))
+        best_top50 = top50_scores[0]
+
+        # Guarda estrita "Ignorar Smurfs de contas fora do Top 50":
+        # Se algum jogador ranqueado #51+ tiver aderência claramente superior à melhor conta do Top 50, ignora!
+        best_outside_prob = 0
+        for out_main in outside_top50_mains:
+            ompid = int(out_main["profile_id"])
+            if ompid == cpid:
+                continue
+            out_scored = score_smurf_pair(
+                cand,
+                out_main,
+                cand_tel,
+                telemetry.players.get(ompid),
+                ally_popularity=ally_pop,
+                pid_aliases=telemetry.pid_aliases,
+                steam_friends_by_pid=steam_friends_by_pid,
+            )
+            if int(out_scored["probability_pct"]) > best_outside_prob:
+                best_outside_prob = int(out_scored["probability_pct"])
+
+        if best_outside_prob >= int(best_top50["probability_pct"]) + 5 or (
+            best_outside_prob >= 55 and int(best_top50["probability_pct"]) < 55
+        ):
+            ignored_outside_top50 += 1
+            continue
+
+        suspects.append(
+            {
+                "candidate": {
+                    "profile_id": cpid,
+                    "steam_id": str(cand.get("steam_id") or "").replace("/steam/", "").strip(),
+                    "alias": strip_unsafe_chars(cand.get("alias") or cand.get("original_alias") or f"Player {cpid}")[:40],
+                    "country": str(cand.get("country") or "").strip().lower() or "??",
+                    "max_elo": int(cand.get("max_elo", 0) or 0),
+                    "total_matches": max(0, int(cand.get("total_matches", 0) or 0)),
+                    "recent_games": cand_tel.games if cand_tel else 0,
+                    "recent_winrate_pct": round((cand_tel.winrate() * 100.0), 1) if (cand_tel and cand_tel.games > 0) else 0.0,
+                    "relic_br_rank": rank_by_pid.get(cpid, 0),
+                    "in_top50": cpid in top50_pids,
+                },
+                "best_probability_pct": int(best_top50["probability_pct"]),
+                "best_confidence_tier": str(best_top50["confidence_tier"]),
+                "top_matches": top50_scores[:3],
+            }
+        )
+
+    suspects.sort(
+        key=lambda s: (
+            -int(s["best_probability_pct"]),
+            -int(s["candidate"]["max_elo"]),
+            int(s["candidate"]["profile_id"]),
+        )
+    )
+
+    return {
+        "top_n": int(top_n),
+        "top50_count": len(top_list),
+        "top50_min_elo": int(top_list[-1]["max_elo"]) if top_list else 0,
+        "top50_max_elo": int(top_list[0]["max_elo"]) if top_list else 0,
+        "top50_br_pids": [int(r["profile_id"]) for r in top_list],
+        "top50_br": top_list,
+        "newly_entered_top50": newly_entered,
+        "dropped_from_top50": dropped,
+        "matches_observed": telemetry.matches_observed,
+        "candidates_evaluated": candidates_evaluated,
+        "known_smurfs_skipped": len(known_smurfs) if not include_known_smurfs else 0,
+        "ignored_outside_top50_count": ignored_outside_top50,
+        "suspects": suspects,
+    }
+
+
+def format_smurf_report_text(report: dict[str, Any]) -> str:
+    """Formata relatório legível em português para exibição direta no Antigravity."""
+    lines: list[str] = []
+    lines.append(
+        f"[DETECÇÃO DE SMURFS — TOP {report.get('top_n', 50)} BR RELIC] "
+        f"Monitorados: {report.get('top50_count', 0)} (ELO {report.get('top50_min_elo', 0)}..{report.get('top50_max_elo', 0)}) | "
+        f"Partidas analisadas: {report.get('matches_observed', 0)} | "
+        f"Candidatas avaliadas: {report.get('candidates_evaluated', 0)} | "
+        f"Ignoradas (fora do Top 50): {report.get('ignored_outside_top50_count', 0)}"
+    )
+
+    newly = report.get("newly_entered_top50") or []
+    if newly:
+        entered_lbl = ", ".join(
+            f"#{p['relic_br_rank']} {p['alias']} (ELO {p['max_elo']}, pid={p['profile_id']})"
+            for p in newly[:15]
+        )
+        lines.append(f"[NOVOS NO TOP 50 BR (+{len(newly)}) -> monitoramento de smurfs ativado]: {entered_lbl}")
+
+    suspects = report.get("suspects") or []
+    if not suspects:
+        lines.append("Nenhuma nova conta suspeita de ser Smurf do Top 50 BR encontrada nesta rodada.")
+        return "\n".join(lines)
+
+    lines.append(f"[SUSPEITAS DE SMURF DO TOP 50 BR ENCONTRADAS ({len(suspects)})]:")
+    for idx, item in enumerate(suspects, 1):
+        c = item["candidate"]
+        best = item["top_matches"][0]
+        lines.append(
+            f"  #{idx:02d} | {c['alias']} (pid={c['profile_id']} | Steam {c['steam_id'] or 'N/D'} | "
+            f"ELO {c['max_elo']} | {c['total_matches']} jogos | WR rec {c['recent_winrate_pct']:.0f}%)"
+        )
+        lines.append(
+            f"       -> Provável Smurf de #{best['main_relic_br_rank']} {best['main_alias']} (pid={best['main_profile_id']}, "
+            f"ELO {best['main_max_elo']}) — Probabilidade: {best['probability_pct']}% ({best['confidence_tier']})"
+        )
+        for ev in best.get("evidence") or []:
+            lines.append(f"          • {ev}")
+        for alt in item["top_matches"][1:]:
+            lines.append(
+                f"       -> Alternativa: #{alt['main_relic_br_rank']} {alt['main_alias']} "
+                f"({alt['probability_pct']}% — {alt['confidence_tier']})"
+            )
+    return "\n".join(lines)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Detecção forense sob demanda de contas Smurf do Top 50 brasileiro na Relic API."
+    )
+    parser.add_argument("--days", type=int, default=DEFAULT_MATCH_DAYS, help="Dias de Open Data Matches (1..30)")
+    parser.add_argument("--top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado (padrão: 50)")
+    parser.add_argument("--min-prob", type=int, default=DEFAULT_MIN_PROBABILITY_PCT, help="Probabilidade mínima em %% (padrão: 40)")
+    parser.add_argument("--include-known", action="store_true", help="Incluir smurfs já catalogadas no players_roster.json")
+    parser.add_argument("--out", type=Path, default=None, help="Arquivo JSON opcional para salvar o relatório estruturado")
+    args = parser.parse_args()
+
+    from lobby_radar import DEFAULT_COMMUNITY_CACHE_PATH, load_community_cache
+
+    now = int(time.time())
+    r_client = RelicActivityClient()
+    cache = load_community_cache(DEFAULT_COMMUNITY_CACHE_PATH)
+    prev_top50 = cache.get("top50_br_pids") if isinstance(cache.get("top50_br_pids"), list) else []
+
+    all_br: dict[int, dict[str, Any]] = {}
+    for bucket in (cache.get("players") or {}, cache.get("dormant_players") or {}):
+        if isinstance(bucket, dict):
+            for row in bucket.values():
+                if isinstance(row, dict) and int(row.get("profile_id", 0) or 0) > 0:
+                    all_br[int(row["profile_id"])] = dict(row)
+    for row in list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS):
+        pid = int(row.get("profile_id", 0) or 0)
+        if pid > 0 and pid not in all_br:
+            all_br[pid] = {
+                "profile_id": pid,
+                "steam_id": str(row.get("steam_id") or ""),
+                "alias": str(row.get("original_alias") or ""),
+                "country": str(row.get("country") or "br"),
+                "max_elo": 0,
+                "total_matches": 0,
+            }
+
+    # Atualiza ELO/stats diretamente na Relic SA + getPersonalStat para o elenco cadastrado
+    sa_br, sa_cand = r_client.discover_br_and_candidates_from_relic_sa(max_pages_per_board=10, use_dynamic_boards=True)
+    for pid, item in sa_br.items():
+        prev = all_br.get(pid)
+        if prev is None or int(item.get("max_elo", 0) or 0) >= int(prev.get("max_elo", 0) or 0):
+            all_br[pid] = {**(prev or {}), **item}
+
+    need_stats = [pid for pid, row in all_br.items() if int(row.get("max_elo", 0) or 0) <= 0]
+    if need_stats:
+        fetched_stats = r_client.fetch_profile_stats_batch(need_stats[:200], pace_delay_sec=0.15)
+        for pid, st in fetched_stats.items():
+            if pid in all_br:
+                all_br[pid].update(
+                    {
+                        "max_elo": max(int(all_br[pid].get("max_elo", 0) or 0), int(st.get("max_elo", 0) or 0)),
+                        "total_matches": max(int(all_br[pid].get("total_matches", 0) or 0), int(st.get("total_matches", 0) or 0)),
+                        "last_match_date": max(int(all_br[pid].get("last_match_date", 0) or 0), int(st.get("last_match_date", 0) or 0)),
+                    }
+                )
+
+    collector = SmurfTelemetryCollector()
+    m_br, m_cand, _ = r_client.discover_br_and_candidates_from_open_data_matches(
+        now_ts=now,
+        days=max(1, min(int(args.days), 30)),
+        seed_br_pids=set(all_br.keys()),
+        match_observer=collector.observe_matches_payload,
+    )
+    for pid, item in m_br.items():
+        if pid not in all_br:
+            all_br[pid] = dict(item)
+        else:
+            all_br[pid]["max_elo"] = max(int(all_br[pid].get("max_elo", 0) or 0), int(item.get("max_elo", 0) or 0))
+            all_br[pid]["total_matches"] = max(int(all_br[pid].get("total_matches", 0) or 0), int(item.get("total_matches", 0) or 0))
+
+    extra_cands = {**sa_cand, **m_cand}
+    report = detect_top50_br_smurfs(
+        all_br_players=all_br,
+        telemetry=collector,
+        extra_candidates=extra_cands,
+        previous_top50_pids=prev_top50,
+        top_n=max(1, int(args.top_n)),
+        min_probability_pct=max(1, min(99, int(args.min_prob))),
+        include_known_smurfs=bool(args.include_known),
+    )
+    print(format_smurf_report_text(report))
+    if args.out is not None:
+        atomic_write_text(args.out, json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except Exception as exc:
+        logger.exception("Erro na detecção de smurfs do Top 50 BR: %s", redact_secrets(exc))
+        sys.exit(1)

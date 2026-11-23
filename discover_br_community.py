@@ -19,6 +19,8 @@ e não disponibiliza API JSON pública filtrada por país; a convergência acima
 from __future__ import annotations
 
 import argparse
+import inspect
+import json
 import logging
 import sys
 import time
@@ -41,7 +43,15 @@ from lobby_radar import (
     resolve_manual_other_br_entries,
     save_community_cache,
 )
-from security import configure_secure_logging, redact_secrets
+from security import atomic_write_text, configure_secure_logging, redact_secrets
+from smurf_detector import (
+    DEFAULT_MIN_PROBABILITY_PCT,
+    DEFAULT_TOP_N_BR,
+    SmurfTelemetryCollector,
+    detect_top50_br_smurfs,
+    extract_known_smurf_pids,
+    format_smurf_report_text,
+)
 from steam_presence import (
     BRAZILIAN_COH_STEAM_GROUPS,
     MANUAL_OTHER_BR_PLAYERS,
@@ -149,9 +159,14 @@ def run_deep_br_discovery(
     steam_groups: tuple[str, ...] = BRAZILIAN_COH_STEAM_GROUPS,
     dry_run: bool = False,
     now_ts: int | None = None,
+    smurf_check: bool = True,
+    smurf_top_n: int = DEFAULT_TOP_N_BR,
+    smurf_min_prob: int = DEFAULT_MIN_PROBABILITY_PCT,
+    smurf_report_path: Path | None = None,
 ) -> dict[str, Any]:
     """
-    Executa a varredura profunda e convergente em 4 fontes oficiais/abertas e atualiza `br_community.json`.
+    Executa a varredura profunda e convergente em 4 fontes oficiais/abertas, atualiza `br_community.json`
+    e (quando `smurf_check=True`) roda a verificação forense de contas Smurf focada no Top 50 BR na Relic API.
     """
     now = int(now_ts) if now_ts is not None else int(time.time())
     active_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
@@ -171,6 +186,11 @@ def run_deep_br_discovery(
     manual_pids = {int(r["profile_id"]) for r in MANUAL_OTHER_BR_PLAYERS if int(r.get("profile_id", 0) or 0) > 0}
 
     community_cache = load_community_cache(community_cache_path)
+    prev_top50_br_pids = (
+        [int(p) for p in community_cache.get("top50_br_pids") if int(p or 0) > 0]
+        if isinstance(community_cache.get("top50_br_pids"), list)
+        else []
+    )
     existing_players: dict[str, dict[str, Any]] = dict(community_cache.get("players") or {})
     raw_existing_dormant = community_cache.get("dormant_players")
     existing_dormant: dict[str, dict[str, Any]] = dict(raw_existing_dormant) if isinstance(raw_existing_dormant, dict) else {}
@@ -182,6 +202,7 @@ def run_deep_br_discovery(
     # com atividade recente de matches!) e pool de candidatos não-`br` para verificação Steam.
     br_pool: dict[int, dict[str, Any]] = {}
     cand_pool: dict[int, dict[str, Any]] = {}
+    smurf_collector = SmurfTelemetryCollector() if smurf_check else None
 
     # Carrega jogadores já verificados anteriormente (ativos e dormentes, preservando Steam-verified e nick anterior)
     for k, row in existing_all.items():
@@ -233,11 +254,22 @@ def run_deep_br_discovery(
     if match_days > 0 and hasattr(r_client, "discover_br_and_candidates_from_open_data_matches"):
         seed_br_pids = set(vet_pids) | set(manual_pids) | set(br_pool.keys())
         try:
-            m_br, m_cand, matches_diag = r_client.discover_br_and_candidates_from_open_data_matches(
-                now_ts=now,
-                days=match_days,
-                seed_br_pids=seed_br_pids,
-            )
+            match_fn = r_client.discover_br_and_candidates_from_open_data_matches
+            match_kwargs: dict[str, Any] = {
+                "now_ts": now,
+                "days": match_days,
+                "seed_br_pids": seed_br_pids,
+            }
+            if smurf_collector is not None:
+                try:
+                    params = inspect.signature(match_fn).parameters
+                    if "match_observer" in params or any(
+                        p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()
+                    ):
+                        match_kwargs["match_observer"] = smurf_collector.observe_matches_payload
+                except (TypeError, ValueError):
+                    pass
+            m_br, m_cand, matches_diag = match_fn(**match_kwargs)
             arranged_teams = list(matches_diag.get("arranged_teams") or [])
             new_from_matches = sum(1 for pid in m_br if pid not in br_pool and pid not in vet_pids)
             for item in m_br.values():
@@ -546,8 +578,69 @@ def run_deep_br_discovery(
     after_high_elo = sum(1 for r in final_players.values() if int(r.get("max_elo", 0) or 0) >= 1300)
     by_source = Counter(str(r.get("br_source") or "unknown") for r in final_players.values())
 
+    # 6b. Verificação forense de Smurfs focada exclusivamente no Top 50 BR na Relic API
+    smurf_analysis: dict[str, Any] = {}
+    top50_br_pids_to_save: list[int] = list(prev_top50_br_pids)
+    if smurf_check and smurf_collector is not None:
+        all_br_for_top50: dict[int, dict[str, Any]] = {int(pid): dict(row) for pid, row in br_pool.items()}
+        missing_vet_elo_pids: list[int] = []
+        for vr in vet_roster:
+            vpid = int(vr.get("profile_id", 0) or 0)
+            if vpid <= 0:
+                continue
+            existing_v = all_br_for_top50.get(vpid)
+            if existing_v is None:
+                all_br_for_top50[vpid] = {
+                    "profile_id": vpid,
+                    "steam_id": str(vr.get("steam_id") or ""),
+                    "alias": str(vr.get("original_alias") or vr.get("alias") or f"Player {vpid}"),
+                    "country": str(vr.get("country") or "br"),
+                    "max_elo": int(vr.get("max_elo", 0) or 0),
+                    "total_matches": int(vr.get("total_matches", 0) or 0),
+                    "last_match_date": int(vr.get("last_match_date", 0) or 0),
+                }
+            if int(all_br_for_top50[vpid].get("max_elo", 0) or 0) <= 0:
+                missing_vet_elo_pids.append(vpid)
+
+        if missing_vet_elo_pids and hasattr(r_client, "fetch_profile_stats_batch"):
+            try:
+                vet_stats = r_client.fetch_profile_stats_batch(missing_vet_elo_pids[:100], pace_delay_sec=0.15)
+                for vpid, st in vet_stats.items():
+                    if vpid in all_br_for_top50:
+                        all_br_for_top50[vpid]["max_elo"] = max(
+                            int(all_br_for_top50[vpid].get("max_elo", 0) or 0),
+                            int(st.get("max_elo", 0) or 0),
+                        )
+                        all_br_for_top50[vpid]["total_matches"] = max(
+                            int(all_br_for_top50[vpid].get("total_matches", 0) or 0),
+                            int(st.get("total_matches", 0) or 0),
+                        )
+                        all_br_for_top50[vpid]["last_match_date"] = max(
+                            int(all_br_for_top50[vpid].get("last_match_date", 0) or 0),
+                            int(st.get("last_match_date", 0) or 0),
+                        )
+            except Exception as exc:
+                logger.warning("[STAGE 7 — SMURF TOP 50] Falha ao enriquecer ELO de Veteranos: %s", redact_secrets(exc))
+
+        known_smurf_pids = extract_known_smurf_pids(list(vet_roster) + list(MANUAL_OTHER_BR_PLAYERS))
+        smurf_analysis = detect_top50_br_smurfs(
+            all_br_players=all_br_for_top50,
+            telemetry=smurf_collector,
+            extra_candidates=cand_pool,
+            known_smurf_pids=known_smurf_pids,
+            previous_top50_pids=prev_top50_br_pids,
+            top_n=smurf_top_n,
+            min_probability_pct=smurf_min_prob,
+        )
+        if smurf_analysis.get("top50_br_pids"):
+            top50_br_pids_to_save = list(smurf_analysis["top50_br_pids"])
+        for line in format_smurf_report_text(smurf_analysis).splitlines():
+            logger.info("%s", line)
+        if smurf_report_path is not None:
+            atomic_write_text(smurf_report_path, json.dumps(smurf_analysis, ensure_ascii=False, indent=2) + "\n")
+
     if not dry_run and final_players:
-        out_cache = {
+        out_cache: dict[str, Any] = {
             "schema_version": COMMUNITY_SCHEMA_VERSION,
             "updated_at": now,
             "deep_discovery_at": now,
@@ -555,6 +648,8 @@ def run_deep_br_discovery(
             "players": final_players,
             "dormant_players": final_dormant,
         }
+        if top50_br_pids_to_save:
+            out_cache["top50_br_pids"] = top50_br_pids_to_save
         save_community_cache(community_cache_path, out_cache)
 
     logger.info(
@@ -718,6 +813,7 @@ def run_deep_br_discovery(
         "steam_verified_count": steam_verified_count,
         "top_new_players": newly_added_rows[:30],
         "arranged_teams_audit": arranged_audit,
+        "smurf_analysis": smurf_analysis,
     }
 
 
@@ -730,6 +826,10 @@ def main() -> int:
     parser.add_argument("--match-days", type=int, default=DEFAULT_MATCH_DAYS, help="Dias de dumps Open Data Matches (1..30)")
     parser.add_argument("--max-steam-verify", type=int, default=DEFAULT_MAX_STEAM_VERIFY, help="Máximo de perfis verificados no XML Steam")
     parser.add_argument("--relic-sa-pages", type=int, default=DEFAULT_RELIC_SA_PAGES, help="Páginas por leaderboard SA na Relic (1..15)")
+    parser.add_argument("--no-smurf-check", action="store_true", help="Desativa a verificação forense de Smurfs do Top 50 BR")
+    parser.add_argument("--smurf-top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado para smurfs (padrão: 50)")
+    parser.add_argument("--smurf-min-prob", type=int, default=DEFAULT_MIN_PROBABILITY_PCT, help="Probabilidade mínima em %% para listar suspeitas (padrão: 40)")
+    parser.add_argument("--smurf-report", type=Path, default=None, help="Arquivo JSON opcional para salvar o relatório de smurfs do Top 50 BR")
     parser.add_argument("--dry-run", action="store_true", help="Apenas exibe o diagnóstico sem gravar br_community.json")
     args = parser.parse_args()
 
@@ -741,6 +841,10 @@ def main() -> int:
             max_steam_verify=args.max_steam_verify,
             relic_sa_pages=args.relic_sa_pages,
             dry_run=bool(args.dry_run),
+            smurf_check=not bool(args.no_smurf_check),
+            smurf_top_n=max(1, int(args.smurf_top_n)),
+            smurf_min_prob=max(1, min(99, int(args.smurf_min_prob))),
+            smurf_report_path=args.smurf_report,
         )
         return 0
     except Exception as exc:
