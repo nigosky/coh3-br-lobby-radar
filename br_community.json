@@ -2472,7 +2472,7 @@
       "max_elo": 1373,
       "profile_id": 1162890,
       "steam_id": "76561198117168962",
-      "total_matches": 458
+      "total_matches": 464
     },
     "1163279": {
       "alias": "Gamerkiis",
@@ -4269,13 +4269,13 @@
     "1369003": {
       "alias": "KyronCrane",
       "br_source": "open_data_lb",
-      "last_match_date": 1795413700,
+      "last_match_date": 1795414751,
       "last_seen_ingame_webapi_ts": 1795389918,
       "last_seen_online_ts": 1795389918,
       "max_elo": 1150,
       "profile_id": 1369003,
       "steam_id": "76561198155713664",
-      "total_matches": 1501
+      "total_matches": 1502
     },
     "1369418": {
       "alias": "xandaoro",
@@ -8517,7 +8517,7 @@
       "last_match_date": 1795360340,
       "last_seen_ingame_ts": 1795153124,
       "last_seen_ingame_webapi_ts": 1795399996,
-      "last_seen_online_ts": 1795413081,
+      "last_seen_online_ts": 1795414881,
       "max_elo": 1112,
       "profile_id": 26373,
       "steam_id": "76561198941629351",
@@ -9715,7 +9715,7 @@
       "max_elo": 1079,
       "profile_id": 64634,
       "steam_id": "76561198169911985",
-      "total_matches": 263
+      "total_matches": 266
     },
     "649133": {
       "alias": "SilitO",
