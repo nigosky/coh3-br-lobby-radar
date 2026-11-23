@@ -2367,7 +2367,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794144947,
       "last_seen_ingame_ts": 1795183144,
-      "last_seen_ingame_webapi_ts": 1795392686,
+      "last_seen_ingame_webapi_ts": 1795414581,
       "last_seen_online_ts": 1795413382,
       "max_elo": 1084,
       "profile_id": 1153245,
@@ -5495,7 +5495,7 @@
       "alias": "Tretinha",
       "br_source": "open_data_matches",
       "last_match_date": 1794623825,
-      "last_seen_online_ts": 1795412781,
+      "last_seen_online_ts": 1795414581,
       "max_elo": 1000,
       "profile_id": 1440897,
       "steam_games_hidden": true,
@@ -5793,7 +5793,7 @@
       "last_match_date": 1794648755,
       "last_seen_ingame_ts": 1795197863,
       "last_seen_ingame_webapi_ts": 1795393286,
-      "last_seen_online_ts": 1795412781,
+      "last_seen_online_ts": 1795414581,
       "max_elo": 1000,
       "profile_id": 1448432,
       "steam_id": "76561198076161082",
@@ -7621,6 +7621,7 @@
     "1478243": {
       "alias": "HEADSHOT : MAGISK",
       "br_source": "open_data_matches",
+      "current_alias": "dontrySHOT",
       "last_match_date": 1794802027,
       "last_seen_ingame_ts": 1795181945,
       "last_seen_ingame_webapi_ts": 1795393286,
@@ -8025,7 +8026,7 @@
       "last_match_date": 1795413033,
       "last_seen_ingame_ts": 1795173967,
       "last_seen_ingame_webapi_ts": 1795392386,
-      "last_seen_online_ts": 1795412781,
+      "last_seen_online_ts": 1795414581,
       "max_elo": 1238,
       "profile_id": 17906,
       "steam_games_hidden": false,
@@ -8168,12 +8169,12 @@
     "20523": {
       "alias": "Goa Trance Mix",
       "br_source": "open_data_matches",
-      "last_match_date": 1795351206,
+      "last_match_date": 1795377174,
       "last_seen_online_ts": 0,
       "max_elo": 1081,
       "profile_id": 20523,
       "steam_id": "76561198044964084",
-      "total_matches": 2475
+      "total_matches": 2478
     },
     "206875": {
       "alias": "Fellschirm",
