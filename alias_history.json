@@ -72499,7 +72499,8 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -72508,7 +72509,7 @@
       "coh3_last_match_date": 1741565136,
       "coh3_total_matches": 4,
       "current_alias": "Heinz Richter",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795549974,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1046437,
@@ -74183,8 +74184,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1741563260,
       "coh3_total_matches": 5,
-      "current_alias": "abacaxi",
-      "last_checked_at": 1795546585,
+      "current_alias": "Abacaxi",
+      "last_checked_at": 1795549974,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1059025,
@@ -74501,7 +74502,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1760050360,
       "coh3_total_matches": 13,
-      "current_alias": "bourne",
+      "current_alias": "Bourne",
       "last_checked_at": 1795549674,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -85287,8 +85288,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1746477337,
       "coh3_total_matches": 3,
-      "current_alias": "mooch",
-      "last_checked_at": 1795546285,
+      "current_alias": "Mooch",
+      "last_checked_at": 1795549974,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1118507,
@@ -86824,7 +86825,8 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -86833,7 +86835,7 @@
       "coh3_last_match_date": 1747610943,
       "coh3_total_matches": 3,
       "current_alias": "JACA",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795549974,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1127470,
@@ -92840,7 +92842,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1754886916,
       "coh3_total_matches": 32,
-      "current_alias": "Maurilioazyzzs",
+      "current_alias": "maurilioazyzzs",
       "last_checked_at": 1795549674,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -135375,7 +135377,7 @@
       "coh3_last_match_date": 1794597624,
       "coh3_total_matches": 6,
       "current_alias": "⚡😘💙 ☢ hnrjogos",
-      "last_checked_at": 1795549674,
+      "last_checked_at": 1795549974,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1447630,
@@ -140274,8 +140276,8 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1467829,
-      "scope": "outros_brasileiros",
-      "smurf_of": "",
+      "scope": "manual_other_br",
+      "smurf_of": "Xampoo",
       "steam_id": "76561198650067332"
     },
     "1467948": {
@@ -180243,7 +180245,8 @@
             "local_db",
             "relic_api",
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -180258,7 +180261,7 @@
       "coh3_last_match_date": 1745861572,
       "coh3_total_matches": 8,
       "current_alias": "Teusão",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795549974,
       "last_coh1_relic_at": 1795546807,
       "last_coh2_relic_at": 1795546807,
       "last_cohdb_at": 0,
@@ -187180,7 +187183,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1757727000,
       "coh3_total_matches": 44,
-      "current_alias": "BillFurY",
+      "current_alias": "Billfury",
       "last_checked_at": 1795549674,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
@@ -202010,6 +202013,15 @@
             "relic_coh1_api",
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "Obstürmbahnführer Von Klarus",
+          "first_seen": 1795549974,
+          "last_seen": 1795549974,
+          "sources": [
+            "local_db",
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "ArMat",
@@ -202024,8 +202036,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1741579168,
       "coh3_total_matches": 3,
-      "current_alias": "ArMat",
-      "last_checked_at": 1795546807,
+      "current_alias": "Obstürmbahnführer Von Klarus",
+      "last_checked_at": 1795549974,
       "last_coh1_relic_at": 1795546807,
       "last_coh2_relic_at": 1795546807,
       "last_cohdb_at": 0,
@@ -218650,7 +218662,7 @@
       "coh3_last_match_date": 1794526879,
       "coh3_total_matches": 4,
       "current_alias": "Qi 124",
-      "last_checked_at": 1795549674,
+      "last_checked_at": 1795549974,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -220184,7 +220196,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1756674722,
       "coh3_total_matches": 3,
-      "current_alias": "muller",
+      "current_alias": "Muller",
       "last_checked_at": 1795549674,
       "last_coh1_relic_at": 1795546807,
       "last_coh2_relic_at": 1795546807,
@@ -230030,13 +230042,14 @@
     "931960": {
       "aliases": [
         {
-          "alias": "Kadaf1313",
+          "alias": "kadaf1313",
           "first_seen": 1745963893,
-          "last_seen": 1795546807,
+          "last_seen": 1795549974,
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -230044,8 +230057,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1745963893,
       "coh3_total_matches": 2,
-      "current_alias": "Kadaf1313",
-      "last_checked_at": 1795546807,
+      "current_alias": "kadaf1313",
+      "last_checked_at": 1795549974,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 931960,
@@ -242084,8 +242097,8 @@
     "relic_coh1_api": 1953,
     "relic_coh2_api": 4742,
     "steam_aliases": 158,
-    "steam_web_api": 7399,
+    "steam_web_api": 7404,
     "steam_xml": 6739
   },
-  "updated_at": 1795549674
+  "updated_at": 1795549974
 }
