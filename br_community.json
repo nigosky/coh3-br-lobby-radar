@@ -2841,14 +2841,14 @@
     "1178218": {
       "alias": "joauleonardo",
       "br_source": "open_data_lb",
-      "last_match_date": 1795476828,
+      "last_match_date": 1795479268,
       "last_seen_online_ts": 1795478396,
       "max_elo": 1739,
       "profile_id": 1178218,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795439342,
       "steam_id": "76561199219878733",
-      "total_matches": 2598
+      "total_matches": 2599
     },
     "1180172": {
       "alias": "Micaelzudo",
@@ -3420,7 +3420,7 @@
       "alias": "jrcervi",
       "br_source": "open_data_matches",
       "last_match_date": 1795004002,
-      "last_seen_online_ts": 1795477495,
+      "last_seen_online_ts": 1795479393,
       "max_elo": 1000,
       "profile_id": 123784,
       "steam_games_hidden": true,
@@ -3443,14 +3443,14 @@
     "1242273": {
       "alias": "LeoCoSi",
       "br_source": "open_data_lb",
-      "last_match_date": 1795403994,
-      "last_seen_online_ts": 1795477495,
+      "last_match_date": 1795479388,
+      "last_seen_online_ts": 1795479393,
       "max_elo": 1000,
       "profile_id": 1242273,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795478793,
       "steam_id": "76561198798609076",
-      "total_matches": 599
+      "total_matches": 600
     },
     "1242418": {
       "alias": "faveri.filho",
@@ -4071,14 +4071,14 @@
     "1297778": {
       "alias": "O CEO Dinossauro",
       "br_source": "open_data_matches",
-      "last_match_date": 1795465653,
+      "last_match_date": 1795473054,
       "last_seen_online_ts": 1795478396,
       "max_elo": 1000,
       "profile_id": 1297778,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795448133,
       "steam_id": "76561198027869465",
-      "total_matches": 4
+      "total_matches": 5
     },
     "1297821": {
       "alias": "General Winter (Smurf: General Winter)",
@@ -4575,13 +4575,13 @@
     "1369003": {
       "alias": "KyronCrane",
       "br_source": "open_data_lb",
-      "last_match_date": 1795476056,
+      "last_match_date": 1795479318,
       "last_seen_ingame_webapi_ts": 1795389918,
       "last_seen_online_ts": 1795389918,
       "max_elo": 1150,
       "profile_id": 1369003,
       "steam_id": "76561198155713664",
-      "total_matches": 1509
+      "total_matches": 1510
     },
     "1369418": {
       "alias": "xandaoro",
@@ -5340,7 +5340,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794312735,
       "last_seen_ingame_ts": 1795185890,
-      "last_seen_ingame_webapi_ts": 1795453031,
+      "last_seen_ingame_webapi_ts": 1795479393,
       "last_seen_online_ts": 1795478396,
       "max_elo": 1000,
       "profile_id": 1435339,
@@ -6582,7 +6582,7 @@
       "last_match_date": 1794626141,
       "last_seen_ingame_ts": 1795182545,
       "last_seen_ingame_webapi_ts": 1795374689,
-      "last_seen_online_ts": 1795401796,
+      "last_seen_online_ts": 1795479393,
       "max_elo": 952,
       "profile_id": 1454276,
       "steam_games_hidden": false,
@@ -7120,7 +7120,7 @@
       "alias": "THEGUARDSMAN",
       "br_source": "open_data_matches",
       "last_match_date": 1794805139,
-      "last_seen_online_ts": 1795477495,
+      "last_seen_online_ts": 1795479393,
       "max_elo": 989,
       "profile_id": 1467000,
       "steam_games_hidden": true,
@@ -8039,14 +8039,14 @@
     "1483378": {
       "alias": "MsGo",
       "br_source": "open_data_matches",
-      "last_match_date": 1795478240,
+      "last_match_date": 1795479194,
       "last_seen_online_ts": 1795479093,
       "max_elo": 952,
       "profile_id": 1483378,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795475396,
       "steam_id": "76561199480759976",
-      "total_matches": 6
+      "total_matches": 7
     },
     "1484526": {
       "alias": "LHNSantos",
@@ -8354,14 +8354,14 @@
     "18414": {
       "alias": "pipiku",
       "br_source": "relic_sa_lb",
-      "last_match_date": 1795404473,
+      "last_match_date": 1795479268,
       "last_seen_online_ts": 1795479093,
       "max_elo": 1516,
       "profile_id": 18414,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795477196,
       "steam_id": "76561198027958034",
-      "total_matches": 2452
+      "total_matches": 2453
     },
     "18699": {
       "alias": "RoG",
@@ -10944,7 +10944,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1794859862,
       "last_seen_ingame_ts": 1795193533,
-      "last_seen_ingame_webapi_ts": 1795457594,
+      "last_seen_ingame_webapi_ts": 1795479393,
       "last_seen_online_ts": 1795478396,
       "max_elo": 1043,
       "profile_id": 802058,
@@ -11671,14 +11671,14 @@
     "925764": {
       "alias": "charles_BRA",
       "br_source": "open_data_lb",
-      "last_match_date": 1795476557,
+      "last_match_date": 1795479161,
       "last_seen_online_ts": 1795478396,
       "max_elo": 1087,
       "profile_id": 925764,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795462511,
       "steam_id": "76561198086888156",
-      "total_matches": 2877
+      "total_matches": 2878
     },
     "927402": {
       "alias": "carlosdile",
@@ -11719,11 +11719,11 @@
       "alias": "centurionsglory",
       "br_source": "open_data_matches",
       "last_match_date": 1795125879,
-      "last_seen_online_ts": 1795463710,
+      "last_seen_online_ts": 1795479393,
       "max_elo": 1012,
       "profile_id": 928607,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795385966,
+      "steam_gd_checked_ts": 1795479393,
       "steam_id": "76561198133055309",
       "total_matches": 967
     },
