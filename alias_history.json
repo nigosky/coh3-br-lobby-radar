@@ -57605,7 +57605,7 @@
         {
           "alias": "zica",
           "first_seen": 1794701679,
-          "last_seen": 1795463475,
+          "last_seen": 1795552772,
           "sources": [
             "coh2stats_opendata",
             "relic_coh2_api",
@@ -105724,8 +105724,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1767220765,
       "coh3_total_matches": 2,
-      "current_alias": "falcon0102",
-      "last_checked_at": 1795549374,
+      "current_alias": "Falcon0102",
+      "last_checked_at": 1795552772,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1249671,
@@ -120439,7 +120439,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1779644857,
       "coh3_total_matches": 1,
-      "current_alias": "RAFHA",
+      "current_alias": "Rafha",
       "last_checked_at": 1795552472,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -135972,7 +135972,7 @@
       "coh3_last_match_date": 1794602764,
       "coh3_total_matches": 1,
       "current_alias": "BESON",
-      "last_checked_at": 1795552472,
+      "last_checked_at": 1795552772,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1449348,
@@ -229432,7 +229432,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1781845321,
       "coh3_total_matches": 9,
-      "current_alias": "Kbessa",
+      "current_alias": "kbessa",
       "last_checked_at": 1795552472,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -235582,7 +235582,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1776803620,
       "coh3_total_matches": 60,
-      "current_alias": "LampiaoX_X",
+      "current_alias": "Lampiaox_x",
       "last_checked_at": 1795552472,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
@@ -242247,5 +242247,5 @@
     "steam_web_api": 7470,
     "steam_xml": 6739
   },
-  "updated_at": 1795552472
+  "updated_at": 1795552772
 }
