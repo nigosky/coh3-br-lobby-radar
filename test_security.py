@@ -240,6 +240,56 @@ class SecurityPrimitivesTests(unittest.TestCase):
         self.assertIsNotNone(NEEDS_DEJAVU_RE.search("★ 1500 ELO"))
         self.assertIsNotNone(NEEDS_DEJAVU_RE.search("Уилла"))
 
+    def test_public_repo_hygiene_and_private_boundary(self) -> None:
+        """Garante que o repositório público nunca versiona bancos privados, watchlists, symlinks ou segredos reais."""
+        import re
+        import subprocess
+
+        repo_root = Path(__file__).resolve().parent
+        tracked = subprocess.check_output(
+            ["git", "-C", str(repo_root), "ls-files"],
+            text=True,
+        ).splitlines()
+        self.assertGreater(len(tracked), 5)
+
+        forbidden_suffixes = (".db", ".sqlite", ".sqlite3", ".pem", ".key", ".p12", ".pfx", ".env")
+        forbidden_names = {
+            "coh3_br_matches.db",
+            "watchlist_monitor.py",
+            "smurf_alert.py",
+            "jogadores_br_steam.json",
+            "config.json",
+            ".env",
+        }
+        secret_patterns = (
+            re.compile(r"https?://(?:(?:ptb|canary)\.)?discord(?:app)?\.com/api/(?:v\d+/)?" + r"webhooks/\d+/[A-Za-z0-9_-]{20,}", re.I),
+            re.compile(r"\b(?:gh[pousr]_" + r"[A-Za-z0-9]{20,}|github_pat_" + r"[A-Za-z0-9_]{20,})\b"),
+            re.compile(r"-----" + r"BEGIN [A-Z ]*PRIVATE KEY-----"),
+            re.compile(r"STEAM_WEB_API_KEY\s*=\s*['\"]?[0-9A-Fa-f]{32}\b"),
+        )
+        binary_suffixes = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".woff", ".woff2", ".ttf", ".otf")
+
+        for rel in tracked:
+            full = repo_root / rel
+            low = rel.lower()
+            base = Path(rel).name.lower()
+            self.assertFalse(full.is_symlink(), msg=f"Symlink proibido no repo público: {rel}")
+            self.assertNotIn(base, forbidden_names, msg=f"Arquivo exclusivo de repo privado não pode estar no Radar público: {rel}")
+            self.assertFalse(
+                any(low.endswith(sfx) for sfx in forbidden_suffixes) or base.startswith(".env."),
+                msg=f"Extensão/arquivo sensível proibido no repo público: {rel}",
+            )
+            self.assertNotIn("watchlist", low, msg=f"Watchlist privada não pode existir no repo público: {rel}")
+            if any(low.endswith(sfx) for sfx in binary_suffixes) or not full.is_file():
+                continue
+            if rel.startswith("test_") or rel.startswith(".github/workflows/"):
+                continue
+            if full.stat().st_size > 8 * 1024 * 1024:
+                continue
+            content = full.read_text(encoding="utf-8", errors="ignore")
+            for pat in secret_patterns:
+                self.assertIsNone(pat.search(content), msg=f"Possível segredo detectado em arquivo público: {rel}")
+
 
 if __name__ == "__main__":
     unittest.main()
