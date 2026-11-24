@@ -15026,7 +15026,6 @@
     "1326632": {
       "alias": "Cleiton Rasta CS2-CASES.COM",
       "br_source": "open_data_lb",
-      "current_alias": "Cleiton Rasta ♥♥♥♥♥♥♥♥♥♥♥♥♥",
       "last_match_date": 1793755338,
       "last_seen_ingame_ts": 1795137670,
       "last_seen_ingame_webapi_ts": 1795200563,
@@ -42591,6 +42590,7 @@
     "1445924": {
       "alias": "Et Bilusca",
       "br_source": "open_data_matches",
+      "current_alias": "Wiz",
       "last_match_date": 1794579345,
       "last_seen_ingame_webapi_ts": 1795484556,
       "last_seen_online_ts": 1795497907,
@@ -44633,7 +44633,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794853649,
       "last_seen_ingame_ts": 1795495277,
-      "last_seen_ingame_webapi_ts": 1795477495,
+      "last_seen_ingame_webapi_ts": 1795499474,
       "last_seen_online_ts": 1795497907,
       "max_elo": 1000,
       "profile_id": 1481396,
@@ -45697,12 +45697,12 @@
       "alias": "PABLO FLEXCOBAR",
       "br_source": "steam_location",
       "flag_country": "ar",
-      "last_match_date": 1795474189,
+      "last_match_date": 1795499082,
       "last_seen_online_ts": 0,
       "max_elo": 1203,
       "profile_id": 29737,
       "steam_id": "76561198158934331",
-      "total_matches": 1460
+      "total_matches": 1461
     },
     "300242": {
       "alias": "LionMaru",
