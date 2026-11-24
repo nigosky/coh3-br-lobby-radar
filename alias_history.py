@@ -1092,8 +1092,8 @@ def detect_country_migrations(
                 evidence = "era_country_shift"
             elif (br_partners_cnt >= 2 or rec.get("scope") in ("veterano", "manual_other_br")) and (is_steam_br or has_br_grp):
                 evidence = "coh2_network_steam_confirmed" if br_partners_cnt >= 2 else "steam_confirmed_expat_coh3"
-            elif rec.get("scope") == "manual_other_br" or is_steam_br:
-                evidence = "steam_confirmed_expat_coh3"
+            elif rec.get("scope") in ("veterano", "manual_other_br") or is_steam_br:
+                evidence = "roster_confirmed_expat_coh3" if rec.get("scope") in ("veterano", "manual_other_br") else "steam_confirmed_expat_coh3"
 
             if evidence:
                 prev_mig = rec.get("country_migration") if isinstance(rec.get("country_migration"), dict) else {}
