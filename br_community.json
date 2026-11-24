@@ -45604,14 +45604,14 @@
       "alias": "Suby",
       "avatar_url": "https://avatars.steamstatic.com/f4d707cfab4357792c601d4f00f7545f177f736e_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795481670,
+      "last_match_date": 1795555516,
       "last_seen_online_ts": 1795554573,
       "max_elo": 1127,
       "profile_id": 209811,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795477796,
       "steam_id": "76561198007078149",
-      "total_matches": 1667
+      "total_matches": 1668
     },
     "211583": {
       "alias": "BIOX-PM",
@@ -48170,6 +48170,7 @@
       "alias": "Rato",
       "avatar_url": "https://avatars.steamstatic.com/cdff433c9ea96c9933449fa59011b1dc31a4f0a2_medium.jpg",
       "br_source": "steam_sister_group_br",
+      "current_alias": "Qi 124",
       "last_match_date": 1794526879,
       "last_seen_ingame_ts": 1795499175,
       "last_seen_ingame_webapi_ts": 1795498808,

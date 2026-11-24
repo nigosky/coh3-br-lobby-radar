@@ -39881,6 +39881,14 @@
             "steam_web_api",
             "steam_xml"
           ]
+        },
+        {
+          "alias": "very chinese time in my life",
+          "first_seen": 1795555563,
+          "last_seen": 1795555563,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "society",
@@ -39888,7 +39896,7 @@
       "coh2_last_match_date": 1789760121,
       "coh2_profile_id": 2875187,
       "coh2_total_matches": 393,
-      "current_alias": "very japanese time in my life",
+      "current_alias": "very chinese time in my life",
       "scope": "legacy_coh2_br",
       "steam_id": "76561198203257874"
     },
@@ -64999,8 +65007,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1786367974,
       "coh3_total_matches": 171,
-      "current_alias": "quimera",
-      "last_checked_at": 1795552073,
+      "current_alias": "Quimera",
+      "last_checked_at": 1795555563,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1018926,
@@ -127074,8 +127082,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1785613535,
       "coh3_total_matches": 1,
-      "current_alias": "r U N A W A Y",
-      "last_checked_at": 1795552073,
+      "current_alias": "R u n a w a y",
+      "last_checked_at": 1795555563,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1380032,
@@ -134760,7 +134768,7 @@
       "coh3_last_match_date": 1794613740,
       "coh3_total_matches": 3,
       "current_alias": "corolla XEI 2008 prata",
-      "last_checked_at": 1795555472,
+      "last_checked_at": 1795555563,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1441520,
@@ -135270,7 +135278,7 @@
       "coh3_last_match_date": 1794579345,
       "coh3_total_matches": 1,
       "current_alias": "Wiz",
-      "last_checked_at": 1795555472,
+      "last_checked_at": 1795555563,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1445924,
@@ -135976,7 +135984,7 @@
       "coh3_last_match_date": 1794602764,
       "coh3_total_matches": 1,
       "current_alias": "BESON",
-      "last_checked_at": 1795555472,
+      "last_checked_at": 1795555563,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1449348,
@@ -172230,8 +172238,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1785270926,
       "coh3_total_matches": 10,
-      "current_alias": "Kuunt",
-      "last_checked_at": 1795552073,
+      "current_alias": "kuunt",
+      "last_checked_at": 1795555563,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -242252,5 +242260,5 @@
     "steam_web_api": 7470,
     "steam_xml": 6739
   },
-  "updated_at": 1795555472
+  "updated_at": 1795555563
 }
