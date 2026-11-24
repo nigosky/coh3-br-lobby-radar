@@ -50,7 +50,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
     def test_canonical_players_roster_integrity_and_parity(self) -> None:
         doc = manage_roster.load_roster_doc(PLAYERS_ROSTER_PATH)
         tot_v, uniq_v, tot_o = manage_roster.validate_roster_doc(doc)
-        self.assertEqual(tot_v, 44)
+        self.assertEqual(tot_v, 45)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
         self.assertGreaterEqual(tot_o, 29)
 
@@ -70,7 +70,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertTrue(all(not r.get("merged_into_profile_id") for r in CORE_BR_ROSTER))
         self.assertTrue(all(not r.get("merged_into_steam_id") for r in CORE_BR_ROSTER))
 
-        # Contas principais preservadas + 5 smurfs em Veteranos (com smurf_of e sem pin_alias)
+        # Contas principais preservadas + 6 smurfs em Veteranos (com smurf_of e sem pin_alias)
         self.assertEqual(vet_by_pid[79327]["original_alias"], "Chacineiro")
         self.assertEqual(vet_by_pid[55693]["original_alias"], "Alface aka BinhoBiceps")
         self.assertIn("BinhoBiceps", vet_by_pid[55693].get("known_aliases") or [])
@@ -82,6 +82,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
             1333418: ("76561198698969876", "Charles Bronson (Smurf: Chacineiro)", "Chacineiro"),
             557890: ("76561199538846112", "gabe44arg (Smurf: Gabe)", "Gabe"),
             1423426: ("76561199482388323", "geladeira velha (Smurf: arc)", "arc"),
+            1487738: ("76561198602236177", "Državljan H (Smurf: arc)", "arc"),
             1390350: ("76561198089278659", "TearsInTheRain (Smurf: Chacineiro)", "Chacineiro"),
             1076221: ("76561198815935562", "Lucielle (Smurf: Colossus)", "Colossus"),
         }
@@ -429,6 +430,43 @@ class TestSharedPlayersRoster(unittest.TestCase):
             self.assertEqual(smurf["original_alias"], "NovoVeteranoBR (Smurf: Chacineiro)")
             self.assertEqual(smurf["smurf_of"], "Chacineiro")
             self.assertNotIn("pin_alias", smurf)
+
+    def test_veteran_smurf_invisible_on_steam_appears_in_radar_via_relic(self) -> None:
+        from steam_presence import build_lobby_radar_snapshot
+
+        now = 1_800_000_000
+        # Državljan H (Smurf: arc) com Steam privada/invisível, mas com partida CoH3 concluída há 18 min na Relic
+        pres = {
+            "76561198602236177": {
+                "steam_id": "76561198602236177",
+                "steam_alias": "Državljan H",
+                "privacy_state": "private",
+                "online_state": "offline",
+                "is_in_coh3": False,
+                "is_online_steam": False,
+                "ok": True,
+            }
+        }
+        latest_matches = {
+            1487738: {
+                "profile_id": 1487738,
+                "completion_time": now - 18 * 60,
+                "mode": "3v3",
+            }
+        }
+        snap = build_lobby_radar_snapshot(
+            custom_players=CORE_BR_ROSTER,
+            presence_by_steam=pres,
+            latest_matches_by_pid=latest_matches,
+            elo_by_pid={1487738: 1361},
+            now_ts=now,
+            recent_relic_minutes=45,
+        )
+        vet_recent = snap["veteranos"]["recent_relic"]
+        by_pid = {int(r["profile_id"]): r for r in vet_recent}
+        self.assertIn(1487738, by_pid, "Smurf de Veterano invisível/privada na Steam deve aparecer no Radar via Relic.")
+        self.assertEqual(by_pid[1487738]["alias"], "Državljan H (Smurf: arc)")
+        self.assertEqual(by_pid[1487738]["status_kind"], "recent_relic")
 
 
 if __name__ == "__main__":

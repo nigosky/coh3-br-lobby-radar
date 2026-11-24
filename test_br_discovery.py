@@ -1070,6 +1070,86 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
                 self.assertNotIn(forbidden_pid, saved["players"])
                 self.assertNotIn(forbidden_pid, saved_hist["players"])
 
+    def test_stage4f_ptbr_reviews_and_stage4d_rotating_cursor(self) -> None:
+        now = 1_800_000_000
+        sid_rev_br = "76561198000950001"
+        sid_rev_pt = "76561198000950002"
+        sid_seed_a = "76561198000950010"
+        sid_seed_b = "76561198000950011"
+        queried_batches: list[list[str]] = []
+
+        class _FakeRelicRev:
+            def discover_br_and_candidates_from_open_data(self, **kwargs: Any) -> Any:
+                return {}, {}, {"files_ok": 16, "files_total": 16, "total_mb": 0.0}
+
+            def discover_br_and_candidates_from_open_data_matches(self, **kwargs: Any) -> Any:
+                return {}, {}, {"days_ok": 1, "days_requested": 1, "matches_scanned": 0}
+
+            def discover_br_and_candidates_from_relic_sa(self, **kwargs: Any) -> Any:
+                return {}, {}
+
+            def fetch_profile_stats_by_steam_ids(self, steam_ids: list[str], pace_delay_sec: float = 0.16) -> dict[int, dict[str, Any]]:
+                catalog = {
+                    sid_rev_br: {"profile_id": 950001, "steam_id": sid_rev_br, "alias": "CampanhaBR", "country": "br", "max_elo": 0, "last_match_date": now - 3600, "total_matches": 0},
+                    sid_rev_pt: {"profile_id": 950002, "steam_id": sid_rev_pt, "alias": "TugaPT", "country": "pt", "max_elo": 1200, "last_match_date": now - 3600, "total_matches": 50},
+                }
+                return {v["profile_id"]: v for s, v in catalog.items() if s in steam_ids}
+
+        class _FakeSteamRev:
+            uses_web_api = True
+
+            def fetch_steam_ptbr_review_steam_ids(self, app_id: int = 1677280, **kwargs: Any) -> list[str]:
+                return [sid_rev_br, sid_rev_pt]
+
+            def fetch_batch_friend_steam_ids(self, steam_ids: list[str]) -> dict[str, list[str]]:
+                queried_batches.append(list(steam_ids))
+                return {}
+
+            def fetch_batch_presence(self, steam_ids: list[str], **kwargs: Any) -> dict[str, dict[str, Any]]:
+                return {}
+
+        with tempfile.TemporaryDirectory() as td:
+            comm_path = Path(td) / "br_community.json"
+            state_path = Path(td) / "state.json"
+            hist_path = Path(td) / "alias_history.json"
+            comm_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 3,
+                        "friends_cursor_offset": 0,
+                        "players": {
+                            "950010": {"profile_id": 950010, "steam_id": sid_seed_a, "alias": "SeedA", "max_elo": 1400, "last_match_date": now - 3600, "total_matches": 100},
+                            "950011": {"profile_id": 950011, "steam_id": sid_seed_b, "alias": "SeedB", "max_elo": 1350, "last_match_date": now - 3600, "total_matches": 80},
+                        },
+                        "dormant_players": {},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            summary = run_deep_br_discovery(
+                community_cache_path=comm_path,
+                state_path=state_path,
+                alias_history_path=hist_path,
+                relic_client=_FakeRelicRev(),  # type: ignore[arg-type]
+                presence_client=_FakeSteamRev(),  # type: ignore[arg-type]
+                match_days=1,
+                max_steam_verify=0,
+                max_friend_seeds=75,  # 45 vet + 29 manual + 1 rotating slot -> avança cursor em +1
+                friend_hops=1,
+                max_custom_history_seeds=0,
+                max_ptbr_review_pages=2,
+                steam_groups=(),
+                sister_steam_groups=(),
+                now_ts=now,
+                smurf_check=False,
+                enable_external_alias_enrichment=False,
+            )
+            self.assertEqual(summary["steam_ptbr_reviews_confirmed"], 1)
+            saved = json.loads(comm_path.read_text(encoding="utf-8"))
+            self.assertIn("950001", saved["players"])
+            self.assertNotIn("950002", saved["players"])
+            self.assertGreaterEqual(int(saved.get("friends_cursor_offset", 0)), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

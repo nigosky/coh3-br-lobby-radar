@@ -184,6 +184,7 @@ def run_deep_br_discovery(
     max_friend_seeds: int = DEFAULT_MAX_FRIEND_SEEDS,
     friend_hops: int = 2,
     max_custom_history_seeds: int = 120,
+    max_ptbr_review_pages: int = 12,
     relic_sa_pages: int = DEFAULT_RELIC_SA_PAGES,
     steam_groups: tuple[str, ...] = BRAZILIAN_COH_STEAM_GROUPS,
     sister_steam_groups: tuple[str, ...] | None = None,
@@ -220,6 +221,8 @@ def run_deep_br_discovery(
     manual_pids, _ = extract_roster_id_sets(MANUAL_OTHER_BR_PLAYERS)
 
     community_cache = load_community_cache(community_cache_path)
+    prev_friends_cursor = max(0, int(community_cache.get("friends_cursor_offset", 0) or 0))
+    next_friends_cursor = prev_friends_cursor
     prev_top50_br_pids = (
         [int(p) for p in community_cache.get("top50_br_pids") if int(p or 0) > 0]
         if isinstance(community_cache.get("top50_br_pids"), list)
@@ -657,14 +660,29 @@ def run_deep_br_discovery(
                 int(r.get("profile_id", 0) or 0),
             ),
         )
+        # Cursor rotativo persistente: mantém Veteranos + manual_other_br sempre no topo e percorre
+        # ciclicamente TODOS os demais BRs do catálogo (ativos + dormentes) ao longo das rodadas.
+        other_seed_candidates: list[str] = []
+        seen_other_cand: set[str] = set()
         for row in ranked_br_seeds:
-            if len(seed_sids) >= effective_seed_cap:
-                break
             sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
-            if sid and STEAM_ID64_VALID_RE.fullmatch(sid) and sid not in seen_seed_sids:
+            if sid and STEAM_ID64_VALID_RE.fullmatch(sid) and sid not in seen_seed_sids and sid not in seen_other_cand:
+                seen_other_cand.add(sid)
+                other_seed_candidates.append(sid)
+
+        rem_slots = max(0, effective_seed_cap - len(seed_sids))
+        if other_seed_candidates and rem_slots > 0:
+            total_other = len(other_seed_candidates)
+            start_idx = prev_friends_cursor % total_other
+            take_n = min(rem_slots, total_other)
+            for i in range(take_n):
+                sid = other_seed_candidates[(start_idx + i) % total_other]
                 seen_seed_sids.add(sid)
                 seed_sids.append(sid)
                 seed_is_vet[sid] = False
+            next_friends_cursor = (start_idx + take_n) % total_other
+        elif not other_seed_candidates:
+            next_friends_cursor = 0
 
         seed_sids = seed_sids[:effective_seed_cap]
         try:
@@ -982,6 +1000,63 @@ def run_deep_br_discovery(
                 relic_custom_confirmed,
             )
 
+    # 4f. Avaliações em Português do Brasil na Steam (app 1677280 — captura compradores de Campanha/Skirmish e amigos privados)
+    steam_ptbr_reviews_confirmed = 0
+    if (
+        int(max_ptbr_review_pages) > 0
+        and hasattr(p_client, "fetch_steam_ptbr_review_steam_ids")
+        and hasattr(r_client, "fetch_profile_stats_by_steam_ids")
+    ):
+        known_sids_rev = set(vet_sids) | {str(v.get("steam_id") or "") for v in br_pool.values() if v.get("steam_id")}
+        try:
+            rev_sids = p_client.fetch_steam_ptbr_review_steam_ids(
+                app_id=1677280,
+                max_pages=int(max_ptbr_review_pages),
+            )
+        except Exception as exc:
+            logger.warning("[STAGE 4f] Falha ao coletar avaliações PT-BR Steam: %s", redact_secrets(exc))
+            rev_sids = []
+        uncat_rev_sids = [
+            s
+            for s in dict.fromkeys(rev_sids or ())
+            if STEAM_ID64_VALID_RE.fullmatch(s) and s not in known_sids_rev
+        ]
+        if uncat_rev_sids:
+            try:
+                rev_stats = r_client.fetch_profile_stats_by_steam_ids(uncat_rev_sids[:600], pace_delay_sec=0.18)
+            except Exception as exc:
+                logger.warning("[STAGE 4f] Falha ao cruzar avaliações PT-BR na Relic API: %s", redact_secrets(exc))
+                rev_stats = {}
+            for pid, st in (rev_stats or {}).items():
+                if pid in vet_pids or pid in br_pool:
+                    continue
+                sid = str(st.get("steam_id") or "").replace("/steam/", "").strip()
+                if not sid or sid in vet_sids or not STEAM_ID64_VALID_RE.fullmatch(sid):
+                    continue
+                if str(st.get("country") or "").strip().lower() in ("br", ""):
+                    _merge_discovered_br_player(
+                        br_pool,
+                        profile_id=pid,
+                        steam_id=sid,
+                        alias=str(st.get("alias") or ""),
+                        max_elo=int(st.get("max_elo", 0) or 0),
+                        last_match_date=int(st.get("last_match_date", 0) or 0),
+                        total_matches=int(st.get("total_matches", 0) or 0),
+                        country="br",
+                        region_id=int(st.get("region_id", 0) or 0),
+                        br_source="steam_ptbr_review",
+                        accumulate_matches=False,
+                    )
+                    relic_stats_collected[pid] = st
+                    steam_ptbr_reviews_confirmed += 1
+            if steam_ptbr_reviews_confirmed:
+                sources_used.append("steam_ptbr_reviews")
+            logger.info(
+                "[STAGE 4f — AVALIAÇÕES PT-BR STEAM] %d autores inéditos consultados -> +%d BRs confirmados.",
+                len(uncat_rev_sids[:600]),
+                steam_ptbr_reviews_confirmed,
+            )
+
     # 5. Filtra apenas ativos no CoH3 (<= 15d) e enriquece TODOS com ELO máximo real / total_matches na Relic API
     active_br_pids = [
         pid
@@ -1194,6 +1269,7 @@ def run_deep_br_discovery(
         "updated_at": now,
         "deep_discovery_at": now,
         "source": "+".join(dict.fromkeys(sources_used)) or "deep_discovery",
+        "friends_cursor_offset": int(next_friends_cursor),
         "players": final_players,
         "dormant_players": final_dormant,
     }
@@ -1517,7 +1593,9 @@ def run_deep_br_discovery(
         "steam_group_confirmed": steam_group_confirmed,
         "steam_sister_confirmed": steam_sister_confirmed,
         "steam_friends_confirmed": steam_friends_confirmed,
+        "friends_cursor_offset": int(next_friends_cursor),
         "relic_custom_confirmed": relic_custom_confirmed,
+        "steam_ptbr_reviews_confirmed": steam_ptbr_reviews_confirmed,
         "steam_verified_count": steam_verified_count,
         "top_new_players": newly_added_rows[:30],
         "arranged_teams_audit": arranged_audit,
@@ -1536,6 +1614,7 @@ def main() -> int:
     parser.add_argument("--max-friend-seeds", type=int, default=DEFAULT_MAX_FRIEND_SEEDS, help="Máximo de contas BR consultadas no grafo de amigos Steam")
     parser.add_argument("--friend-hops", type=int, default=2, help="Profundidade do grafo de amigos Steam (1 ou 2 graus; padrão 2 com Web API)")
     parser.add_argument("--max-custom-seeds", type=int, default=120, help="Máximo de perfis BR consultados em partidas Custom/vs-IA na Relic")
+    parser.add_argument("--max-ptbr-review-pages", type=int, default=12, help="Páginas de avaliações PT-BR Steam do CoH3 (10 autores/página)")
     parser.add_argument("--relic-sa-pages", type=int, default=DEFAULT_RELIC_SA_PAGES, help="Páginas por leaderboard SA na Relic (1..15)")
     parser.add_argument("--no-smurf-check", action="store_true", help="Desativa a verificação forense de Smurfs do Top 50 BR")
     parser.add_argument("--smurf-top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado para smurfs (padrão: 50)")
@@ -1553,6 +1632,7 @@ def main() -> int:
             max_friend_seeds=max(0, int(args.max_friend_seeds)),
             friend_hops=max(1, min(2, int(args.friend_hops))),
             max_custom_history_seeds=max(0, int(args.max_custom_seeds)),
+            max_ptbr_review_pages=max(0, int(args.max_ptbr_review_pages)),
             relic_sa_pages=args.relic_sa_pages,
             dry_run=bool(args.dry_run),
             smurf_check=not bool(args.no_smurf_check),
