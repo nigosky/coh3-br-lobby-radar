@@ -2497,13 +2497,17 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             [], {}, now_ts=now, other_br_players=other_rows, other_presence_by_steam=pres, alias_history_by_pid={}
         )
         self.assertTrue(snap_flagged["outros_brasileiros"]["in_coh3"][0]["suspected_foreign_flag"])
+        self.assertIn(
+            "possível estrangeiro se passando por brasileiro",
+            snap_flagged["outros_brasileiros"]["in_coh3"][0]["status_note"],
+        )
         self.assertFalse(snap_flagged["outros_brasileiros"]["online_steam"][0]["suspected_foreign_flag"])
         self.assertNotEqual(compute_lobby_state_digest(snap_flagged), compute_lobby_state_digest(snap_plain))
 
         links = build_lobby_radar_links_payload(snap_flagged)
         oth_desc = links["embeds"][2]["description"]
         self.assertIn("Nocturne", oth_desc)
-        self.assertIn("possível estrangeiro usando VPN", oth_desc)
+        self.assertIn("possível estrangeiro se passando por brasileiro — VPN", oth_desc)
         self.assertNotIn("Московский метро** ↗](https://steamcommunity.com/profiles/76561198000970468) 🌐", oth_desc)
 
         _, _, oth_png = render_lobby_radar_cards_png(snap_flagged, SteamAvatarProvider(allow_network=False))
@@ -2816,6 +2820,116 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         by_pid[500002]["coh3_inactive_warning"] = False
         dig_after = compute_lobby_state_digest(snap)
         self.assertNotEqual(dig_before, dig_after)
+
+    def test_cjk_font_rendering_and_foreign_vpn_warning_card(self) -> None:
+        from card_renderer import (
+            FOREIGN_VPN_WARNING_TEXT,
+            SteamAvatarProvider,
+            _discover_cjk_fonts,
+            _is_suspected_foreign_row,
+            pick_font,
+            render_lobby_radar_cards_png,
+            verify_cjk_font_rendering,
+        )
+        from discord_lobby import build_lobby_radar_links_payload
+        from steam_presence import build_lobby_radar_snapshot
+
+        sample_alias = "北方军港 (克鲁杰7分钟800人力就1v2)"
+        discovered = _discover_cjk_fonts()
+        has_system_cjk = bool(discovered.get("cjk_bold") or discovered.get("cjk_regular"))
+        if has_system_cjk:
+            ok_cjk, info_cjk = verify_cjk_font_rendering("北方军港克鲁杰アリス")
+            self.assertTrue(ok_cjk, f"Falha na fonte CJK: {info_cjk}")
+            fnt = pick_font(sample_alias, size=20, bold=True)
+            fpath = str(getattr(fnt, "path", "") or "").lower()
+            self.assertNotIn("dejavu", fpath)
+            self.assertNotIn("roboto", fpath)
+
+        now = 1_800_000_000
+        sid_in_coh3 = "76561198319696040"
+        sid_online = "76561198999900111"
+        sid_recent = "76561198999900222"
+        other_rows = [
+            {
+                "profile_id": 3984,
+                "steam_id": sid_in_coh3,
+                "alias": "克鲁杰7分钟800人力就1v2",
+                "current_alias": "北方军港",
+                "max_elo": 1446,
+                "total_matches": 1274,
+                "last_match_date": now - 1800,
+                "flag_country": "br",
+            },
+            {
+                "profile_id": 990111,
+                "steam_id": sid_online,
+                "alias": "夕绫",
+                "max_elo": 1410,
+                "total_matches": 320,
+                "last_match_date": now - 3600,
+                "flag_country": "br",
+            },
+            {
+                "profile_id": 990222,
+                "steam_id": sid_recent,
+                "alias": "北京战士",
+                "max_elo": 1350,
+                "total_matches": 220,
+                "last_match_date": now - 600,
+                "flag_country": "br",
+            },
+        ]
+        pres = {
+            sid_in_coh3: {
+                "steam_id": sid_in_coh3,
+                "ok": True,
+                "is_in_coh3": True,
+                "is_online_steam": True,
+                "online_state": "in-game",
+                "steam_alias": "北方军港",
+            },
+            sid_online: {
+                "steam_id": sid_online,
+                "ok": True,
+                "is_in_coh3": False,
+                "is_online_steam": True,
+                "online_state": "online",
+                "steam_alias": "夕绫",
+            },
+        }
+        verified_map = {
+            3984: {"status": "confirmed_foreign_vpn"},
+            990111: {"status": "suspected_foreign_vpn"},
+            990222: {"status": "confirmed_foreign_vpn"},
+        }
+        other_latest = {
+            990222: {"completion_time": now - 420, "mode": "4v4"},
+        }
+        snap = build_lobby_radar_snapshot(
+            [],
+            {},
+            now_ts=now,
+            other_br_players=other_rows,
+            other_presence_by_steam=pres,
+            other_latest_matches_by_pid=other_latest,
+            verified_foreign_status_by_pid=verified_map,
+        )
+        self.assertEqual(snap["outros_brasileiros"]["in_coh3"][0]["alias"], sample_alias)
+        for sec in ("in_coh3", "online_steam", "recent_relic"):
+            pl = snap["outros_brasileiros"][sec][0]
+            self.assertTrue(_is_suspected_foreign_row(pl, is_veteranos=False, is_monitorados=False))
+            self.assertFalse(_is_suspected_foreign_row(pl, is_veteranos=True, is_monitorados=False))
+            self.assertFalse(_is_suspected_foreign_row(pl, is_veteranos=False, is_monitorados=True))
+            self.assertIn("possível estrangeiro se passando por brasileiro", pl["status_note"])
+
+        self.assertIn("Possível estrangeiro se passando por brasileiro", FOREIGN_VPN_WARNING_TEXT)
+        links = build_lobby_radar_links_payload(snap)
+        oth_desc = links["embeds"][2]["description"]
+        self.assertIn("北方军港", oth_desc)
+        self.assertIn("possível estrangeiro se passando por brasileiro — VPN", oth_desc)
+
+        _, _, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        self.assertTrue(oth_png.startswith(b"\x89PNG\r\n\x1a\n"))
 
 
 if __name__ == "__main__":

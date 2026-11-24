@@ -79,7 +79,9 @@ jobs:
           fi
           if [ "${NEED_CJK}" -eq 1 ]; then
             timeout 90 sudo apt-get "${APT_OPTS[@]}" install -y --no-install-recommends fonts-wqy-microhei \
-              || echo "::warning::Fonte CJK opcional (fonts-wqy-microhei) indisponivel no mirror Ubuntu; seguindo com fallback DejaVu."
+              || timeout 90 sudo apt-get "${APT_OPTS[@]}" install -y --no-install-recommends fonts-wqy-zenhei \
+              || timeout 120 sudo apt-get "${APT_OPTS[@]}" install -y --no-install-recommends fonts-noto-cjk \
+              || { echo "::error::Nenhuma fonte CJK oficial (wqy-microhei/wqy-zenhei/noto-cjk) disponivel via apt."; exit 1; }
           fi
 
       - name: Validar suite de precisao e seguranca (anti-falso-positivo / anti-XXE)
@@ -87,6 +89,7 @@ jobs:
           PYTHONDONTWRITEBYTECODE: "1"
         run: |
           set -euo pipefail
+          python3 -c "import sys, card_renderer as cr; ok, info = cr.verify_cjk_font_rendering(); print(f'[CJK CHECK] ok={ok} ({info})'); sys.exit(0 if ok else 1)"
           python3 manage_roster.py validate
           python3 -m unittest discover -s . -p "test_*.py"
 

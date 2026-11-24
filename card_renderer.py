@@ -315,6 +315,35 @@ def draw_text_safe(
     return text_width(draw, text, font)
 
 
+def verify_cjk_font_rendering(sample: str = "北方军港克鲁杰アリス") -> tuple[bool, str]:
+    """
+    Valida que a fonte CJK ativa renderiza ideogramas/kana reais (distintos do glifo `.notdef`/tofu)
+    e não caiu no fallback latino (DejaVu/Roboto/bitmap padrão).
+    """
+    fnt = pick_font(sample, size=20, bold=True)
+    fpath = str(getattr(fnt, "path", "") or "")
+    low_name = Path(fpath).name.lower() if fpath else ""
+    if not fpath or any(tok in low_name for tok in ("dejavu", "roboto", "liberation")):
+        return False, f"fallback não-CJK ativo: {fpath or type(fnt).__name__}"
+
+    def _glyph_bytes(ch: str) -> bytes:
+        gi = Image.new("L", (36, 36), 0)
+        ImageDraw.Draw(gi).text((4, 4), ch, font=fnt, fill=255)
+        return gi.tobytes()
+
+    notdef_bmp = _glyph_bytes("\ufffe")
+    unique_chars = [ch for ch in dict.fromkeys(sample) if ord(ch) > 127 and not ch.isspace()]
+    rendered: set[bytes] = set()
+    for ch in unique_chars:
+        bmp = _glyph_bytes(ch)
+        if bmp == notdef_bmp:
+            return False, f"glifo tofu (.notdef) para U+{ord(ch):04X} ({ch}) em {fpath}"
+        rendered.add(bmp)
+    if len(rendered) < max(2, len(unique_chars) - 1):
+        return False, f"glifos idênticos/inválidos ({len(rendered)}/{len(unique_chars)}) em {fpath}"
+    return True, fpath
+
+
 def text_width(draw: ImageDraw.ImageDraw, text: str, font: Any) -> float:
     if not text:
         return 0.0
@@ -1102,6 +1131,19 @@ def _resolve_foreign_flag_badge(
     return ("VPN?", (74, 34, 14, 255), (251, 146, 60, 240), (253, 186, 116, 255))
 
 
+FOREIGN_VPN_WARNING_TEXT = "⚠ Possível estrangeiro se passando por brasileiro"
+FOREIGN_VPN_WARNING_COLOR = (253, 186, 116, 255)
+
+
+def _is_suspected_foreign_row(
+    pl: dict[str, Any],
+    *,
+    is_veteranos: bool = False,
+    is_monitorados: bool = False,
+) -> bool:
+    return (not is_veteranos) and (not is_monitorados) and bool(pl.get("suspected_foreign_flag"))
+
+
 def _resolve_coh3_inactivity_badge(
     pl: dict[str, Any],
     *,
@@ -1239,7 +1281,7 @@ def _draw_low_prominence_strip(
     draw.line([(24, y), (width - 20, y)], fill=(30, 36, 46, 255), width=1)
     for idx, ln in enumerate(lines):
         fnt = pick_font(ln, size=font_size, bold=False)
-        draw.text((28, y + pad_y + idx * line_h), ln, font=fnt, fill=(104, 118, 138, 255))
+        draw_text_safe(draw, (28, y + pad_y + idx * line_h), ln, font=fnt, fill=(104, 118, 138, 255), bold=False)
     return y + strip_h
 
 
@@ -1547,7 +1589,17 @@ def _draw_category_block(
                             pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 7, badge=badge, font_size=13)
                             next_x += pw + 6
 
-                        note_raw = str(pl.get("status_note") or "No CoH3 agora")
+                        is_foreign_row = _is_suspected_foreign_row(
+                            pl,
+                            is_veteranos=is_veteranos,
+                            is_monitorados=is_monitorados,
+                        )
+                        if is_foreign_row:
+                            note_raw = FOREIGN_VPN_WARNING_TEXT
+                            note_col = FOREIGN_VPN_WARNING_COLOR
+                        else:
+                            note_raw = str(pl.get("status_note") or "No CoH3 agora")
+                            note_col = (253, 224, 71, 255) if "menu/fila" in note_raw else (134, 239, 172, 255)
                         st_disp, st_fnt = truncate_to_px(
                             draw,
                             note_raw,
@@ -1555,8 +1607,7 @@ def _draw_category_block(
                             size=sub_2col_size,
                             bold=False,
                         )
-                        note_col = (253, 224, 71, 255) if "menu/fila" in note_raw else (134, 239, 172, 255)
-                        draw.text((cx0 + 50, ry + 34), st_disp, font=st_fnt, fill=note_col)
+                        draw_text_safe(draw, (cx0 + 50, ry + 34), st_disp, font=st_fnt, fill=note_col, bold=False)
                     y += grid_h
                 else:
                     for idx, pl in enumerate(vis_coh3):
@@ -1600,12 +1651,23 @@ def _draw_category_block(
                         )
 
                         elo_val = int(pl.get("max_elo", 0) or 0)
-                        note_raw = str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora")
-                        note_disp, n_fnt = truncate_to_px(draw, note_raw, max_px=520, size=18, bold=True)
+                        is_foreign_row = _is_suspected_foreign_row(
+                            pl,
+                            is_veteranos=is_veteranos,
+                            is_monitorados=is_monitorados,
+                        )
+                        if is_foreign_row:
+                            note_raw = FOREIGN_VPN_WARNING_TEXT
+                            note_col = FOREIGN_VPN_WARNING_COLOR
+                            note_sz = 17
+                        else:
+                            note_raw = str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora")
+                            note_col = (253, 224, 71, 255) if "menu/fila" in note_raw else (134, 239, 172, 255)
+                            note_sz = 18
+                        note_disp, n_fnt = truncate_to_px(draw, note_raw, max_px=520, size=note_sz, bold=True)
                         nw = text_width(draw, note_disp, n_fnt)
                         note_x = width - 26 - nw
-                        note_col = (253, 224, 71, 255) if "menu/fila" in note_raw else (134, 239, 172, 255)
-                        draw.text((note_x, y + 19), note_disp, font=n_fnt, fill=note_col)
+                        draw_text_safe(draw, (note_x, y + 19), note_disp, font=n_fnt, fill=note_col, bold=True)
 
                         if is_high and elo_val > 0:
                             elo_x = _draw_gold_elo_pill(
@@ -1873,7 +1935,22 @@ def _draw_category_block(
                         if (is_mon_inactive and inact_days is not None and int(inact_days) >= 30)
                         else ("sem CoH3 ≥30d" if is_mon_inactive else "")
                     )
-                    if has_other:
+                    is_foreign_row = _is_suspected_foreign_row(
+                        pl,
+                        is_veteranos=is_veteranos,
+                        is_monitorados=is_monitorados,
+                    )
+                    if is_foreign_row:
+                        if has_other:
+                            sub_st = f"⚠ Possível estrangeiro (BR) • {pl['other_game']}"
+                        elif is_busy:
+                            sub_st = "⚠ Ocupado • Possível estrangeiro se passando por BR"
+                        elif is_away:
+                            sub_st = "⚠ Ausente • Possível estrangeiro se passando por BR"
+                        else:
+                            sub_st = FOREIGN_VPN_WARNING_TEXT
+                        sub_col = FOREIGN_VPN_WARNING_COLOR
+                    elif has_other:
                         if inact_short_txt:
                             sub_st = f"Outro jogo: {pl['other_game']} • {inact_short_txt}"
                             sub_col = (217, 175, 110, 240)
@@ -1902,7 +1979,7 @@ def _draw_category_block(
                         sub_col = (125, 211, 252, 255)
 
                     st_disp, st_fnt = truncate_to_px(draw, sub_st, max_px=max(100, cx_limit - (cx0 + 48)), size=sub_2col_size, bold=False)
-                    draw.text((cx0 + 48, ry + 32), st_disp, font=st_fnt, fill=sub_col)
+                    draw_text_safe(draw, (cx0 + 48, ry + 32), st_disp, font=st_fnt, fill=sub_col, bold=False)
 
                 y += grid_h
 
@@ -2050,9 +2127,15 @@ def _draw_category_block(
                     for badge in row_badges:
                         pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 6, badge=badge, font_size=12)
                         next_x += pw + 6
-                    note_r = str(pl.get("status_note") or "Partida recente na Relic")
+                    is_foreign_row = _is_suspected_foreign_row(
+                        pl,
+                        is_veteranos=is_veteranos,
+                        is_monitorados=is_monitorados,
+                    )
+                    note_r = FOREIGN_VPN_WARNING_TEXT if is_foreign_row else str(pl.get("status_note") or "Partida recente na Relic")
+                    rec_note_col = FOREIGN_VPN_WARNING_COLOR if is_foreign_row else (253, 230, 138, 255)
                     nd, nf = truncate_to_px(draw, note_r, max_px=max(90, cx_limit - (cx0 + 46)), size=max(14, sub_2col_size - 1), bold=False)
-                    draw.text((cx0 + 46, ry + 31), nd, font=nf, fill=(253, 230, 138, 255))
+                    draw_text_safe(draw, (cx0 + 46, ry + 31), nd, font=nf, fill=rec_note_col, bold=False)
                 y += grid_h
             else:
                 for idx, pl in enumerate(vis_recent):
@@ -2087,11 +2170,17 @@ def _draw_category_block(
                         compact=False,
                     )
 
-                    note_r = str(pl.get("status_note") or "Partida recente na Relic")
+                    is_foreign_row = _is_suspected_foreign_row(
+                        pl,
+                        is_veteranos=is_veteranos,
+                        is_monitorados=is_monitorados,
+                    )
+                    note_r = FOREIGN_VPN_WARNING_TEXT if is_foreign_row else str(pl.get("status_note") or "Partida recente na Relic")
+                    rec_note_col = FOREIGN_VPN_WARNING_COLOR if is_foreign_row else (253, 230, 138, 255)
                     nd, nf = truncate_to_px(draw, note_r, max_px=520, size=17, bold=True)
                     nw = text_width(draw, nd, nf)
                     nx = width - 26 - nw
-                    draw.text((nx, y + 17), nd, font=nf, fill=(253, 230, 138, 255))
+                    draw_text_safe(draw, (nx, y + 17), nd, font=nf, fill=rec_note_col, bold=True)
 
                     elo_val = int(pl.get("max_elo", 0) or 0)
                     right_limit_x = nx
@@ -2439,15 +2528,17 @@ def _render_single_category_card_png(
     else:
         cat_count_lbl = f" ({total_cat})" if total_cat > 0 else ""
         has_any_foreign = any(bool(p.get("suspected_foreign_flag")) for p in all_cat_players)
-        foreign_leg = "  •  VPN? possível estrangeiro usando VPN" if has_any_foreign else ""
+        foreign_leg = "  •  VPN? = possível estrangeiro se passando por brasileiro" if has_any_foreign else ""
         expat_short_leg = "  •  BR EXT = BR no exterior" if has_any_expat else ""
         foot_txt = (
             f"Somente ativos no CoH3 ≤{active_days}d{cat_count_lbl}"
             f"  •  ★ ELO alto{expat_short_leg}{foreign_leg}  •  Links Steam abaixo"
         )
     f_fnt = pick_font(foot_txt, size=15, bold=False)
-    if text_width(draw, foot_txt, f_fnt) > (width - 52):
-        f_fnt = pick_font(foot_txt, size=14, bold=False)
+    for cand_fsz in (15, 14, 13, 12):
+        f_fnt = pick_font(foot_txt, size=cand_fsz, bold=False)
+        if text_width(draw, foot_txt, f_fnt) <= (width - 52):
+            break
     draw.text((28, y + 8), foot_txt, font=f_fnt, fill=(148, 163, 184, 255))
     draw.rectangle((0, 0, width - 1, total_h - 1), outline=(56, 65, 82, 255), width=1)
 
