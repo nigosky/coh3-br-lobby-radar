@@ -112074,7 +112074,8 @@
           "first_seen": 1774305393,
           "last_seen": 1774305393,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -112091,7 +112092,8 @@
           "first_seen": 1775517145,
           "last_seen": 1775536002,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -168450,6 +168452,7 @@
           "last_seen": 1792254086,
           "sources": [
             "coh3stats_opendata",
+            "local_db",
             "steam_aliases"
           ]
         },
@@ -168459,6 +168462,7 @@
           "last_seen": 1792672845,
           "sources": [
             "coh3stats_opendata",
+            "local_db",
             "steam_aliases"
           ]
         },
@@ -168468,6 +168472,7 @@
           "last_seen": 1793571623,
           "sources": [
             "coh3stats_opendata",
+            "local_db",
             "steam_aliases"
           ]
         },
@@ -168477,6 +168482,7 @@
           "last_seen": 1794123646,
           "sources": [
             "coh3stats_opendata",
+            "local_db",
             "steam_aliases"
           ]
         },
@@ -231181,5 +231187,5 @@
     "steam_web_api": 7388,
     "steam_xml": 4153
   },
-  "updated_at": 1795496407
+  "updated_at": 1795497608
 }
