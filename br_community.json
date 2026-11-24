@@ -19850,17 +19850,6 @@
       "steam_id": "76561198137108036",
       "total_matches": 1
     },
-    "22472": {
-      "alias": "Annatar_BR",
-      "br_source": "alias_history",
-      "current_alias": "Ricardo Milos",
-      "last_match_date": 1706941153,
-      "last_seen_online_ts": 0,
-      "max_elo": 0,
-      "profile_id": 22472,
-      "steam_id": "76561197964897955",
-      "total_matches": 25
-    },
     "225084": {
       "alias": "Kommissar",
       "br_source": "alias_history",
@@ -39086,7 +39075,7 @@
       "last_match_date": 1795367943,
       "last_seen_ingame_ts": 1795197263,
       "last_seen_ingame_webapi_ts": 1795539498,
-      "last_seen_online_ts": 1795538521,
+      "last_seen_online_ts": 1795540399,
       "max_elo": 1000,
       "profile_id": 1158074,
       "steam_id": "76561198262693646",
@@ -40168,7 +40157,7 @@
       "avatar_url": "https://avatars.steamstatic.com/48ea5bf1697534b6a02ddfe8884c7bcca0a76047_medium.jpg",
       "br_source": "open_data_matches",
       "last_match_date": 1795204284,
-      "last_seen_online_ts": 1795534455,
+      "last_seen_online_ts": 1795540399,
       "max_elo": 1048,
       "profile_id": 1282670,
       "steam_games_hidden": true,
@@ -40357,7 +40346,7 @@
       "last_match_date": 1794699241,
       "last_seen_ingame_ts": 1795499175,
       "last_seen_ingame_webapi_ts": 1795498808,
-      "last_seen_online_ts": 1795505878,
+      "last_seen_online_ts": 1795540399,
       "max_elo": 1000,
       "profile_id": 1292044,
       "steam_games_hidden": false,
@@ -40397,7 +40386,7 @@
       "last_match_date": 1795484618,
       "last_seen_ingame_ts": 1795188956,
       "last_seen_ingame_webapi_ts": 1795475396,
-      "last_seen_online_ts": 1795538521,
+      "last_seen_online_ts": 1795540399,
       "max_elo": 1052,
       "profile_id": 1295461,
       "steam_games_hidden": false,
@@ -40422,14 +40411,14 @@
       "alias": "O CEO Dinossauro",
       "avatar_url": "https://avatars.steamstatic.com/3e82f088acd1bcf39cf31ba841b7a95fe7d0de85_medium.jpg",
       "br_source": "open_data_matches",
-      "last_match_date": 1795473054,
+      "last_match_date": 1795540355,
       "last_seen_online_ts": 1795539198,
       "max_elo": 1000,
       "profile_id": 1297778,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795448133,
       "steam_id": "76561198027869465",
-      "total_matches": 5
+      "total_matches": 6
     },
     "1297870": {
       "alias": "AVESTRUZ TE SEDUZ",
@@ -40495,14 +40484,14 @@
       "alias": "LordBaconBR",
       "avatar_url": "https://avatars.steamstatic.com/c9f1e0e322f694170fa2a2d35e8c5a115daee6f5_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795526603,
+      "last_match_date": 1795540364,
       "last_seen_online_ts": 1795539198,
       "max_elo": 1012,
       "profile_id": 1304125,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795453031,
       "steam_id": "76561199482244877",
-      "total_matches": 823
+      "total_matches": 824
     },
     "1304518": {
       "alias": "B4NDEIRA",
@@ -42524,7 +42513,6 @@
       "alias": "ES BRIEB CSGOSKINS.GG",
       "avatar_url": "https://avatars.steamstatic.com/76d0046be1c161e081a317c4c6ad739e6a75d3d5_medium.jpg",
       "br_source": "open_data_matches",
-      "current_alias": "BESON",
       "last_match_date": 1794602764,
       "last_seen_ingame_ts": 1795529220,
       "last_seen_ingame_webapi_ts": 1795530420,
@@ -45135,6 +45123,17 @@
       "profile_id": 21883,
       "steam_id": "76561198368569818",
       "total_matches": 25
+    },
+    "22472": {
+      "alias": "Annatar_BR",
+      "br_source": "alias_history",
+      "current_alias": "Ricardo Milos",
+      "last_match_date": 1795396412,
+      "last_seen_online_ts": 1795540399,
+      "max_elo": 1213,
+      "profile_id": 22472,
+      "steam_id": "76561197964897955",
+      "total_matches": 1892
     },
     "227157": {
       "alias": "pedrosaddy1",
