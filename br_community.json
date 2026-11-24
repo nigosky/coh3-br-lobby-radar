@@ -40355,13 +40355,13 @@
     "1369003": {
       "alias": "KyronCrane",
       "br_source": "open_data_lb",
-      "last_match_date": 1795479318,
+      "last_match_date": 1795525318,
       "last_seen_ingame_webapi_ts": 1795389918,
       "last_seen_online_ts": 1795389918,
       "max_elo": 1150,
       "profile_id": 1369003,
       "steam_id": "76561198155713664",
-      "total_matches": 1510
+      "total_matches": 1511
     },
     "1369418": {
       "alias": "xandaoro",
@@ -43808,14 +43808,14 @@
     "1483034": {
       "alias": "vitor_piovan",
       "br_source": "open_data_matches",
-      "last_match_date": 1795523717,
+      "last_match_date": 1795525413,
       "last_seen_online_ts": 1795522758,
       "max_elo": 908,
       "profile_id": 1483034,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795464310,
       "steam_id": "76561199820474577",
-      "total_matches": 27
+      "total_matches": 28
     },
     "1483091": {
       "alias": "R4PTHOR",
