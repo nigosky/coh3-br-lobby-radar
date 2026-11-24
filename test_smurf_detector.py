@@ -1356,6 +1356,43 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertIn(1999164, suspect_by_cand)
         self.assertEqual(suspect_by_cand[1999164]["top_matches"][0]["main_profile_id"], 164152)
 
+    def test_expanded_smurf_verification_window_above_30_days(self) -> None:
+        self.assertGreaterEqual(sd.DEFAULT_MATCH_DAYS, 90)
+        self.assertGreaterEqual(sd.MAX_SMURF_MATCH_DAYS, 120)
+        self.assertGreaterEqual(sd.MAX_SMURF_MATCH_DAYS, sd.DEFAULT_MATCH_DAYS)
+
+        # Verifica que discover_br_and_candidates_from_open_data_matches não trava mais em 30 dias
+        from unittest.mock import patch
+        from steam_presence import RelicActivityClient
+
+        client = RelicActivityClient()
+        seen_urls: list[str] = []
+
+        class _FakeResp:
+            def __enter__(self) -> "_FakeResp":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+            def read(self, _n: int = -1) -> bytes:
+                return b'{"matches": []}'
+
+        class _FakeOpener:
+            def open(self, req: object, timeout: float = 0.0) -> _FakeResp:
+                _ = timeout
+                seen_urls.append(str(getattr(req, "full_url", "")))
+                return _FakeResp()
+
+        with patch("steam_presence._get_relic_opener", return_value=_FakeOpener()):
+            _, _, diag = client.discover_br_and_candidates_from_open_data_matches(
+                now_ts=1_795_478_400,
+                days=90,
+                seed_br_pids=set(),
+            )
+        self.assertEqual(diag["days_requested"], 90)
+        self.assertEqual(len(seen_urls), 90)
+
 
 if __name__ == "__main__":
     unittest.main()

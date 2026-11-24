@@ -335,401 +335,190 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
 ]
 
 _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
-    {"profile_id": 33487, "steam_id": "76561197995712470", "original_alias": "Generick", "country": "us", "flag_country": "us"},
-    {
-        "profile_id": 16867,
-        "steam_id": "76561198874381986",
-        "original_alias": "Golden Cobra",
-        "country": "br",
-        "known_aliases": ["COHBRAMACHINE", "Golden Cobra"],
-    },
+    {"profile_id": 16867, "steam_id": "76561198874381986", "original_alias": "Golden Cobra", "country": "br", "known_aliases": ["COHBRAMACHINE", "Golden Cobra"]},
     {"profile_id": 19747, "steam_id": "76561198058548575", "original_alias": "twitch.tv/luck22ai", "country": "br"},
-    {
-        "profile_id": 23250,
-        "steam_id": "76561198028378060",
-        "original_alias": "Nargoth",
-        "country": "br",
-        "known_aliases": ["Nargoth de Bebbanburg", "Nargoth"],
-    },
+    {"profile_id": 23250, "steam_id": "76561198028378060", "original_alias": "Nargoth", "country": "br", "known_aliases": ["Nargoth de Bebbanburg", "Nargoth"]},
     {"profile_id": 28937, "steam_id": "76561198089948995", "original_alias": "Mjr Bruno", "country": "br"},
     {"profile_id": 81751, "steam_id": "76561198080023560", "original_alias": "Razi", "country": "br"},
     {"profile_id": 3895, "steam_id": "76561198054318813", "original_alias": "Liquid", "country": "br"},
-    {
-        "profile_id": 462597,
-        "steam_id": "76561198133760614",
-        "original_alias": "General Winter",
-        "country": "br",
-    },
-    {
-        "profile_id": 1297821,
-        "steam_id": "76561198722284920",
-        "original_alias": "General Winter (Smurf: General Winter)",
-        "smurf_of": "General Winter",
-        "country": "br",
-        "known_aliases": ["General Winter", "Dick of the Galaxies", "General Winter (Smurf: General Winter)"],
-    },
-    {
-        "profile_id": 1318162,
-        "steam_id": "76561198708550887",
-        "original_alias": "General Winter (Smurf: General Winter)",
-        "smurf_of": "General Winter",
-        "country": "br",
-        "known_aliases": ["General Winter", ".", "General Winter (Smurf: General Winter)"],
-    },
-    {
-        "profile_id": 509690,
-        "steam_id": "76561198053226112",
-        "original_alias": "Alekel",
-        "country": "br",
-        "pin_alias": True,
-        "known_aliases": [
-            "Minhoca de ferro!",
-            "Minhoca de ferro",
-            "Akael",
-            "Don Comerabo!",
-            "No mercy",
-            "Spectro",
-            "Alekel",
-        ],
-    },
-    {
-        "profile_id": 1297853,
-        "steam_id": "76561198721980631",
-        "original_alias": "Shadow (Smurf: Alekel)",
-        "smurf_of": "Alekel",
-        "country": "br",
-        "known_aliases": [
-            "Shadow",
-            "Shadowk",
-            "Zé da manga",
-            "Alekelgames",
-            "Alekel (Smurf: Shadow)",
-            "Shadow (Smurf: Alekel)",
-        ],
-    },
-    {
-        "profile_id": 844225,
-        "steam_id": "76561198009000654",
-        "original_alias": "『V』SKOBADARK",
-        "country": "br",
-        "pin_alias": True,
-        "known_aliases": ["『V』SKOBADARK", "SKOBADARK"],
-    },
-    {
-        "profile_id": 1297804,
-        "steam_id": "76561198723667226",
-        "original_alias": "Leite Moço (Smurf: 『V』SKOBADARK)",
-        "smurf_of": "『V』SKOBADARK",
-        "country": "br",
-        "known_aliases": ["Leite Moço", "『V』SKOBADARK (Smurf: Leite Moço)", "Leite Moço (Smurf: 『V』SKOBADARK)"],
-    },
-    {
-        "profile_id": 164152,
-        "steam_id": "76561198029749621",
-        "original_alias": "Sgt.Yoda",
-        "country": "br",
-        "priority_watch": True,
-        "known_aliases": ["Sgt.Yoda", "seu pai", "fiadaputa"],
-    },
-    {
-        "profile_id": 941524,
-        "steam_id": "76561198162353268",
-        "original_alias": "Colossus",
-        "country": "br",
-        "known_aliases": ["Colossus", "̶C̶o̶l̶o̶s̶s̶u̶s̶", "̶H̶e̶c̶t̶o̶r̶", "Hector"],
-    },
-    {
-        "profile_id": 1076221,
-        "steam_id": "76561198815935562",
-        "original_alias": "Lucielle (Smurf: Colossus)",
-        "smurf_of": "Colossus",
-        "country": "br",
-        "known_aliases": [
-            "Lucielle",
-            "Lucifer",
-            "Lan",
-            "Leonardo Martins Dantas Gomes",
-            "Lucielle (Colossus)",
-            "Lucielle (Smurf: Colossus)",
-        ],
-    },
-    {
-        "profile_id": 40833,
-        "steam_id": "76561198216174113",
-        "original_alias": "Tokai Teio",
-        "country": "br",
-        "known_aliases": [
-            "Tokai Teio",
-            "Tokai Teio!",
-            "Aston Machan",
-            "GOTE",
-            "GOTEツ",
-            "Cabra",
-            "ouh mai GOTE",
-            "miGOTE",
-            "T.M. Opera O",
-            "Oguri Cap",
-            "Assault Grenadier",
-            "Seiun Sky",
-            "Silence Suzuka",
-            "Nice Nature",
-            "Sakura Bakushin O",
-        ],
-    },
+    {"profile_id": 462597, "steam_id": "76561198133760614", "original_alias": "General Winter", "country": "br"},
+    {"profile_id": 1297821, "steam_id": "76561198722284920", "original_alias": "General Winter (Smurf: General Winter)", "smurf_of": "General Winter", "country": "br", "known_aliases": ["General Winter", "Dick of the Galaxies", "General Winter (Smurf: General Winter)"]},
+    {"profile_id": 1318162, "steam_id": "76561198708550887", "original_alias": "General Winter (Smurf: General Winter)", "smurf_of": "General Winter", "country": "br", "known_aliases": ["General Winter", ".", "General Winter (Smurf: General Winter)"]},
+    {"profile_id": 509690, "steam_id": "76561198053226112", "original_alias": "Alekel", "country": "br", "pin_alias": True, "known_aliases": ["Minhoca de ferro!", "Minhoca de ferro", "Akael", "Don Comerabo!", "No mercy", "Spectro", "Alekel"]},
+    {"profile_id": 1297853, "steam_id": "76561198721980631", "original_alias": "Shadow (Smurf: Alekel)", "smurf_of": "Alekel", "country": "br", "known_aliases": ["Shadow", "Shadowk", "Zé da manga", "Alekelgames", "Alekel (Smurf: Shadow)", "Shadow (Smurf: Alekel)"]},
+    {"profile_id": 844225, "steam_id": "76561198009000654", "original_alias": "『V』SKOBADARK", "country": "br", "pin_alias": True, "known_aliases": ["『V』SKOBADARK", "SKOBADARK"]},
+    {"profile_id": 1297804, "steam_id": "76561198723667226", "original_alias": "Leite Moço (Smurf: 『V』SKOBADARK)", "smurf_of": "『V』SKOBADARK", "country": "br", "known_aliases": ["Leite Moço", "『V』SKOBADARK (Smurf: Leite Moço)", "Leite Moço (Smurf: 『V』SKOBADARK)"]},
+    {"profile_id": 164152, "steam_id": "76561198029749621", "original_alias": "Sgt.Yoda", "country": "br", "priority_watch": True, "known_aliases": ["Sgt.Yoda", "seu pai", "fiadaputa"]},
+    {"profile_id": 941524, "steam_id": "76561198162353268", "original_alias": "Colossus", "country": "br", "known_aliases": ["Colossus", "̶C̶o̶l̶o̶s̶s̶u̶s̶", "̶H̶e̶c̶t̶o̶r̶", "Hector"]},
+    {"profile_id": 1076221, "steam_id": "76561198815935562", "original_alias": "Lucielle (Smurf: Colossus)", "smurf_of": "Colossus", "country": "br", "known_aliases": ["Lucielle", "Lucifer", "Lan", "Leonardo Martins Dantas Gomes", "Lucielle (Colossus)", "Lucielle (Smurf: Colossus)"]},
+    {"profile_id": 40833, "steam_id": "76561198216174113", "original_alias": "Tokai Teio", "country": "br", "known_aliases": ["Tokai Teio", "Tokai Teio!", "Aston Machan", "GOTE", "GOTEツ", "Cabra", "ouh mai GOTE", "miGOTE", "T.M. Opera O", "Oguri Cap", "Assault Grenadier", "Seiun Sky", "Silence Suzuka", "Nice Nature", "Sakura Bakushin O"]},
     {"profile_id": 991551, "steam_id": "76561198067968388", "original_alias": "Caveira-.", "country": "br"},
     {"profile_id": 667564, "steam_id": "76561198258429491", "original_alias": "Friedhelm Winter", "country": "br"},
     {"profile_id": 7448, "steam_id": "76561198002516537", "original_alias": "icewarp", "country": "za", "flag_country": "za"},
-    {
-        "profile_id": 91827,
-        "steam_id": "76561198031697638",
-        "original_alias": "[★General★] Apollo",
-        "country": "au",
-        "flag_country": "au",
-        "known_aliases": ["General Apolo", "[★General★] Apollo"],
-    },
-    {"profile_id": 312670, "steam_id": "76561197978279848", "original_alias": "TNF", "country": "au", "flag_country": "au"},
-    {"profile_id": 263517, "steam_id": "76561197994925919", "original_alias": "Angel of Death", "country": "jp", "flag_country": "jp"},
-    {
-        "profile_id": 26237,
-        "steam_id": "76561198036822207",
-        "original_alias": "[EL] Queue",
-        "country": "us",
-        "flag_country": "us",
-        "known_aliases": ["Qpid™", "[EL] Queue"],
-    },
-    {"profile_id": 304013, "steam_id": "76561197984619024", "original_alias": "Napa", "country": "us", "flag_country": "us"},
-    {"profile_id": 76165, "steam_id": "76561197961890785", "original_alias": "1337", "country": "ee", "flag_country": "ee"},
-    {"profile_id": 1480421, "steam_id": "76561198070841504", "original_alias": "ShadBlack", "country": "au", "flag_country": "au"},
-    {"profile_id": 4805, "steam_id": "76561198048811566", "original_alias": "MDCCC", "country": "us", "flag_country": "us"},
-    {
-        "profile_id": 29737,
-        "steam_id": "76561198158934331",
-        "original_alias": "PABLO FLEXCOBAR",
-        "country": "ar",
-        "flag_country": "ar",
-        "known_aliases": ["NegroS0rete", "PABLO FLEXCOBAR"],
-    },
-    {"profile_id": 999940, "steam_id": "76561198074249692", "original_alias": "Warmech11", "country": "py", "flag_country": "py"},
-    {"profile_id": 812247, "steam_id": "76561198062044957", "original_alias": "Texugo", "country": "th", "flag_country": "th"},
-    {"profile_id": 229162, "steam_id": "76561198089247149", "original_alias": "Sombra", "country": "us", "flag_country": "us"},
     {"profile_id": 212034, "steam_id": "76561198207565088", "original_alias": "XAPA KENTE", "country": "ca", "flag_country": "ca"},
-    {"profile_id": 110593, "steam_id": "76561198414864681", "original_alias": "Ethan Hunt", "country": "us", "flag_country": "us"},
-    {"profile_id": 1304336, "steam_id": "76561198043710924", "original_alias": "V.I.T.O.X", "country": "us", "flag_country": "us"},
-    {
-        "profile_id": 1168460,
-        "steam_id": "76561198012821540",
-        "original_alias": "Nonô",
-        "country": "ca",
-        "flag_country": "ca",
-        "known_aliases": ["Killer_BR", "Nonô"],
-    },
-    {"profile_id": 11033, "steam_id": "76561198009533220", "original_alias": "Coka", "country": "jp", "flag_country": "jp"},
-    {"profile_id": 24963, "steam_id": "76561197987674520", "original_alias": "Eduardo A.", "country": "sa", "flag_country": "sa"},
-    {
-        "profile_id": 357310,
-        "steam_id": "76561197994129168",
-        "original_alias": "Sleeping Sheep",
-        "country": "br",
-        "known_aliases": ["Sleeping Sheep", "Pet Shop", "RLSP", "The World"],
-    },
-    {
-        "profile_id": 17169,
-        "steam_id": "76561198066101827",
-        "original_alias": "Guh",
-        "country": "br",
-        "known_aliases": ["Guh", "[KGB] Guh", "StrawHat", "Aoi Todo"],
-    },
+    {"profile_id": 357310, "steam_id": "76561197994129168", "original_alias": "Sleeping Sheep", "country": "br", "known_aliases": ["Sleeping Sheep", "Pet Shop", "RLSP", "The World"]},
+    {"profile_id": 17169, "steam_id": "76561198066101827", "original_alias": "Guh", "country": "br", "known_aliases": ["Guh", "[KGB] Guh", "StrawHat", "Aoi Todo"]},
     {"profile_id": 1178218, "steam_id": "76561199219878733", "original_alias": "joauleonardo", "country": "br"},
-    {
-        "profile_id": 71299,
-        "steam_id": "76561198089205644",
-        "original_alias": "Bruno.s",
-        "country": "br",
-        "known_aliases": ["Bruno.s", "Bruno", "Bruno.s (Busy)", "Bruno114a"],
-    },
-    {
-        "profile_id": 16507,
-        "steam_id": "76561198064299508",
-        "original_alias": "Honest Copper Dealer",
-        "country": "br",
-        "known_aliases": ["Honest Copper Dealer", "Honesto Vendedor De Cobre", "Ea-Nasir", "Peixe"],
-    },
+    {"profile_id": 71299, "steam_id": "76561198089205644", "original_alias": "Bruno.s", "country": "br", "known_aliases": ["Bruno.s", "Bruno", "Bruno.s (Busy)", "Bruno114a"]},
+    {"profile_id": 16507, "steam_id": "76561198064299508", "original_alias": "Honest Copper Dealer", "country": "br", "known_aliases": ["Honest Copper Dealer", "Honesto Vendedor De Cobre", "Ea-Nasir", "Peixe"]},
     {"profile_id": 18414, "steam_id": "76561198027958034", "original_alias": "pipiku", "country": "br"},
     {"profile_id": 869772, "steam_id": "76561198874552921", "original_alias": "Tazi", "country": "br"},
     {"profile_id": 845669, "steam_id": "76561199696199477", "original_alias": "PH0BB05", "country": "br"},
-    {
-        "profile_id": 2583,
-        "steam_id": "76561198142536814",
-        "original_alias": "Manupktd",
-        "country": "br",
-        "known_aliases": ["Manupktd", "Manu PKTD"],
-    },
-    {
-        "profile_id": 661598,
-        "steam_id": "76561198066255117",
-        "original_alias": "Lord Tywin",
-        "country": "br",
-        "known_aliases": ["Lord Tywin", "Barao"],
-    },
+    {"profile_id": 2583, "steam_id": "76561198142536814", "original_alias": "Manupktd", "country": "br", "known_aliases": ["Manupktd", "Manu PKTD"]},
+    {"profile_id": 661598, "steam_id": "76561198066255117", "original_alias": "Lord Tywin", "country": "br", "known_aliases": ["Lord Tywin", "Barao"]},
     {"profile_id": 821542, "steam_id": "76561198028624206", "original_alias": "belfort", "country": "br"},
-    {
-        "profile_id": 674379,
-        "steam_id": "76561198353482620",
-        "original_alias": "Galva",
-        "country": "br",
-        "known_aliases": ["Galva", "Galvinha"],
-    },
-    {
-        "profile_id": 13516,
-        "steam_id": "76561198000943380",
-        "original_alias": "Pax Xavier youtube",
-        "country": "br",
-        "known_aliases": ["Pax Xavier youtube", "Pax_Nebadon_Br", "Nébadon", "Xavier"],
-    },
+    {"profile_id": 674379, "steam_id": "76561198353482620", "original_alias": "Galva", "country": "br", "known_aliases": ["Galva", "Galvinha"]},
+    {"profile_id": 13516, "steam_id": "76561198000943380", "original_alias": "Pax Xavier youtube", "country": "br", "known_aliases": ["Pax Xavier youtube", "Pax_Nebadon_Br", "Nébadon", "Xavier"]},
     {"profile_id": 38270, "steam_id": "76561197984468206", "original_alias": "[CoBrA] Shadow*", "country": "br"},
-    {
-        "profile_id": 970468,
-        "steam_id": "76561198937445340",
-        "original_alias": "Московский метро",
-        "country": "br",
-        "known_aliases": ["Московский метро", "LutsBloom"],
-    },
+    {"profile_id": 970468, "steam_id": "76561198937445340", "original_alias": "Московский метро", "country": "br", "known_aliases": ["Московский метро", "LutsBloom"]},
     {"profile_id": 20523, "steam_id": "76561198044964084", "original_alias": "Goa Trance Mix", "country": "br"},
-    {
-        "profile_id": 940355,
-        "steam_id": "76561198018536980",
-        "original_alias": "SacanaLord",
-        "country": "br",
-        "known_aliases": ["SacanaLord", "Fidelis", "Faraco"],
-    },
-    {
-        "profile_id": 1279100,
-        "steam_id": "76561198117204290",
-        "original_alias": "Tiagod",
-        "country": "br",
-        "known_aliases": ["Tiagod", "彡 Tiagod 彡"],
-    },
+    {"profile_id": 940355, "steam_id": "76561198018536980", "original_alias": "SacanaLord", "country": "br", "known_aliases": ["SacanaLord", "Fidelis", "Faraco"]},
+    {"profile_id": 1279100, "steam_id": "76561198117204290", "original_alias": "Tiagod", "country": "br", "known_aliases": ["Tiagod", "彡 Tiagod 彡"]},
     {"profile_id": 1453831, "steam_id": "76561199528441090", "original_alias": "CΛЯИICΣIЯӨ", "country": "br"},
     {"profile_id": 198711, "steam_id": "76561198013841424", "original_alias": "Товарищ Mérlin", "country": "br"},
-    {
-        "profile_id": 1010793,
-        "steam_id": "76561199641123845",
-        "original_alias": "拉斐爾",
-        "country": "br",
-        "known_aliases": ["拉斐爾", "Caldas03", "Rafle"],
-    },
+    {"profile_id": 1010793, "steam_id": "76561199641123845", "original_alias": "拉斐爾", "country": "br", "known_aliases": ["拉斐爾", "Caldas03", "Rafle"]},
     {"profile_id": 28570, "steam_id": "76561198060258379", "original_alias": "Paulo220V", "country": "br"},
-    {
-        "profile_id": 779143,
-        "steam_id": "76561198874288631",
-        "original_alias": "Nicolau",
-        "country": "br",
-        "known_aliases": ["Nicolau", "ニコラス"],
-    },
-    {
-        "profile_id": 952854,
-        "steam_id": "76561198131209135",
-        "original_alias": "乂卂丨",
-        "country": "br",
-        "known_aliases": ["乂卂丨", "乂卂丨☁"],
-    },
+    {"profile_id": 779143, "steam_id": "76561198874288631", "original_alias": "Nicolau", "country": "br", "known_aliases": ["Nicolau", "ニコラス"]},
+    {"profile_id": 952854, "steam_id": "76561198131209135", "original_alias": "乂卂丨", "country": "br", "known_aliases": ["乂卂丨", "乂卂丨☁"]},
     {"profile_id": 1041470, "steam_id": "76561198125923649", "original_alias": "芋サラダ", "country": "br"},
     {"profile_id": 1216477, "steam_id": "76561199105792679", "original_alias": "FinalGATE-2", "country": "br"},
     {"profile_id": 1216912, "steam_id": "76561198269605156", "original_alias": "[KoFu] Might_lloll", "country": "br"},
     {"profile_id": 1276975, "steam_id": "76561198062002353", "original_alias": "Rozin", "country": "br"},
-    {
-        "profile_id": 1356223,
-        "steam_id": "76561198188738303",
-        "original_alias": "Manu-chan",
-        "country": "br",
-        "known_aliases": ["Manu-chan", "Silencer..."],
-    },
+    {"profile_id": 1356223, "steam_id": "76561198188738303", "original_alias": "Manu-chan", "country": "br", "known_aliases": ["Manu-chan", "Silencer..."]},
     {"profile_id": 1402500, "steam_id": "76561198274006807", "original_alias": "MiiNu <3", "country": "br"},
-    {
-        "profile_id": 197937,
-        "steam_id": "76561198066944603",
-        "original_alias": "Armaddin",
-        "country": "br",
-        "known_aliases": ["Armaddin", "Armadin"],
-    },
-    {
-        "profile_id": 58933,
-        "steam_id": "76561198209825195",
-        "original_alias": 'Mister "Generic"',
-        "country": "br",
-        "known_aliases": [
-            'Mister "Generic"',
-            "General Cris.P.Bacon",
-            "SS-Verwaltung von Paris [TNO]",
-            "Lieutenant Moe Ron",
-        ],
-    },
-    {
-        "profile_id": 11180,
-        "steam_id": "76561197982280686",
-        "original_alias": "Brujoga",
-        "country": "br",
-        "known_aliases": ["Brujoga", "Brujoga10"],
-    },
-    {
-        "profile_id": 207342,
-        "steam_id": "76561197961608539",
-        "original_alias": "AkvaBr",
-        "country": "br",
-        "known_aliases": ["AkvaBr", "AkvaBr_TTV", "Akva"],
-    },
+    {"profile_id": 197937, "steam_id": "76561198066944603", "original_alias": "Armaddin", "country": "br", "known_aliases": ["Armaddin", "Armadin"]},
+    {"profile_id": 58933, "steam_id": "76561198209825195", "original_alias": "Mister \"Generic\"", "country": "br", "known_aliases": ["Mister \"Generic\"", "General Cris.P.Bacon", "SS-Verwaltung von Paris [TNO]", "Lieutenant Moe Ron"]},
+    {"profile_id": 11180, "steam_id": "76561197982280686", "original_alias": "Brujoga", "country": "br", "known_aliases": ["Brujoga", "Brujoga10"]},
+    {"profile_id": 207342, "steam_id": "76561197961608539", "original_alias": "AkvaBr", "country": "br", "known_aliases": ["AkvaBr", "AkvaBr_TTV", "Akva"]},
     {"profile_id": 703146, "steam_id": "76561198217753836", "original_alias": "viperking", "country": "br"},
-    {
-        "profile_id": 110123,
-        "steam_id": "76561198003329628",
-        "original_alias": "Iracnats",
-        "country": "br",
-        "known_aliases": ["Iracnats", "Iracnats de Bebbanburg"],
-    },
-    {
-        "profile_id": 864699,
-        "steam_id": "76561198037383807",
-        "original_alias": "Mael Radec",
-        "country": "br",
-        "known_aliases": ["Mael Radec", "Radec"],
-    },
+    {"profile_id": 110123, "steam_id": "76561198003329628", "original_alias": "Iracnats", "country": "br", "known_aliases": ["Iracnats", "Iracnats de Bebbanburg"]},
+    {"profile_id": 864699, "steam_id": "76561198037383807", "original_alias": "Mael Radec", "country": "br", "known_aliases": ["Mael Radec", "Radec"]},
     {"profile_id": 424813, "steam_id": "76561198163017219", "original_alias": "peace", "country": "br"},
     {"profile_id": 11710, "steam_id": "76561198129851471", "original_alias": "Correia", "country": "br"},
-    {
-        "profile_id": 4517,
-        "steam_id": "76561198033317439",
-        "original_alias": "The Collector",
-        "country": "br",
-        "known_aliases": [
-            "The Collector",
-            "A Mangueira do Bombeiro",
-            "Boi leiteiro",
-            "Catador de papelão e latinha",
-        ],
-    },
-    {
-        "profile_id": 624624,
-        "steam_id": "76561198072467801",
-        "original_alias": "Filho Brasil",
-        "country": "br",
-        "known_aliases": [
-            "Filho Brasil",
-            "Michelin Brasil",
-            "Coronel Jesuino",
-            "Redutor de Carbono",
-        ],
-    },
-    {
-        "profile_id": 59671,
-        "steam_id": "76561198257105445",
-        "original_alias": "Gurenn",
-        "country": "br",
-        "known_aliases": ["Gurenn", "ttv/gurennplays"],
-    },
+    {"profile_id": 4517, "steam_id": "76561198033317439", "original_alias": "The Collector", "country": "br", "known_aliases": ["The Collector", "A Mangueira do Bombeiro", "Boi leiteiro", "Catador de papelão e latinha"]},
+    {"profile_id": 624624, "steam_id": "76561198072467801", "original_alias": "Filho Brasil", "country": "br", "known_aliases": ["Filho Brasil", "Michelin Brasil", "Coronel Jesuino", "Redutor de Carbono"]},
+    {"profile_id": 59671, "steam_id": "76561198257105445", "original_alias": "Gurenn", "country": "br", "known_aliases": ["Gurenn", "ttv/gurennplays"]},
+    {"profile_id": 649535, "steam_id": "76561197974916464", "original_alias": "pensss", "country": "br", "known_aliases": ["pensss", "pensss_ideal"]},
+    {"profile_id": 765837, "steam_id": "76561197990946349", "original_alias": "Southland", "country": "br"},
+    {"profile_id": 975900, "steam_id": "76561198326055603", "original_alias": "[COHBR/RJ]Roney", "country": "br", "known_aliases": ["[COHBR/RJ]Roney", "[COHBR]Roney", "[BR/RJ]Roney"]},
+    {"profile_id": 890394, "steam_id": "76561198049023794", "original_alias": "TheKat", "country": "br", "known_aliases": ["TheKat", "Liez \"The Kat\"", "Dois Lule Numa Moto"]},
+    {"profile_id": 7375, "steam_id": "76561198047826077", "original_alias": "pigote", "country": "br", "known_aliases": ["pigote", "mr. got", "pigoteiro"]},
+    {"profile_id": 87314, "steam_id": "76561197986521921", "original_alias": "Pedro Jedi", "country": "br"},
+    {"profile_id": 6880, "steam_id": "76561198078150897", "original_alias": "ArguS", "country": "br", "known_aliases": ["ArguS", "VonDun #Trump2016"]},
+    {"profile_id": 383796, "steam_id": "76561197982976352", "original_alias": "Vanghoul", "country": "br", "known_aliases": ["Vanghoul", "darkcostaxxx"]},
+    {"profile_id": 396850, "steam_id": "76561198148238879", "original_alias": "Thiklitsa", "country": "br"},
+    {"profile_id": 946312, "steam_id": "76561198259733766", "original_alias": "colgatti", "country": "br"},
+    {"profile_id": 12522, "steam_id": "76561198108513961", "original_alias": "Caramez", "country": "br"},
+    {"profile_id": 5296, "steam_id": "76561198154353245", "original_alias": "vasointupido", "country": "br"},
+    {"profile_id": 1162890, "steam_id": "76561198117168962", "original_alias": "Fauzix", "country": "br"},
+    {"profile_id": 716376, "steam_id": "76561198099054871", "original_alias": "TrueLothar", "country": "br"},
+    {"profile_id": 409715, "steam_id": "76561198083043687", "original_alias": "Rapo", "country": "br", "known_aliases": ["Rapo", "Memento Mori", "Querido Raposo"]},
+    {"profile_id": 316794, "steam_id": "76561198086650941", "original_alias": "Masguer", "country": "br"},
+    {"profile_id": 946322, "steam_id": "76561198135260753", "original_alias": "phconzatti", "country": "br"},
+    {"profile_id": 892947, "steam_id": "76561198121504561", "original_alias": "Macfly2001", "country": "br"},
+    {"profile_id": 1156831, "steam_id": "76561198135522044", "original_alias": "DAk120", "country": "br"},
+    {"profile_id": 1330031, "steam_id": "76561198076583881", "original_alias": "Thinkker", "country": "br"},
+    {"profile_id": 911313, "steam_id": "76561198010387961", "original_alias": "El Pollo Diablo", "country": "br"},
+    {"profile_id": 153485, "steam_id": "76561198060873557", "original_alias": "Juninho", "country": "br", "known_aliases": ["Juninho", "SpaceBoy_Br"]},
+    {"profile_id": 1231517, "steam_id": "76561198132222485", "original_alias": "Mustang7412", "country": "br"},
+    {"profile_id": 167270, "steam_id": "76561198149193970", "original_alias": "CPU - Wrong one to garden with", "country": "br"},
+    {"profile_id": 1134857, "steam_id": "76561198818470958", "original_alias": "guilhermemariano20", "country": "br"},
+    {"profile_id": 1361626, "steam_id": "76561198155881999", "original_alias": "Giota", "country": "br"},
+    {"profile_id": 1201954, "steam_id": "76561198124850127", "original_alias": "Corvo", "country": "br"},
+    {"profile_id": 1332786, "steam_id": "76561198093892211", "original_alias": "Katana Man", "country": "br"},
+    {"profile_id": 122829, "steam_id": "76561198061075119", "original_alias": "Guardiola de Peruca", "country": "br", "known_aliases": ["Guardiola de Peruca", "GuardioladePeruca", "DevilboyEx"]},
+    {"profile_id": 1286523, "steam_id": "76561198417833011", "original_alias": "Megumula", "country": "br", "known_aliases": ["Megumula", "Gugouf"]},
+    {"profile_id": 1461766, "steam_id": "76561198067634756", "original_alias": "Hugola", "country": "br"},
+    {"profile_id": 71274, "steam_id": "76561198092092480", "original_alias": "Tavares", "country": "br", "known_aliases": ["Tavares", "Wonder of U"]},
+    {"profile_id": 1046646, "steam_id": "76561198868863447", "original_alias": "Viktor Maia", "country": "br", "known_aliases": ["Viktor Maia", "Vickeh"]},
+    {"profile_id": 145299, "steam_id": "76561198017254697", "original_alias": "Andre", "country": "br"},
+    {"profile_id": 677441, "steam_id": "76561198013484803", "original_alias": "Resilient", "country": "br"},
+    {"profile_id": 173761, "steam_id": "76561198873253024", "original_alias": "EUSOU", "country": "br", "known_aliases": ["EUSOU", "EU SOU", "EU SOU - I AM"]},
+    {"profile_id": 1232389, "steam_id": "76561198372477752", "original_alias": "caralhassauro", "country": "br"},
+    {"profile_id": 1024394, "steam_id": "76561198431410480", "original_alias": "MOKUJIN", "country": "br"},
+    {"profile_id": 893197, "steam_id": "76561198048254869", "original_alias": "Alexandre", "country": "br"},
+    {"profile_id": 902305, "steam_id": "76561198098458214", "original_alias": "Vanigas", "country": "br", "known_aliases": ["Vanigas", "Brazilian Monkey"]},
+    {"profile_id": 1043198, "steam_id": "76561198017121369", "original_alias": "Immortalxw", "country": "br"},
+    {"profile_id": 5434, "steam_id": "76561198031004739", "original_alias": "Mazu", "country": "br"},
+    {"profile_id": 84816, "steam_id": "76561198159203637", "original_alias": "ChadVader", "country": "br", "known_aliases": ["ChadVader", "Degrelle"]},
+    {"profile_id": 3888, "steam_id": "76561198854785478", "original_alias": "Pepe Popo", "country": "br", "known_aliases": ["Pepe Popo", "Gótica não-rabuda", "Gotosa do company"]},
+    {"profile_id": 1707, "steam_id": "76561197998487466", "original_alias": "Anhangá", "country": "br", "known_aliases": ["Anhangá", "Luiz Coke"]},
+    {"profile_id": 9799, "steam_id": "76561198097076285", "original_alias": "✠ Führercoach ®", "country": "br", "known_aliases": ["✠ Führercoach ®", "☭ COREIA DO NORT ☭", "Ironbitch ®", "Ironfox ©"]},
+    {"profile_id": 656815, "steam_id": "76561199366015251", "original_alias": "Botson", "country": "br", "known_aliases": ["Botson", "Botson (cimento)"]},
+    {"profile_id": 13934, "steam_id": "76561198340401196", "original_alias": "Duro de Mamar", "country": "br", "known_aliases": ["Duro de Mamar", "Apenas um ass"]},
+    {"profile_id": 85746, "steam_id": "76561198045288427", "original_alias": "[IRON] Kabal-PE", "country": "br"},
+    {"profile_id": 36206, "steam_id": "76561198144804075", "original_alias": "Sentinela", "country": "br"},
+    {"profile_id": 8764, "steam_id": "76561198155662761", "original_alias": "Maverick", "country": "br", "known_aliases": ["Maverick", "Jukki"]},
+    {"profile_id": 27052, "steam_id": "76561199055548856", "original_alias": "gleison-luan", "country": "br"},
+    {"profile_id": 220378, "steam_id": "76561198074392592", "original_alias": "Edimar.", "country": "br"},
+    {"profile_id": 31405, "steam_id": "76561198122862152", "original_alias": "[IRON]ViROX", "country": "br", "known_aliases": ["[IRON]ViROX", "[COHBR]ViROX", "ViROX"]},
+    {"profile_id": 85670, "steam_id": "76561198025162176", "original_alias": "Stig", "country": "br", "known_aliases": ["Stig", "YanKee"]},
+    {"profile_id": 664781, "steam_id": "76561198412321280", "original_alias": "Flatline🔰", "country": "br", "known_aliases": ["Flatline🔰", "Flatline"]},
+    {"profile_id": 840769, "steam_id": "76561198082125321", "original_alias": "Ricardin_ihuull", "country": "br", "known_aliases": ["Ricardin_ihuull", "SABUGO"]},
+    {"profile_id": 756737, "steam_id": "76561198001254162", "original_alias": "JonyCalcinha", "country": "br"},
+    {"profile_id": 11112, "steam_id": "76561198024371602", "original_alias": "RazumAzul", "country": "br"},
+    {"profile_id": 31916, "steam_id": "76561198013738008", "original_alias": "El Patada [Br]🦜", "country": "br"},
+    {"profile_id": 124729, "steam_id": "76561198015179885", "original_alias": "Mawll", "country": "br", "known_aliases": ["Mawll", "[D.T.B] Mawll"]},
+    {"profile_id": 3414, "steam_id": "76561198111168811", "original_alias": "[SE:VH] Queiroz", "country": "br"},
+    {"profile_id": 956645, "steam_id": "76561198119663404", "original_alias": "Magraiver", "country": "br"},
+    {"profile_id": 32791, "steam_id": "76561198355821508", "original_alias": "FALAV", "country": "br"},
+    {"profile_id": 741345, "steam_id": "76561198108658944", "original_alias": "defanteinfante", "country": "br"},
+    {"profile_id": 20491, "steam_id": "76561198893359627", "original_alias": "Captan_Igor", "country": "br", "known_aliases": ["Captan_Igor", "BruxoSagaz"]},
+    {"profile_id": 893019, "steam_id": "76561198193551428", "original_alias": "Chuck Norris", "country": "br"},
+    {"profile_id": 996815, "steam_id": "76561198388487203", "original_alias": "richard.eop", "country": "br"},
+    {"profile_id": 111954, "steam_id": "76561198019263316", "original_alias": "Marques", "country": "br", "known_aliases": ["Marques", "[IRON]Marques"]},
+    {"profile_id": 1123905, "steam_id": "76561198020133377", "original_alias": "Wintermute", "country": "br", "known_aliases": ["Wintermute", "Wintermute #t.420", "Wintermute420"]},
+    {"profile_id": 764130, "steam_id": "76561198260873423", "original_alias": "Indra", "country": "br", "known_aliases": ["Indra", "General Grievous"]},
+    {"profile_id": 29436, "steam_id": "76561198048274930", "original_alias": "edergabriel", "country": "br"},
+    {"profile_id": 128231, "steam_id": "76561198022850599", "original_alias": "E5p4rTaN0", "country": "br"},
+    {"profile_id": 24539, "steam_id": "76561198020353566", "original_alias": "VONPESTER", "country": "br", "known_aliases": ["VONPESTER", "CURA GAY", "TERMINATOR GAY", "WOODY WOODDICK"]},
+    {"profile_id": 780673, "steam_id": "76561198034277846", "original_alias": "VenturadeJesus", "country": "br"},
+    {"profile_id": 12326, "steam_id": "76561199046113981", "original_alias": "HEROI", "country": "br", "known_aliases": ["HEROI", "danielvianaredex"]},
+    {"profile_id": 767932, "steam_id": "76561198166203065", "original_alias": "Ritalino", "country": "br"},
+    {"profile_id": 24660, "steam_id": "76561198150674760", "original_alias": "bonicius10", "country": "br"},
+    {"profile_id": 135138, "steam_id": "76561198028166152", "original_alias": "WeliWest", "country": "br"},
+    {"profile_id": 135141, "steam_id": "76561198039466768", "original_alias": "[PWA]-ForceMaster", "country": "br", "known_aliases": ["[PWA]-ForceMaster", "ForceMaster"]},
+    {"profile_id": 8427, "steam_id": "76561197990778045", "original_alias": "Tom_BR", "country": "br"},
+    {"profile_id": 87903, "steam_id": "76561199112478566", "original_alias": "Daniloparre", "country": "br"},
+    {"profile_id": 26736, "steam_id": "76561198002634846", "original_alias": "Arkymendes", "country": "br"},
+    {"profile_id": 1383106, "steam_id": "76561199017071156", "original_alias": "weed4i20", "country": "br"},
+    {"profile_id": 86675, "steam_id": "76561198079508454", "original_alias": "Fred", "country": "br"},
+    {"profile_id": 655548, "steam_id": "76561198037528747", "original_alias": "Garm", "country": "br", "known_aliases": ["Garm", "Galva", "lrs"]},
+    {"profile_id": 3917, "steam_id": "76561197967668319", "original_alias": "[IRON] ManchaNegra", "country": "br", "known_aliases": ["[IRON] ManchaNegra", "BlackSpot_BR", "Mancha Negra"]},
+    {"profile_id": 207951, "steam_id": "76561198183965757", "original_alias": "≫ Last_Night", "country": "br", "known_aliases": ["≫ Last_Night", "»BAIN« Last_Night"]},
+    {"profile_id": 838813, "steam_id": "76561198022258604", "original_alias": "heitorcorrea", "country": "br"},
+    {"profile_id": 993209, "steam_id": "76561198053754717", "original_alias": "BobGon", "country": "br"},
+    {"profile_id": 39939, "steam_id": "76561198008329858", "original_alias": "Romioul", "country": "br", "known_aliases": ["Romioul", "TOM E JEBA", "Rômioul"]},
+    {"profile_id": 96129, "steam_id": "76561198016825303", "original_alias": "Gerhard", "country": "br", "known_aliases": ["Gerhard", "G_e_h_4_r_d"]},
+    {"profile_id": 766215, "steam_id": "76561197997896382", "original_alias": "L3ooW", "country": "br"},
+    {"profile_id": 143443, "steam_id": "76561198149823284", "original_alias": "Ted", "country": "br"},
+    {"profile_id": 29557, "steam_id": "76561198144606355", "original_alias": "Rylanor", "country": "br", "known_aliases": ["Rylanor", "Rylanor, Cavalo Forte"]},
 ]
 
 # Alias retrocompatível para o fallback da 3ª categoria (`monitorados`)
 _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = _FALLBACK_MONITORED_BR_PLAYERS
+
+# Emigrados brasileiros mantidos em Outros Brasileiros com bandeira real de residência + badge BR EXT
+_FALLBACK_OUTROS_BR_EMIGRADOS: list[dict[str, Any]] = [
+    {"profile_id": 33487, "steam_id": "76561197995712470", "original_alias": "Generick", "country": "us", "flag_country": "us"},
+    {"profile_id": 91827, "steam_id": "76561198031697638", "original_alias": "[★General★] Apollo", "country": "au", "flag_country": "au", "known_aliases": ["General Apolo", "[★General★] Apollo"]},
+    {"profile_id": 312670, "steam_id": "76561197978279848", "original_alias": "TNF", "country": "au", "flag_country": "au"},
+    {"profile_id": 263517, "steam_id": "76561197994925919", "original_alias": "Angel of Death", "country": "jp", "flag_country": "jp"},
+    {"profile_id": 26237, "steam_id": "76561198036822207", "original_alias": "[EL] Queue", "country": "us", "flag_country": "us", "known_aliases": ["Qpid™", "[EL] Queue"]},
+    {"profile_id": 304013, "steam_id": "76561197984619024", "original_alias": "Napa", "country": "us", "flag_country": "us"},
+    {"profile_id": 76165, "steam_id": "76561197961890785", "original_alias": "1337", "country": "ee", "flag_country": "ee"},
+    {"profile_id": 1480421, "steam_id": "76561198070841504", "original_alias": "ShadBlack", "country": "au", "flag_country": "au"},
+    {"profile_id": 4805, "steam_id": "76561198048811566", "original_alias": "MDCCC", "country": "us", "flag_country": "us"},
+    {"profile_id": 29737, "steam_id": "76561198158934331", "original_alias": "PABLO FLEXCOBAR", "country": "ar", "flag_country": "ar", "known_aliases": ["NegroS0rete", "PABLO FLEXCOBAR"]},
+    {"profile_id": 999940, "steam_id": "76561198074249692", "original_alias": "Warmech11", "country": "py", "flag_country": "py"},
+    {"profile_id": 812247, "steam_id": "76561198062044957", "original_alias": "Texugo", "country": "th", "flag_country": "th"},
+    {"profile_id": 229162, "steam_id": "76561198089247149", "original_alias": "Sombra", "country": "us", "flag_country": "us"},
+    {"profile_id": 110593, "steam_id": "76561198414864681", "original_alias": "Ethan Hunt", "country": "us", "flag_country": "us"},
+    {"profile_id": 1304336, "steam_id": "76561198043710924", "original_alias": "V.I.T.O.X", "country": "us", "flag_country": "us"},
+    {"profile_id": 1168460, "steam_id": "76561198012821540", "original_alias": "Nonô", "country": "ca", "flag_country": "ca", "known_aliases": ["Killer_BR", "Nonô"]},
+    {"profile_id": 11033, "steam_id": "76561198009533220", "original_alias": "Coka", "country": "jp", "flag_country": "jp"},
+    {"profile_id": 24963, "steam_id": "76561197987674520", "original_alias": "Eduardo A.", "country": "sa", "flag_country": "sa"},
+]
 
 
 _SMURF_LABEL_RE = re.compile(r"^(.*?)\s*\(\s*smurf\s*:\s*([^)]+?)\s*\)\s*$", re.IGNORECASE)
@@ -862,6 +651,41 @@ def load_shared_players_roster(
     return [dict(r) for r in _FALLBACK_CORE_BR_ROSTER], [dict(r) for r in _FALLBACK_MONITORED_BR_PLAYERS]
 
 
+def load_shared_outros_br_emigrados(
+    roster_path: Path = PLAYERS_ROSTER_PATH,
+) -> list[dict[str, Any]]:
+    """
+    Carrega os brasileiros emigrados mantidos na categoria `Outros Brasileiros` (`outros_br_emigrados`
+    em `players_roster.json`), garantindo bandeira real de residência + badge `BR EXT` sem incluí-los
+    em `Players Monitorados`.
+    """
+    try:
+        parsed = read_bounded_json_file(roster_path, max_bytes=262_144)
+        if isinstance(parsed, dict) and isinstance(parsed.get("outros_br_emigrados"), list):
+            taken_pids: set[int] = set()
+            for sec_key in ("veteranos", "monitorados", "manual_other_br"):
+                raw_sec = parsed.get(sec_key)
+                if isinstance(raw_sec, list):
+                    for row in raw_sec:
+                        if isinstance(row, dict):
+                            rpid = int(row.get("profile_id", 0) or 0)
+                            if rpid > 0:
+                                taken_pids.add(rpid)
+            expats: list[dict[str, Any]] = []
+            seen_pids: set[int] = set()
+            for row in parsed["outros_br_emigrados"]:
+                norm = _normalize_shared_roster_entry(row, default_in_ranking=False)
+                if norm and norm["profile_id"] not in taken_pids and norm["profile_id"] not in seen_pids:
+                    seen_pids.add(norm["profile_id"])
+                    expats.append(norm)
+            return expats
+    except FileNotFoundError:
+        pass
+    except Exception as exc:
+        logger.warning("Falha ao carregar outros_br_emigrados de %s; usando fallback embutido: %s", roster_path.name, redact_secrets(exc))
+    return [dict(r) for r in _FALLBACK_OUTROS_BR_EMIGRADOS]
+
+
 def extract_roster_id_sets(roster: list[dict[str, Any]]) -> tuple[set[int], set[str]]:
     """Extrai conjuntos normalizados `(profile_ids, steam_ids)` de uma lista de entradas de roster."""
     pids: set[int] = set()
@@ -895,16 +719,20 @@ def format_coh3_recency_age(pl: dict[str, Any]) -> str:
 
 # Elenco compartilhado carregado de `players_roster.json`:
 # 1) Veteranos (topo) | 2) Players Monitorados (intermediária — mesmo objeto referenciado pelo alias legado MANUAL_OTHER_BR_PLAYERS)
+# 3) Emigrados mantidos em Outros Brasileiros com bandeira real + badge BR EXT (`OUTROS_BR_EMIGRADOS`)
 CORE_BR_ROSTER: list[dict[str, Any]] = []
 MONITORED_BR_PLAYERS: list[dict[str, Any]] = []
 MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = MONITORED_BR_PLAYERS
+OUTROS_BR_EMIGRADOS: list[dict[str, Any]] = []
 
 
 def reload_shared_players_roster(roster_path: Path = PLAYERS_ROSTER_PATH) -> tuple[int, int]:
-    """Recarrega `CORE_BR_ROSTER` e `MONITORED_BR_PLAYERS` in-place a partir de `players_roster.json`."""
+    """Recarrega `CORE_BR_ROSTER`, `MONITORED_BR_PLAYERS` e `OUTROS_BR_EMIGRADOS` in-place a partir de `players_roster.json`."""
     vets, monitored = load_shared_players_roster(roster_path)
+    expats = load_shared_outros_br_emigrados(roster_path)
     CORE_BR_ROSTER[:] = vets
     MONITORED_BR_PLAYERS[:] = monitored
+    OUTROS_BR_EMIGRADOS[:] = expats
     return len(vets), len(monitored)
 
 
@@ -912,11 +740,11 @@ reload_shared_players_roster()
 
 
 def get_configured_flag_country(profile_id: int) -> str:
-    """Retorna a bandeira explícita configurada em CORE_BR_ROSTER/MONITORED_BR_PLAYERS (ex.: 'us' para Lem22 e Generick)."""
+    """Retorna a bandeira explícita configurada em CORE_BR_ROSTER/MONITORED_BR_PLAYERS/OUTROS_BR_EMIGRADOS (ex.: 'us' para Lem22 e Generick)."""
     pid = int(profile_id or 0)
     if pid <= 0:
         return ""
-    for roster in (CORE_BR_ROSTER, MONITORED_BR_PLAYERS):
+    for roster in (CORE_BR_ROSTER, MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS):
         for row in roster:
             if int(row.get("profile_id", 0) or 0) == pid:
                 return normalize_flag_country(row.get("flag_country") or row.get("country"))
@@ -924,13 +752,14 @@ def get_configured_flag_country(profile_id: int) -> str:
 
 
 def get_monitored_br_override(profile_id: int) -> dict[str, Any] | None:
-    """Retorna metadados de `MONITORED_BR_PLAYERS` (alias preferencial, known_aliases, pin_alias, priority_watch, flag_country)."""
+    """Retorna metadados de `MONITORED_BR_PLAYERS` ou `OUTROS_BR_EMIGRADOS` (alias preferencial, known_aliases, pin_alias, priority_watch, flag_country)."""
     pid = int(profile_id or 0)
     if pid <= 0:
         return None
-    for row in MONITORED_BR_PLAYERS:
-        if int(row.get("profile_id", 0) or 0) == pid:
-            return row
+    for roster in (MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS):
+        for row in roster:
+            if int(row.get("profile_id", 0) or 0) == pid:
+                return row
     return None
 
 
@@ -4290,7 +4119,7 @@ class RelicActivityClient:
         """
         now_dt = datetime.fromtimestamp(int(now_ts) if now_ts is not None else int(time.time()), tz=timezone.utc)
         base_day = datetime(now_dt.year, now_dt.month, now_dt.day, tzinfo=timezone.utc)
-        days_clamped = max(1, min(int(days), 30))
+        days_clamped = max(1, min(int(days), 120))
 
         # Os arquivos `matches-{day}.json` são publicados às 06:00 UTC referentes ao dia anterior
         start_offset = 1 if now_dt.hour >= 7 else 2

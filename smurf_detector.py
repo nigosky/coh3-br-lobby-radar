@@ -53,6 +53,7 @@ from steam_presence import (
     EN_MONTH_NUM,
     MANUAL_OTHER_BR_PLAYERS,
     MONITORED_BR_PLAYERS,
+    OUTROS_BR_EMIGRADOS,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
     SteamPresenceClient,
@@ -65,7 +66,8 @@ logger = logging.getLogger("coh3_br.lobby.smurf_detector")
 
 DEFAULT_TOP_N_BR = 50
 DEFAULT_MIN_PROBABILITY_PCT = 45
-DEFAULT_MATCH_DAYS = 30
+DEFAULT_MATCH_DAYS = 90
+MAX_SMURF_MATCH_DAYS = 120
 STEAM_ID64_BASE = 76561197960265728
 
 COHDB_BASE_URL = "https://cohdb.com"
@@ -4298,7 +4300,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Detecção forense sob demanda de contas Smurf do Top 50 brasileiro na Relic API (com APM, Battlegroups, Histórico CoH1/CoH2/CoH3 e Migrações de País)."
     )
-    parser.add_argument("--days", type=int, default=DEFAULT_MATCH_DAYS, help="Dias de Open Data Matches (1..30)")
+    parser.add_argument(
+        "--days",
+        type=int,
+        default=DEFAULT_MATCH_DAYS,
+        help=f"Dias de Open Data Matches (1..{MAX_SMURF_MATCH_DAYS}; padrão: {DEFAULT_MATCH_DAYS})",
+    )
     parser.add_argument("--top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado (padrão: 50)")
     parser.add_argument("--min-prob", type=int, default=DEFAULT_MIN_PROBABILITY_PCT, help="Probabilidade mínima em %% (padrão: 45)")
     parser.add_argument("--include-known", action="store_true", help="Incluir smurfs já catalogadas no players_roster.json")
@@ -4336,9 +4343,10 @@ def main() -> int:
     alias_history_doc = load_alias_history(DEFAULT_ALIAS_HISTORY_PATH)
     prev_top50 = cache.get("top50_br_pids") if isinstance(cache.get("top50_br_pids"), list) else []
 
+    all_curated_rows_cli = list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS) + list(OUTROS_BR_EMIGRADOS)
     roster_pids_cli = {
         int(r.get("profile_id", 0) or 0)
-        for r in (list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS))
+        for r in all_curated_rows_cli
         if int(r.get("profile_id", 0) or 0) > 0
     }
     hist_players_cli = alias_history_doc.get("players") if isinstance(alias_history_doc.get("players"), dict) else {}
@@ -4374,7 +4382,7 @@ def main() -> int:
                     if not (isinstance(hrec_chk, dict) and _is_confirmed_br_hist_rec(hrec_chk, rpid)):
                         continue
                 all_br[rpid] = dict(row)
-    for row in list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS):
+    for row in all_curated_rows_cli:
         pid = int(row.get("profile_id", 0) or 0)
         if pid > 0 and pid not in all_br:
             all_br[pid] = {
@@ -4421,13 +4429,13 @@ def main() -> int:
                 merged["original_alias"] = str(prev["alias"]).strip()
             all_br[pid] = merged
 
-    # Prioriza busca de ELO real para Veteranos, manual_other_br e emigrados (country_migration) sem ELO
+    # Prioriza busca de ELO real para Veteranos, monitorados e emigrados (outros_br_emigrados / country_migration) sem ELO
     migrated_pids = {
         int(rec.get("profile_id", 0) or 0)
         for rec in (alias_history_doc.get("players") or {}).values()
         if isinstance(rec, dict) and isinstance(rec.get("country_migration"), dict)
     }
-    roster_pid_set = {int(r.get("profile_id", 0) or 0) for r in list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS)}
+    roster_pid_set = set(roster_pids_cli)
     need_stats = sorted(
         [pid for pid, row in all_br.items() if int(row.get("max_elo", 0) or 0) <= 0],
         key=lambda p: (0 if (p in roster_pid_set or p in migrated_pids) else 1, -int(all_br[p].get("total_matches", 0) or 0), p),
@@ -4449,7 +4457,7 @@ def main() -> int:
     collector = SmurfTelemetryCollector()
     m_br, m_cand, _ = r_client.discover_br_and_candidates_from_open_data_matches(
         now_ts=now,
-        days=max(1, min(int(args.days), 30)),
+        days=max(1, min(int(args.days), MAX_SMURF_MATCH_DAYS)),
         seed_br_pids=set(all_br.keys()),
         match_observer=collector.observe_matches_payload,
     )

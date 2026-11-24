@@ -74,6 +74,8 @@ def _normalize_section_name(section: str) -> str:
         return "veteranos"
     if sec in ("monitorados", "manual_other_br"):
         return "monitorados"
+    if sec == "outros_br_emigrados":
+        return "outros_br_emigrados"
     raise ValueError(f"Seção inválida: {section}")
 
 
@@ -94,13 +96,16 @@ def load_roster_doc(roster_path: Path = PLAYERS_ROSTER_PATH) -> dict[str, Any]:
         for row in legacy_extra:
             if isinstance(row, dict) and int(row.get("profile_id", 0) or 0) not in seen:
                 parsed["monitorados"].append(row)
+    if "outros_br_emigrados" in parsed and not isinstance(parsed.get("outros_br_emigrados"), list):
+        raise ValueError("Estrutura inválida em players_roster.json ('outros_br_emigrados' deve ser lista).")
     return parsed
 
 
 def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
     """
     Valida rigorosamente `players_roster.json` (incluindo unicidade de IDs, convenção de nomes,
-    consistência de `smurf_of`, `priority_watch` e ausência de rótulos legados `(Principal)`/`(Smurf 1)`).
+    consistência de `smurf_of`, `priority_watch`, seção opcional `outros_br_emigrados`
+    e ausência de rótulos legados `(Principal)`/`(Smurf 1)`).
     Retorna `(total_veteranos_contas, unique_veteranos, total_monitorados)`.
     """
     if not isinstance(doc, dict):
@@ -115,10 +120,13 @@ def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
     else:
         mon_key = "manual_other_br"
         others = doc.get("manual_other_br", [])
+    expats = doc.get("outros_br_emigrados", [])
     if not isinstance(vets, list) or not vets:
         raise ValueError("Lista 'veteranos' deve ser não-vazia.")
     if not isinstance(others, list):
         raise ValueError(f"Lista '{mon_key}' deve ser uma lista.")
+    if not isinstance(expats, list):
+        raise ValueError("Lista 'outros_br_emigrados' deve ser uma lista.")
 
     seen_pids: set[int] = set()
     seen_sids: set[str] = set()
@@ -141,6 +149,10 @@ def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
                 raise ValueError(f"{sec_name}[{idx}] ({pid}) original_alias vazio.")
             if not ctry:
                 raise ValueError(f"{sec_name}[{idx}] ({alias}) country inválido: {entry.get('country')!r}")
+            if sec_name == "outros_br_emigrados" and ctry == "br":
+                raise ValueError(
+                    f"{sec_name}[{idx}] ({alias}) deve conter apenas emigrados com bandeira não-BR (country != 'br')."
+                )
             if "priority_watch" in entry and not isinstance(entry.get("priority_watch"), bool):
                 raise ValueError(f"{sec_name}[{idx}] ({alias}) priority_watch deve ser booleano.")
             if is_legacy_synthetic_alias_label(alias):
@@ -184,6 +196,7 @@ def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
         if target not in vet_pids:
             raise ValueError(f"merged_into_profile_id={target} não existe na lista 'veteranos'.")
     _validate_section(mon_key, others)
+    _validate_section("outros_br_emigrados", expats)
 
     unique_vets = sum(1 for v in vets if not int(v.get("merged_into_profile_id", 0) or 0))
     return len(vets), unique_vets, len(others)
@@ -258,13 +271,17 @@ def upsert_player_in_roster(
     pid = int(resolved["profile_id"])
     sid = str(resolved["steam_id"])
 
-    # Se promover de monitorados para veteranos (ou vice-versa), remove da outra seção sem duplicar
-    other_section = "monitorados" if norm_section == "veteranos" else "veteranos"
-    doc[other_section] = [
-        row
-        for row in doc[other_section]
-        if int(row.get("profile_id", 0) or 0) != pid and str(row.get("steam_id") or "").strip() != sid
-    ]
+    # Se mover entre veteranos, monitorados e outros_br_emigrados, remove das demais seções sem duplicar
+    for other_section in ("veteranos", "monitorados", "outros_br_emigrados"):
+        if other_section == norm_section or not isinstance(doc.get(other_section), list):
+            continue
+        doc[other_section] = [
+            row
+            for row in doc[other_section]
+            if int(row.get("profile_id", 0) or 0) != pid and str(row.get("steam_id") or "").strip() != sid
+        ]
+    if norm_section not in doc or not isinstance(doc.get(norm_section), list):
+        doc[norm_section] = []
 
     clean_smurf_of = strip_unsafe_chars(smurf_of)[:40]
     final_alias = resolved["original_alias"]
@@ -317,7 +334,7 @@ def remove_player_from_roster(roster_path: Path, *, section: str, target: str) -
         raise ValueError(f"Identificador inválido para remoção: '{strip_unsafe_chars(target)[:80]}'.")
 
     doc = load_roster_doc(roster_path)
-    before = list(doc[norm_section])
+    before = list(doc.get(norm_section) or [])
     after = [
         row
         for row in before
