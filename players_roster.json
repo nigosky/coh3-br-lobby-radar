@@ -899,7 +899,13 @@
       "profile_id": 703146,
       "steam_id": "76561198217753836",
       "original_alias": "viperking",
-      "country": "br"
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "viperking",
+        "Manicômio",
+        "Edu"
+      ]
     },
     {
       "profile_id": 110123,
@@ -1616,6 +1622,134 @@
       "known_aliases": [
         "Rodrigo Ragagnin",
         "Rodrigo"
+      ]
+    },
+    {
+      "profile_id": 5882,
+      "steam_id": "76561198034364786",
+      "original_alias": "ElektroStomper",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "ElektroStomper",
+        "Ʊ ElektroStomper ☭",
+        "⛧ ElektroStomper ⛧",
+        "⛧ ElektroStomper ☭"
+      ]
+    },
+    {
+      "profile_id": 2821,
+      "steam_id": "76561198051332729",
+      "original_alias": "Shark",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 2185,
+      "steam_id": "76561197999712702",
+      "original_alias": "BrazilianHunter (Hunter)",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "BrazilianHunter",
+        "Hunter",
+        "BrazilianHunter (Hunter)"
+      ]
+    },
+    {
+      "profile_id": 31992,
+      "steam_id": "76561198060948936",
+      "original_alias": ".:PacMan:.",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        ".:PacMan:.",
+        "PacMan",
+        "Pac Man"
+      ]
+    },
+    {
+      "profile_id": 4005,
+      "steam_id": "76561197999564490",
+      "original_alias": "JuniorLimaa",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "JuniorLimaa",
+        "Noob Lima",
+        "$$$-KING-$$$-NOOB-$$$ (BR)",
+        "Lima Al-Sharif"
+      ]
+    },
+    {
+      "profile_id": 83244,
+      "steam_id": "76561198064709981",
+      "original_alias": "PROMETHEUS",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "PROMETHEUS",
+        "Berserker"
+      ]
+    },
+    {
+      "profile_id": 5128,
+      "steam_id": "76561198047280225",
+      "original_alias": "rafaeldjx",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "rafaeldjx",
+        "[SOCTD] ★ rafaeldjx ★"
+      ]
+    },
+    {
+      "profile_id": 1292305,
+      "steam_id": "76561198121355576",
+      "original_alias": "rafaeldjx42 (Smurf: rafaeldjx)",
+      "smurf_of": "rafaeldjx",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "rafaeldjx42",
+        "rafaeldjx42 (Smurf: rafaeldjx)"
+      ]
+    },
+    {
+      "profile_id": 702745,
+      "steam_id": "76561199239019193",
+      "original_alias": "KSxWOS",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 173761,
+      "steam_id": "76561198873253024",
+      "original_alias": "EUSOU",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "EUSOU",
+        "EU SOU",
+        "EU SOU - I AM"
+      ]
+    },
+    {
+      "profile_id": 1056541,
+      "steam_id": "76561198064149997",
+      "original_alias": "YOUMORREU",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 23250,
+      "steam_id": "76561198028378060",
+      "original_alias": "Nargoth",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "Nargoth",
+        "Nargoth de Bebbanburg"
       ]
     }
   ],
