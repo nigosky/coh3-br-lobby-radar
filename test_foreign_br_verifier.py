@@ -129,12 +129,14 @@ class TestForeignBrVerifier(unittest.TestCase):
             hist_p = root / "alias_history.json"
             reg_p = root / "suspected_foreign_br.json"
 
+            br_test_pid = 920523
+            br_test_sid = "76561198044990523"
             comm_p.write_text(
                 json.dumps(
                     {
                         "players": {
                             "1142621": {"profile_id": 1142621, "steam_id": "76561199152224993", "alias": "Nocturne", "max_elo": 1558},
-                            "20523": {"profile_id": 20523, "steam_id": "76561198044964084", "alias": "Goa Trance Mix", "max_elo": 1081},
+                            str(br_test_pid): {"profile_id": br_test_pid, "steam_id": br_test_sid, "alias": "OutroBR MemeCJK", "max_elo": 1081},
                         },
                         "dormant_players": {},
                     }
@@ -146,10 +148,10 @@ class TestForeignBrVerifier(unittest.TestCase):
                     {
                         "players": {
                             "1142621": {"aliases": [{"alias": "夕绫"}, {"alias": "夕兮"}, {"alias": "Nocturne"}]},
-                            "20523": {
+                            str(br_test_pid): {
                                 "coh2_country": "br",
                                 "coh2_total_matches": 1111,
-                                "aliases": [{"alias": "Fera demais cara"}, {"alias": "东风浩荡进行曲"}, {"alias": "Goa Trance Mix"}],
+                                "aliases": [{"alias": "Fera demais cara"}, {"alias": "东风浩荡进行曲"}, {"alias": "OutroBR MemeCJK"}],
                             },
                         }
                     }
@@ -167,14 +169,14 @@ class TestForeignBrVerifier(unittest.TestCase):
                             self_alias="Nocturne",
                         )
                     return _make_fake_relic_history(
-                        20523,
+                        br_test_pid,
                         utc_hours=[22, 23, 0, 1, 22, 23, 0, 1],
                         ally_profiles=[(79327, "br", "Chacineiro")],
-                        self_alias="Goa Trance Mix",
+                        self_alias="OutroBR MemeCJK",
                     )
 
             def _fake_xml(sid: str) -> tuple[dict[str, Any], str]:
-                if sid == "76561198044964084":
+                if sid == br_test_sid:
                     return {"privacy_state": "public", "is_steam_brazil": True, "location": "Sao Paulo, Brazil"}, ""
                 return {"privacy_state": "public", "is_steam_brazil": False, "location": ""}, ""
 
@@ -195,7 +197,7 @@ class TestForeignBrVerifier(unittest.TestCase):
             loaded = load_suspected_foreign_br_registry(reg_p)
             excluded = get_ranking_excluded_foreign_pids(loaded)
             self.assertIn(1142621, excluded)
-            self.assertNotIn(20523, excluded)
+            self.assertNotIn(br_test_pid, excluded)
 
             # 1 dia depois (antes dos 3 dias): nenhum candidato vencido -> checked_count == 0
             res_early = run_periodic_foreign_br_verification(
