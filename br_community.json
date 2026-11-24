@@ -38758,12 +38758,12 @@
       "alias": "Hy",
       "avatar_url": "https://avatars.steamstatic.com/aa0c5472cfbe2436f785ccc2fba1ac4988eb7d68_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795555764,
+      "last_match_date": 1795564478,
       "last_seen_online_ts": 0,
       "max_elo": 1129,
       "profile_id": 1042107,
       "steam_id": "76561198199845271",
-      "total_matches": 171
+      "total_matches": 172
     },
     "1042204": {
       "alias": "Saker",
@@ -40022,14 +40022,14 @@
       "avatar_url": "https://avatars.steamstatic.com/b2c0f6ee35e24dd0c577dfc3d873ea005e0da8c2_medium.jpg",
       "br_source": "open_data_lb",
       "current_alias": "4 Queijos",
-      "last_match_date": 1795562220,
+      "last_match_date": 1795564215,
       "last_seen_online_ts": 1795562995,
       "max_elo": 1044,
       "profile_id": 1213751,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795458194,
       "steam_id": "76561198163510110",
-      "total_matches": 601
+      "total_matches": 602
     },
     "1213971": {
       "alias": "VFzada",
@@ -40529,7 +40529,7 @@
     },
     "125629": {
       "alias": "Ёна",
-      "avatar_url": "https://avatars.steamstatic.com/56cbd980a405fd68ba57bbd15bb41b4e8345d80f_medium.jpg",
+      "avatar_url": "https://avatars.steamstatic.com/e5e5fbb98265736b55accaaec80e5dfe9d55452c_medium.jpg",
       "br_source": "alias_history",
       "last_match_date": 1794633083,
       "last_seen_ingame_webapi_ts": 1795545985,
@@ -41549,14 +41549,14 @@
       "alias": "[COHBR] King Jong-Un",
       "avatar_url": "https://avatars.steamstatic.com/733927baa20ba952799c47698641c63a03d9cc1f_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795476918,
+      "last_match_date": 1795564221,
       "last_seen_online_ts": 1795562995,
       "max_elo": 1037,
       "profile_id": 1374662,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795474624,
       "steam_id": "76561198187162605",
-      "total_matches": 396
+      "total_matches": 397
     },
     "137848": {
       "alias": "Elvenking",
@@ -44242,7 +44242,7 @@
       "avatar_url": "https://avatars.steamstatic.com/882c36d9f00ca3e2d683d2d97ea956a6550df9f0_medium.jpg",
       "br_source": "open_data_matches",
       "last_match_date": 1794805139,
-      "last_seen_online_ts": 1795561980,
+      "last_seen_online_ts": 1795564494,
       "max_elo": 989,
       "profile_id": 1467000,
       "steam_games_hidden": true,
@@ -47107,7 +47107,7 @@
       "avatar_url": "https://avatars.steamstatic.com/f0d901766dd065fc12ed913ff5867da6e4f57dfd_medium.jpg",
       "br_source": "open_data_lb",
       "last_match_date": 1795325497,
-      "last_seen_online_ts": 1795497907,
+      "last_seen_online_ts": 1795564494,
       "max_elo": 1050,
       "profile_id": 7255,
       "steam_games_hidden": true,
@@ -47295,7 +47295,7 @@
       "alias": "Rudel",
       "avatar_url": "https://avatars.steamstatic.com/227bdf5b522699329118c21d4e7f41215e7828bc_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795559383,
+      "last_match_date": 1795564515,
       "last_seen_online_ts": 1795562995,
       "max_elo": 1250,
       "profile_id": 739986,
@@ -47870,6 +47870,7 @@
     },
     "799127": {
       "alias": "RevoltZzZ",
+      "avatar_url": "https://avatars.steamstatic.com/87925cbe10b71cfe91b5231d4437e8a3f7f0ba85_medium.jpg",
       "br_source": "alias_history",
       "current_alias": "Sniper_Americano",
       "last_match_date": 1794424797,
