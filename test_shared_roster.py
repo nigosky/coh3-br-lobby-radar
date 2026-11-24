@@ -52,7 +52,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         tot_v, uniq_v, tot_o = manage_roster.validate_roster_doc(doc)
         self.assertEqual(tot_v, 46)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
-        self.assertGreaterEqual(tot_o, 29)
+        self.assertGreaterEqual(tot_o, 34)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr e Tracker presentes; Lem22/Generick US e XAPA KENTE CA
         vet_by_pid = {int(r["profile_id"]): r for r in CORE_BR_ROSTER}
@@ -66,6 +66,12 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertEqual(get_configured_flag_country(366826), "us")
         self.assertEqual(get_configured_flag_country(33487), "us")
         self.assertEqual(get_configured_flag_country(212034), "ca")
+        self.assertEqual(get_configured_flag_country(7448), "za")
+        self.assertEqual(get_configured_flag_country(110593), "us")
+        self.assertEqual(get_configured_flag_country(1304336), "us")
+        self.assertEqual(get_configured_flag_country(1168460), "ca")
+        self.assertEqual(get_configured_flag_country(11033), "jp")
+        self.assertEqual(get_configured_flag_country(24963), "sa")
         self.assertTrue(all(STEAM_ID64_VALID_RE.fullmatch(str(r.get("steam_id") or "")) for r in CORE_BR_ROSTER))
         self.assertTrue(all(not r.get("merged_into_profile_id") for r in CORE_BR_ROSTER))
         self.assertTrue(all(not r.get("merged_into_steam_id") for r in CORE_BR_ROSTER))
@@ -106,7 +112,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Outros BR manuais: Generick, Golden Cobra, 5 movidos, 3 General Winter, 2 Alekel, 2 SKOBADARK, seu pai, emigrados + XAPA KENTE (CA)
+        # Outros BR manuais: Generick, Golden Cobra, 5 movidos, 3 General Winter, 2 Alekel, 2 SKOBADARK, seu pai, todos os 20 emigrados 100% confirmados
         oth_by_pid = {int(r["profile_id"]): r for r in MANUAL_OTHER_BR_PLAYERS}
         for other_pid in (
             33487,
@@ -125,12 +131,33 @@ class TestSharedPlayersRoster(unittest.TestCase):
             1297804,
             164152,
             212034,
+            110593,
+            1304336,
+            1168460,
+            11033,
+            24963,
         ):
             self.assertIn(other_pid, oth_by_pid)
             self.assertNotIn(other_pid, vet_by_pid)
         self.assertEqual(oth_by_pid[212034]["original_alias"], "XAPA KENTE")
         self.assertEqual(oth_by_pid[212034]["steam_id"], "76561198207565088")
         self.assertEqual(oth_by_pid[212034].get("flag_country"), "ca")
+        for exp_pid, exp_alias, exp_ctry in (
+            (110593, "Ethan Hunt", "us"),
+            (1304336, "V.I.T.O.X", "us"),
+            (1168460, "Nonô", "ca"),
+            (11033, "Coka", "jp"),
+            (24963, "Eduardo A.", "sa"),
+            (7448, "icewarp", "za"),
+            (91827, "[★General★] Apollo", "au"),
+            (263517, "Angel of Death", "jp"),
+            (29737, "PABLO FLEXCOBAR", "ar"),
+            (999940, "Warmech11", "py"),
+            (76165, "1337", "ee"),
+            (812247, "Texugo", "th"),
+        ):
+            self.assertEqual(oth_by_pid[exp_pid]["original_alias"], exp_alias)
+            self.assertEqual(oth_by_pid[exp_pid].get("flag_country"), exp_ctry)
         self.assertEqual(oth_by_pid[16867]["original_alias"], "Golden Cobra")
         self.assertIn("COHBRAMACHINE", oth_by_pid[16867].get("known_aliases") or [])
         self.assertIn("Nargoth de Bebbanburg", oth_by_pid[23250].get("known_aliases") or [])

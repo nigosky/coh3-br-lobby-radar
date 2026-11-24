@@ -2235,6 +2235,201 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertEqual(rec_main["alias"], "General Winter")
         self.assertNotIn("current_alias", rec_main)
 
+    def test_all_confirmed_expats_render_real_country_flags_and_override_stale_br_cache(self) -> None:
+        from card_renderer import _render_vector_fallback_flag, get_br_flag, get_country_flag
+        from steam_presence import build_lobby_radar_snapshot
+
+        br_px = list(get_br_flag(w=26, h=18).getdata())
+        # Todas as bandeiras de emigrados confirmados devem ser visualmente distintas da bandeira do Brasil!
+        for cc in ("ca", "us", "za", "au", "jp", "ar", "py", "ee", "th", "sa", "cl", "de", "pt", "gb"):
+            fl_im = get_country_flag(cc, w=26, h=18)
+            self.assertEqual(fl_im.size, (26, 18))
+            self.assertNotEqual(list(fl_im.getdata()), br_px, f"Bandeira {cc} não pode cair em fallback BR!")
+            vec_im = _render_vector_fallback_flag(cc, w=26, h=18)
+            self.assertNotEqual(list(vec_im.getdata()), br_px, f"Fallback vetorial {cc} não pode desenhar BR!")
+
+        # XAPA KENTE (CA) e icewarp (ZA) com cache propositalmente contaminado com flag_country='br'
+        # devem ser corrigidos imediatamente a partir de players_roster.json!
+        now = 1_800_000_000
+        xapa_sid = "76561198207565088"
+        ice_sid = "76561198002516537"
+        edu_sid = "76561197987674520"
+        other_rows = [
+            {
+                "profile_id": 212034,
+                "steam_id": xapa_sid,
+                "alias": "XAPA KENTE",
+                "flag_country": "br",  # cache antigo incorreto -> deve virar "ca"!
+                "max_elo": 1329,
+                "total_matches": 3842,
+                "last_match_date": now - 600,
+            },
+            {
+                "profile_id": 7448,
+                "steam_id": ice_sid,
+                "alias": "icewarp",
+                "flag_country": "br",  # cache antigo incorreto -> deve virar "za"!
+                "max_elo": 1104,
+                "total_matches": 4168,
+                "last_match_date": now - 1200,
+            },
+            {
+                "profile_id": 24963,
+                "steam_id": edu_sid,
+                "alias": "Eduardo A.",
+                "flag_country": "br",  # cache antigo incorreto -> deve virar "sa"!
+                "max_elo": 1100,
+                "total_matches": 100,
+                "last_match_date": now - 1800,
+            },
+        ]
+        pres = {
+            xapa_sid: {"steam_id": xapa_sid, "ok": True, "is_in_coh3": True, "is_online_steam": True, "online_state": "in-game"},
+            ice_sid: {"steam_id": ice_sid, "ok": True, "is_in_coh3": False, "is_online_steam": True, "online_state": "online"},
+            edu_sid: {"steam_id": edu_sid, "ok": True, "is_in_coh3": False, "is_online_steam": True, "online_state": "online"},
+        }
+        snap = build_lobby_radar_snapshot(
+            [],
+            {},
+            now_ts=now,
+            other_br_players=other_rows,
+            other_presence_by_steam=pres,
+        )
+        self.assertEqual(snap["outros_brasileiros"]["in_coh3"][0]["alias"], "XAPA KENTE")
+        self.assertEqual(snap["outros_brasileiros"]["in_coh3"][0]["flag_country"], "ca")
+        self.assertFalse(snap["outros_brasileiros"]["in_coh3"][0]["suspected_foreign_flag"])
+        online_by_alias = {p["alias"]: p for p in snap["outros_brasileiros"]["online_steam"]}
+        self.assertEqual(online_by_alias["icewarp"]["flag_country"], "za")
+        self.assertEqual(online_by_alias["Eduardo A."]["flag_country"], "sa")
+
+        # Card PNG: 1ª linha 1-col de Outros BR (XAPA KENTE) exibe vermelho da bandeira do Canadá e ZERO verde da bandeira do Brasil!
+        _, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        with Image.open(io.BytesIO(oth_png)) as im:
+            crop_px = list(im.crop((82, 136, 108, 158)).getdata())
+            self.assertTrue(any(r > 150 and g < 70 and b < 70 for r, g, b in crop_px), "Esperava vermelho da bandeira do Canadá em XAPA KENTE.")
+            self.assertFalse(any(g > 130 and r < 50 and b < 90 for r, g, b in crop_px), "XAPA KENTE não pode renderizar verde da bandeira do Brasil.")
+
+        # Links Discord exibem 🇨🇦, 🇿🇦 e 🇸🇦!
+        links_payload = build_lobby_radar_links_payload(snap)
+        oth_desc = links_payload["embeds"][1]["description"]
+        self.assertIn("🇨🇦", oth_desc)
+        self.assertIn("🇿🇦", oth_desc)
+        self.assertIn("🇸🇦", oth_desc)
+
+    def test_suspected_foreign_br_flag_signals_nocturne_and_similar_without_false_positives(self) -> None:
+        from steam_presence import (
+            build_lobby_radar_snapshot,
+            compute_lobby_state_digest,
+            detect_suspected_foreign_br_flag,
+        )
+
+        # 1. Casos positivos reais (Nocturne, 北方军港, GDI, 你说是，那便是吧, localização Steam China)
+        self.assertTrue(
+            detect_suspected_foreign_br_flag(
+                profile_id=1142621,
+                flag_country="br",
+                current_aliases=["Nocturne"],
+                historical_aliases=["夕绫", "夕兮", "夕云XL", "超级无敌可爱的果木香风味烤鸭比萨", "Nocturne"],
+            )[0]
+        )
+        self.assertTrue(
+            detect_suspected_foreign_br_flag(
+                profile_id=3984,
+                flag_country="br",
+                current_aliases=["北方军港"],
+                historical_aliases=["克鲁杰7分钟800人力就1v2", "北方军港"],
+                coh2_country="cn",
+                coh2_matches=3911,
+            )[0]
+        )
+        self.assertTrue(
+            detect_suspected_foreign_br_flag(
+                profile_id=1159891,
+                flag_country="br",
+                current_aliases=["GDI"],
+                historical_aliases=["Protoss", "GDI"],
+                coh2_country="cn",
+                coh2_matches=43,
+            )[0]
+        )
+        self.assertTrue(
+            detect_suspected_foreign_br_flag(
+                profile_id=811294,
+                flag_country="br",
+                current_aliases=["你说是，那便是吧"],
+                coh2_country="br",
+                coh2_matches=75,
+            )[0]
+        )
+
+        # 2. ZERO falsos positivos em brasileiros reais (decorativos 彡/ツ, faux-Cyrillic, Steam Brazil, CoH2 BR, Veteranos, Emigrados)
+        for kwargs in (
+            # Veterano nunca sinalizado
+            {"profile_id": 79327, "flag_country": "br", "current_aliases": ["夕绫夕兮夕云"], "historical_aliases": ["夕绫", "夕兮"]},
+            # Emigrado confirmado (manual_other_br) nunca sinalizado
+            {"profile_id": 212034, "flag_country": "ca", "current_aliases": ["XAPA KENTE"]},
+            # Brasileiro com localização Steam Brasil + nick em russo (Московский метро)
+            {
+                "profile_id": 970468,
+                "flag_country": "br",
+                "current_aliases": ["Московский метро"],
+                "steam_presences": [{"is_steam_brazil": True, "location": "Cuiaba, Mato Grosso, Brazil"}],
+            },
+            # Brasileiro com caracteres decorativos 彡 / ツ / ャ e leetspeak cirílico (CΛЯИICΣIЯӨ)
+            {"profile_id": 1279100, "flag_country": "br", "current_aliases": ["彡 Tiagod 彡"], "historical_aliases": ["彡 Tiagod 彡"]},
+            {"profile_id": 40833, "flag_country": "br", "current_aliases": ["Tokai Teio"], "historical_aliases": ["GOTEツ", "Cabra"]},
+            {"profile_id": 1453831, "flag_country": "br", "current_aliases": ["CΛЯИICΣIЯӨ"]},
+            # Brasileiro fã soviético com histórico CoH2 BR (Ёна / Товарищ Mérlin)
+            {"profile_id": 198711, "flag_country": "br", "current_aliases": ["Товарищ Mérlin"], "coh2_country": "br", "coh2_matches": 634},
+            # Brasileiro Rafael Caldas com apenas 3 kanji isolados
+            {"profile_id": 1010793, "flag_country": "br", "current_aliases": ["拉斐爾"], "historical_aliases": ["Caldas03", "Rafle", "拉斐爾"]},
+        ):
+            flagged, reason = detect_suspected_foreign_br_flag(**kwargs)  # type: ignore[arg-type]
+            self.assertFalse(flagged, f"Falso positivo para {kwargs['current_aliases']} (motivo={reason})")
+
+        # 3. Fluxo ponta a ponta: snapshot -> card PNG -> Discord Links -> digest
+        now = 1_800_000_000
+        noc_sid = "76561199152224993"
+        br_sid = "76561198000970468"
+        other_rows = [
+            {"profile_id": 1142621, "steam_id": noc_sid, "alias": "Nocturne", "max_elo": 1558, "total_matches": 406, "last_match_date": now - 900},
+            {"profile_id": 970468, "steam_id": br_sid, "alias": "Московский метро", "max_elo": 1179, "total_matches": 180, "last_match_date": now - 900},
+        ]
+        pres = {
+            noc_sid: {"steam_id": noc_sid, "ok": True, "is_in_coh3": True, "is_online_steam": True, "online_state": "in-game"},
+            br_sid: {
+                "steam_id": br_sid,
+                "ok": True,
+                "is_in_coh3": False,
+                "is_online_steam": True,
+                "online_state": "online",
+                "is_steam_brazil": True,
+                "location": "Cuiaba, Mato Grosso, Brazil",
+            },
+        }
+        hist_map = {
+            "1142621": {"aliases": [{"alias": "夕绫"}, {"alias": "夕兮"}, {"alias": "夕云XL"}, {"alias": "Nocturne"}]},
+            "970468": {"aliases": [{"alias": "LutsBloom"}, {"alias": "Московский метро"}]},
+        }
+        snap_flagged = build_lobby_radar_snapshot(
+            [], {}, now_ts=now, other_br_players=other_rows, other_presence_by_steam=pres, alias_history_by_pid=hist_map
+        )
+        snap_plain = build_lobby_radar_snapshot(
+            [], {}, now_ts=now, other_br_players=other_rows, other_presence_by_steam=pres, alias_history_by_pid={}
+        )
+        self.assertTrue(snap_flagged["outros_brasileiros"]["in_coh3"][0]["suspected_foreign_flag"])
+        self.assertFalse(snap_flagged["outros_brasileiros"]["online_steam"][0]["suspected_foreign_flag"])
+        self.assertNotEqual(compute_lobby_state_digest(snap_flagged), compute_lobby_state_digest(snap_plain))
+
+        links = build_lobby_radar_links_payload(snap_flagged)
+        oth_desc = links["embeds"][1]["description"]
+        self.assertIn("Nocturne", oth_desc)
+        self.assertIn("possível outra nacionalidade", oth_desc)
+        self.assertNotIn("Московский метро** ↗](https://steamcommunity.com/profiles/76561198000970468) 🌐", oth_desc)
+
+        _, oth_png = render_lobby_radar_cards_png(snap_flagged, SteamAvatarProvider(allow_network=False))
+        self.assertTrue(oth_png.startswith(b"\x89PNG\r\n\x1a\n"))
+
 
 if __name__ == "__main__":
     unittest.main()

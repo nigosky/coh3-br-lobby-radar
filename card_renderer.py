@@ -36,7 +36,18 @@ logger = logging.getLogger("coh3_br.lobby.renderer")
 
 BASE_DIR = Path(__file__).resolve().parent
 VETERANOS_BADGE_PATH = BASE_DIR / "assets" / "discord_veteranos_patente.png"
+FLAGS_DIR = BASE_DIR / "assets" / "flags"
 BRT_TZ = timezone(timedelta(hours=-3))
+
+SAFE_FLAG_CODE_RE = re.compile(r"^[a-z]{2}$")
+MAX_FLAG_ASSET_BYTES = 65_536  # 64 KB
+FLAG_CODE_ALIASES: dict[str, str] = {
+    "usa": "us",
+    "eua": "us",
+    "bra": "br",
+    "uk": "gb",
+    "can": "ca",
+}
 
 ALLOWED_STEAM_AVATAR_HOSTS: frozenset[str] = frozenset(
     {
@@ -58,6 +69,7 @@ NEEDS_DEJAVU_RE = re.compile(r"[^\u0000-\u024f]")
 _NO_REDIRECT_OPENER = build_no_redirect_https_opener()
 _FONT_CACHE: dict[tuple[str, int], ImageFont.FreeTypeFont | ImageFont.ImageFont] = {}
 _VETERANOS_BADGE_CACHE: dict[int, Image.Image] = {}
+_FLAG_BASE_CACHE: dict[str, Image.Image | None] = {}
 _FLAG_CACHE: dict[tuple[str, int, int], Image.Image] = {}
 
 FONT_CANDIDATES: dict[str, list[str]] = {
@@ -253,12 +265,155 @@ def get_us_flag(w: int = 20, h: int = 14) -> Image.Image:
     return out
 
 
+def _load_flag_asset(code: str) -> Image.Image | None:
+    """Carrega bandeira PNG local oficial (48x36) de assets/flags/<cc>.png com validação segura."""
+    if not SAFE_FLAG_CODE_RE.fullmatch(code):
+        return None
+    if code in _FLAG_BASE_CACHE:
+        return _FLAG_BASE_CACHE[code]
+
+    png_path = FLAGS_DIR / f"{code}.png"
+    base: Image.Image | None = None
+    try:
+        flags_root = FLAGS_DIR.resolve()
+        if not png_path.is_symlink() and png_path.is_file():
+            resolved = png_path.resolve()
+            if resolved.parent == flags_root and resolved.stat().st_size <= MAX_FLAG_ASSET_BYTES:
+                with Image.open(resolved, formats=["PNG"]) as im:
+                    im.load()
+                    base = im.convert("RGBA")
+    except Exception:
+        base = None
+
+    _FLAG_BASE_CACHE[code] = base
+    return base
+
+
+def _render_vector_fallback_flag(code: str, w: int, h: int) -> Image.Image:
+    """Fallback vetorial nítido caso assets/flags/<cc>.png esteja indisponível (jamais desenha bandeira BR para código estrangeiro)."""
+    sw, sh = w * 4, h * 4
+    im = Image.new("RGBA", (sw, sh), (45, 54, 70, 255))
+    d = ImageDraw.Draw(im)
+
+    if code == "ca":
+        side = int(round(sw * 0.25))
+        red = (216, 6, 33, 255)
+        d.rectangle((0, 0, sw - 1, sh - 1), fill=(252, 252, 252, 255))
+        d.rectangle((0, 0, side, sh - 1), fill=red)
+        d.rectangle((sw - 1 - side, 0, sw - 1, sh - 1), fill=red)
+        cx, cy = sw // 2, sh // 2
+        d.polygon(
+            [
+                (cx, int(sh * 0.16)),
+                (int(sw * 0.56), int(sh * 0.42)),
+                (int(sw * 0.68), int(sh * 0.40)),
+                (int(sw * 0.60), int(sh * 0.58)),
+                (int(sw * 0.64), int(sh * 0.68)),
+                (cx + 2, int(sh * 0.66)),
+                (cx + 2, int(sh * 0.84)),
+                (cx - 2, int(sh * 0.84)),
+                (cx - 2, int(sh * 0.66)),
+                (int(sw * 0.36), int(sh * 0.68)),
+                (int(sw * 0.40), int(sh * 0.58)),
+                (int(sw * 0.32), int(sh * 0.40)),
+                (int(sw * 0.44), int(sh * 0.42)),
+            ],
+            fill=red,
+        )
+    elif code == "jp":
+        d.rectangle((0, 0, sw - 1, sh - 1), fill=(252, 252, 252, 255))
+        r = int(round(sh * 0.30))
+        d.ellipse((sw // 2 - r, sh // 2 - r, sw // 2 + r, sh // 2 + r), fill=(188, 0, 45, 255))
+    elif code == "za":
+        d.rectangle((0, 0, sw - 1, sh // 2), fill=(224, 60, 49, 255))
+        d.rectangle((0, sh // 2, sw - 1, sh - 1), fill=(0, 20, 137, 255))
+        d.rectangle((0, int(sh * 0.36), sw - 1, int(sh * 0.64)), fill=(255, 255, 255, 255))
+        d.polygon([(0, 0), (int(sw * 0.46), sh // 2), (0, sh - 1)], fill=(0, 119, 73, 255))
+        d.rectangle((0, int(sh * 0.41), sw - 1, int(sh * 0.59)), fill=(0, 119, 73, 255))
+        d.polygon([(0, int(sh * 0.16)), (int(sw * 0.28), sh // 2), (0, int(sh * 0.84))], fill=(255, 184, 28, 255))
+        d.polygon([(0, int(sh * 0.24)), (int(sw * 0.21), sh // 2), (0, int(sh * 0.76))], fill=(18, 18, 18, 255))
+    elif code in ("au", "nz"):
+        d.rectangle((0, 0, sw - 1, sh - 1), fill=(0, 0, 139, 255))
+        d.rectangle((0, 0, sw // 2, sh // 2), fill=(1, 33, 105, 255))
+        d.line([(0, sh // 4), (sw // 2, sh // 4)], fill=(255, 255, 255, 255), width=6)
+        d.line([(sw // 4, 0), (sw // 4, sh // 2)], fill=(255, 255, 255, 255), width=6)
+        d.line([(0, sh // 4), (sw // 2, sh // 4)], fill=(200, 16, 46, 255), width=3)
+        d.line([(sw // 4, 0), (sw // 4, sh // 2)], fill=(200, 16, 46, 255), width=3)
+        for sx, sy in ((int(sw * 0.72), int(sh * 0.32)), (int(sw * 0.84), int(sh * 0.58)), (int(sw * 0.64), int(sh * 0.72))):
+            d.ellipse((sx - 3, sy - 3, sx + 3, sy + 3), fill=(255, 255, 255, 255))
+    elif code == "ar":
+        for i, col in enumerate(((116, 172, 223, 255), (255, 255, 255, 255), (116, 172, 223, 255))):
+            d.rectangle((0, int(i * sh / 3), sw - 1, int((i + 1) * sh / 3)), fill=col)
+        r = max(3, sh // 9)
+        d.ellipse((sw // 2 - r, sh // 2 - r, sw // 2 + r, sh // 2 + r), fill=(246, 180, 14, 255))
+    elif code == "py":
+        for i, col in enumerate(((213, 43, 30, 255), (255, 255, 255, 255), (0, 56, 168, 255))):
+            d.rectangle((0, int(i * sh / 3), sw - 1, int((i + 1) * sh / 3)), fill=col)
+    elif code == "ee":
+        for i, col in enumerate(((0, 114, 206, 255), (18, 18, 18, 255), (255, 255, 255, 255))):
+            d.rectangle((0, int(i * sh / 3), sw - 1, int((i + 1) * sh / 3)), fill=col)
+    elif code == "th":
+        bands = [
+            (0.0, 1 / 6, (165, 25, 49, 255)),
+            (1 / 6, 2 / 6, (244, 245, 248, 255)),
+            (2 / 6, 4 / 6, (45, 42, 74, 255)),
+            (4 / 6, 5 / 6, (244, 245, 248, 255)),
+            (5 / 6, 1.0, (165, 25, 49, 255)),
+        ]
+        for y0, y1, col in bands:
+            d.rectangle((0, int(y0 * sh), sw - 1, int(y1 * sh)), fill=col)
+    elif code == "sa":
+        d.rectangle((0, 0, sw - 1, sh - 1), fill=(0, 108, 53, 255))
+        d.rectangle((int(sw * 0.22), int(sh * 0.42), int(sw * 0.78), int(sh * 0.54)), fill=(255, 255, 255, 255))
+        d.rectangle((int(sw * 0.25), int(sh * 0.64), int(sw * 0.75), int(sh * 0.70)), fill=(255, 255, 255, 255))
+    elif code == "cl":
+        d.rectangle((0, 0, sw - 1, sh // 2), fill=(255, 255, 255, 255))
+        d.rectangle((0, sh // 2, sw - 1, sh - 1), fill=(213, 43, 30, 255))
+        d.rectangle((0, 0, sw // 3, sh // 2), fill=(0, 57, 166, 255))
+    elif code == "de":
+        for i, col in enumerate(((18, 18, 18, 255), (221, 0, 0, 255), (255, 206, 0, 255))):
+            d.rectangle((0, int(i * sh / 3), sw - 1, int((i + 1) * sh / 3)), fill=col)
+    elif code == "pt":
+        d.rectangle((0, 0, int(sw * 0.40), sh - 1), fill=(0, 102, 0, 255))
+        d.rectangle((int(sw * 0.40), 0, sw - 1, sh - 1), fill=(255, 0, 0, 255))
+        r = max(4, sh // 5)
+        d.ellipse((int(sw * 0.40) - r, sh // 2 - r, int(sw * 0.40) + r, sh // 2 + r), fill=(255, 210, 0, 255))
+    else:
+        lbl = code.upper()[:2]
+        fnt = pick_font(lbl, size=max(10, int(sh * 0.55)), bold=True)
+        tw = text_width(d, lbl, fnt)
+        d.text(((sw - tw) / 2, sh * 0.18), lbl, font=fnt, fill=(226, 232, 240, 255))
+
+    d.rectangle((0, 0, sw - 1, sh - 1), outline=(0, 0, 0, 110), width=1)
+    return im.resize((w, h), Image.Resampling.LANCZOS)
+
+
 def get_country_flag(country_code: Any = "br", w: int = 20, h: int = 14) -> Image.Image:
-    """Retorna a bandeira correspondente ao código ISO-2 do jogador (`us` para residentes nos EUA; padrão `br`)."""
-    code = str(country_code or "br").strip().lower()
-    if code in ("us", "usa", "eua"):
+    """Retorna a bandeira oficial correspondente ao código ISO-2 do jogador (`br`, `us`, `ca`, `za`, `au`, `jp`, `ar`, `py`, `ee`, `th`, `sa`, etc.)."""
+    raw = str(country_code or "br").strip().lower()
+    code = FLAG_CODE_ALIASES.get(raw, raw)
+    if not code or code == "br":
+        return get_br_flag(w=w, h=h)
+    if code == "us":
         return get_us_flag(w=w, h=h)
-    return get_br_flag(w=w, h=h)
+    if not SAFE_FLAG_CODE_RE.fullmatch(code):
+        return get_br_flag(w=w, h=h)
+
+    key = (code, w, h)
+    cached = _FLAG_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    asset = _load_flag_asset(code)
+    if asset is not None:
+        out = asset.resize((w, h), Image.Resampling.LANCZOS)
+        bd = ImageDraw.Draw(out)
+        bd.rectangle((0, 0, w - 1, h - 1), outline=(0, 0, 0, 110), width=1)
+    else:
+        out = _render_vector_fallback_flag(code, w=w, h=h)
+
+    _FLAG_CACHE[key] = out
+    return out
 
 
 def get_veteranos_badge_icon(size: int = 20) -> Image.Image:
@@ -399,6 +554,8 @@ def _split_prominent_and_low(
 
 def _format_low_player_token(pl: dict[str, Any], *, show_age_min: bool = False) -> str:
     alias = strip_unsafe_chars(str(pl.get("alias") or "BR"))[:48] or "BR"
+    if pl.get("suspected_foreign_flag"):
+        alias = f"{alias} [EXT?]"
     elo = int(pl.get("max_elo", 0) or 0)
     parts: list[str] = []
     if elo > 0:
@@ -505,6 +662,34 @@ def _resolve_presence_badge(pl: dict[str, Any]) -> tuple[str, tuple[int, int, in
     return None
 
 
+def _resolve_foreign_flag_badge(
+    pl: dict[str, Any],
+    *,
+    is_veteranos: bool = False,
+) -> tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]] | None:
+    """Retorna selo âmbar compacto `EXT?` quando a conta tem flag BR mas fortes indícios de outra nacionalidade."""
+    if is_veteranos or not bool(pl.get("suspected_foreign_flag")):
+        return None
+    return ("EXT?", (68, 38, 16, 255), (251, 146, 60, 235), (253, 186, 116, 255))
+
+
+def _resolve_player_badges(
+    pl: dict[str, Any],
+    *,
+    is_veteranos: bool = False,
+    include_presence: bool = True,
+) -> list[tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]]]:
+    badges: list[tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]]] = []
+    fb = _resolve_foreign_flag_badge(pl, is_veteranos=is_veteranos)
+    if fb is not None:
+        badges.append(fb)
+    if include_presence:
+        pb = _resolve_presence_badge(pl)
+        if pb is not None:
+            badges.append(pb)
+    return badges
+
+
 def _measure_status_pill_width(draw: ImageDraw.ImageDraw, text: str, font_size: int = 13) -> int:
     fnt = pick_font(text, size=font_size, bold=True)
     return int(text_width(draw, text, fnt)) + 14
@@ -521,7 +706,7 @@ def _draw_status_pill(
     text_color: tuple[int, int, int, int],
     font_size: int = 13,
 ) -> int:
-    """Desenha selo compacto de status Steam (`zZz` ou `OCUPADO`) alinhado à esquerda e retorna a largura."""
+    """Desenha selo compacto de status Steam (`zZz`, `OCUPADO` ou `EXT?`) alinhado à esquerda e retorna a largura."""
     fnt = pick_font(text, size=font_size, bold=True)
     tw = int(text_width(draw, text, fnt))
     pad_x = 7
@@ -546,7 +731,7 @@ def _draw_presence_badge_pill(
     badge: tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]],
     font_size: int = 13,
 ) -> int:
-    """Desenha um badge retornado por `_resolve_presence_badge` sem repetir o desempacotamento da tupla."""
+    """Desenha um badge retornado por `_resolve_presence_badge`/`_resolve_foreign_flag_badge` sem repetir o desempacotamento."""
     return _draw_status_pill(
         draw,
         x=x,
@@ -838,8 +1023,8 @@ def _draw_category_block(
                                 draw.text((cx_limit - ew, ry + 9), elo_tag, font=ef, fill=(226, 232, 240, 255))
 
                         name_x = cx0 + 78
-                        pres_badge = _resolve_presence_badge(pl)
-                        pill_reserve = (_measure_status_pill_width(draw, pres_badge[0], font_size=13) + 6) if pres_badge else 0
+                        row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=True)
+                        pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=13) + 6 for b in row_badges)
                         badge_pad = (26 if is_veteranos else 8) + pill_reserve
                         disp_alias, a_fnt, a_dy = fit_alias_to_px(
                             draw,
@@ -854,8 +1039,9 @@ def _draw_category_block(
                         if is_veteranos:
                             img.paste(vet_xs, (next_x, ry + 8), vet_xs)
                             next_x += 24
-                        if pres_badge:
-                            _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 7, badge=pres_badge, font_size=13)
+                        for badge in row_badges:
+                            pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 7, badge=badge, font_size=13)
+                            next_x += pw + 6
 
                         note_raw = str(pl.get("status_note") or "No CoH3 agora")
                         st_disp, st_fnt = truncate_to_px(
@@ -917,8 +1103,8 @@ def _draw_category_block(
                             elo_x = int(note_x - 24 - ew)
                             draw.text((elo_x, y + 19), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
 
-                        pres_badge = _resolve_presence_badge(pl)
-                        pill_reserve = (_measure_status_pill_width(draw, pres_badge[0], font_size=14) + 10) if pres_badge else 0
+                        row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=True)
+                        pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=14) + 10 for b in row_badges)
                         badge_pad = (34 if is_veteranos else 10) + pill_reserve
                         max_alias_px = max(110, int(elo_x - 118 - badge_pad))
                         alias_sz = 23 if (is_veteranos or is_high) else 21
@@ -935,8 +1121,9 @@ def _draw_category_block(
                         if is_veteranos:
                             img.paste(vet_sm, (next_x, y + 18), vet_sm)
                             next_x += 29
-                        if pres_badge:
-                            _draw_presence_badge_pill(draw, x=next_x + 2, top_y=y + 18, badge=pres_badge, font_size=14)
+                        for badge in row_badges:
+                            pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=y + 18, badge=badge, font_size=14)
+                            next_x += pw + 8
 
                         y += coh3_row_h
 
@@ -1071,8 +1258,8 @@ def _draw_category_block(
                             draw.text((cx_limit - elo_w, ry + 9), elo_tag, font=ef, fill=(203, 213, 225, 255))
 
                     name_x = cx0 + 76
-                    pres_badge = _resolve_presence_badge(pl)
-                    pill_reserve = (_measure_status_pill_width(draw, pres_badge[0], font_size=13) + 6) if pres_badge else 0
+                    row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=True)
+                    pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=13) + 6 for b in row_badges)
                     badge_pad = (26 if is_veteranos else 8) + pill_reserve
                     max_nm_px = max(80, (cx_limit - elo_w - 10) - name_x - badge_pad)
                     disp_alias, a_fnt, a_dy = fit_alias_to_px(
@@ -1097,8 +1284,9 @@ def _draw_category_block(
                     if is_veteranos:
                         img.paste(vet_xs, (next_x, ry + 8), vet_xs)
                         next_x += 24
-                    if pres_badge:
-                        _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 7, badge=pres_badge, font_size=13)
+                    for badge in row_badges:
+                        pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 7, badge=badge, font_size=13)
+                        next_x += pw + 6
 
                     rec_tag = _format_coh3_recency_short(pl) if not is_veteranos else ""
                     if has_other:
@@ -1222,7 +1410,9 @@ def _draw_category_block(
                             draw.text((cx_limit - ew, ry + 8), elo_tag, font=ef, fill=(226, 232, 240, 255))
 
                     name_x = cx0 + 74
-                    badge_pad = 24 if is_veteranos else 8
+                    row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=False)
+                    pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=12) + 6 for b in row_badges)
+                    badge_pad = (24 if is_veteranos else 8) + pill_reserve
                     disp_alias, a_fnt, a_dy = fit_alias_to_px(
                         draw,
                         str(pl.get("alias") or ""),
@@ -1231,8 +1421,13 @@ def _draw_category_block(
                         bold=True,
                     )
                     draw.text((name_x, ry + 5 + a_dy), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
+                    next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
                     if is_veteranos:
-                        img.paste(vet_xs, (int(name_x + text_width(draw, disp_alias, a_fnt) + 5), ry + 6), vet_xs)
+                        img.paste(vet_xs, (next_x, ry + 6), vet_xs)
+                        next_x += 24
+                    for badge in row_badges:
+                        pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 6, badge=badge, font_size=12)
+                        next_x += pw + 6
                     note_r = str(pl.get("status_note") or "Partida recente na Relic")
                     nd, nf = truncate_to_px(draw, note_r, max_px=max(90, cx_limit - (cx0 + 46)), size=max(14, sub_2col_size - 1), bold=False)
                     draw.text((cx0 + 46, ry + 31), nd, font=nf, fill=(253, 230, 138, 255))
@@ -1280,7 +1475,9 @@ def _draw_category_block(
                             draw.text((elo_x, y + 17), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
                             right_limit_x = elo_x
 
-                    badge_pad = 34 if is_veteranos else 10
+                    row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=False)
+                    pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=13) + 8 for b in row_badges)
+                    badge_pad = (34 if is_veteranos else 10) + pill_reserve
                     disp_alias, a_fnt, a_dy = fit_alias_to_px(
                         draw,
                         str(pl.get("alias") or ""),
@@ -1289,8 +1486,13 @@ def _draw_category_block(
                         bold=True,
                     )
                     draw.text((112, y + 15 + a_dy), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
+                    next_x = int(112 + text_width(draw, disp_alias, a_fnt) + 7)
                     if is_veteranos:
-                        img.paste(vet_sm, (int(112 + text_width(draw, disp_alias, a_fnt) + 7), y + 16), vet_sm)
+                        img.paste(vet_sm, (next_x, y + 16), vet_sm)
+                        next_x += 29
+                    for badge in row_badges:
+                        pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=y + 16, badge=badge, font_size=13)
+                        next_x += pw + 8
                     y += recent_row_h
                 draw.rectangle((rail_w, y, width, y + 8), fill=(22, 20, 16, 255))
                 y += 8
@@ -1532,9 +1734,14 @@ def _render_single_category_card_png(
         foot_txt = f"Veteranos: todos os {total_cat} monitorados exibidos sem filtro  •  Links Steam abaixo"
     else:
         cat_count_lbl = f" ({total_cat})" if total_cat > 0 else ""
+        has_any_foreign = any(
+            bool(p.get("suspected_foreign_flag"))
+            for p in (bucket["in_coh3"] + bucket["online_steam"] + bucket["recent_relic"])
+        )
+        foreign_leg = "  •  EXT? possível outra nac." if has_any_foreign else ""
         foot_txt = (
             f"Somente ativos no CoH3 nos últimos {active_days} dias{cat_count_lbl}"
-            "  •  ★ ELO alto + ativos  •  Links Steam abaixo"
+            f"  •  ★ ELO alto + ativos{foreign_leg}  •  Links Steam abaixo"
         )
     f_fnt = pick_font(foot_txt, size=15, bold=False)
     if text_width(draw, foot_txt, f_fnt) > (width - 52):

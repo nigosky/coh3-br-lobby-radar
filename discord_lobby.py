@@ -164,15 +164,24 @@ def _append_vertical_section(
 
 
 def _format_player_flag_badge(player: dict[str, Any]) -> str:
-    """Retorna emoji de bandeira (ex.: ' 🇺🇸') apenas para brasileiros residentes no exterior (flag_country != 'br')."""
+    """Retorna emoji de bandeira (ex.: ' 🇺🇸', ' 🇨🇦') apenas para brasileiros residentes no exterior (flag_country != 'br')."""
     code = str(player.get("flag_country") or "").strip().lower()
     if code in ("usa", "eua"):
         code = "us"
+    elif code == "can":
+        code = "ca"
     if not code or code == "br" or len(code) != 2 or not code.isascii() or not code.isalpha():
         return ""
-    # Converte código ISO-2 ASCII em regional indicator symbols (ex.: 'us' -> '🇺🇸')
+    # Converte código ISO-2 ASCII em regional indicator symbols (ex.: 'ca' -> '🇨🇦')
     flag_emoji = "".join(chr(0x1F1E6 + (ord(ch) - ord("a"))) for ch in code)
     return f" {flag_emoji}"
+
+
+def _format_suspected_foreign_badge(player: dict[str, Any], *, is_veteranos: bool = False, compact: bool = False) -> str:
+    """Sinaliza discretamente contas com flag BR e fortes indícios de outra nacionalidade (ex.: Nocturne)."""
+    if is_veteranos or not bool(player.get("suspected_foreign_flag")):
+        return ""
+    return " 🌐" if compact else " 🌐 *(possível outra nacionalidade)*"
 
 
 def _resolve_discord_display_alias(player: dict[str, Any], *, max_len: int = 48) -> str:
@@ -246,6 +255,7 @@ def _format_category_vertical_description(
             for pl in prom_coh3[:coh3_cap]:
                 link_txt = _format_discord_player_link(pl, bold=True, max_len=48)
                 flag_tag = _format_player_flag_badge(pl)
+                foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos)
                 age_m = pl.get("last_age_min")
                 tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
                 elo_val = int(pl.get("max_elo", 0) or 0)
@@ -263,7 +273,7 @@ def _format_category_vertical_description(
                         rec_tag = f" *(via Relic há {max(1, int(age_m))}m)*"
                     else:
                         rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
-                    coh3_lines.append(f"• {star}🎮 {link_txt}{flag_tag}{elo_txt}{rec_tag}{status_extra}")
+                    coh3_lines.append(f"• {star}🎮 {link_txt}{flag_tag}{foreign_tag}{elo_txt}{rec_tag}{status_extra}")
                 else:
                     if age_m is not None and int(age_m) <= 15:
                         tag = f" *(saiu de partida há {max(1, int(age_m))}m)*"
@@ -304,6 +314,7 @@ def _format_category_vertical_description(
         on_lines: list[str] = []
         for pl in free_online[:free_cap]:
             flag_tag = _format_player_flag_badge(pl)
+            foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos)
             rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
             if not is_veteranos:
                 tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
@@ -311,11 +322,11 @@ def _format_category_vertical_description(
                 if tier == "high":
                     link_txt = _format_discord_player_link(pl, bold=True, max_len=48)
                     elo_txt = f" — **{elo_val} ELO**" if elo_val > 0 else ""
-                    on_lines.append(f"• ⭐ {link_txt}{flag_tag}{elo_txt}{rec_tag}")
+                    on_lines.append(f"• ⭐ {link_txt}{flag_tag}{foreign_tag}{elo_txt}{rec_tag}")
                 else:
                     link_txt = _format_discord_player_link(pl, bold=False, max_len=48)
                     elo_txt = f" — {elo_val} ELO" if elo_val > 0 else ""
-                    on_lines.append(f"• {link_txt}{flag_tag}{elo_txt}{rec_tag}")
+                    on_lines.append(f"• {link_txt}{flag_tag}{foreign_tag}{elo_txt}{rec_tag}")
             else:
                 link_txt = _format_discord_player_link(pl, bold=True, max_len=48)
                 on_lines.append(f"• {link_txt}{flag_tag}{rec_tag}")
@@ -333,13 +344,14 @@ def _format_category_vertical_description(
         for pl in busy_online[:busy_cap]:
             link_txt = _format_discord_player_link(pl, bold=False, max_len=48)
             flag_tag = _format_player_flag_badge(pl)
+            foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos)
             og = _format_presence_status_label(pl)
             if not is_veteranos:
                 tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 star = "⭐ " if tier == "high" else ""
                 elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
-                bz_lines.append(f"• {star}{link_txt}{flag_tag}{elo_txt} *({og})*")
+                bz_lines.append(f"• {star}{link_txt}{flag_tag}{foreign_tag}{elo_txt} *({og})*")
             else:
                 bz_lines.append(f"• {link_txt}{flag_tag} *({og})*")
         if len(busy_online) > busy_cap:
@@ -364,6 +376,7 @@ def _format_category_vertical_description(
             rec_lines: list[str] = []
             for pl in prom_recent[:recent_cap]:
                 flag_tag = _format_player_flag_badge(pl)
+                foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos)
                 age_m = max(1, int(pl.get("last_age_min") or 1))
                 if not is_veteranos:
                     tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
@@ -371,7 +384,7 @@ def _format_category_vertical_description(
                     star = "⭐ " if tier == "high" else ""
                     elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
                     link_txt = _format_discord_player_link(pl, bold=(tier == "high"), max_len=48)
-                    rec_lines.append(f"• {star}{link_txt}{flag_tag}{elo_txt} *(há {age_m}m)*")
+                    rec_lines.append(f"• {star}{link_txt}{flag_tag}{foreign_tag}{elo_txt} *(há {age_m}m)*")
                 else:
                     link_txt = _format_discord_player_link(pl, bold=True, max_len=48)
                     rec_lines.append(f"• {link_txt}{flag_tag} *(há {age_m}m)*")
@@ -390,6 +403,7 @@ def _format_category_vertical_description(
         for pl, detail in low_entries[:low_cap]:
             link_txt = _format_discord_player_link(pl, bold=False, max_len=44)
             flag_tag = _format_player_flag_badge(pl)
+            foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=False, compact=True)
             elo_val = int(pl.get("max_elo", 0) or 0)
             meta_parts: list[str] = []
             if elo_val > 0:
@@ -397,7 +411,7 @@ def _format_category_vertical_description(
             if detail:
                 meta_parts.append(detail)
             meta_str = f" ({' · '.join(meta_parts)})" if meta_parts else ""
-            low_lines.append(f"-# • {link_txt}{flag_tag}{meta_str}")
+            low_lines.append(f"-# • {link_txt}{flag_tag}{foreign_tag}{meta_str}")
         if len(low_entries) > low_cap:
             low_lines.append(f"-# _...e mais {len(low_entries) - low_cap} de baixa evidência_")
         _append_vertical_section(

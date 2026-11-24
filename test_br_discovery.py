@@ -1126,6 +1126,8 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
+            from steam_presence import CORE_BR_ROSTER, MANUAL_OTHER_BR_PLAYERS
+
             summary = run_deep_br_discovery(
                 community_cache_path=comm_path,
                 state_path=state_path,
@@ -1134,7 +1136,7 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
                 presence_client=_FakeSteamRev(),  # type: ignore[arg-type]
                 match_days=1,
                 max_steam_verify=0,
-                max_friend_seeds=76,  # 46 vet + 29 manual + 1 rotating slot -> avança cursor em +1
+                max_friend_seeds=len(CORE_BR_ROSTER) + len(MANUAL_OTHER_BR_PLAYERS) + 1,
                 friend_hops=1,
                 max_custom_history_seeds=0,
                 max_ptbr_review_pages=2,
