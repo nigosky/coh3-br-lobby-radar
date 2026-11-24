@@ -264,6 +264,13 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
         "smurf_of": "arc",
         "known_aliases": ["geladeira velha", "dibas", "uncle hans", "geladeira velha (arc)", "geladeira velha (Smurf: arc)"],
     },
+    {
+        "profile_id": 1487738,
+        "steam_id": "76561198602236177",
+        "original_alias": "Državljan H (Smurf: arc)",
+        "smurf_of": "arc",
+        "known_aliases": ["Državljan H", "Državljan H (arc)", "Državljan H (Smurf: arc)"],
+    },
     {"profile_id": 31145, "steam_id": "76561197985268629", "original_alias": "vonMises"},
     {"profile_id": 58737, "steam_id": "76561197993922195", "original_alias": "INFIEL"},
     {"profile_id": 431802, "steam_id": "76561198000099422", "original_alias": "Conflict.BR"},
@@ -2260,6 +2267,124 @@ class SteamPresenceClient:
         except Exception as exc:
             logger.debug("Steam IsPlayingSharedGame indisponível para %s: %s", sid, redact_secrets(exc))
             return ""
+
+    def _resolve_vanity_steam_id(self, vanity: str) -> str:
+        """Resolve uma vanity URL Steam (`/id/<vanity>/?xml=1`) para SteamID64 com allowlist e anti-redirect."""
+        clean_van = re.sub(r"[^A-Za-z0-9_-]", "", str(vanity or "").strip())[:40]
+        if len(clean_van) < 2:
+            return ""
+        url = f"https://steamcommunity.com/id/{clean_van}/?xml=1"
+        try:
+            validate_https_endpoint(url, ALLOWED_STEAM_COMMUNITY_HOSTS, path_prefix="/id/", allow_query=True)
+            req = urllib.request.Request(url, headers=_RELIC_JSON_HEADERS, method="GET")
+            with _get_steam_opener().open(req, timeout=10) as resp:
+                raw = read_bounded_http_body(resp, MAX_STEAM_XML_BYTES).decode("utf-8", errors="ignore")
+            m = re.search(r"<steamID64>(7656119\d{10})</steamID64>", raw)
+            return m.group(1) if m else ""
+        except Exception:
+            return ""
+
+    def fetch_steam_ptbr_review_steam_ids(
+        self,
+        app_id: int = 1677280,
+        *,
+        max_pages: int = 12,
+        max_vanity_resolves: int = 120,
+        pace_delay_sec: float = 0.16,
+    ) -> list[str]:
+        """
+        Coleta SteamID64 de autores de avaliações em Português do Brasil (`filterLanguage=brazilian`)
+        em `steamcommunity.com/app/<app_id>/homecontent/` com cursor paginado, allowlist estrita e leitura limitada.
+        Captura inclusive compradores brasileiros que jogam apenas Campanha/Skirmish ou têm amigos privados.
+        """
+        aid = int(app_id or 0)
+        if aid <= 0:
+            return []
+        pages_cap = max(1, min(int(max_pages), 120))
+        pace = max(0.0, min(float(pace_delay_sec), 2.0))
+        sid_re = re.compile(r"steamcommunity\.com/profiles/(7656119\d{10})", re.IGNORECASE)
+        van_re = re.compile(r"steamcommunity\.com/id/([A-Za-z0-9_-]{2,40})(?:[\"'/?#<]|$)", re.IGNORECASE)
+        cursor_re = re.compile(r'name="userreviewscursor"\s+value="([^"]+)"')
+
+        found_sids: list[str] = []
+        seen_sids: set[str] = set()
+        found_vanities: list[str] = []
+        seen_vanities: set[str] = set()
+        cursor = ""
+        seen_cursors: set[str] = set()
+
+        for page in range(1, pages_cap + 1):
+            if page > 1 and pace > 0.0:
+                time.sleep(pace)
+            params: dict[str, str] = {
+                "userreviewsoffset": str((page - 1) * 10),
+                "p": str(page),
+                "workshopitemspage": str(page),
+                "readytouseitemspage": str(page),
+                "mtxitemspage": str(page),
+                "itemspage": str(page),
+                "screenshotspage": str(page),
+                "videospage": str(page),
+                "artpage": str(page),
+                "allguidepage": str(page),
+                "webguidepage": str(page),
+                "integratedguidepage": str(page),
+                "discussionspage": str(page),
+                "numperpage": "10",
+                "browsefilter": "mostrecent",
+                "appid": str(aid),
+                "appHubSubSection": "10",
+                "l": "brazilian",
+                "filterLanguage": "brazilian",
+                "searchText": "",
+                "maxInappropriateScore": "50",
+                "forceanon": "1",
+            }
+            if cursor:
+                params["userreviewscursor"] = cursor
+            url = f"https://steamcommunity.com/app/{aid}/homecontent/?{urllib.parse.urlencode(params)}"
+            try:
+                validate_https_endpoint(
+                    url,
+                    ALLOWED_STEAM_COMMUNITY_HOSTS,
+                    path_prefix=f"/app/{aid}/homecontent/",
+                    allow_query=True,
+                )
+                req = urllib.request.Request(url, headers=_RELIC_JSON_HEADERS, method="GET")
+                with _get_steam_opener().open(req, timeout=12) as resp:
+                    body = read_bounded_http_body(resp, 2 * 1024 * 1024).decode("utf-8", errors="ignore")
+            except Exception as exc:
+                logger.debug("Falha ao paginar avaliações PT-BR Steam (app=%d p=%d): %s", aid, page, redact_secrets(exc))
+                break
+
+            page_sids = sid_re.findall(body)
+            page_vans = van_re.findall(body)
+            if not page_sids and not page_vans:
+                break
+            for sid in page_sids:
+                if sid not in seen_sids and STEAM_ID64_VALID_RE.fullmatch(sid):
+                    seen_sids.add(sid)
+                    found_sids.append(sid)
+            for van in page_vans:
+                if van not in seen_vanities:
+                    seen_vanities.add(van)
+                    found_vanities.append(van)
+            cm = cursor_re.search(body)
+            next_cursor = cm.group(1) if cm else ""
+            if not next_cursor or next_cursor in seen_cursors:
+                break
+            seen_cursors.add(next_cursor)
+            cursor = next_cursor
+
+        van_cap = max(0, min(int(max_vanity_resolves), 400))
+        for idx, van in enumerate(found_vanities[:van_cap]):
+            if idx > 0 and pace > 0.0:
+                time.sleep(min(pace, 0.15))
+            sid = self._resolve_vanity_steam_id(van)
+            if sid and sid not in seen_sids and STEAM_ID64_VALID_RE.fullmatch(sid):
+                seen_sids.add(sid)
+                found_sids.append(sid)
+        return found_sids
 
     def fetch_steam_alias_history(
         self,

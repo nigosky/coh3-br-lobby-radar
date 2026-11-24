@@ -455,7 +455,7 @@ def build_lobby_radar_links_payload(
     vet_color = (
         COLOR_LOBBY_GAME
         if vet["in_coh3"]
-        else (COLOR_LOBBY_ONLINE if vet["online_steam"] else COLOR_LOBBY_IDLE)
+        else (COLOR_LOBBY_ONLINE if (vet["online_steam"] or vet["recent_relic"]) else COLOR_LOBBY_IDLE)
     )
     oth_color = (
         COLOR_LOBBY_GAME
