@@ -64981,8 +64981,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1786367974,
       "coh3_total_matches": 171,
-      "current_alias": "quimera",
-      "last_checked_at": 1795541599,
+      "current_alias": "Quimera",
+      "last_checked_at": 1795544993,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1018926,
@@ -116487,7 +116487,7 @@
       ],
       "canonical_alias": "negromonte_",
       "coh3_country": "br",
-      "current_alias": "Negromonte_",
+      "current_alias": "negromonte_",
       "last_checked_at": 1795544693,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -132987,7 +132987,7 @@
       "coh3_last_match_date": 1794613740,
       "coh3_total_matches": 3,
       "current_alias": "corolla XEI 2008 prata",
-      "last_checked_at": 1795543793,
+      "last_checked_at": 1795544993,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1441520,
@@ -140586,7 +140586,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795544693,
+      "last_checked_at": 1795544993,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -212286,7 +212286,7 @@
       "coh3_last_match_date": 1794526879,
       "coh3_total_matches": 4,
       "current_alias": "Qi 124",
-      "last_checked_at": 1795544693,
+      "last_checked_at": 1795544993,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -234002,5 +234002,5 @@
     "steam_web_api": 7388,
     "steam_xml": 6734
   },
-  "updated_at": 1795544693
+  "updated_at": 1795544993
 }
