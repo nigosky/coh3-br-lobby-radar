@@ -52,7 +52,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         tot_v, uniq_v, tot_m = manage_roster.validate_roster_doc(doc)
         self.assertEqual(tot_v, 48)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
-        self.assertEqual(tot_m, 161)
+        self.assertEqual(tot_m, 162)
         self.assertEqual(len(doc.get("outros_br_emigrados") or []), 15)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr e Tracker presentes; Lem22/Generick/Napa US e XAPA KENTE CA
@@ -117,14 +117,14 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Players Monitorados (161 contas): inclui panelinhas viperking/Shark e Brazuca/SkY fixadas (`pin_monitorados=True`)
+        # Players Monitorados (162 contas): inclui panelinhas viperking/Shark, Brazuca/SkY e XAMPUZINHO (Smurf: Xampoo) fixadas (`pin_monitorados=True`)
         from foreign_br_verifier import load_suspected_foreign_br_registry
         from steam_presence import MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS
 
         self.assertIs(MANUAL_OTHER_BR_PLAYERS, MONITORED_BR_PLAYERS)
         mon_by_pid = {int(r["profile_id"]): r for r in MONITORED_BR_PLAYERS}
         exp_by_pid = {int(r["profile_id"]): r for r in OUTROS_BR_EMIGRADOS}
-        self.assertEqual(len(mon_by_pid), 161)
+        self.assertEqual(len(mon_by_pid), 162)
         self.assertEqual(len(exp_by_pid), 15)
         sf_reg = load_suspected_foreign_br_registry()
         self.assertNotIn(448521, sf_reg.get("excluded_from_rankings_pids") or [])
@@ -264,6 +264,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
             803384,
             802771,
             8838,
+            1467829,
         ):
             self.assertIn(mon_pid, mon_by_pid)
             self.assertNotIn(mon_pid, vet_by_pid)
@@ -302,11 +303,13 @@ class TestSharedPlayersRoster(unittest.TestCase):
             (803384, "DeMarco"),
             (802771, "Odin"),
             (8838, "Saint"),
+            (1467829, "XAMPUZINHO (Smurf: Xampoo)"),
         ):
             self.assertEqual(mon_by_pid[pinned_pid]["original_alias"], pinned_alias)
             self.assertTrue(mon_by_pid[pinned_pid].get("pin_monitorados"))
             self.assertFalse(mon_by_pid[pinned_pid].get("priority_watch"))
         self.assertEqual(mon_by_pid[1292305].get("smurf_of"), "rafaeldjx")
+        self.assertEqual(mon_by_pid[1467829].get("smurf_of"), "Xampoo")
 
         # Contas <1200 ELO e sem frequência >=15d foram movidas de Players Monitorados para Outros Brasileiros
         for demoted_pid in (1115599, 1315226, 26172, 766215, 28570, 59671, 940355):
