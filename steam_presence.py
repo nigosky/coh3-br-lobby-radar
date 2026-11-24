@@ -496,6 +496,7 @@ _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 803384, "steam_id": "76561197960926415", "original_alias": "DeMarco", "country": "br", "pin_monitorados": True},
     {"profile_id": 802771, "steam_id": "76561198072811551", "original_alias": "Odin", "country": "br", "pin_monitorados": True},
     {"profile_id": 8838, "steam_id": "76561198092565055", "original_alias": "Saint", "country": "br", "pin_monitorados": True, "known_aliases": ["Saint", "╬ IIIR ╬ PanzerGrenadier ╬"]},
+    {"profile_id": 1467829, "steam_id": "76561198650067332", "original_alias": "XAMPUZINHO (Smurf: Xampoo)", "smurf_of": "Xampoo", "country": "br", "pin_monitorados": True, "known_aliases": ["XAMPUZINHO", "XAMPUZINHO (Smurf: Xampoo)"]},
 ]
 
 # Alias retrocompatível para o fallback da 3ª categoria (`monitorados`)
