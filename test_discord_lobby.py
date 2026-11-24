@@ -516,7 +516,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             )
             self.assertTrue(summary["panel_updated"])
             self.assertEqual(summary["alerts_pruned"], 1)
-            self.assertEqual(summary["monitorados_total"], 132)
+            self.assertEqual(summary["monitorados_total"], 134)
             self.assertEqual(summary["other_br_catalog_total"], 3)
             self.assertEqual(summary["other_br_in_coh3"], 1)
             self.assertEqual(summary["other_br_online_steam"], 1)
@@ -2753,6 +2753,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             {"profile_id": 500004, "steam_id": "76561198500000004", "original_alias": "InativoLowDemote"},
             {"profile_id": 500005, "steam_id": "76561198500000005", "original_alias": "AtivoLowFica"},
             {"profile_id": 500006, "steam_id": "76561198500000006", "original_alias": "InativoHighNoCoH3Agora"},
+            {"profile_id": 500007, "steam_id": "76561198500000007", "original_alias": "InativoLowFixado", "pin_monitorados": True},
         ]
         pres = {
             "76561198500000001": {"steam_id": "76561198500000001", "ok": True, "is_in_coh3": False, "is_online_steam": True},
@@ -2761,6 +2762,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             "76561198500000004": {"steam_id": "76561198500000004", "ok": True, "is_in_coh3": False, "is_online_steam": True},
             "76561198500000005": {"steam_id": "76561198500000005", "ok": True, "is_in_coh3": False, "is_online_steam": True},
             "76561198500000006": {"steam_id": "76561198500000006", "ok": True, "is_in_coh3": True, "is_online_steam": True},
+            "76561198500000007": {"steam_id": "76561198500000007", "ok": True, "is_in_coh3": False, "is_online_steam": True},
         }
         matches = {
             500001: {"profile_id": 500001, "completion_time": now - 5 * 86400, "mode": "2v2"},     # ELO 1350, 5d -> ativo
@@ -2769,8 +2771,9 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             500004: {"profile_id": 500004, "completion_time": now - 20 * 86400, "mode": "4v4"},    # ELO 1080, 20d -> demote p/ Outros BR
             500005: {"profile_id": 500005, "completion_time": now - 7 * 86400, "mode": "4v4"},     # ELO 1080, 7d -> permanece em Monitorados
             500006: {"profile_id": 500006, "completion_time": now - 120 * 86400, "mode": "1v1"},   # ELO 1600, 120d MAS abriu CoH3 agora -> sem ressalva!
+            500007: {"profile_id": 500007, "completion_time": now - 170 * 86400, "mode": "4v4"},   # ELO 1070, 170d MAS pin_monitorados=True -> permanece em Monitorados!
         }
-        elos = {500001: 1350, 500002: 1550, 500003: 1420, 500004: 1080, 500005: 1080, 500006: 1600}
+        elos = {500001: 1350, 500002: 1550, 500003: 1420, 500004: 1080, 500005: 1080, 500006: 1600, 500007: 1070}
 
         snap = build_lobby_radar_snapshot(
             custom_players=[{"profile_id": 79327, "steam_id": "76561197963172584", "original_alias": "Chacineiro"}],
@@ -2782,18 +2785,21 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             monitored_elo_by_pid=elos,
         )
 
-        # 1. InativoLowDemote (<1200 ELO e >=15d) sai de Players Monitorados e vai para Outros BR (oculto por corte 15d)
+        # 1. InativoLowDemote (<1200 ELO e >=15d) sai de Players Monitorados; InativoLowFixado (`pin_monitorados=True`) permanece!
         mon_online_pids = [p["profile_id"] for p in snap["monitorados"]["online_steam"]]
         self.assertNotIn(500004, mon_online_pids)
-        self.assertEqual(snap["monitorados"]["total_monitored"], 5)
+        self.assertIn(500007, mon_online_pids)
+        self.assertEqual(snap["monitorados"]["total_monitored"], 6)
         self.assertEqual(snap["outros_brasileiros"]["online_steam"], [])
 
-        # 2. Ordenação em Monitorados: livres ativos (AtivoHigh 1350, AtivoLowFica 1080) vêm ANTES de livre inativo (>=30d, InativoHighLivre 1550)!
-        self.assertEqual(mon_online_pids, [500001, 500005, 500002, 500003])
+        # 2. Ordenação em Monitorados: livres ativos (AtivoHigh 1350, AtivoLowFica 1080, InativoLowFixado 1070) vêm ANTES de livre inativo (>=30d, InativoHighLivre 1550)!
+        self.assertEqual(mon_online_pids, [500001, 500005, 500007, 500002, 500003])
 
         by_pid = {p["profile_id"]: p for p in snap["monitorados"]["online_steam"]}
         self.assertFalse(by_pid[500001]["coh3_inactive_warning"])
         self.assertFalse(by_pid[500005]["coh3_inactive_warning"])
+        self.assertFalse(by_pid[500007]["priority_watch"])
+        self.assertNotIn("VIGÍLIA", [b[0] for b in _resolve_player_badges(by_pid[500007], is_monitorados=True)])
         self.assertTrue(by_pid[500002]["coh3_inactive_warning"])
         self.assertEqual(by_pid[500002]["coh3_inactive_days"], 95)
         self.assertTrue(by_pid[500003]["coh3_inactive_warning"])

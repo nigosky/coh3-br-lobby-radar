@@ -155,6 +155,8 @@ def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
                 )
             if "priority_watch" in entry and not isinstance(entry.get("priority_watch"), bool):
                 raise ValueError(f"{sec_name}[{idx}] ({alias}) priority_watch deve ser booleano.")
+            if "pin_monitorados" in entry and not isinstance(entry.get("pin_monitorados"), bool):
+                raise ValueError(f"{sec_name}[{idx}] ({alias}) pin_monitorados deve ser booleano.")
             if is_legacy_synthetic_alias_label(alias):
                 raise ValueError(
                     f"{sec_name}[{idx}] ({alias}) usa rótulo legado proibido; use '<NomeOriginal>' para principal "

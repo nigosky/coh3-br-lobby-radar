@@ -449,7 +449,7 @@ _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 135138, "steam_id": "76561198028166152", "original_alias": "WeliWest", "country": "br"},
     {"profile_id": 135141, "steam_id": "76561198039466768", "original_alias": "[PWA]-ForceMaster", "country": "br", "known_aliases": ["[PWA]-ForceMaster", "ForceMaster"]},
     {"profile_id": 87903, "steam_id": "76561199112478566", "original_alias": "Daniloparre", "country": "br"},
-    {"profile_id": 26736, "steam_id": "76561198002634846", "original_alias": "Arkymendes", "country": "br"},
+    {"profile_id": 26736, "steam_id": "76561198002634846", "original_alias": "Arkymendes", "country": "br", "pin_monitorados": True},
     {"profile_id": 3917, "steam_id": "76561197967668319", "original_alias": "[IRON] ManchaNegra", "country": "br", "known_aliases": ["[IRON] ManchaNegra", "BlackSpot_BR", "Mancha Negra"]},
     {"profile_id": 838813, "steam_id": "76561198022258604", "original_alias": "heitorcorrea", "country": "br"},
     {"profile_id": 993209, "steam_id": "76561198053754717", "original_alias": "BobGon", "country": "br"},
@@ -467,6 +467,8 @@ _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 22246, "steam_id": "76561197971282128", "original_alias": "Açucar Macabro", "country": "br", "known_aliases": ["Açucar Macabro", "Macabre Sugar", "FazueL", "NooBR"]},
     {"profile_id": 6696, "steam_id": "76561198182964383", "original_alias": "Roda", "country": "br", "known_aliases": ["Roda", "★ Roda", "[※] Roda"]},
     {"profile_id": 502544, "steam_id": "76561198049822246", "original_alias": "Arthoumadbro", "country": "br"},
+    {"profile_id": 673604, "steam_id": "76561197975133878", "original_alias": "MataMOsca", "country": "br", "pin_monitorados": True},
+    {"profile_id": 893043, "steam_id": "76561197974495191", "original_alias": "Rodrigo Ragagnin", "country": "br", "pin_monitorados": True, "known_aliases": ["Rodrigo Ragagnin", "Rodrigo"]},
 ]
 
 # Alias retrocompatível para o fallback da 3ª categoria (`monitorados`)
@@ -564,6 +566,8 @@ def _normalize_shared_roster_entry(raw: Any, *, default_in_ranking: bool = True)
         entry["pin_alias"] = True
     if raw.get("priority_watch"):
         entry["priority_watch"] = True
+    if raw.get("pin_monitorados"):
+        entry["pin_monitorados"] = True
     smurf_owner = strip_unsafe_chars(raw.get("smurf_of") or "")[:40]
     if not smurf_owner:
         _, smurf_owner = extract_smurf_owner_and_nick(alias)
@@ -5117,6 +5121,7 @@ def build_lobby_radar_snapshot(
         r_in_coh3_now = bool((merged_mon_pres.get(rsid) or {}).get("is_in_coh3"))
         if (
             not row.get("priority_watch")
+            and not row.get("pin_monitorados")
             and not row.get("smurf_of")
             and not r_in_coh3_now
             and r_lmd > 0
