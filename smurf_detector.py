@@ -3424,12 +3424,44 @@ def main() -> int:
     alias_history_doc = load_alias_history(DEFAULT_ALIAS_HISTORY_PATH)
     prev_top50 = cache.get("top50_br_pids") if isinstance(cache.get("top50_br_pids"), list) else []
 
+    roster_pids_cli = {
+        int(r.get("profile_id", 0) or 0)
+        for r in (list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS))
+        if int(r.get("profile_id", 0) or 0) > 0
+    }
+    hist_players_cli = alias_history_doc.get("players") if isinstance(alias_history_doc.get("players"), dict) else {}
+
+    def _is_confirmed_br_hist_rec(hrec_obj: dict[str, Any], hpid_val: int) -> bool:
+        hc3 = str(hrec_obj.get("coh3_country") or "").strip().lower()
+        hc2 = str(hrec_obj.get("coh2_country") or "").strip().lower()
+        hc1 = str(hrec_obj.get("coh1_country") or "").strip().lower()
+        return (
+            hc3 in ("br", "")
+            or hpid_val in roster_pids_cli
+            or hc2 == "br"
+            or hc1 == "br"
+            or bool(hrec_obj.get("country_migration"))
+        )
+
     all_br: dict[int, dict[str, Any]] = {}
     for bucket in (cache.get("players") or {}, cache.get("dormant_players") or {}):
         if isinstance(bucket, dict):
             for row in bucket.values():
-                if isinstance(row, dict) and int(row.get("profile_id", 0) or 0) > 0:
-                    all_br[int(row["profile_id"])] = dict(row)
+                if not isinstance(row, dict):
+                    continue
+                rpid = int(row.get("profile_id", 0) or 0)
+                if rpid <= 0:
+                    continue
+                rflag = str(row.get("flag_country") or row.get("country") or "").strip().lower()
+                if (
+                    str(row.get("br_source") or "").strip() == "alias_history"
+                    and rflag not in ("", "br")
+                    and rpid not in roster_pids_cli
+                ):
+                    hrec_chk = hist_players_cli.get(str(rpid))
+                    if not (isinstance(hrec_chk, dict) and _is_confirmed_br_hist_rec(hrec_chk, rpid)):
+                        continue
+                all_br[rpid] = dict(row)
     for row in list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS):
         pid = int(row.get("profile_id", 0) or 0)
         if pid > 0 and pid not in all_br:
@@ -3441,11 +3473,11 @@ def main() -> int:
                 "max_elo": 0,
                 "total_matches": 0,
             }
-    for hrec in (alias_history_doc.get("players") or {}).values():
+    for hrec in hist_players_cli.values():
         if not isinstance(hrec, dict):
             continue
         pid = int(hrec.get("profile_id", 0) or 0)
-        if pid > 0 and pid not in all_br:
+        if pid > 0 and pid not in all_br and _is_confirmed_br_hist_rec(hrec, pid):
             all_br[pid] = {
                 "profile_id": pid,
                 "steam_id": str(hrec.get("steam_id") or ""),
