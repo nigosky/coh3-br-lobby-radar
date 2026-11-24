@@ -52,7 +52,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         tot_v, uniq_v, tot_m = manage_roster.validate_roster_doc(doc)
         self.assertEqual(tot_v, 48)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
-        self.assertEqual(tot_m, 146)
+        self.assertEqual(tot_m, 161)
         self.assertEqual(len(doc.get("outros_br_emigrados") or []), 15)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr e Tracker presentes; Lem22/Generick/Napa US e XAPA KENTE CA
@@ -117,14 +117,14 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Players Monitorados (146 contas): inclui panelinha viperking/ElektroStomper/Shark/BrazilianHunter/PacMan fixada (`pin_monitorados=True`)
+        # Players Monitorados (161 contas): inclui panelinhas viperking/Shark e Brazuca/SkY fixadas (`pin_monitorados=True`)
         from foreign_br_verifier import load_suspected_foreign_br_registry
         from steam_presence import MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS
 
         self.assertIs(MANUAL_OTHER_BR_PLAYERS, MONITORED_BR_PLAYERS)
         mon_by_pid = {int(r["profile_id"]): r for r in MONITORED_BR_PLAYERS}
         exp_by_pid = {int(r["profile_id"]): r for r in OUTROS_BR_EMIGRADOS}
-        self.assertEqual(len(mon_by_pid), 146)
+        self.assertEqual(len(mon_by_pid), 161)
         self.assertEqual(len(exp_by_pid), 15)
         sf_reg = load_suspected_foreign_br_registry()
         self.assertNotIn(448521, sf_reg.get("excluded_from_rankings_pids") or [])
@@ -248,6 +248,22 @@ class TestSharedPlayersRoster(unittest.TestCase):
             173761,
             1056541,
             23250,
+            # Panelinha Brazuca / SkY / Iracnats
+            19635,
+            148438,
+            341258,
+            1105416,
+            1018227,
+            148895,
+            36206,
+            21639,
+            227094,
+            15063,
+            142572,
+            31504,
+            803384,
+            802771,
+            8838,
         ):
             self.assertIn(mon_pid, mon_by_pid)
             self.assertNotIn(mon_pid, vet_by_pid)
@@ -270,6 +286,22 @@ class TestSharedPlayersRoster(unittest.TestCase):
             (173761, "EUSOU"),
             (1056541, "YOUMORREU"),
             (23250, "Nargoth"),
+            (110123, "Iracnats"),
+            (19635, "Brazuca"),
+            (148438, "SkY"),
+            (341258, "FAOGozalo"),
+            (1105416, "Yzer"),
+            (1018227, "Silverbolt"),
+            (148895, "kpzeta"),
+            (36206, "Sentinela"),
+            (21639, "Tuzão, o Verme"),
+            (227094, "Ricardo | Guardian"),
+            (15063, "WaffeR"),
+            (142572, "LudoRJ"),
+            (31504, "Fioti"),
+            (803384, "DeMarco"),
+            (802771, "Odin"),
+            (8838, "Saint"),
         ):
             self.assertEqual(mon_by_pid[pinned_pid]["original_alias"], pinned_alias)
             self.assertTrue(mon_by_pid[pinned_pid].get("pin_monitorados"))

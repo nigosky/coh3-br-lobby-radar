@@ -912,6 +912,7 @@
       "steam_id": "76561198003329628",
       "original_alias": "Iracnats",
       "country": "br",
+      "pin_monitorados": true,
       "known_aliases": [
         "Iracnats",
         "Iracnats de Bebbanburg"
@@ -1750,6 +1751,132 @@
       "known_aliases": [
         "Nargoth",
         "Nargoth de Bebbanburg"
+      ]
+    },
+    {
+      "profile_id": 19635,
+      "steam_id": "76561197991132744",
+      "original_alias": "Brazuca",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 148438,
+      "steam_id": "76561197972178744",
+      "original_alias": "SkY",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 341258,
+      "steam_id": "76561197987415250",
+      "original_alias": "FAOGozalo",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "FAOGozalo",
+        "FAOGozalo Twitch.TV"
+      ]
+    },
+    {
+      "profile_id": 1105416,
+      "steam_id": "76561198055935466",
+      "original_alias": "Yzer",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 1018227,
+      "steam_id": "76561197989663365",
+      "original_alias": "Silverbolt",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 148895,
+      "steam_id": "76561197998145582",
+      "original_alias": "kpzeta",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 36206,
+      "steam_id": "76561198144804075",
+      "original_alias": "Sentinela",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 21639,
+      "steam_id": "76561198003743715",
+      "original_alias": "Tuzão, o Verme",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "Tuzão, o Verme",
+        "Tuzão o Verme"
+      ]
+    },
+    {
+      "profile_id": 227094,
+      "steam_id": "76561198048484613",
+      "original_alias": "Ricardo | Guardian",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "Ricardo | Guardian",
+        "Ricardo  | Guardian"
+      ]
+    },
+    {
+      "profile_id": 15063,
+      "steam_id": "76561198017157095",
+      "original_alias": "WaffeR",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 142572,
+      "steam_id": "76561198067392182",
+      "original_alias": "LudoRJ",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 31504,
+      "steam_id": "76561198095301909",
+      "original_alias": "Fioti",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "Fioti",
+        "Ironoob",
+        "Rolândia PR"
+      ]
+    },
+    {
+      "profile_id": 803384,
+      "steam_id": "76561197960926415",
+      "original_alias": "DeMarco",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 802771,
+      "steam_id": "76561198072811551",
+      "original_alias": "Odin",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 8838,
+      "steam_id": "76561198092565055",
+      "original_alias": "Saint",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "Saint",
+        "╬ IIIR ╬ PanzerGrenadier ╬"
       ]
     }
   ],
