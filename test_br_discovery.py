@@ -1134,7 +1134,7 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
                 presence_client=_FakeSteamRev(),  # type: ignore[arg-type]
                 match_days=1,
                 max_steam_verify=0,
-                max_friend_seeds=75,  # 45 vet + 29 manual + 1 rotating slot -> avança cursor em +1
+                max_friend_seeds=76,  # 46 vet + 29 manual + 1 rotating slot -> avança cursor em +1
                 friend_hops=1,
                 max_custom_history_seeds=0,
                 max_ptbr_review_pages=2,
@@ -1149,6 +1149,143 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
             self.assertIn("950001", saved["players"])
             self.assertNotIn("950002", saved["players"])
             self.assertGreaterEqual(int(saved.get("friends_cursor_offset", 0)), 1)
+
+    def test_steamcharts_and_valve_global_telemetry_parsers_and_surge_budget(self) -> None:
+        from steam_presence import (
+            parse_steam_app_news_payload,
+            parse_steam_current_players_payload,
+            parse_steamcharts_app_html,
+            parse_steamcharts_chart_data,
+        )
+
+        now = 1_800_000_000
+        sample_html = """
+        <div class="app-stat"><span class="num">3,176</span> <br>playing <abbr class="timeago"></abbr></div>
+        <div class="app-stat"><span class="num">7,431</span> <br>24-hour peak</div>
+        <div class="app-stat"><span class="num">30,243</span> <br>all-time peak</div>
+        """
+        parsed_html = parse_steamcharts_app_html(sample_html)
+        self.assertEqual(parsed_html["current_players"], 3176)
+        self.assertEqual(parsed_html["peak_24h"], 7431)
+        self.assertEqual(parsed_html["all_time_peak"], 30243)
+
+        chart_rows = [
+            [(now - 100 * 86400) * 1000, 30243],
+            [(now - 10 * 86400) * 1000, 2800],
+            [(now - 5 * 86400) * 1000, 3200],
+            [(now - 3600) * 1000, 7431],
+            [(now - 600) * 1000, 4500],
+        ]
+        parsed_chart = parse_steamcharts_chart_data(chart_rows, now_ts=now)
+        self.assertEqual(parsed_chart["latest_players"], 4500)
+        self.assertEqual(parsed_chart["peak_24h"], 7431)
+        self.assertEqual(parsed_chart["all_time_peak"], 30243)
+        self.assertEqual(parsed_chart["avg_30d"], round((2800 + 3200 + 7431 + 4500) / 4))
+
+        self.assertEqual(parse_steam_current_players_payload({"response": {"player_count": 3164, "result": 1}}), 3164)
+        self.assertEqual(parse_steam_current_players_payload({"response": {"result": 42}}), 0)
+
+        news = parse_steam_app_news_payload(
+            {
+                "appnews": {
+                    "newsitems": [
+                        {
+                            "title": "3.0.2 Hot Fix Patch Notes",
+                            "date": now - 2 * 86400,
+                            "feedlabel": "Community Announcements",
+                            "feed_type": 1,
+                        }
+                    ]
+                }
+            },
+            now_ts=now,
+        )
+        self.assertTrue(news["ok"])
+        self.assertEqual(news["latest_title"], "3.0.2 Hot Fix Patch Notes")
+        self.assertTrue(news["recent_patch_within_7d"])
+
+        # Integração Stage 0: onda/patch amplia max_ptbr_review_pages (4 -> 6) e grava global_telemetry em br_community.json
+        seen_review_pages: list[int] = []
+
+        class _FakeRelicTel:
+            def discover_br_and_candidates_from_open_data(self, **kwargs: Any) -> Any:
+                return (
+                    {
+                        960001: {
+                            "profile_id": 960001,
+                            "steam_id": "76561198000960001",
+                            "alias": "SurgeBR",
+                            "country": "br",
+                            "max_elo": 1400,
+                            "last_match_date": now - 3600,
+                            "total_matches": 50,
+                        }
+                    },
+                    {},
+                    {"files_ok": 16, "total_bytes": 100},
+                )
+
+            def discover_br_and_candidates_from_open_data_matches(self, **kwargs: Any) -> Any:
+                return {}, {}, {"days_ok": 1, "days_requested": 1, "matches_scanned": 0}
+
+            def discover_br_and_candidates_from_relic_sa(self, **kwargs: Any) -> Any:
+                return {}, {}
+
+            def fetch_profile_stats_by_steam_ids(self, steam_ids: list[str], **kwargs: Any) -> dict[int, dict[str, Any]]:
+                return {}
+
+        class _FakeSteamTel:
+            def fetch_global_coh3_telemetry(self, app_id: int = 1677280, *, now_ts: int | None = None) -> dict[str, Any]:
+                return {
+                    "ok": True,
+                    "app_id": app_id,
+                    "fetched_at": now,
+                    "sources": ["steamcharts", "valve_current_players", "valve_app_news"],
+                    "current_players": 5200,
+                    "peak_24h": 7400,
+                    "avg_30d": 3500,
+                    "peak_30d": 7400,
+                    "all_time_peak": 30243,
+                    "surge_ratio": 2.11,
+                    "live_ratio": 1.49,
+                    "is_surge": True,
+                    "recent_patch_title": "3.0.2 Hot Fix Patch Notes",
+                    "recent_patch_at": now - 86400,
+                    "recent_patch_within_7d": True,
+                    "steamdb_status": "cloudflare_gated_using_valve_official_feed",
+                }
+
+            def fetch_steam_ptbr_review_steam_ids(self, app_id: int = 1677280, *, max_pages: int = 10) -> list[str]:
+                seen_review_pages.append(int(max_pages))
+                return []
+
+        with tempfile.TemporaryDirectory() as td:
+            comm_path = Path(td) / "br_community.json"
+            state_path = Path(td) / "state.json"
+            hist_path = Path(td) / "alias_history.json"
+            summary = run_deep_br_discovery(
+                community_cache_path=comm_path,
+                state_path=state_path,
+                alias_history_path=hist_path,
+                relic_client=_FakeRelicTel(),  # type: ignore[arg-type]
+                presence_client=_FakeSteamTel(),  # type: ignore[arg-type]
+                match_days=1,
+                max_steam_verify=0,
+                max_friend_seeds=0,
+                max_custom_history_seeds=0,
+                max_ptbr_review_pages=4,
+                steam_groups=(),
+                sister_steam_groups=(),
+                now_ts=now,
+                smurf_check=False,
+                enable_external_alias_enrichment=False,
+            )
+            self.assertEqual(seen_review_pages, [6])  # 4 * 1.5 surge boost!
+            self.assertTrue(summary["global_telemetry"]["surge_budget_boost_applied"])
+            saved = json.loads(comm_path.read_text(encoding="utf-8"))
+            self.assertIn("global_telemetry", saved)
+            self.assertEqual(saved["global_telemetry"]["peak_24h"], 7400)
+            self.assertGreater(saved["global_telemetry"]["br_active_to_global_peak_pct"], 0.0)
 
 
 if __name__ == "__main__":
