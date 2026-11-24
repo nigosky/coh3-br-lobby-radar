@@ -39711,14 +39711,14 @@
     "1285745": {
       "alias": "maathmunix",
       "br_source": "relic_sa_lb",
-      "last_match_date": 1795503889,
+      "last_match_date": 1795531027,
       "last_seen_online_ts": 1795529220,
       "max_elo": 1000,
       "profile_id": 1285745,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795522758,
       "steam_id": "76561199014615184",
-      "total_matches": 50
+      "total_matches": 51
     },
     "1285769": {
       "alias": "Ouvido Albino",
@@ -39902,12 +39902,12 @@
     "1297870": {
       "alias": "AVESTRUZ TE SEDUZ",
       "br_source": "open_data_lb",
-      "last_match_date": 1795487534,
+      "last_match_date": 1795530804,
       "last_seen_online_ts": 0,
       "max_elo": 1285,
       "profile_id": 1297870,
       "steam_id": "76561198047131936",
-      "total_matches": 1741
+      "total_matches": 1742
     },
     "1298464": {
       "alias": "Maçã",
@@ -47381,12 +47381,12 @@
       "alias": "Warmech11",
       "br_source": "manual_other_br",
       "flag_country": "py",
-      "last_match_date": 1795529639,
+      "last_match_date": 1795531047,
       "last_seen_online_ts": 1795529220,
       "max_elo": 1155,
       "profile_id": 999940,
       "steam_id": "76561198074249692",
-      "total_matches": 675
+      "total_matches": 676
     }
   },
   "schema_version": 3,
