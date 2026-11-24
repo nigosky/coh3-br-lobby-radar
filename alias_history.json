@@ -1,17 +1,35 @@
 {
   "legacy_br_players": {
     "76561197960441887": {
-      "aliases": [],
-      "canonical_alias": "Steam 441887",
-      "current_alias": "Steam 441887",
+      "aliases": [
+        {
+          "alias": "LoneGunner",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "LoneGunner",
+      "current_alias": "LoneGunner",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197960441887"
     },
     "76561197960878157": {
-      "aliases": [],
-      "canonical_alias": "Steam 878157",
-      "current_alias": "Steam 878157",
+      "aliases": [
+        {
+          "alias": "ToOrN",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "ToOrN",
+      "current_alias": "ToOrN",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197960878157"
@@ -34,9 +52,18 @@
       "steam_id": "76561197960900071"
     },
     "76561197961191522": {
-      "aliases": [],
-      "canonical_alias": "Steam 191522",
-      "current_alias": "Steam 191522",
+      "aliases": [
+        {
+          "alias": "HKonda",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "HKonda",
+      "current_alias": "HKonda",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197961191522"
@@ -59,17 +86,35 @@
       "steam_id": "76561197961227989"
     },
     "76561197961258604": {
-      "aliases": [],
-      "canonical_alias": "Steam 258604",
-      "current_alias": "Steam 258604",
+      "aliases": [
+        {
+          "alias": "BignatO",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "BignatO",
+      "current_alias": "BignatO",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197961258604"
     },
     "76561197961267040": {
-      "aliases": [],
-      "canonical_alias": "Steam 267040",
-      "current_alias": "Steam 267040",
+      "aliases": [
+        {
+          "alias": "Barroso",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Barroso",
+      "current_alias": "Barroso",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197961267040"
@@ -122,9 +167,18 @@
       "steam_id": "76561197961480714"
     },
     "76561197962902136": {
-      "aliases": [],
-      "canonical_alias": "Steam 902136",
-      "current_alias": "Steam 902136",
+      "aliases": [
+        {
+          "alias": "GeneralMeliante",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "GeneralMeliante",
+      "current_alias": "GeneralMeliante",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197962902136"
@@ -169,9 +223,18 @@
       "steam_id": "76561197963908210"
     },
     "76561197964698451": {
-      "aliases": [],
-      "canonical_alias": "Steam 698451",
-      "current_alias": "Steam 698451",
+      "aliases": [
+        {
+          "alias": "Luiz Francez",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Luiz Francez",
+      "current_alias": "Luiz Francez",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197964698451"
@@ -186,6 +249,14 @@
             "relic_coh1_api",
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "ャ Togakure (S FA)",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Togakure (S FA)",
@@ -193,7 +264,7 @@
       "coh1_profile_id": 2162712,
       "coh2_country": "br",
       "coh2_profile_id": 671152,
-      "current_alias": "Togakure (S FA)",
+      "current_alias": "ャ Togakure (S FA)",
       "scope": "legacy_coh1_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561197964879142"
@@ -203,9 +274,10 @@
         {
           "alias": "whitefish",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -240,17 +312,35 @@
       "steam_id": "76561197965016127"
     },
     "76561197965198481": {
-      "aliases": [],
-      "canonical_alias": "Steam 198481",
-      "current_alias": "Steam 198481",
+      "aliases": [
+        {
+          "alias": "[srxz]",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "[srxz]",
+      "current_alias": "[srxz]",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197965198481"
     },
     "76561197965368803": {
-      "aliases": [],
-      "canonical_alias": "Steam 368803",
-      "current_alias": "Steam 368803",
+      "aliases": [
+        {
+          "alias": "Ricky McHawk",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Ricky McHawk",
+      "current_alias": "Ricky McHawk",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197965368803"
@@ -264,28 +354,54 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "jotace",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "JULIOK5",
       "coh2_country": "br",
       "coh2_profile_id": 791700,
-      "current_alias": "JULIOK5",
+      "current_alias": "jotace",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561197965416145"
     },
     "76561197965516279": {
-      "aliases": [],
-      "canonical_alias": "Steam 516279",
-      "current_alias": "Steam 516279",
+      "aliases": [
+        {
+          "alias": "Ernesto de Castilho",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Ernesto de Castilho",
+      "current_alias": "Ernesto de Castilho",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197965516279"
     },
     "76561197966639778": {
-      "aliases": [],
-      "canonical_alias": "Steam 639778",
-      "current_alias": "Steam 639778",
+      "aliases": [
+        {
+          "alias": "Cow",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Cow",
+      "current_alias": "Cow",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197966639778"
@@ -312,9 +428,18 @@
       "steam_id": "76561197967264487"
     },
     "76561197967412672": {
-      "aliases": [],
-      "canonical_alias": "Steam 412672",
-      "current_alias": "Steam 412672",
+      "aliases": [
+        {
+          "alias": "Sidnei",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Sidnei",
+      "current_alias": "Sidnei",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197967412672"
@@ -341,9 +466,18 @@
       "steam_id": "76561197967438241"
     },
     "76561197968325770": {
-      "aliases": [],
-      "canonical_alias": "Steam 325770",
-      "current_alias": "Steam 325770",
+      "aliases": [
+        {
+          "alias": "Piuzim !",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Piuzim !",
+      "current_alias": "Piuzim !",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197968325770"
@@ -357,13 +491,21 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "cyco",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "CycoVision",
       "coh2_country": "br",
       "coh2_profile_id": 1277920,
       "coh2_total_matches": 4,
-      "current_alias": "CycoVision",
+      "current_alias": "cyco",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561197968562091"
@@ -408,17 +550,35 @@
       "steam_id": "76561197968627369"
     },
     "76561197968911355": {
-      "aliases": [],
-      "canonical_alias": "Steam 911355",
-      "current_alias": "Steam 911355",
+      "aliases": [
+        {
+          "alias": "Kotz",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Kotz",
+      "current_alias": "Kotz",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197968911355"
     },
     "76561197969594276": {
-      "aliases": [],
-      "canonical_alias": "Steam 594276",
-      "current_alias": "Steam 594276",
+      "aliases": [
+        {
+          "alias": "-=LP=-",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "-=LP=-",
+      "current_alias": "-=LP=-",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197969594276"
@@ -453,9 +613,18 @@
       "steam_id": "76561197969893485"
     },
     "76561197969968255": {
-      "aliases": [],
-      "canonical_alias": "Steam 968255",
-      "current_alias": "Steam 968255",
+      "aliases": [
+        {
+          "alias": "MRPKlein",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "MRPKlein",
+      "current_alias": "MRPKlein",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197969968255"
@@ -500,9 +669,18 @@
       "steam_id": "76561197970139640"
     },
     "76561197970166232": {
-      "aliases": [],
-      "canonical_alias": "Steam 166232",
-      "current_alias": "Steam 166232",
+      "aliases": [
+        {
+          "alias": "GusDreyer",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "GusDreyer",
+      "current_alias": "GusDreyer",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197970166232"
@@ -529,17 +707,35 @@
       "steam_id": "76561197971237367"
     },
     "76561197971242754": {
-      "aliases": [],
-      "canonical_alias": "Steam 242754",
-      "current_alias": "Steam 242754",
+      "aliases": [
+        {
+          "alias": "[RTS]GhostRider2610",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "[RTS]GhostRider2610",
+      "current_alias": "[RTS]GhostRider2610",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197971242754"
     },
     "76561197971284963": {
-      "aliases": [],
-      "canonical_alias": "Steam 284963",
-      "current_alias": "Steam 284963",
+      "aliases": [
+        {
+          "alias": "Ezequiel",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Ezequiel",
+      "current_alias": "Ezequiel",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197971284963"
@@ -586,10 +782,11 @@
         {
           "alias": "Paulinho",
           "first_seen": 1435014450,
-          "last_seen": 1714195472,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -608,9 +805,18 @@
       "steam_id": "76561197971435708"
     },
     "76561197971526138": {
-      "aliases": [],
-      "canonical_alias": "Steam 526138",
-      "current_alias": "Steam 526138",
+      "aliases": [
+        {
+          "alias": "Carro do Leite",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Carro do Leite",
+      "current_alias": "Carro do Leite",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197971526138"
@@ -683,9 +889,10 @@
         {
           "alias": "Gusca",
           "first_seen": 1687129085,
-          "last_seen": 1687129085,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -700,9 +907,18 @@
       "steam_id": "76561197971865229"
     },
     "76561197972020061": {
-      "aliases": [],
-      "canonical_alias": "Steam 020061",
-      "current_alias": "Steam 020061",
+      "aliases": [
+        {
+          "alias": "Ace",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Ace",
+      "current_alias": "Ace",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197972020061"
@@ -880,9 +1096,18 @@
       "steam_id": "76561197972931383"
     },
     "76561197973139604": {
-      "aliases": [],
-      "canonical_alias": "Steam 139604",
-      "current_alias": "Steam 139604",
+      "aliases": [
+        {
+          "alias": "barbosa",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "barbosa",
+      "current_alias": "barbosa",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197973139604"
@@ -892,9 +1117,10 @@
         {
           "alias": "Lisotavio",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -933,9 +1159,10 @@
         {
           "alias": "Schleder",
           "first_seen": 1545013124,
-          "last_seen": 1545013124,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -954,10 +1181,11 @@
         {
           "alias": "RPB",
           "first_seen": 1699694497,
-          "last_seen": 1699694497,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -1003,12 +1231,20 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "silent",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "🆂🅸🅻🅴🅽🆃",
       "coh2_country": "br",
       "coh2_profile_id": 3415728,
-      "current_alias": "🆂🅸🅻🅴🅽🆃",
+      "current_alias": "silent",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561197978855450"
@@ -1081,12 +1317,20 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "R04DK1LL",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Ferdinand von Jossgrund",
       "coh2_country": "br",
       "coh2_profile_id": 1015556,
-      "current_alias": "Ferdinand von Jossgrund",
+      "current_alias": "R04DK1LL",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561197979853667"
@@ -1175,17 +1419,35 @@
       "steam_id": "76561197981252993"
     },
     "76561197981321791": {
-      "aliases": [],
-      "canonical_alias": "Steam 321791",
-      "current_alias": "Steam 321791",
+      "aliases": [
+        {
+          "alias": "Makino",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Makino",
+      "current_alias": "Makino",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197981321791"
     },
     "76561197981408638": {
-      "aliases": [],
-      "canonical_alias": "Steam 408638",
-      "current_alias": "Steam 408638",
+      "aliases": [
+        {
+          "alias": "Vinicius_BR",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Vinicius_BR",
+      "current_alias": "Vinicius_BR",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197981408638"
@@ -1220,12 +1482,20 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "[.:VT.NC:.] DÓRIA",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "[.:VT.NC:.] DORIA-PCERJ",
       "coh2_country": "br",
       "coh2_profile_id": 2901128,
-      "current_alias": "[.:VT.NC:.] DORIA-PCERJ",
+      "current_alias": "[.:VT.NC:.] DÓRIA",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561197982527151"
@@ -1298,6 +1568,14 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "Numenusty",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Carlão do Bayou",
@@ -1305,7 +1583,7 @@
       "coh2_last_match_date": 1634060214,
       "coh2_profile_id": 2958008,
       "coh2_total_matches": 14,
-      "current_alias": "Carlão do Bayou",
+      "current_alias": "Numenusty",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561197983439300"
@@ -1337,9 +1615,18 @@
       "steam_id": "76561197984043234"
     },
     "76561197984091200": {
-      "aliases": [],
-      "canonical_alias": "Steam 091200",
-      "current_alias": "Steam 091200",
+      "aliases": [
+        {
+          "alias": "Thorak",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Thorak",
+      "current_alias": "Thorak",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197984091200"
@@ -1494,9 +1781,18 @@
       "steam_id": "76561197985466549"
     },
     "76561197985490725": {
-      "aliases": [],
-      "canonical_alias": "Steam 490725",
-      "current_alias": "Steam 490725",
+      "aliases": [
+        {
+          "alias": "Blinddread",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Blinddread",
+      "current_alias": "Blinddread",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197985490725"
@@ -1538,12 +1834,20 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "Trapo Mr. Magoo",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Trapo",
       "coh2_country": "br",
       "coh2_profile_id": 2302086,
-      "current_alias": "Trapo",
+      "current_alias": "Trapo Mr. Magoo",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561197985680159"
@@ -1587,9 +1891,18 @@
       "steam_id": "76561197985714576"
     },
     "76561197985744083": {
-      "aliases": [],
-      "canonical_alias": "Steam 744083",
-      "current_alias": "Steam 744083",
+      "aliases": [
+        {
+          "alias": "Belzinha",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Belzinha",
+      "current_alias": "Belzinha",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197985744083"
@@ -1599,10 +1912,11 @@
         {
           "alias": "[LaR7] sesma",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -1754,9 +2068,18 @@
       "steam_id": "76561197986404592"
     },
     "76561197986435301": {
-      "aliases": [],
-      "canonical_alias": "Steam 435301",
-      "current_alias": "Steam 435301",
+      "aliases": [
+        {
+          "alias": "dakombi",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "dakombi",
+      "current_alias": "dakombi",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197986435301"
@@ -1766,9 +2089,10 @@
         {
           "alias": "Piracicaba (S FA)",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh1_api"
+            "relic_coh1_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -1825,9 +2149,18 @@
       "steam_id": "76561197987435700"
     },
     "76561197987449454": {
-      "aliases": [],
-      "canonical_alias": "Steam 449454",
-      "current_alias": "Steam 449454",
+      "aliases": [
+        {
+          "alias": "superkeka",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "superkeka",
+      "current_alias": "superkeka",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197987449454"
@@ -1966,10 +2299,11 @@
         {
           "alias": "Boris",
           "first_seen": 1482980198,
-          "last_seen": 1482980198,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -1991,9 +2325,10 @@
         {
           "alias": "brender",
           "first_seen": 1443413136,
-          "last_seen": 1443413136,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -2044,6 +2379,14 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "Full HouZe",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Full RuleZ",
@@ -2051,7 +2394,7 @@
       "coh2_last_match_date": 1459831063,
       "coh2_profile_id": 251817,
       "coh2_total_matches": 10,
-      "current_alias": "Full RuleZ",
+      "current_alias": "Full HouZe",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561197989349286"
@@ -2117,9 +2460,18 @@
       "steam_id": "76561197989740424"
     },
     "76561197989742487": {
-      "aliases": [],
-      "canonical_alias": "Steam 742487",
-      "current_alias": "Steam 742487",
+      "aliases": [
+        {
+          "alias": "Be!",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Be!",
+      "current_alias": "Be!",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197989742487"
@@ -2179,9 +2531,10 @@
         {
           "alias": "Renné",
           "first_seen": 1751069512,
-          "last_seen": 1751069512,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh1_api"
+            "relic_coh1_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -2336,10 +2689,11 @@
         {
           "alias": "BalaQuente",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -2394,9 +2748,18 @@
       "steam_id": "76561197990925885"
     },
     "76561197990972400": {
-      "aliases": [],
-      "canonical_alias": "Steam 972400",
-      "current_alias": "Steam 972400",
+      "aliases": [
+        {
+          "alias": "GrimM - \"Estilo Cangaceiro\"",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "GrimM - \"Estilo Cangaceiro\"",
+      "current_alias": "GrimM - \"Estilo Cangaceiro\"",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197990972400"
@@ -2492,17 +2855,35 @@
       "steam_id": "76561197991249000"
     },
     "76561197991346818": {
-      "aliases": [],
-      "canonical_alias": "Steam 346818",
-      "current_alias": "Steam 346818",
+      "aliases": [
+        {
+          "alias": "sawyer.",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "sawyer.",
+      "current_alias": "sawyer.",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197991346818"
     },
     "76561197991412739": {
-      "aliases": [],
-      "canonical_alias": "Steam 412739",
-      "current_alias": "Steam 412739",
+      "aliases": [
+        {
+          "alias": "VittoS",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "VittoS",
+      "current_alias": "VittoS",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197991412739"
@@ -2530,17 +2911,35 @@
       "steam_id": "76561197991547081"
     },
     "76561197991666913": {
-      "aliases": [],
-      "canonical_alias": "Steam 666913",
-      "current_alias": "Steam 666913",
+      "aliases": [
+        {
+          "alias": "Dunha",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Dunha",
+      "current_alias": "Dunha",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197991666913"
     },
     "76561197991712983": {
-      "aliases": [],
-      "canonical_alias": "Steam 712983",
-      "current_alias": "Steam 712983",
+      "aliases": [
+        {
+          "alias": "T!c0",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "T!c0",
+      "current_alias": "T!c0",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197991712983"
@@ -2602,20 +3001,38 @@
       "steam_id": "76561197991932846"
     },
     "76561197991988641": {
-      "aliases": [],
-      "canonical_alias": "Steam 988641",
+      "aliases": [
+        {
+          "alias": "Snoopy_BR",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Snoopy_BR",
       "coh2_country": "br",
       "coh2_profile_id": 289798,
       "coh2_total_matches": 1,
-      "current_alias": "Steam 988641",
+      "current_alias": "Snoopy_BR",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561197991988641"
     },
     "76561197992198609": {
-      "aliases": [],
-      "canonical_alias": "Steam 198609",
-      "current_alias": "Steam 198609",
+      "aliases": [
+        {
+          "alias": "Chuck101BR",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Chuck101BR",
+      "current_alias": "Chuck101BR",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197992198609"
@@ -2664,9 +3081,18 @@
       "steam_id": "76561197992294791"
     },
     "76561197992633275": {
-      "aliases": [],
-      "canonical_alias": "Steam 633275",
-      "current_alias": "Steam 633275",
+      "aliases": [
+        {
+          "alias": "mancha王",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "mancha王",
+      "current_alias": "mancha王",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197992633275"
@@ -2715,9 +3141,10 @@
         {
           "alias": "wellprometeus",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -2730,17 +3157,35 @@
       "steam_id": "76561197992958968"
     },
     "76561197993233121": {
-      "aliases": [],
-      "canonical_alias": "Steam 233121",
-      "current_alias": "Steam 233121",
+      "aliases": [
+        {
+          "alias": "-fofs_silver-",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "-fofs_silver-",
+      "current_alias": "-fofs_silver-",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197993233121"
     },
     "76561197993426685": {
-      "aliases": [],
-      "canonical_alias": "Steam 426685",
-      "current_alias": "Steam 426685",
+      "aliases": [
+        {
+          "alias": "Jiraya",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Jiraya",
+      "current_alias": "Jiraya",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197993426685"
@@ -2791,9 +3236,18 @@
       "steam_id": "76561197993607706"
     },
     "76561197993700769": {
-      "aliases": [],
-      "canonical_alias": "Steam 700769",
-      "current_alias": "Steam 700769",
+      "aliases": [
+        {
+          "alias": "Jolly Rogers",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Jolly Rogers",
+      "current_alias": "Jolly Rogers",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197993700769"
@@ -2843,9 +3297,18 @@
       "steam_id": "76561197993890923"
     },
     "76561197994036161": {
-      "aliases": [],
-      "canonical_alias": "Steam 036161",
-      "current_alias": "Steam 036161",
+      "aliases": [
+        {
+          "alias": "Ultra Magnus Fuchs",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Ultra Magnus Fuchs",
+      "current_alias": "Ultra Magnus Fuchs",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197994036161"
@@ -2955,9 +3418,18 @@
       "steam_id": "76561197994391479"
     },
     "76561197994729071": {
-      "aliases": [],
-      "canonical_alias": "Steam 729071",
-      "current_alias": "Steam 729071",
+      "aliases": [
+        {
+          "alias": "Sundance",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Sundance",
+      "current_alias": "Sundance",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197994729071"
@@ -3107,10 +3579,11 @@
         {
           "alias": "Rafaddb",
           "first_seen": 1664768792,
-          "last_seen": 1664768792,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -3615,9 +4088,10 @@
         {
           "alias": "Svaiter",
           "first_seen": 1530213972,
-          "last_seen": 1530213972,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh1_api"
+            "relic_coh1_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -3652,33 +4126,69 @@
       "steam_id": "76561197998373469"
     },
     "76561197998388697": {
-      "aliases": [],
-      "canonical_alias": "Steam 388697",
-      "current_alias": "Steam 388697",
+      "aliases": [
+        {
+          "alias": "faith*",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "faith*",
+      "current_alias": "faith*",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197998388697"
     },
     "76561197998420956": {
-      "aliases": [],
-      "canonical_alias": "Steam 420956",
-      "current_alias": "Steam 420956",
+      "aliases": [
+        {
+          "alias": "zerokiller",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "zerokiller",
+      "current_alias": "zerokiller",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197998420956"
     },
     "76561197998430913": {
-      "aliases": [],
-      "canonical_alias": "Steam 430913",
-      "current_alias": "Steam 430913",
+      "aliases": [
+        {
+          "alias": "Terninho",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Terninho",
+      "current_alias": "Terninho",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197998430913"
     },
     "76561197998475210": {
-      "aliases": [],
-      "canonical_alias": "Steam 475210",
-      "current_alias": "Steam 475210",
+      "aliases": [
+        {
+          "alias": "Arel (S FA)",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Arel (S FA)",
+      "current_alias": "Arel (S FA)",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197998475210"
@@ -3743,9 +4253,18 @@
       "steam_id": "76561197998800284"
     },
     "76561197999098953": {
-      "aliases": [],
-      "canonical_alias": "Steam 098953",
-      "current_alias": "Steam 098953",
+      "aliases": [
+        {
+          "alias": "Fumaca",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Fumaca",
+      "current_alias": "Fumaca",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197999098953"
@@ -3755,9 +4274,10 @@
         {
           "alias": "Rickardo",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh1_api"
+            "relic_coh1_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -3807,9 +4327,18 @@
       "steam_id": "76561197999176372"
     },
     "76561197999412694": {
-      "aliases": [],
-      "canonical_alias": "Steam 412694",
-      "current_alias": "Steam 412694",
+      "aliases": [
+        {
+          "alias": "BLUE-SKULL",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "BLUE-SKULL",
+      "current_alias": "BLUE-SKULL",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197999412694"
@@ -3895,9 +4424,18 @@
       "steam_id": "76561197999499669"
     },
     "76561197999541793": {
-      "aliases": [],
-      "canonical_alias": "Steam 541793",
-      "current_alias": "Steam 541793",
+      "aliases": [
+        {
+          "alias": "_pSychedelic ツ",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "_pSychedelic ツ",
+      "current_alias": "_pSychedelic ツ",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561197999541793"
@@ -4001,6 +4539,14 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "Th1AG0GG",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Th1AGO.GG ",
@@ -4008,7 +4554,7 @@
       "coh2_last_match_date": 1460336046,
       "coh2_profile_id": 2132313,
       "coh2_total_matches": 42,
-      "current_alias": "Th1AGO.GG ",
+      "current_alias": "Th1AG0GG",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198000577202"
@@ -4053,6 +4599,14 @@
           "sources": [
             "relic_coh1_api"
           ]
+        },
+        {
+          "alias": "Agulinea",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Agulha Negra",
@@ -4063,7 +4617,7 @@
       "coh2_last_match_date": 1602543569,
       "coh2_profile_id": 1838786,
       "coh2_total_matches": 13,
-      "current_alias": "Agulha Negra",
+      "current_alias": "Agulinea",
       "scope": "legacy_coh1_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198000642884"
@@ -4086,17 +4640,35 @@
       "steam_id": "76561198001262090"
     },
     "76561198001284202": {
-      "aliases": [],
-      "canonical_alias": "Steam 284202",
-      "current_alias": "Steam 284202",
+      "aliases": [
+        {
+          "alias": "Daldegan",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Daldegan",
+      "current_alias": "Daldegan",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198001284202"
     },
     "76561198001386404": {
-      "aliases": [],
-      "canonical_alias": "Steam 386404",
-      "current_alias": "Steam 386404",
+      "aliases": [
+        {
+          "alias": "Ruan ;] '",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Ruan ;] '",
+      "current_alias": "Ruan ;] '",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198001386404"
@@ -4212,9 +4784,18 @@
       "steam_id": "76561198001980993"
     },
     "76561198002005410": {
-      "aliases": [],
-      "canonical_alias": "Steam 005410",
-      "current_alias": "Steam 005410",
+      "aliases": [
+        {
+          "alias": "Emula Filha Da!!!",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Emula Filha Da!!!",
+      "current_alias": "Emula Filha Da!!!",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198002005410"
@@ -4249,25 +4830,52 @@
       "steam_id": "76561198002053540"
     },
     "76561198002271226": {
-      "aliases": [],
-      "canonical_alias": "Steam 271226",
-      "current_alias": "Steam 271226",
+      "aliases": [
+        {
+          "alias": "Tiago Cabral",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Tiago Cabral",
+      "current_alias": "Tiago Cabral",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198002271226"
     },
     "76561198002319457": {
-      "aliases": [],
-      "canonical_alias": "Steam 319457",
-      "current_alias": "Steam 319457",
+      "aliases": [
+        {
+          "alias": "penDRIVE",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "penDRIVE",
+      "current_alias": "penDRIVE",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198002319457"
     },
     "76561198002565981": {
-      "aliases": [],
-      "canonical_alias": "Steam 565981",
-      "current_alias": "Steam 565981",
+      "aliases": [
+        {
+          "alias": "Molina",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Molina",
+      "current_alias": "Molina",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198002565981"
@@ -4277,9 +4885,10 @@
         {
           "alias": "Omega-Raider",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -4321,6 +4930,14 @@
             "relic_coh1_api",
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "Lippelt",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Malkav",
@@ -4331,23 +4948,41 @@
       "coh2_last_match_date": 1669580954,
       "coh2_profile_id": 1186457,
       "coh2_total_matches": 3,
-      "current_alias": "Malkav",
+      "current_alias": "Lippelt",
       "scope": "legacy_coh1_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198002701396"
     },
     "76561198002886531": {
-      "aliases": [],
-      "canonical_alias": "Steam 886531",
-      "current_alias": "Steam 886531",
+      "aliases": [
+        {
+          "alias": "Onbudsman!",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Onbudsman!",
+      "current_alias": "Onbudsman!",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198002886531"
     },
     "76561198003095314": {
-      "aliases": [],
-      "canonical_alias": "Steam 095314",
-      "current_alias": "Steam 095314",
+      "aliases": [
+        {
+          "alias": "rummens",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "rummens",
+      "current_alias": "rummens",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198003095314"
@@ -4357,9 +4992,10 @@
         {
           "alias": "(PG)Lerner (Gotrek40k)",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -4397,9 +5033,18 @@
       "steam_id": "76561198003517598"
     },
     "76561198003688677": {
-      "aliases": [],
-      "canonical_alias": "Steam 688677",
-      "current_alias": "Steam 688677",
+      "aliases": [
+        {
+          "alias": "João",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "João",
+      "current_alias": "João",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198003688677"
@@ -4409,10 +5054,11 @@
         {
           "alias": "Phack",
           "first_seen": 1648927885,
-          "last_seen": 1648931347,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -4448,9 +5094,18 @@
       "steam_id": "76561198003873689"
     },
     "76561198003880515": {
-      "aliases": [],
-      "canonical_alias": "Steam 880515",
-      "current_alias": "Steam 880515",
+      "aliases": [
+        {
+          "alias": "Ana_Paula",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Ana_Paula",
+      "current_alias": "Ana_Paula",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198003880515"
@@ -4460,10 +5115,11 @@
         {
           "alias": "{>R7<}stg.Danilo",
           "first_seen": 1757640816,
-          "last_seen": 1757640816,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -4523,9 +5179,18 @@
       "steam_id": "76561198004083195"
     },
     "76561198004185536": {
-      "aliases": [],
-      "canonical_alias": "Steam 185536",
-      "current_alias": "Steam 185536",
+      "aliases": [
+        {
+          "alias": "Junaum",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Junaum",
+      "current_alias": "Junaum",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198004185536"
@@ -4584,9 +5249,18 @@
       "steam_id": "76561198004267644"
     },
     "76561198004309186": {
-      "aliases": [],
-      "canonical_alias": "Steam 309186",
-      "current_alias": "Steam 309186",
+      "aliases": [
+        {
+          "alias": "mths1",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "mths1",
+      "current_alias": "mths1",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198004309186"
@@ -4596,9 +5270,10 @@
         {
           "alias": "Mav",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh1_api"
+            "relic_coh1_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -4612,9 +5287,18 @@
       "steam_id": "76561198004428229"
     },
     "76561198004514113": {
-      "aliases": [],
-      "canonical_alias": "Steam 514113",
-      "current_alias": "Steam 514113",
+      "aliases": [
+        {
+          "alias": "Riverside",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Riverside",
+      "current_alias": "Riverside",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198004514113"
@@ -4640,9 +5324,18 @@
       "steam_id": "76561198004596515"
     },
     "76561198004618821": {
-      "aliases": [],
-      "canonical_alias": "Steam 618821",
-      "current_alias": "Steam 618821",
+      "aliases": [
+        {
+          "alias": "xVinauMx",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "xVinauMx",
+      "current_alias": "xVinauMx",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198004618821"
@@ -4755,9 +5448,18 @@
       "steam_id": "76561198005639148"
     },
     "76561198005653707": {
-      "aliases": [],
-      "canonical_alias": "Steam 653707",
-      "current_alias": "Steam 653707",
+      "aliases": [
+        {
+          "alias": "kAzZ",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "kAzZ",
+      "current_alias": "kAzZ",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198005653707"
@@ -4785,9 +5487,18 @@
       "steam_id": "76561198005724513"
     },
     "76561198005862624": {
-      "aliases": [],
-      "canonical_alias": "Steam 862624",
-      "current_alias": "Steam 862624",
+      "aliases": [
+        {
+          "alias": "0icram",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "0icram",
+      "current_alias": "0icram",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198005862624"
@@ -4843,9 +5554,18 @@
       "steam_id": "76561198006029123"
     },
     "76561198006312343": {
-      "aliases": [],
-      "canonical_alias": "Steam 312343",
-      "current_alias": "Steam 312343",
+      "aliases": [
+        {
+          "alias": "Nanau",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Nanau",
+      "current_alias": "Nanau",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198006312343"
@@ -4877,10 +5597,11 @@
         {
           "alias": "domcalabreza",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -4938,9 +5659,18 @@
       "steam_id": "76561198006869913"
     },
     "76561198006923333": {
-      "aliases": [],
-      "canonical_alias": "Steam 923333",
-      "current_alias": "Steam 923333",
+      "aliases": [
+        {
+          "alias": "Guzansky",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Guzansky",
+      "current_alias": "Guzansky",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198006923333"
@@ -4967,9 +5697,10 @@
         {
           "alias": "roberknight",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -5151,17 +5882,35 @@
       "steam_id": "76561198008997035"
     },
     "76561198009085283": {
-      "aliases": [],
-      "canonical_alias": "Steam 085283",
-      "current_alias": "Steam 085283",
+      "aliases": [
+        {
+          "alias": "LordWMF",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "LordWMF",
+      "current_alias": "LordWMF",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198009085283"
     },
     "76561198009212087": {
-      "aliases": [],
-      "canonical_alias": "Steam 212087",
-      "current_alias": "Steam 212087",
+      "aliases": [
+        {
+          "alias": "Fraldinha",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Fraldinha",
+      "current_alias": "Fraldinha",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198009212087"
@@ -5305,9 +6054,18 @@
       "steam_id": "76561198009815316"
     },
     "76561198009831829": {
-      "aliases": [],
-      "canonical_alias": "Steam 831829",
-      "current_alias": "Steam 831829",
+      "aliases": [
+        {
+          "alias": "Darth Nader",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Darth Nader",
+      "current_alias": "Darth Nader",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198009831829"
@@ -5432,9 +6190,10 @@
         {
           "alias": "PauloCosta",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -5477,12 +6236,20 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "Uri",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "[LaR7] Pirok",
       "coh2_country": "br",
       "coh2_profile_id": 1362173,
-      "current_alias": "[LaR7] Pirok",
+      "current_alias": "Uri",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198010860950"
@@ -5505,25 +6272,52 @@
       "steam_id": "76561198010919323"
     },
     "76561198010922857": {
-      "aliases": [],
-      "canonical_alias": "Steam 922857",
-      "current_alias": "Steam 922857",
+      "aliases": [
+        {
+          "alias": "frasson",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "frasson",
+      "current_alias": "frasson",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198010922857"
     },
     "76561198011007039": {
-      "aliases": [],
-      "canonical_alias": "Steam 007039",
-      "current_alias": "Steam 007039",
+      "aliases": [
+        {
+          "alias": "=S.4th=Ronny",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "=S.4th=Ronny",
+      "current_alias": "=S.4th=Ronny",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198011007039"
     },
     "76561198011126826": {
-      "aliases": [],
-      "canonical_alias": "Steam 126826",
-      "current_alias": "Steam 126826",
+      "aliases": [
+        {
+          "alias": "[RTS] MTAlmeida",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "[RTS] MTAlmeida",
+      "current_alias": "[RTS] MTAlmeida",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198011126826"
@@ -5652,9 +6446,18 @@
       "steam_id": "76561198011592752"
     },
     "76561198011797963": {
-      "aliases": [],
-      "canonical_alias": "Steam 797963",
-      "current_alias": "Steam 797963",
+      "aliases": [
+        {
+          "alias": "Loop!",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Loop!",
+      "current_alias": "Loop!",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198011797963"
@@ -5773,9 +6576,18 @@
       "steam_id": "76561198012415879"
     },
     "76561198012423598": {
-      "aliases": [],
-      "canonical_alias": "Steam 423598",
-      "current_alias": "Steam 423598",
+      "aliases": [
+        {
+          "alias": "Napobar",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Napobar",
+      "current_alias": "Napobar",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198012423598"
@@ -5785,9 +6597,10 @@
         {
           "alias": "Carabina",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -5822,9 +6635,18 @@
       "steam_id": "76561198012596898"
     },
     "76561198012610299": {
-      "aliases": [],
-      "canonical_alias": "Steam 610299",
-      "current_alias": "Steam 610299",
+      "aliases": [
+        {
+          "alias": "Corleone",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Corleone",
+      "current_alias": "Corleone",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198012610299"
@@ -6321,9 +7143,18 @@
       "steam_id": "76561198015269729"
     },
     "76561198015280330": {
-      "aliases": [],
-      "canonical_alias": "Steam 280330",
-      "current_alias": "Steam 280330",
+      "aliases": [
+        {
+          "alias": "FlashBr",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "FlashBr",
+      "current_alias": "FlashBr",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198015280330"
@@ -6355,17 +7186,35 @@
       "steam_id": "76561198015321058"
     },
     "76561198015336489": {
-      "aliases": [],
-      "canonical_alias": "Steam 336489",
-      "current_alias": "Steam 336489",
+      "aliases": [
+        {
+          "alias": "Pedr0-3SH",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Pedr0-3SH",
+      "current_alias": "Pedr0-3SH",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198015336489"
     },
     "76561198015433450": {
-      "aliases": [],
-      "canonical_alias": "Steam 433450",
-      "current_alias": "Steam 433450",
+      "aliases": [
+        {
+          "alias": "united-loko",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "united-loko",
+      "current_alias": "united-loko",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198015433450"
@@ -6388,17 +7237,35 @@
       "steam_id": "76561198015625083"
     },
     "76561198015846469": {
-      "aliases": [],
-      "canonical_alias": "Steam 846469",
-      "current_alias": "Steam 846469",
+      "aliases": [
+        {
+          "alias": "^4[>StK<] ^9D i a s^1",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "^4[>StK<] ^9D i a s^1",
+      "current_alias": "^4[>StK<] ^9D i a s^1",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198015846469"
     },
     "76561198016012859": {
-      "aliases": [],
-      "canonical_alias": "Steam 012859",
-      "current_alias": "Steam 012859",
+      "aliases": [
+        {
+          "alias": "dedalus 1",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "dedalus 1",
+      "current_alias": "dedalus 1",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198016012859"
@@ -6421,9 +7288,18 @@
       "steam_id": "76561198016133273"
     },
     "76561198016423893": {
-      "aliases": [],
-      "canonical_alias": "Steam 423893",
-      "current_alias": "Steam 423893",
+      "aliases": [
+        {
+          "alias": "@< >< itazzzz>< >@",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "@< >< itazzzz>< >@",
+      "current_alias": "@< >< itazzzz>< >@",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198016423893"
@@ -6711,9 +7587,18 @@
       "steam_id": "76561198018018136"
     },
     "76561198018054674": {
-      "aliases": [],
-      "canonical_alias": "Steam 054674",
-      "current_alias": "Steam 054674",
+      "aliases": [
+        {
+          "alias": "Cesar",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Cesar",
+      "current_alias": "Cesar",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198018054674"
@@ -7014,9 +7899,18 @@
       "steam_id": "76561198019396463"
     },
     "76561198019434486": {
-      "aliases": [],
-      "canonical_alias": "Steam 434486",
-      "current_alias": "Steam 434486",
+      "aliases": [
+        {
+          "alias": "R1KK0",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "R1KK0",
+      "current_alias": "R1KK0",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198019434486"
@@ -7044,9 +7938,18 @@
       "steam_id": "76561198019572155"
     },
     "76561198019776050": {
-      "aliases": [],
-      "canonical_alias": "Steam 776050",
-      "current_alias": "Steam 776050",
+      "aliases": [
+        {
+          "alias": "Trufelli",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Trufelli",
+      "current_alias": "Trufelli",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198019776050"
@@ -7136,9 +8039,10 @@
         {
           "alias": "Cyberpunk-76",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -7177,9 +8081,10 @@
         {
           "alias": "Prod",
           "first_seen": 1437776057,
-          "last_seen": 1437776057,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -7198,9 +8103,10 @@
         {
           "alias": "italow93",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -7235,9 +8141,18 @@
       "steam_id": "76561198020301654"
     },
     "76561198020475378": {
-      "aliases": [],
-      "canonical_alias": "Steam 475378",
-      "current_alias": "Steam 475378",
+      "aliases": [
+        {
+          "alias": "=OCC= GrandeBR",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "=OCC= GrandeBR",
+      "current_alias": "=OCC= GrandeBR",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198020475378"
@@ -7269,17 +8184,35 @@
       "steam_id": "76561198020531815"
     },
     "76561198020579627": {
-      "aliases": [],
-      "canonical_alias": "Steam 579627",
-      "current_alias": "Steam 579627",
+      "aliases": [
+        {
+          "alias": "RatoBranco",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "RatoBranco",
+      "current_alias": "RatoBranco",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198020579627"
     },
     "76561198020631209": {
-      "aliases": [],
-      "canonical_alias": "Steam 631209",
-      "current_alias": "Steam 631209",
+      "aliases": [
+        {
+          "alias": "Kibesurdo",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Kibesurdo",
+      "current_alias": "Kibesurdo",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198020631209"
@@ -7345,9 +8278,10 @@
         {
           "alias": "'Zee Kat",
           "first_seen": 1754039717,
-          "last_seen": 1754039717,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh1_api"
+            "relic_coh1_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -7407,9 +8341,18 @@
       "steam_id": "76561198021094567"
     },
     "76561198021152014": {
-      "aliases": [],
-      "canonical_alias": "Steam 152014",
-      "current_alias": "Steam 152014",
+      "aliases": [
+        {
+          "alias": "trutawave",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "trutawave",
+      "current_alias": "trutawave",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198021152014"
@@ -7461,17 +8404,35 @@
       "steam_id": "76561198021487841"
     },
     "76561198021806757": {
-      "aliases": [],
-      "canonical_alias": "Steam 806757",
-      "current_alias": "Steam 806757",
+      "aliases": [
+        {
+          "alias": "BLANKA-HARD",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "BLANKA-HARD",
+      "current_alias": "BLANKA-HARD",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198021806757"
     },
     "76561198022222059": {
-      "aliases": [],
-      "canonical_alias": "Steam 222059",
-      "current_alias": "Steam 222059",
+      "aliases": [
+        {
+          "alias": "Comange",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Comange",
+      "current_alias": "Comange",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198022222059"
@@ -7540,9 +8501,18 @@
       "steam_id": "76561198023218470"
     },
     "76561198023653558": {
-      "aliases": [],
-      "canonical_alias": "Steam 653558",
-      "current_alias": "Steam 653558",
+      "aliases": [
+        {
+          "alias": "Major Dutch  (Camargo)",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Major Dutch  (Camargo)",
+      "current_alias": "Major Dutch  (Camargo)",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198023653558"
@@ -7594,9 +8564,10 @@
         {
           "alias": "orestesbn",
           "first_seen": 1599793614,
-          "last_seen": 1599793614,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -7752,10 +8723,11 @@
         {
           "alias": "Camargo",
           "first_seen": 1601091029,
-          "last_seen": 1601091029,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -8065,9 +9037,18 @@
       "steam_id": "76561198026491800"
     },
     "76561198027020173": {
-      "aliases": [],
-      "canonical_alias": "Steam 020173",
-      "current_alias": "Steam 020173",
+      "aliases": [
+        {
+          "alias": "Crismon",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Crismon",
+      "current_alias": "Crismon",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198027020173"
@@ -8300,9 +9281,10 @@
         {
           "alias": "extremee-br",
           "first_seen": 1658337675,
-          "last_seen": 1658337675,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -8586,9 +9568,18 @@
       "steam_id": "76561198029446908"
     },
     "76561198030044738": {
-      "aliases": [],
-      "canonical_alias": "Steam 044738",
-      "current_alias": "Steam 044738",
+      "aliases": [
+        {
+          "alias": "Portinari",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Portinari",
+      "current_alias": "Portinari",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198030044738"
@@ -8768,12 +9759,20 @@
           "sources": [
             "relic_coh1_api"
           ]
+        },
+        {
+          "alias": "Rufus Lenhador",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Luan Miguel",
       "coh1_country": "br",
       "coh1_profile_id": 812672,
-      "current_alias": "Luan Miguel",
+      "current_alias": "Rufus Lenhador",
       "scope": "legacy_coh1_br",
       "steam_br_group": true,
       "steam_id": "76561198031919414"
@@ -8843,11 +9842,20 @@
       "steam_id": "76561198032942439"
     },
     "76561198033340037": {
-      "aliases": [],
-      "canonical_alias": "Steam 340037",
+      "aliases": [
+        {
+          "alias": "Pai de 5",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Pai de 5",
       "coh2_country": "br",
       "coh2_profile_id": 170597,
-      "current_alias": "Steam 340037",
+      "current_alias": "Pai de 5",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198033340037"
@@ -9139,9 +10147,10 @@
         {
           "alias": "Sorcerer117",
           "first_seen": 1654308666,
-          "last_seen": 1654308666,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -9455,9 +10464,18 @@
       "steam_id": "76561198036374622"
     },
     "76561198036585022": {
-      "aliases": [],
-      "canonical_alias": "Steam 585022",
-      "current_alias": "Steam 585022",
+      "aliases": [
+        {
+          "alias": "warleyitalva",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "warleyitalva",
+      "current_alias": "warleyitalva",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198036585022"
@@ -9553,9 +10571,18 @@
       "steam_id": "76561198038369737"
     },
     "76561198038415044": {
-      "aliases": [],
-      "canonical_alias": "Steam 415044",
-      "current_alias": "Steam 415044",
+      "aliases": [
+        {
+          "alias": "Mancha-verde",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Mancha-verde",
+      "current_alias": "Mancha-verde",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198038415044"
@@ -9605,6 +10632,14 @@
           "sources": [
             "relic_coh1_api"
           ]
+        },
+        {
+          "alias": "Leo Atreides",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Fives",
@@ -9613,7 +10648,7 @@
       "coh1_total_matches": 2,
       "coh2_country": "br",
       "coh2_profile_id": 1285756,
-      "current_alias": "panzerkampf ice",
+      "current_alias": "Leo Atreides",
       "scope": "legacy_coh1_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198038779147"
@@ -9748,13 +10783,21 @@
           "sources": [
             "relic_coh1_api"
           ]
+        },
+        {
+          "alias": "Puddles",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "RHBH",
       "coh1_country": "br",
       "coh1_profile_id": 860723,
       "coh1_total_matches": 1,
-      "current_alias": "RHBH",
+      "current_alias": "Puddles",
       "scope": "legacy_coh1_br",
       "steam_br_group": true,
       "steam_id": "76561198039353837"
@@ -10331,6 +11374,14 @@
           "sources": [
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "Honkler",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Radovan Karadžić",
@@ -10338,7 +11389,7 @@
       "coh2_last_match_date": 1549548007,
       "coh2_profile_id": 43317,
       "coh2_total_matches": 5,
-      "current_alias": "Radovan Karadžić",
+      "current_alias": "Honkler",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198045054153"
@@ -10417,6 +11468,14 @@
             "relic_coh1_api",
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "Piero Herrera",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "pherrera",
@@ -10426,7 +11485,7 @@
       "coh2_last_match_date": 1598772169,
       "coh2_profile_id": 107128,
       "coh2_total_matches": 258,
-      "current_alias": "pherrera",
+      "current_alias": "Piero Herrera",
       "scope": "legacy_coh1_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198045922821"
@@ -10898,12 +11957,20 @@
           "sources": [
             "relic_coh1_api"
           ]
+        },
+        {
+          "alias": "Barba Roza",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Tyller ︻芫══一҉--─•",
       "coh1_country": "br",
       "coh1_profile_id": 385284,
-      "current_alias": "Tyller ︻芫══一҉--─•",
+      "current_alias": "Barba Roza",
       "scope": "legacy_coh1_br",
       "steam_br_group": true,
       "steam_id": "76561198049297624"
@@ -10992,9 +12059,18 @@
       "steam_id": "76561198050608013"
     },
     "76561198050781043": {
-      "aliases": [],
-      "canonical_alias": "Steam 781043",
-      "current_alias": "Steam 781043",
+      "aliases": [
+        {
+          "alias": "DougFunnieZen",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "DougFunnieZen",
+      "current_alias": "DougFunnieZen",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198050781043"
@@ -11338,9 +12414,10 @@
         {
           "alias": "Badejo Médio",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh1_api"
+            "relic_coh1_api",
+            "steam_web_api"
           ]
         },
         {
@@ -12422,9 +13499,10 @@
         {
           "alias": "alarconuaw",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -13021,9 +14099,10 @@
         {
           "alias": "HenriquePaix",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795486128,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -13516,9 +14595,18 @@
       "steam_id": "76561198070218880"
     },
     "76561198070244313": {
-      "aliases": [],
-      "canonical_alias": "Steam 244313",
-      "current_alias": "Steam 244313",
+      "aliases": [
+        {
+          "alias": "Kuzuhara",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Kuzuhara",
+      "current_alias": "Kuzuhara",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198070244313"
@@ -13545,11 +14633,20 @@
       "steam_id": "76561198070272508"
     },
     "76561198070366388": {
-      "aliases": [],
-      "canonical_alias": "Steam 366388",
+      "aliases": [
+        {
+          "alias": "DrausioBr",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "DrausioBr",
       "coh2_country": "br",
       "coh2_profile_id": 427604,
-      "current_alias": "Steam 366388",
+      "current_alias": "DrausioBr",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198070366388"
@@ -13723,6 +14820,14 @@
             "relic_coh1_api",
             "relic_coh2_api"
           ]
+        },
+        {
+          "alias": "Gustoso",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "=F|R= Gustoso",
@@ -13733,7 +14838,7 @@
       "coh2_last_match_date": 1627349706,
       "coh2_profile_id": 1352954,
       "coh2_total_matches": 37,
-      "current_alias": "=F|R= Gustoso",
+      "current_alias": "Gustoso",
       "scope": "legacy_coh1_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198071927334"
@@ -14078,10 +15183,11 @@
         {
           "alias": "Lt. Rasczak",
           "first_seen": 1652750459,
-          "last_seen": 1652750459,
+          "last_seen": 1795486128,
           "sources": [
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -14705,9 +15811,18 @@
       "steam_id": "76561198078692422"
     },
     "76561198078713618": {
-      "aliases": [],
-      "canonical_alias": "Steam 713618",
-      "current_alias": "Steam 713618",
+      "aliases": [
+        {
+          "alias": "NxGamer",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "NxGamer",
+      "current_alias": "NxGamer",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198078713618"
@@ -15047,6 +16162,14 @@
           "sources": [
             "relic_coh1_api"
           ]
+        },
+        {
+          "alias": "Bartig",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
         }
       ],
       "canonical_alias": "Bärtig",
@@ -15055,7 +16178,7 @@
       "coh1_total_matches": 20,
       "coh2_country": "br",
       "coh2_profile_id": 1455373,
-      "current_alias": "Yorion",
+      "current_alias": "Bartig",
       "scope": "legacy_coh1_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198080994820"
@@ -16296,9 +17419,18 @@
       "steam_id": "76561198088785528"
     },
     "76561198088876431": {
-      "aliases": [],
-      "canonical_alias": "Steam 876431",
-      "current_alias": "Steam 876431",
+      "aliases": [
+        {
+          "alias": "MarcolaAtayde",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "MarcolaAtayde",
+      "current_alias": "MarcolaAtayde",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198088876431"
@@ -16583,12 +17715,21 @@
       "steam_id": "76561198090322961"
     },
     "76561198090585794": {
-      "aliases": [],
-      "canonical_alias": "Steam 585794",
+      "aliases": [
+        {
+          "alias": "[RTS]Coelho_Br",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "[RTS]Coelho_Br",
       "coh2_country": "br",
       "coh2_profile_id": 382061,
       "coh2_total_matches": 1,
-      "current_alias": "Steam 585794",
+      "current_alias": "[RTS]Coelho_Br",
       "scope": "legacy_coh2_br",
       "steam_br_group": true,
       "steam_id": "76561198090585794"
@@ -17151,9 +18292,18 @@
       "steam_id": "76561198098251916"
     },
     "76561198098718402": {
-      "aliases": [],
-      "canonical_alias": "Steam 718402",
-      "current_alias": "Steam 718402",
+      "aliases": [
+        {
+          "alias": "quick",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "quick",
+      "current_alias": "quick",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198098718402"
@@ -17510,9 +18660,18 @@
       "steam_id": "76561198102136727"
     },
     "76561198102438944": {
-      "aliases": [],
-      "canonical_alias": "Steam 438944",
-      "current_alias": "Steam 438944",
+      "aliases": [
+        {
+          "alias": "(SPT)C.moreno",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "(SPT)C.moreno",
+      "current_alias": "(SPT)C.moreno",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198102438944"
@@ -19257,9 +20416,18 @@
       "steam_id": "76561198132921979"
     },
     "76561198134834128": {
-      "aliases": [],
-      "canonical_alias": "Steam 834128",
-      "current_alias": "Steam 834128",
+      "aliases": [
+        {
+          "alias": "The Great Mighty Poo",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "The Great Mighty Poo",
+      "current_alias": "The Great Mighty Poo",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198134834128"
@@ -20308,9 +21476,18 @@
       "steam_id": "76561198147638392"
     },
     "76561198148224585": {
-      "aliases": [],
-      "canonical_alias": "Steam 224585",
-      "current_alias": "Steam 224585",
+      "aliases": [
+        {
+          "alias": "Hollywood",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Hollywood",
+      "current_alias": "Hollywood",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198148224585"
@@ -22095,9 +23272,18 @@
       "steam_id": "76561198205217329"
     },
     "76561198206278676": {
-      "aliases": [],
-      "canonical_alias": "Steam 278676",
-      "current_alias": "Steam 278676",
+      "aliases": [
+        {
+          "alias": "markinhoschapolin",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "markinhoschapolin",
+      "current_alias": "markinhoschapolin",
       "scope": "legacy_steam_group_br",
       "steam_br_group": true,
       "steam_id": "76561198206278676"
@@ -30208,7 +31394,7 @@
       "coh3_last_match_date": 1741450872,
       "coh3_total_matches": 6,
       "current_alias": "SKEL",
-      "last_checked_at": 1795485828,
+      "last_checked_at": 1795486128,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -32011,9 +33197,11 @@
           "first_seen": 1435014450,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -32026,7 +33214,7 @@
       "coh2_total_matches": 2,
       "coh3_country": "br",
       "current_alias": "GatoPreto",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1059169,
@@ -33425,9 +34613,11 @@
           "first_seen": 1758328958,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -33444,7 +34634,7 @@
       "coh3_last_match_date": 1793643142,
       "coh3_total_matches": 8,
       "current_alias": "WIlissonRFP",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1092921,
@@ -39191,8 +40381,10 @@
           "first_seen": 1795486029,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -39201,7 +40393,7 @@
       "coh2_profile_id": 1363211,
       "coh3_country": "br",
       "current_alias": "IntelliTour",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1226227,
@@ -44259,9 +45451,11 @@
           "first_seen": 1662320127,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -44276,7 +45470,7 @@
       "coh2_total_matches": 78,
       "coh3_country": "br",
       "current_alias": "Pablo Nieto",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1309878,
@@ -57954,7 +59148,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795485828,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -59870,7 +61064,7 @@
       "coh3_last_match_date": 1795467214,
       "coh3_total_matches": 6176,
       "current_alias": "COHBRAMACHINE",
-      "last_checked_at": 1795485828,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 1795475539,
       "last_steam_aliases_at": 1795475539,
       "profile_id": 16867,
@@ -61149,9 +62343,11 @@
           "first_seen": 1417481501,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -61168,7 +62364,7 @@
       "coh3_last_match_date": 1679435779,
       "coh3_total_matches": 1,
       "current_alias": "pontobas",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 205663,
@@ -62736,7 +63932,7 @@
       "coh3_last_match_date": 1778035588,
       "coh3_total_matches": 62,
       "current_alias": "Nargoth de Bebbanburg",
-      "last_checked_at": 1795485828,
+      "last_checked_at": 1795486128,
       "last_coh1_relic_at": 1795480318,
       "last_coh1stats_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
@@ -63039,7 +64235,17 @@
           "first_seen": 1785435739,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api"
+          ]
+        },
+        {
+          "alias": "Cassius Thundercock",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "local_db",
+            "steam_web_api"
           ]
         }
       ],
@@ -63055,8 +64261,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1785435739,
       "coh3_total_matches": 62,
-      "current_alias": "Greif",
-      "last_checked_at": 1795486029,
+      "current_alias": "Cassius Thundercock",
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 2458,
@@ -66055,7 +67261,9 @@
           "first_seen": 1795486029,
           "last_seen": 1795486029,
           "sources": [
-            "relic_api"
+            "local_db",
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -66066,7 +67274,7 @@
       "coh2_total_matches": 5,
       "coh3_country": "br",
       "current_alias": "Tmaus",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 32256,
@@ -70748,7 +71956,7 @@
       "coh3_last_match_date": 1795370889,
       "coh3_total_matches": 11874,
       "current_alias": "Minhoca de ferro!",
-      "last_checked_at": 1795485828,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 1795475539,
       "last_steam_aliases_at": 1795475539,
       "profile_id": 509690,
@@ -70840,7 +72048,9 @@
           "first_seen": 1690816386,
           "last_seen": 1795486029,
           "sources": [
-            "relic_api"
+            "local_db",
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -70849,7 +72059,7 @@
       "coh3_last_match_date": 1690816386,
       "coh3_total_matches": 174,
       "current_alias": "ARM4GEDDON",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 519273,
@@ -70884,7 +72094,7 @@
       "coh2_total_matches": 86,
       "coh3_country": "br",
       "current_alias": "mw",
-      "last_checked_at": 1795485828,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 5288,
@@ -73059,9 +74269,11 @@
           "first_seen": 1622809273,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -73076,7 +74288,7 @@
       "coh2_total_matches": 14,
       "coh3_country": "br",
       "current_alias": "flaviovidal",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 648196,
@@ -76210,9 +77422,11 @@
           "first_seen": 1788042763,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
             "relic_coh1_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -76227,7 +77441,7 @@
       "coh2_total_matches": 43,
       "coh3_country": "br",
       "current_alias": "DoppelGangerBR",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 737665,
@@ -76307,8 +77521,10 @@
           "first_seen": 1795486029,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -76318,7 +77534,7 @@
       "coh2_total_matches": 1,
       "coh3_country": "br",
       "current_alias": "Harpia",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 738366,
@@ -77034,8 +78250,10 @@
           "first_seen": 1795486029,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -77044,7 +78262,7 @@
       "coh2_profile_id": 6400665,
       "coh3_country": "br",
       "current_alias": "G r a y F o x",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 740337,
@@ -77550,9 +78768,19 @@
           "first_seen": 1630017068,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
             "relic_coh1_api",
             "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "j0shua",
+          "first_seen": 1795486128,
+          "last_seen": 1795486128,
+          "sources": [
+            "local_db",
+            "steam_web_api"
           ]
         }
       ],
@@ -77566,8 +78794,8 @@
       "coh2_profile_id": 2235343,
       "coh2_total_matches": 24,
       "coh3_country": "br",
-      "current_alias": "georgeydc",
-      "last_checked_at": 1795486029,
+      "current_alias": "j0shua",
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 742145,
@@ -81399,8 +82627,10 @@
           "first_seen": 1795486029,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -81409,7 +82639,7 @@
       "coh2_profile_id": 5540480,
       "coh3_country": "br",
       "current_alias": "Bryan Grobmann",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 798700,
@@ -82823,8 +84053,10 @@
           "first_seen": 1677030266,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -82837,7 +84069,7 @@
       "coh3_last_match_date": 1789844288,
       "coh3_total_matches": 582,
       "current_alias": "Müller",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 83426,
@@ -84041,7 +85273,9 @@
           "first_seen": 1795486029,
           "last_seen": 1795486029,
           "sources": [
-            "relic_api"
+            "local_db",
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -84052,7 +85286,7 @@
       "coh2_total_matches": 4,
       "coh3_country": "br",
       "current_alias": "LordLemos",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 85275,
@@ -84547,8 +85781,10 @@
           "first_seen": 1718680073,
           "last_seen": 1795486029,
           "sources": [
+            "local_db",
             "relic_api",
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -84561,7 +85797,7 @@
       "coh3_last_match_date": 1791602530,
       "coh3_total_matches": 27,
       "current_alias": "Sujo",
-      "last_checked_at": 1795486029,
+      "last_checked_at": 1795486128,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 86998,
@@ -89518,7 +90754,7 @@
       "coh3_last_match_date": 1776803619,
       "coh3_total_matches": 60,
       "current_alias": "LampiaoX_X",
-      "last_checked_at": 1795485828,
+      "last_checked_at": 1795486128,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -91828,13 +93064,13 @@
     "coh2stats_opendata": 257,
     "coh3stats_opendata": 1082,
     "cohdb": 58,
-    "local_db": 1663,
+    "local_db": 1680,
     "relic_api": 1679,
     "relic_coh1_api": 879,
     "relic_coh2_api": 2455,
     "steam_aliases": 48,
-    "steam_web_api": 2869,
+    "steam_web_api": 3053,
     "steam_xml": 64
   },
-  "updated_at": 1795486029
+  "updated_at": 1795486128
 }
