@@ -39033,7 +39033,7 @@
       "last_match_date": 1795120600,
       "last_seen_ingame_ts": 1795192633,
       "last_seen_ingame_webapi_ts": 1795469519,
-      "last_seen_online_ts": 1795519083,
+      "last_seen_online_ts": 1795545292,
       "max_elo": 1058,
       "profile_id": 115658,
       "steam_id": "76561198122325359",
@@ -40378,6 +40378,7 @@
     },
     "1295675": {
       "alias": "Just Rengo",
+      "avatar_url": "https://avatars.steamstatic.com/f3d05db4d8557efbcdbfb337f4176abe9fcb5c1b_medium.jpg",
       "br_source": "alias_history",
       "last_match_date": 1795463489,
       "last_seen_online_ts": 1795544993,
