@@ -89315,7 +89315,8 @@
           "first_seen": 1758082407,
           "last_seen": 1758082407,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -89339,7 +89340,8 @@
           "first_seen": 1758226952,
           "last_seen": 1758226952,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -89353,7 +89355,7 @@
           ]
         }
       ],
-      "canonical_alias": "Nardes",
+      "canonical_alias": "Bubebolos",
       "coh3_country": "br",
       "coh3_last_match_date": 1758226952,
       "coh3_total_matches": 15,
@@ -89362,8 +89364,8 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1160699,
-      "scope": "outros_brasileiros",
-      "smurf_of": "",
+      "scope": "veterano",
+      "smurf_of": "arc",
       "steam_id": "76561199814547622"
     },
     "1160876": {
@@ -216743,7 +216745,8 @@
           "first_seen": 1729142465,
           "last_seen": 1729142465,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -216791,7 +216794,8 @@
           "first_seen": 1756497888,
           "last_seen": 1756926829,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -216855,7 +216859,8 @@
           "first_seen": 1758119368,
           "last_seen": 1758398658,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -216915,6 +216920,7 @@
           "first_seen": 1784566300,
           "last_seen": 1784566300,
           "sources": [
+            "local_db",
             "relic_coh2_api"
           ]
         }
@@ -216938,8 +216944,8 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 917917,
-      "scope": "outros_brasileiros",
-      "smurf_of": "",
+      "scope": "veterano",
+      "smurf_of": "arc",
       "steam_id": "76561198287157768"
     },
     "91815": {
@@ -216983,7 +216989,8 @@
           "first_seen": 1729211435,
           "last_seen": 1729295471,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -217007,8 +217014,8 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 918241,
-      "scope": "outros_brasileiros",
-      "smurf_of": "",
+      "scope": "veterano",
+      "smurf_of": "arc",
       "steam_id": "76561199794093952"
     },
     "91827": {
@@ -231188,5 +231195,5 @@
     "steam_web_api": 7388,
     "steam_xml": 4154
   },
-  "updated_at": 1795499775
+  "updated_at": 1795500675
 }

@@ -7613,17 +7613,6 @@
       "steam_id": "76561199209768283",
       "total_matches": 3
     },
-    "1160699": {
-      "alias": "Nardes",
-      "br_source": "alias_history",
-      "current_alias": "Beeble",
-      "last_match_date": 1753588950,
-      "last_seen_online_ts": 0,
-      "max_elo": 0,
-      "profile_id": 1160699,
-      "steam_id": "76561199814547622",
-      "total_matches": 7
-    },
     "1160876": {
       "alias": "Vitor",
       "br_source": "alias_history",
@@ -34602,16 +34591,6 @@
       "steam_id": "76561198041800001",
       "total_matches": 39
     },
-    "917917": {
-      "alias": "arc",
-      "br_source": "alias_history",
-      "last_match_date": 1762021597,
-      "last_seen_online_ts": 0,
-      "max_elo": 0,
-      "profile_id": 917917,
-      "steam_id": "76561198287157768",
-      "total_matches": 268
-    },
     "91815": {
       "alias": "Ragigigos",
       "br_source": "alias_history",
@@ -34621,16 +34600,6 @@
       "profile_id": 91815,
       "steam_id": "76561198122394478",
       "total_matches": 1
-    },
-    "918241": {
-      "alias": "Faint",
-      "br_source": "alias_history",
-      "last_match_date": 1729443146,
-      "last_seen_online_ts": 0,
-      "max_elo": 0,
-      "profile_id": 918241,
-      "steam_id": "76561199794093952",
-      "total_matches": 11
     },
     "91827": {
       "alias": "[★General★] Apollo",
@@ -46082,7 +46051,7 @@
     "383796": {
       "alias": "Vanghoul",
       "br_source": "open_data_lb",
-      "last_match_date": 1795499770,
+      "last_match_date": 1795500439,
       "last_seen_ingame_ts": 1795495277,
       "last_seen_ingame_webapi_ts": 1795488529,
       "last_seen_online_ts": 1795497907,
@@ -46091,7 +46060,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795213980,
       "steam_id": "76561197982976352",
-      "total_matches": 3302
+      "total_matches": 3303
     },
     "3888": {
       "alias": "Pepe Popo",
