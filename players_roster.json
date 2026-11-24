@@ -1412,7 +1412,8 @@
       "profile_id": 26736,
       "steam_id": "76561198002634846",
       "original_alias": "Arkymendes",
-      "country": "br"
+      "country": "br",
+      "pin_monitorados": true
     },
     {
       "profile_id": 3917,
@@ -1598,6 +1599,24 @@
       "steam_id": "76561198049822246",
       "original_alias": "Arthoumadbro",
       "country": "br"
+    },
+    {
+      "profile_id": 673604,
+      "steam_id": "76561197975133878",
+      "original_alias": "MataMOsca",
+      "country": "br",
+      "pin_monitorados": true
+    },
+    {
+      "profile_id": 893043,
+      "steam_id": "76561197974495191",
+      "original_alias": "Rodrigo Ragagnin",
+      "country": "br",
+      "pin_monitorados": true,
+      "known_aliases": [
+        "Rodrigo Ragagnin",
+        "Rodrigo"
+      ]
     }
   ],
   "outros_br_emigrados": [

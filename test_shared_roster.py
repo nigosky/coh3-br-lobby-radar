@@ -52,7 +52,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         tot_v, uniq_v, tot_m = manage_roster.validate_roster_doc(doc)
         self.assertEqual(tot_v, 48)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
-        self.assertEqual(tot_m, 132)
+        self.assertEqual(tot_m, 134)
         self.assertEqual(len(doc.get("outros_br_emigrados") or []), 15)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr e Tracker presentes; Lem22/Generick/Napa US e XAPA KENTE CA
@@ -117,14 +117,14 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Players Monitorados (132 contas): 43 contas <1200 ELO sem frequência (>=15d) movidas para Outros Brasileiros
+        # Players Monitorados (134 contas): Arkymendes, MataMOsca e Rodrigo Ragagnin fixados em Monitorados (`pin_monitorados=True`)
         from foreign_br_verifier import load_suspected_foreign_br_registry
         from steam_presence import MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS
 
         self.assertIs(MANUAL_OTHER_BR_PLAYERS, MONITORED_BR_PLAYERS)
         mon_by_pid = {int(r["profile_id"]): r for r in MONITORED_BR_PLAYERS}
         exp_by_pid = {int(r["profile_id"]): r for r in OUTROS_BR_EMIGRADOS}
-        self.assertEqual(len(mon_by_pid), 132)
+        self.assertEqual(len(mon_by_pid), 134)
         self.assertEqual(len(exp_by_pid), 15)
         sf_reg = load_suspected_foreign_br_registry()
         self.assertNotIn(448521, sf_reg.get("excluded_from_rankings_pids") or [])
@@ -230,13 +230,22 @@ class TestSharedPlayersRoster(unittest.TestCase):
             22246,
             6696,
             502544,
+            # Fixados explicitamente em Players Monitorados (`pin_monitorados=True`)
+            26736,
+            673604,
+            893043,
         ):
             self.assertIn(mon_pid, mon_by_pid)
             self.assertNotIn(mon_pid, vet_by_pid)
             self.assertNotIn(mon_pid, exp_by_pid)
 
+        for pinned_pid, pinned_alias in ((26736, "Arkymendes"), (673604, "MataMOsca"), (893043, "Rodrigo Ragagnin")):
+            self.assertEqual(mon_by_pid[pinned_pid]["original_alias"], pinned_alias)
+            self.assertTrue(mon_by_pid[pinned_pid].get("pin_monitorados"))
+            self.assertFalse(mon_by_pid[pinned_pid].get("priority_watch"))
+
         # Contas <1200 ELO e sem frequência >=15d foram movidas de Players Monitorados para Outros Brasileiros
-        for demoted_pid in (23250, 673604, 893043, 1115599, 1315226, 26172, 766215, 28570, 59671, 940355):
+        for demoted_pid in (23250, 1115599, 1315226, 26172, 766215, 28570, 59671, 940355):
             self.assertNotIn(demoted_pid, mon_by_pid)
             self.assertNotIn(demoted_pid, vet_by_pid)
 
