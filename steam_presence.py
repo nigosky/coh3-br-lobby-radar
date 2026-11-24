@@ -493,6 +493,9 @@ _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 766215, "steam_id": "76561197997896382", "original_alias": "L3ooW", "country": "br"},
     {"profile_id": 143443, "steam_id": "76561198149823284", "original_alias": "Ted", "country": "br"},
     {"profile_id": 29557, "steam_id": "76561198144606355", "original_alias": "Rylanor", "country": "br", "known_aliases": ["Rylanor", "Rylanor, Cavalo Forte"]},
+    {"profile_id": 2834, "steam_id": "76561198091708083", "original_alias": "Xampoo", "country": "br", "known_aliases": ["Xampoo", "Xampoo - ☭", "Xampoo - ❤", "Xampoo - ♛", "Xampoo -  🔞", "Xampoo - có3 ficô bom ?", "IRONSHIT", "ANALÂNDIA (SP)", "TIMÃO E POMBA"]},
+    {"profile_id": 448521, "steam_id": "76561198831175531", "original_alias": "icemaker", "country": "br", "known_aliases": ["icemaker", "stop", "v1", "高浜 雅己", "dbs", "morena", "CabeloRosa", "A floresta escura da noite", "Nativo de Antes"]},
+    {"profile_id": 720147, "steam_id": "76561199667577805", "original_alias": "アリス", "country": "br", "known_aliases": ["アリス", "David42", "Denis", "Deneuve", "Mia Khalifa"]},
 ]
 
 # Alias retrocompatível para o fallback da 3ª categoria (`monitorados`)

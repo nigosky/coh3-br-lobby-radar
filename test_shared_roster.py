@@ -52,7 +52,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         tot_v, uniq_v, tot_m = manage_roster.validate_roster_doc(doc)
         self.assertEqual(tot_v, 48)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
-        self.assertEqual(tot_m, 158)
+        self.assertEqual(tot_m, 161)
         self.assertEqual(len(doc.get("outros_br_emigrados") or []), 18)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr e Tracker presentes; Lem22/Generick US e XAPA KENTE CA
@@ -116,14 +116,18 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Players Monitorados (158 contas): citados/movidos + Top 100 BR >1300 + amigos + APENAS XAPA KENTE e icewarp entre emigrados
+        # Players Monitorados (161 contas): citados/movidos + Top 100 BR >1300 + amigos + Xampoo + icemaker/アリス + XAPA KENTE e icewarp
+        from foreign_br_verifier import load_suspected_foreign_br_registry
         from steam_presence import MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS
 
         self.assertIs(MANUAL_OTHER_BR_PLAYERS, MONITORED_BR_PLAYERS)
         mon_by_pid = {int(r["profile_id"]): r for r in MONITORED_BR_PLAYERS}
         exp_by_pid = {int(r["profile_id"]): r for r in OUTROS_BR_EMIGRADOS}
-        self.assertEqual(len(mon_by_pid), 158)
+        self.assertEqual(len(mon_by_pid), 161)
         self.assertEqual(len(exp_by_pid), 18)
+        sf_reg = load_suspected_foreign_br_registry()
+        self.assertNotIn(448521, sf_reg.get("excluded_from_rankings_pids") or [])
+        self.assertEqual((sf_reg.get("players") or {}).get("448521", {}).get("status"), "confirmed_br")
         self.assertEqual(
             {pid for pid, r in mon_by_pid.items() if str(r.get("flag_country") or r.get("country") or "br").lower() != "br"},
             {212034, 7448},
@@ -218,6 +222,10 @@ class TestSharedPlayersRoster(unittest.TestCase):
             3888,
             656815,
             86675,
+            # Xampoo + icemaker e possível conta secundária アリス
+            2834,
+            448521,
+            720147,
         ):
             self.assertIn(mon_pid, mon_by_pid)
             self.assertNotIn(mon_pid, vet_by_pid)

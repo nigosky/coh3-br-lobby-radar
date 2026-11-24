@@ -10,7 +10,6 @@
     154301,
     310028,
     416040,
-    448521,
     682793,
     743575,
     811294,
@@ -911,9 +910,9 @@
       "steam_id": "76561198275374020"
     },
     "448521": {
-      "alias": "stop",
-      "br_score": 30,
-      "checks_count": 1,
+      "alias": "icemaker",
+      "br_score": 100,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.275,
         "br_allies_matches": 18,
@@ -923,7 +922,7 @@
         "coh2_matches": 0,
         "foreign_script_allies_matches": 5,
         "live_relic_country": "br",
-        "ptbr_alias_evidence": false,
+        "ptbr_alias_evidence": true,
         "recent_matches_analyzed": 40,
         "steam_br_groups": false,
         "steam_friends_br_count": 0,
@@ -932,9 +931,9 @@
         "steam_location": "",
         "unique_br_allies": 4
       },
-      "exclude_from_rankings": true,
+      "exclude_from_rankings": false,
       "first_flagged_at": 1795496818,
-      "foreign_score": 40,
+      "foreign_score": 0,
       "history": [
         {
           "br_score": 30,
@@ -945,16 +944,28 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 100,
+          "foreign_score": 0,
+          "reasons": [
+            "roster_monitorados_confirmed_br",
+            "coh1_br",
+            "br_squadmates:4"
+          ],
+          "ts": 1795525976,
+          "verdict": "confirmed_br"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795525976,
       "profile_id": 448521,
       "reasons": [
-        "br_squadmates:4",
-        "cjk_alias_history"
+        "roster_monitorados_confirmed_br",
+        "coh1_br",
+        "br_squadmates:4"
       ],
       "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "status": "confirmed_br",
       "steam_id": "76561198831175531"
     },
     "47214": {
@@ -1516,5 +1527,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": 1795496818
+  "updated_at": 1795525976
 }
