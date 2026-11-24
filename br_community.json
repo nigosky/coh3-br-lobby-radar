@@ -25326,6 +25326,16 @@
       "steam_id": "76561198191250231",
       "total_matches": 68
     },
+    "657172": {
+      "alias": "meu piru",
+      "br_source": "open_data_lb",
+      "last_match_date": 1794203740,
+      "last_seen_online_ts": 0,
+      "max_elo": 1092,
+      "profile_id": 657172,
+      "steam_id": "76561198373970544",
+      "total_matches": 1308
+    },
     "65733": {
       "alias": "HelmanD",
       "br_source": "alias_history",
@@ -42590,7 +42600,6 @@
     "1445924": {
       "alias": "Et Bilusca",
       "br_source": "open_data_matches",
-      "current_alias": "Wiz",
       "last_match_date": 1794579345,
       "last_seen_ingame_webapi_ts": 1795484556,
       "last_seen_online_ts": 1795497907,
@@ -44212,7 +44221,6 @@
     "1475296": {
       "alias": "wIIIa",
       "br_source": "open_data_matches",
-      "current_alias": "Уилла",
       "last_match_date": 1794771844,
       "last_seen_ingame_ts": 1795495277,
       "last_seen_ingame_webapi_ts": 1795497907,
@@ -46074,7 +46082,7 @@
     "383796": {
       "alias": "Vanghoul",
       "br_source": "open_data_lb",
-      "last_match_date": 1795498739,
+      "last_match_date": 1795499770,
       "last_seen_ingame_ts": 1795495277,
       "last_seen_ingame_webapi_ts": 1795488529,
       "last_seen_online_ts": 1795497907,
@@ -46083,7 +46091,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795213980,
       "steam_id": "76561197982976352",
-      "total_matches": 3301
+      "total_matches": 3302
     },
     "3888": {
       "alias": "Pepe Popo",
@@ -46818,16 +46826,6 @@
       "steam_gd_checked_ts": 1795367388,
       "steam_id": "76561199366015251",
       "total_matches": 873
-    },
-    "657172": {
-      "alias": "meu piru",
-      "br_source": "open_data_lb",
-      "last_match_date": 1794203740,
-      "last_seen_online_ts": 0,
-      "max_elo": 1092,
-      "profile_id": 657172,
-      "steam_id": "76561198373970544",
-      "total_matches": 1308
     },
     "658891": {
       "alias": "Foco.SKINS",
@@ -48160,7 +48158,6 @@
     "86550": {
       "alias": "Rato",
       "br_source": "steam_sister_group_br",
-      "current_alias": "Qi 124",
       "last_match_date": 1794526879,
       "last_seen_ingame_ts": 1795499175,
       "last_seen_ingame_webapi_ts": 1795498808,
