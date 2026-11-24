@@ -63,6 +63,7 @@ ALLOWED_RELIC_COH1_HOSTS: frozenset[str] = frozenset({"coh1-api.reliclink.com"})
 ALLOWED_COH3STATS_HOSTS: frozenset[str] = frozenset({"storage.coh3stats.com"})
 ALLOWED_COH2STATS_HOSTS: frozenset[str] = frozenset({"storage.coh2stats.com"})
 ALLOWED_COH1STATS_HOSTS: frozenset[str] = frozenset({"api.coh1stats.com"})
+ALLOWED_STEAMCHARTS_HOSTS: frozenset[str] = frozenset({"steamcharts.com"})
 RELIC_BASE_URL = "https://coh3-api.reliclink.com/community/leaderboard"
 RELIC_COH2_BASE_URL = "https://coh2-api.reliclink.com/community/leaderboard"
 RELIC_COH1_BASE_URL = "https://coh1-api.reliclink.com/community/leaderboard"
@@ -70,6 +71,9 @@ STEAM_API_SUMMARIES_URL = "https://api.steampowered.com/ISteamUser/GetPlayerSumm
 STEAM_API_FRIEND_LIST_URL = "https://api.steampowered.com/ISteamUser/GetFriendList/v1/"
 STEAM_API_OWNED_GAMES_URL = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
 STEAM_API_SHARED_GAME_URL = "https://api.steampowered.com/IPlayerService/IsPlayingSharedGame/v1/"
+STEAM_API_CURRENT_PLAYERS_URL = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/"
+STEAM_API_APP_NEWS_URL = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/"
+STEAMCHARTS_BASE_URL = "https://steamcharts.com"
 COH3STATS_LEADERBOARDS_BASE = "https://storage.coh3stats.com/leaderboards"
 COH3STATS_MATCHES_BASE = "https://storage.coh3stats.com/matches"
 COH2STATS_MATCHES_BASE = "https://storage.coh2stats.com/matches"
@@ -148,6 +152,10 @@ STEAM_API_SUMMARIES_PATH_RE = re.compile(r"^/ISteamUser/GetPlayerSummaries/v0*2/
 STEAM_API_FRIEND_LIST_PATH_RE = re.compile(r"^/ISteamUser/GetFriendList/v0*1/?$")
 STEAM_API_OWNED_GAMES_PATH_RE = re.compile(r"^/IPlayerService/GetOwnedGames/v0*1/?$")
 STEAM_API_SHARED_GAME_PATH_RE = re.compile(r"^/IPlayerService/IsPlayingSharedGame/v0*1/?$")
+STEAM_API_CURRENT_PLAYERS_PATH_RE = re.compile(r"^/ISteamUserStats/GetNumberOfCurrentPlayers/v0*1/?$")
+STEAM_API_APP_NEWS_PATH_RE = re.compile(r"^/ISteamNews/GetNewsForApp/v0*2/?$")
+STEAMCHARTS_APP_PATH_RE = re.compile(r"^/app/\d{1,10}/?$")
+STEAMCHARTS_CHART_DATA_PATH_RE = re.compile(r"^/app/\d{1,10}/chart-data\.json$")
 STEAM_PROFILE_XML_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/?$")
 STEAM_PROFILE_FRIENDS_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/friends/?$")
 STEAM_FRIENDS_REDIRECT_PATH_RE = re.compile(r"^/(?:profiles/7656119\d{10}|id/[A-Za-z0-9_-]{1,64})/friends/?$")
@@ -176,6 +184,8 @@ MAX_STEAM_ALIASES_BYTES = 65_536        # 64 KB (endpoint público ajaxaliases ~
 MAX_STEAM_API_RESPONSE_BYTES = 524_288  # 512 KB (100 perfis GetPlayerSummaries ~ 40 KB)
 MAX_STEAM_FRIEND_LIST_BYTES = 1 * 1024 * 1024  # 1 MB (lista de amigos Steam API ou HTML público)
 MAX_STEAM_GROUP_XML_BYTES = 2 * 1024 * 1024  # 2 MB
+MAX_STEAMCHARTS_BYTES = 262_144         # 256 KB (steamcharts.com HTML e chart-data.json ~ 18 KB)
+MAX_STEAM_NEWS_BYTES = 131_072          # 128 KB (Valve ISteamNews/GetNewsForApp/v2)
 MAX_COH1STATS_RESPONSE_BYTES = 262_144  # 256 KB (payload /api/player/<SteamID64> do coh1stats.com)
 MAX_RELIC_RESPONSE_BYTES = 8 * 1024 * 1024  # 8 MB (cobre históricos Relic > 2 MB de jogadores ativos com proteção anti-Gzip-bomb)
 MAX_OPENDATA_RESPONSE_BYTES = 128 * 1024 * 1024  # 128 MB limite seguro anti-bomb para leaderboards Open Data
@@ -196,7 +206,7 @@ FALLBACK_MATCH_TYPES: dict[int, str] = {
 PLAYERS_ROSTER_PATH = Path(__file__).resolve().parent / "players_roster.json"
 _VALID_FLAG_COUNTRY_RE = re.compile(r"^[a-z]{2}$")
 
-# Fallback embutido caso players_roster.json esteja ausente (43 contas Steam / 43 Veteranos únicos)
+# Fallback embutido caso players_roster.json esteja ausente (46 contas Steam / 46 Veteranos únicos)
 _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
     {"profile_id": 79327, "steam_id": "76561197963172584", "original_alias": "Chacineiro"},
     {
@@ -270,6 +280,13 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
         "original_alias": "Državljan H (Smurf: arc)",
         "smurf_of": "arc",
         "known_aliases": ["Državljan H", "Državljan H (arc)", "Državljan H (Smurf: arc)"],
+    },
+    {
+        "profile_id": 1482961,
+        "steam_id": "76561199886227102",
+        "original_alias": "Vog (Smurf: arc)",
+        "smurf_of": "arc",
+        "known_aliases": ["Vog", "Vog (arc)", "Vog (Smurf: arc)"],
     },
     {"profile_id": 31145, "steam_id": "76561197985268629", "original_alias": "vonMises"},
     {"profile_id": 58737, "steam_id": "76561197993922195", "original_alias": "INFIEL"},
@@ -2464,6 +2481,346 @@ class SteamPresenceClient:
             consecutive_errors = 0
             out[sid] = rows
         return out
+
+    def fetch_steamcharts_app_telemetry(
+        self,
+        app_id: int = 1677280,
+        *,
+        now_ts: int | None = None,
+    ) -> dict[str, Any]:
+        """
+        Consulta telemetria populacional pública em `https://steamcharts.com/app/<appid>` e
+        `/chart-data.json` (HTTPS-only, sem redirects, allowlist `steamcharts.com`, leitura limitada).
+        Nota: SteamCharts agrega exclusivamente contagem global de jogadores simultâneos (não lista
+        SteamIDs individuais nem países), sendo usado para detectar picos globais/patches e calibrar
+        automaticamente o orçamento de descoberta da comunidade brasileira.
+        """
+        aid = int(app_id or 0)
+        if aid <= 0:
+            return {}
+        now = int(now_ts) if now_ts is not None else int(time.time())
+        headers_json = {
+            "User-Agent": "CoH3-BR-Lobby-Radar/1.4",
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip",
+        }
+        headers_html = {
+            "User-Agent": "CoH3-BR-Lobby-Radar/1.4",
+            "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1",
+            "Accept-Encoding": "gzip",
+        }
+        chart_stats: dict[str, Any] = {}
+        html_stats: dict[str, int] = {}
+
+        chart_url = f"{STEAMCHARTS_BASE_URL}/app/{aid}/chart-data.json"
+        try:
+            validate_https_endpoint(
+                chart_url,
+                ALLOWED_STEAMCHARTS_HOSTS,
+                path_prefix="/app/",
+                path_regex=STEAMCHARTS_CHART_DATA_PATH_RE,
+                allow_query=False,
+            )
+            req = urllib.request.Request(chart_url, headers=headers_json, method="GET")
+            with _get_relic_opener().open(req, timeout=10) as resp:
+                raw = read_bounded_http_body(resp, MAX_STEAMCHARTS_BYTES)
+            payload = json.loads(raw.decode("utf-8", errors="ignore"))
+            chart_stats = parse_steamcharts_chart_data(payload, now_ts=now)
+        except Exception as exc:
+            logger.debug("Falha ao consultar SteamCharts chart-data (app=%d): %s", aid, redact_secrets(exc))
+
+        page_url = f"{STEAMCHARTS_BASE_URL}/app/{aid}"
+        try:
+            validate_https_endpoint(
+                page_url,
+                ALLOWED_STEAMCHARTS_HOSTS,
+                path_prefix="/app/",
+                path_regex=STEAMCHARTS_APP_PATH_RE,
+                allow_query=False,
+            )
+            req = urllib.request.Request(page_url, headers=headers_html, method="GET")
+            with _get_relic_opener().open(req, timeout=10) as resp:
+                raw = read_bounded_http_body(resp, MAX_STEAMCHARTS_BYTES)
+            html_stats = parse_steamcharts_app_html(raw.decode("utf-8", errors="ignore"))
+        except Exception as exc:
+            logger.debug("Falha ao consultar SteamCharts HTML (app=%d): %s", aid, redact_secrets(exc))
+
+        if not chart_stats and not html_stats:
+            return {}
+        return {
+            "ok": True,
+            "source": "steamcharts",
+            "app_id": aid,
+            "current_players": int(html_stats.get("current_players") or chart_stats.get("latest_players") or 0),
+            "peak_24h": max(int(html_stats.get("peak_24h") or 0), int(chart_stats.get("peak_24h") or 0)),
+            "avg_30d": int(chart_stats.get("avg_30d") or 0),
+            "peak_30d": int(chart_stats.get("peak_30d") or 0),
+            "all_time_peak": max(int(html_stats.get("all_time_peak") or 0), int(chart_stats.get("all_time_peak") or 0)),
+            "latest_ts": int(chart_stats.get("latest_ts") or now),
+            "points_count": int(chart_stats.get("points_count") or 0),
+        }
+
+    def fetch_valve_current_players(self, app_id: int = 1677280) -> int:
+        """
+        Consulta a API pública oficial da Valve `ISteamUserStats/GetNumberOfCurrentPlayers/v1`
+        (fonte primária usada por SteamDB e SteamCharts; dispensa chave e não tem bloqueio Cloudflare).
+        """
+        aid = int(app_id or 0)
+        if aid <= 0:
+            return 0
+        url = f"{STEAM_API_CURRENT_PLAYERS_URL}?{urllib.parse.urlencode({'appid': str(aid)})}"
+        try:
+            validate_https_endpoint(
+                url,
+                ALLOWED_STEAM_API_HOSTS,
+                path_prefix="/ISteamUserStats/GetNumberOfCurrentPlayers/",
+                path_regex=STEAM_API_CURRENT_PLAYERS_PATH_RE,
+            )
+            req = urllib.request.Request(url, headers=_RELIC_JSON_HEADERS, method="GET")
+            with _get_relic_opener().open(req, timeout=8) as resp:
+                raw = read_bounded_http_body(resp, 16_384)
+            payload = json.loads(raw.decode("utf-8", errors="ignore"))
+            return parse_steam_current_players_payload(payload)
+        except Exception as exc:
+            logger.debug("Falha ao consultar Valve GetNumberOfCurrentPlayers (app=%d): %s", aid, redact_secrets(exc))
+            return 0
+
+    def fetch_valve_app_news(
+        self,
+        app_id: int = 1677280,
+        *,
+        count: int = 5,
+        now_ts: int | None = None,
+    ) -> dict[str, Any]:
+        """
+        Consulta anúncios/patches recentes da Valve (`ISteamNews/GetNewsForApp/v2`, fonte oficial
+        equivalente aos alertas de patch/DLC do SteamDB; sem necessidade de API key).
+        """
+        aid = int(app_id or 0)
+        if aid <= 0:
+            return {}
+        c = max(1, min(int(count or 5), 10))
+        qs = urllib.parse.urlencode({"appid": str(aid), "count": str(c), "maxlength": "120", "format": "json"})
+        url = f"{STEAM_API_APP_NEWS_URL}?{qs}"
+        try:
+            validate_https_endpoint(
+                url,
+                ALLOWED_STEAM_API_HOSTS,
+                path_prefix="/ISteamNews/GetNewsForApp/",
+                path_regex=STEAM_API_APP_NEWS_PATH_RE,
+            )
+            req = urllib.request.Request(url, headers=_RELIC_JSON_HEADERS, method="GET")
+            with _get_relic_opener().open(req, timeout=8) as resp:
+                raw = read_bounded_http_body(resp, MAX_STEAM_NEWS_BYTES)
+            payload = json.loads(raw.decode("utf-8", errors="ignore"))
+            return parse_steam_app_news_payload(payload, now_ts=now_ts)
+        except Exception as exc:
+            logger.debug("Falha ao consultar Valve GetNewsForApp (app=%d): %s", aid, redact_secrets(exc))
+            return {}
+
+    def fetch_global_coh3_telemetry(
+        self,
+        app_id: int = 1677280,
+        *,
+        now_ts: int | None = None,
+    ) -> dict[str, Any]:
+        """
+        Consolida telemetria global de população e ondas de patch/DLC de CoH3 combinando:
+        - `steamcharts.com` (`/app/1677280` + `/chart-data.json`) para curva 24h/30d e recorde histórico;
+        - Valve oficial `ISteamUserStats/GetNumberOfCurrentPlayers/v1` + `ISteamNews/GetNewsForApp/v2`
+          (mesma fonte oficial subjacente ao SteamDB, já que `steamdb.info` aplica desafio Cloudflare HTTP 403
+          e nenhum dos dois expõe listas individuais de SteamIDs ou nacionalidades).
+        """
+        now = int(now_ts) if now_ts is not None else int(time.time())
+        sc = self.fetch_steamcharts_app_telemetry(app_id=app_id, now_ts=now)
+        valve_live = self.fetch_valve_current_players(app_id=app_id)
+        news = self.fetch_valve_app_news(app_id=app_id, count=5, now_ts=now)
+
+        sources: list[str] = []
+        if sc.get("ok"):
+            sources.append("steamcharts")
+        if valve_live > 0:
+            sources.append("valve_current_players")
+        if news.get("ok"):
+            sources.append("valve_app_news")
+        if not sources:
+            return {}
+
+        current_players = valve_live if valve_live > 0 else int(sc.get("current_players") or 0)
+        peak_24h = max(int(sc.get("peak_24h") or 0), current_players)
+        avg_30d = int(sc.get("avg_30d") or 0)
+        peak_30d = max(int(sc.get("peak_30d") or 0), peak_24h)
+        all_time_peak = max(int(sc.get("all_time_peak") or 0), peak_30d)
+        surge_ratio = round(peak_24h / avg_30d, 2) if avg_30d > 0 else (round(current_players / avg_30d, 2) if avg_30d > 0 else 1.0)
+        live_ratio = round(current_players / avg_30d, 2) if avg_30d > 0 else 1.0
+        recent_patch_7d = bool(news.get("recent_patch_within_7d"))
+        is_surge = bool(
+            (avg_30d > 0 and (live_ratio >= 1.30 or surge_ratio >= 1.35))
+            or recent_patch_7d
+        )
+
+        return {
+            "ok": True,
+            "app_id": int(app_id),
+            "fetched_at": now,
+            "sources": sources,
+            "current_players": current_players,
+            "steamcharts_current_players": int(sc.get("current_players") or 0),
+            "valve_current_players": valve_live,
+            "peak_24h": peak_24h,
+            "avg_30d": avg_30d,
+            "peak_30d": peak_30d,
+            "all_time_peak": all_time_peak,
+            "surge_ratio": surge_ratio,
+            "live_ratio": live_ratio,
+            "is_surge": is_surge,
+            "recent_patch_title": str(news.get("latest_title") or ""),
+            "recent_patch_at": int(news.get("latest_date") or 0),
+            "recent_patch_within_7d": recent_patch_7d,
+            "steamdb_status": "cloudflare_gated_using_valve_official_feed",
+        }
+
+
+_STEAMCHARTS_STAT_BLOCK_RE = re.compile(
+    r'<div\s+class="app-stat"[^>]*>(.*?)</div>',
+    re.IGNORECASE | re.DOTALL,
+)
+_STEAMCHARTS_NUM_RE = re.compile(r'<span\s+class="num"[^>]*>\s*([0-9][0-9,.\s]*)\s*</span>', re.IGNORECASE)
+_STEAM_PATCH_KEYWORD_RE = re.compile(
+    r"(?i)\b(?:patch|hot\s*fix|update|dlc|expansion|operation|free\s*weekend|battlegroup|tuning|balance)\b"
+)
+
+
+def parse_steamcharts_app_html(html_text: str) -> dict[str, int]:
+    """Extrai `current_players`, `peak_24h` e `all_time_peak` do HTML público do `steamcharts.com/app/<id>`."""
+    if not html_text:
+        return {}
+    out: dict[str, int] = {}
+    for block in _STEAMCHARTS_STAT_BLOCK_RE.findall(html_text)[:6]:
+        m_num = _STEAMCHARTS_NUM_RE.search(block)
+        if not m_num:
+            continue
+        digits = re.sub(r"[^0-9]", "", m_num.group(1))
+        if not digits:
+            continue
+        val = int(digits)
+        low = block.lower()
+        if "24-hour peak" in low:
+            out["peak_24h"] = val
+        elif "all-time peak" in low:
+            out["all_time_peak"] = val
+        elif "playing" in low or "current_players" not in out:
+            out["current_players"] = val
+    return out
+
+
+def parse_steamcharts_chart_data(
+    payload: Any,
+    *,
+    now_ts: int | None = None,
+) -> dict[str, Any]:
+    """
+    Faz parse da série temporal `[[epoch_ms, players], ...]` de `steamcharts.com/app/<id>/chart-data.json`.
+    Calcula `latest_players`, `latest_ts`, `peak_24h`, `avg_30d`, `peak_30d`, `all_time_peak` e `points_count`.
+    """
+    if not isinstance(payload, list) or not payload:
+        return {}
+    now = int(now_ts) if now_ts is not None else int(time.time())
+    pts: list[tuple[int, int]] = []
+    for row in payload[-20000:]:
+        if not isinstance(row, (list, tuple)) or len(row) < 2:
+            continue
+        try:
+            raw_t = int(row[0])
+            cnt = int(row[1])
+        except (TypeError, ValueError):
+            continue
+        ts_sec = raw_t // 1000 if raw_t > 10_000_000_000 else raw_t
+        if ts_sec > 0 and cnt >= 0:
+            pts.append((ts_sec, cnt))
+    if not pts:
+        return {}
+    pts.sort(key=lambda item: item[0])
+    latest_ts, latest_players = pts[-1]
+    ref_ts = max(now, latest_ts)
+    cutoff_24h = ref_ts - 86400
+    cutoff_30d = ref_ts - 30 * 86400
+
+    vals_24h = [c for t, c in pts if t >= cutoff_24h]
+    vals_30d = [c for t, c in pts if t >= cutoff_30d]
+    all_time_peak = max(c for _, c in pts)
+    peak_24h = max(vals_24h) if vals_24h else latest_players
+    peak_30d = max(vals_30d) if vals_30d else peak_24h
+    avg_30d = int(round(sum(vals_30d) / len(vals_30d))) if vals_30d else latest_players
+    return {
+        "latest_ts": latest_ts,
+        "latest_players": latest_players,
+        "peak_24h": peak_24h,
+        "avg_30d": avg_30d,
+        "peak_30d": peak_30d,
+        "all_time_peak": all_time_peak,
+        "points_count": len(pts),
+    }
+
+
+def parse_steam_current_players_payload(payload: Any) -> int:
+    """Extrai `player_count` de `ISteamUserStats/GetNumberOfCurrentPlayers/v1`."""
+    if not isinstance(payload, dict):
+        return 0
+    resp = payload.get("response")
+    if not isinstance(resp, dict):
+        return 0
+    try:
+        cnt = int(resp.get("player_count", 0) or 0)
+        return cnt if cnt > 0 else 0
+    except (TypeError, ValueError):
+        return 0
+
+
+def parse_steam_app_news_payload(
+    payload: Any,
+    *,
+    now_ts: int | None = None,
+    recent_days: int = 7,
+) -> dict[str, Any]:
+    """
+    Extrai o anúncio/patch oficial mais recente de `ISteamNews/GetNewsForApp/v2`,
+    detectando ondas de atualização/DLC/Free Weekend nos últimos `recent_days` dias.
+    """
+    if not isinstance(payload, dict):
+        return {}
+    appnews = payload.get("appnews")
+    items = appnews.get("newsitems") if isinstance(appnews, dict) else None
+    if not isinstance(items, list) or not items:
+        return {}
+    now = int(now_ts) if now_ts is not None else int(time.time())
+    cutoff = now - max(1, int(recent_days)) * 86400
+    best_title = ""
+    best_date = 0
+    recent_patch = False
+    for item in items[:10]:
+        if not isinstance(item, dict):
+            continue
+        title = strip_unsafe_chars(str(item.get("title") or ""))[:120]
+        try:
+            dt = int(item.get("date", 0) or 0)
+        except (TypeError, ValueError):
+            dt = 0
+        if dt > best_date and title:
+            best_date = dt
+            best_title = title
+        feed_lbl = str(item.get("feedlabel") or "").lower()
+        is_official = "community announcements" in feed_lbl or int(item.get("feed_type", 0) or 0) == 1
+        if dt >= cutoff and title and (is_official or _STEAM_PATCH_KEYWORD_RE.search(title)):
+            recent_patch = True
+    if not best_title:
+        return {}
+    return {
+        "ok": True,
+        "latest_title": best_title,
+        "latest_date": best_date,
+        "recent_patch_within_7d": recent_patch,
+    }
 
 
 _STEAM_ALIAS_DATE_RE = re.compile(

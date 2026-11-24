@@ -12,8 +12,16 @@ Fontes oficiais / abertas convergidas com segurança (TLS 1.2+, allowlist estrit
    cruzados na Relic + verificação de `<location>` Brasil/Brazil no XML público Steam para brasileiros que
    deixaram o país em branco ou diferente na Relic.
 
-Nota sobre `cohdb.com`: conforme informado no próprio site, o CoHDB indexa os mesmos dados da Relic e do COH3 Stats
-e não disponibiliza API JSON pública filtrada por país; a convergência acima cobre o superconjunto completo.
+5. Telemetria Global Steam (`steamcharts.com` + APIs oficiais Valve `ISteamUserStats/GetNumberOfCurrentPlayers/v1`
+   e `ISteamNews/GetNewsForApp/v2`): monitora população global simultânea de CoH3, pico 24h, média 30d e ondas de
+   patches/DLCs para escalar automaticamente os orçamentos de varredura durante picos e calcular a participação BR.
+
+Notas sobre fontes externas:
+- `cohdb.com`: indexa os mesmos dados da Relic e do COH3 Stats e não disponibiliza API JSON pública filtrada por país.
+- `steamdb.info` e `steamcharts.com`: ambos agregam contagens globais da Valve (`GetNumberOfCurrentPlayers`) e não
+  listam SteamIDs individuais nem nacionalidades; adicionalmente, `steamdb.info` bloqueia automação via desafio
+  Cloudflare (HTTP 403), razão pela qual consultamos `steamcharts.com` em conjunto com as APIs públicas oficiais
+  da própria Valve (`ISteamUserStats` + `ISteamNews`, fonte primária subjacente ao SteamDB).
 """
 
 from __future__ import annotations
@@ -195,6 +203,7 @@ def run_deep_br_discovery(
     smurf_min_prob: int = DEFAULT_MIN_PROBABILITY_PCT,
     smurf_report_path: Path | None = None,
     enable_external_alias_enrichment: bool | None = None,
+    enable_global_telemetry: bool | None = None,
 ) -> dict[str, Any]:
     """
     Executa a varredura profunda e convergente em fontes oficiais/abertas, atualiza `br_community.json`,
@@ -292,6 +301,46 @@ def run_deep_br_discovery(
             )
 
     sources_used: list[str] = []
+
+    # 0. Telemetria Global Steam (`steamcharts.com` + APIs públicas da Valve equivalentes ao SteamDB)
+    #    Detecta picos globais de população e ondas de patch/DLC para escalar os orçamentos de descoberta BR.
+    global_telemetry: dict[str, Any] = {}
+    effective_max_steam_verify = max(0, int(max_steam_verify))
+    effective_max_friend_seeds = max(0, int(max_friend_seeds))
+    effective_max_ptbr_review_pages = max(0, int(max_ptbr_review_pages))
+    do_global_telemetry = (
+        bool(enable_global_telemetry)
+        if enable_global_telemetry is not None
+        else (
+            (presence_client is not None and hasattr(p_client, "fetch_global_coh3_telemetry"))
+            or (isinstance(r_client, RelicActivityClient) and isinstance(p_client, SteamPresenceClient))
+        )
+    )
+    if do_global_telemetry and hasattr(p_client, "fetch_global_coh3_telemetry"):
+        try:
+            gt = p_client.fetch_global_coh3_telemetry(app_id=1677280, now_ts=now)
+            if isinstance(gt, dict) and gt.get("ok"):
+                global_telemetry = dict(gt)
+                sources_used.append("steamcharts_valve_telemetry")
+                if bool(global_telemetry.get("is_surge")):
+                    if effective_max_steam_verify > 0:
+                        effective_max_steam_verify = min(1200, int(round(effective_max_steam_verify * 1.35)))
+                    if effective_max_friend_seeds > 0:
+                        effective_max_friend_seeds = min(750, int(round(effective_max_friend_seeds * 1.25)))
+                    if effective_max_ptbr_review_pages > 0:
+                        effective_max_ptbr_review_pages = min(24, int(round(effective_max_ptbr_review_pages * 1.5)))
+                    global_telemetry["surge_budget_boost_applied"] = True
+                logger.info(
+                    "[STAGE 0 — TELEMETRIA GLOBAL STEAMCHARTS + VALVE] Agora: %d | Pico 24h: %d | Média 30d: %d | Ratio: %.2fx | Onda/Patch: %s (%s)",
+                    int(global_telemetry.get("current_players", 0) or 0),
+                    int(global_telemetry.get("peak_24h", 0) or 0),
+                    int(global_telemetry.get("avg_30d", 0) or 0),
+                    float(global_telemetry.get("surge_ratio", 1.0) or 1.0),
+                    "SIM (orçamento ampliado)" if global_telemetry.get("is_surge") else "normal",
+                    str(global_telemetry.get("recent_patch_title") or "-")[:60],
+                )
+        except Exception as exc:
+            logger.warning("[STAGE 0] Falha não fatal na telemetria global SteamCharts/Valve: %s", redact_secrets(exc))
 
     # 1. COH3 Stats Open Data — Leaderboards (16 arquivos globais)
     lb_diag: dict[str, Any] = {}
@@ -560,7 +609,7 @@ def run_deep_br_discovery(
             del cand_pool[pid]
 
     active_candidates = sorted(cand_pool.values(), key=lambda c: _candidate_verify_priority(c, now=now))
-    verify_slice = active_candidates[: max(0, int(max_steam_verify))]
+    verify_slice = active_candidates[:effective_max_steam_verify]
     if verify_slice and hasattr(p_client, "fetch_batch_presence"):
         from lobby_radar import _call_batch_presence
         bucket_counts = Counter(_candidate_verify_priority(c, now=now)[0] for c in verify_slice)
@@ -624,12 +673,12 @@ def run_deep_br_discovery(
     steam_friends_active = 0
     steam_friends_expat_verified = 0
     if (
-        max_friend_seeds > 0
+        effective_max_friend_seeds > 0
         and hasattr(p_client, "fetch_batch_friend_steam_ids")
         and hasattr(r_client, "fetch_profile_stats_by_steam_ids")
     ):
         has_web_api_friends = bool(getattr(p_client, "uses_web_api", False) or getattr(p_client, "has_web_api", False))
-        effective_seed_cap = max(0, int(max_friend_seeds)) if has_web_api_friends else min(max(0, int(max_friend_seeds)), 45)
+        effective_seed_cap = effective_max_friend_seeds if has_web_api_friends else min(effective_max_friend_seeds, 45)
         _, manual_sids = extract_roster_id_sets(MANUAL_OTHER_BR_PLAYERS)
 
         seed_sids: list[str] = []
@@ -1003,7 +1052,7 @@ def run_deep_br_discovery(
     # 4f. Avaliações em Português do Brasil na Steam (app 1677280 — captura compradores de Campanha/Skirmish e amigos privados)
     steam_ptbr_reviews_confirmed = 0
     if (
-        int(max_ptbr_review_pages) > 0
+        effective_max_ptbr_review_pages > 0
         and hasattr(p_client, "fetch_steam_ptbr_review_steam_ids")
         and hasattr(r_client, "fetch_profile_stats_by_steam_ids")
     ):
@@ -1011,7 +1060,7 @@ def run_deep_br_discovery(
         try:
             rev_sids = p_client.fetch_steam_ptbr_review_steam_ids(
                 app_id=1677280,
-                max_pages=int(max_ptbr_review_pages),
+                max_pages=effective_max_ptbr_review_pages,
             )
         except Exception as exc:
             logger.warning("[STAGE 4f] Falha ao coletar avaliações PT-BR Steam: %s", redact_secrets(exc))
@@ -1275,6 +1324,15 @@ def run_deep_br_discovery(
     }
     if top50_br_pids_to_save:
         out_cache_snapshot["top50_br_pids"] = top50_br_pids_to_save
+    if global_telemetry:
+        peak_24h_g = int(global_telemetry.get("peak_24h", 0) or 0)
+        br_active_total = len(final_players) + len(vet_roster)
+        if peak_24h_g > 0:
+            global_telemetry["br_active_15d_total"] = br_active_total
+            global_telemetry["br_active_to_global_peak_pct"] = round(100.0 * br_active_total / peak_24h_g, 2)
+        out_cache_snapshot["global_telemetry"] = global_telemetry
+    elif isinstance(community_cache.get("global_telemetry"), dict):
+        out_cache_snapshot["global_telemetry"] = dict(community_cache["global_telemetry"])
 
     if not dry_run and final_players:
         save_community_cache(community_cache_path, out_cache_snapshot)
@@ -1599,6 +1657,7 @@ def run_deep_br_discovery(
         "steam_verified_count": steam_verified_count,
         "top_new_players": newly_added_rows[:30],
         "arranged_teams_audit": arranged_audit,
+        "global_telemetry": global_telemetry,
         "smurf_analysis": smurf_analysis,
     }
 
