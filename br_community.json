@@ -40383,7 +40383,7 @@
       "avatar_url": "https://avatars.steamstatic.com/a759483b0ed468481ea70b4996e0f902729f7f76_medium.jpg",
       "br_source": "open_data_matches",
       "last_match_date": 1795476506,
-      "last_seen_online_ts": 1795477495,
+      "last_seen_online_ts": 1795558562,
       "max_elo": 1000,
       "profile_id": 1246298,
       "steam_games_hidden": true,
@@ -45299,14 +45299,14 @@
       "alias": "Blur",
       "avatar_url": "https://avatars.steamstatic.com/850e0ad405588add9714a17546713d6af045b08f_medium.jpg",
       "br_source": "open_data_matches",
-      "last_match_date": 1795556666,
+      "last_match_date": 1795558523,
       "last_seen_online_ts": 1795557963,
       "max_elo": 1000,
       "profile_id": 1485357,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795522758,
       "steam_id": "76561198075173287",
-      "total_matches": 32
+      "total_matches": 33
     },
     "1485829": {
       "alias": "NII",
@@ -48174,6 +48174,7 @@
       "alias": "Rato",
       "avatar_url": "https://avatars.steamstatic.com/cdff433c9ea96c9933449fa59011b1dc31a4f0a2_medium.jpg",
       "br_source": "steam_sister_group_br",
+      "current_alias": "Qi 124",
       "last_match_date": 1794526879,
       "last_seen_ingame_ts": 1795499175,
       "last_seen_ingame_webapi_ts": 1795498808,
