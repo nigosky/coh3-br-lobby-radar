@@ -17698,6 +17698,20 @@
       "steam_id": "76561198804662583",
       "total_matches": 0
     },
+    "1434107": {
+      "alias": "Big_Bang_Sheep",
+      "br_source": "open_data_matches",
+      "last_match_date": 1794236916,
+      "last_seen_ingame_ts": 1795532610,
+      "last_seen_ingame_webapi_ts": 1795439941,
+      "last_seen_online_ts": 1795532610,
+      "max_elo": 1000,
+      "profile_id": 1434107,
+      "steam_games_hidden": false,
+      "steam_gd_checked_ts": 1795359487,
+      "steam_id": "76561199056168991",
+      "total_matches": 2
+    },
     "143577": {
       "alias": "Evil_Catholic",
       "br_source": "alias_history",
@@ -41033,20 +41047,6 @@
       "steam_id": "76561199655028409",
       "total_matches": 18
     },
-    "1434107": {
-      "alias": "Big_Bang_Sheep",
-      "br_source": "open_data_matches",
-      "last_match_date": 1794236916,
-      "last_seen_ingame_ts": 1795532610,
-      "last_seen_ingame_webapi_ts": 1795439941,
-      "last_seen_online_ts": 1795532610,
-      "max_elo": 1000,
-      "profile_id": 1434107,
-      "steam_games_hidden": false,
-      "steam_gd_checked_ts": 1795359487,
-      "steam_id": "76561199056168991",
-      "total_matches": 2
-    },
     "1434263": {
       "alias": "xLoaded",
       "br_source": "open_data_matches",
@@ -41845,7 +41845,6 @@
     "1449348": {
       "alias": "ES BRIEB CSGOSKINS.GG",
       "br_source": "open_data_matches",
-      "current_alias": "BESON",
       "last_match_date": 1794602764,
       "last_seen_ingame_ts": 1795529220,
       "last_seen_ingame_webapi_ts": 1795530420,
