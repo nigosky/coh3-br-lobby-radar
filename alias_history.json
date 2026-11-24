@@ -116487,7 +116487,7 @@
       ],
       "canonical_alias": "negromonte_",
       "coh3_country": "br",
-      "current_alias": "Negromonte_",
+      "current_alias": "negromonte_",
       "last_checked_at": 1795537424,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -122578,9 +122578,17 @@
             "steam_web_api",
             "steam_xml"
           ]
+        },
+        {
+          "alias": "NEBADON",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "local_db"
+          ]
         }
       ],
-      "canonical_alias": "Pax Xavier youtube",
+      "canonical_alias": "NEBADON",
       "coh1_country": "br",
       "coh1_last_match_date": 1708012255,
       "coh1_profile_id": 46704,
@@ -132979,7 +132987,7 @@
       "coh3_last_match_date": 1794613740,
       "coh3_total_matches": 3,
       "current_alias": "corolla XEI 2008 prata",
-      "last_checked_at": 1795537123,
+      "last_checked_at": 1795537620,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1441520,
@@ -133462,7 +133470,7 @@
       "coh3_last_match_date": 1794579345,
       "coh3_total_matches": 1,
       "current_alias": "Wiz",
-      "last_checked_at": 1795537424,
+      "last_checked_at": 1795537620,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1445924,
@@ -133632,7 +133640,7 @@
       "coh3_last_match_date": 1794597624,
       "coh3_total_matches": 6,
       "current_alias": "⚡😘💙 ☢ hnrjogos",
-      "last_checked_at": 1795537424,
+      "last_checked_at": 1795537620,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1447630,
@@ -134168,7 +134176,7 @@
       "coh3_last_match_date": 1794602764,
       "coh3_total_matches": 1,
       "current_alias": "BESON",
-      "last_checked_at": 1795537424,
+      "last_checked_at": 1795537620,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1449348,
@@ -140578,7 +140586,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795536215,
+      "last_checked_at": 1795537620,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -233994,5 +234002,5 @@
     "steam_web_api": 7388,
     "steam_xml": 6734
   },
-  "updated_at": 1795537424
+  "updated_at": 1795537620
 }
