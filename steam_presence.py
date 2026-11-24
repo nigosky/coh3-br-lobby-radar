@@ -20,6 +20,7 @@ import concurrent.futures
 import html
 import json
 import logging
+import math
 import os
 import re
 import threading
@@ -46,6 +47,14 @@ from security import (
 logger = logging.getLogger("coh3_br.lobby.presence")
 
 COH3_STEAM_APP_ID = "1677280"
+# AppIDs legados de CoH1 (Original/OF/ToV/Relaunch) e CoH2: NUNCA podem acionar `is_in_coh3`
+COH_LEGACY_STEAM_APP_IDS: frozenset[str] = frozenset({
+    "4560",    # Company of Heroes (Legacy)
+    "9340",    # Company of Heroes: Opposing Fronts
+    "20540",   # Company of Heroes: Tales of Valor
+    "228200",  # Company of Heroes (New Steam Version)
+    "231430",  # Company of Heroes 2
+})
 ALLOWED_STEAM_COMMUNITY_HOSTS: frozenset[str] = frozenset({"steamcommunity.com"})
 ALLOWED_STEAM_API_HOSTS: frozenset[str] = frozenset({"api.steampowered.com"})
 ALLOWED_RELIC_HOSTS: frozenset[str] = frozenset({"coh3-api.reliclink.com"})
@@ -895,15 +904,23 @@ def parse_steam_profile_xml(xml_text: str, steam_id: str) -> dict[str, Any]:
     in_game_link_lower = in_game_link.lower()
     in_game_icon_lower = in_game_icon.lower()
 
-    is_in_coh3 = online_state == "in-game" and (
-        f"/app/{COH3_STEAM_APP_ID}" in in_game_link_lower
-        or f"/{COH3_STEAM_APP_ID}/" in in_game_icon_lower
-        or in_game_name_lower == "company of heroes 3"
-        or "company of heroes 3" in in_game_name_lower
-        or (
-            in_game_el is None
-            and ("in-game" in state_msg_lower or "em jogo" in state_msg_lower)
-            and "company of heroes 3" in state_msg_lower
+    is_legacy_coh_app = any(
+        f"/app/{lid}" in in_game_link_lower or f"/{lid}/" in in_game_icon_lower
+        for lid in COH_LEGACY_STEAM_APP_IDS
+    )
+    is_in_coh3 = (
+        online_state == "in-game"
+        and (not is_legacy_coh_app)
+        and (
+            f"/app/{COH3_STEAM_APP_ID}" in in_game_link_lower
+            or f"/{COH3_STEAM_APP_ID}/" in in_game_icon_lower
+            or in_game_name_lower == "company of heroes 3"
+            or "company of heroes 3" in in_game_name_lower
+            or (
+                in_game_el is None
+                and ("in-game" in state_msg_lower or "em jogo" in state_msg_lower)
+                and "company of heroes 3" in state_msg_lower
+            )
         )
     )
 
@@ -1006,7 +1023,12 @@ def parse_steam_web_api_player(player_obj: dict[str, Any]) -> dict[str, Any] | N
     gameid = str(player_obj.get("gameid") or "").strip()
     game_extra = strip_unsafe_chars(player_obj.get("gameextrainfo") or "")[:36]
 
-    is_in_coh3 = gameid == COH3_STEAM_APP_ID or "company of heroes 3" in game_extra.lower()
+    # Quando a Steam Web API fornece `gameid`, exige correspondência estrita com CoH3 (`1677280`),
+    # bloqueando qualquer falso positivo de CoH2 (`231430`), CoH1 (`4560`/`9340`/`20540`/`228200`) ou outros apps.
+    if gameid:
+        is_in_coh3 = gameid == COH3_STEAM_APP_ID
+    else:
+        is_in_coh3 = "company of heroes 3" in game_extra.lower()
     other_game = ""
     if not is_in_coh3 and (gameid or game_extra):
         other_game = game_extra or f"App {gameid}"
@@ -3342,13 +3364,20 @@ def classify_other_br_prominence(
         recency_bonus += 80.0
     elif age_days <= 7.0:
         recency_bonus += 35.0
-    vol_bonus = min(90.0, matches * 0.45) if matches > 0 else 0.0
+    # Recompensa contínua por amostra de partidas no CoH3 (evita empate entre 200 e 2.000+ jogos)
+    if matches > 0:
+        base_vol = min(90.0, matches * 0.45)
+        extra_vol = min(70.0, math.log10(matches / 200.0) * 55.0) if matches > 200 else 0.0
+        vol_bonus = base_vol + extra_vol
+    else:
+        vol_bonus = 0.0
     score = int(round(elo + recency_bonus + vol_bonus))
 
+    has_solid_sample = matches == 0 or matches >= 30
     if (
-        (elo >= 1250 and (age_days <= 7.0 or is_in_coh3))
-        or (elo >= 1400 and age_days <= 14.0)
-        or (elo >= 1200 and age_days <= 3.0 and (matches == 0 or matches >= 30))
+        (elo >= 1250 and has_solid_sample and (age_days <= 7.0 or is_in_coh3))
+        or (elo >= 1400 and (has_solid_sample or elo >= 1450) and age_days <= 14.0)
+        or (elo >= 1200 and has_solid_sample and age_days <= 3.0)
     ):
         tier = "high"
     elif (
@@ -3356,7 +3385,7 @@ def classify_other_br_prominence(
         or (elo < 1100 and age_days > 3.0)
         or (elo < 1200 and age_days > 7.0)
         or (elo < 1350 and age_days > 14.0)
-        or (0 < matches < 15 and elo < 1150)
+        or (0 < matches < 15 and elo < 1200)
     ):
         tier = "low"
     else:
@@ -3639,6 +3668,7 @@ def _build_category_lists(
                 PROMINENCE_TIER_ORDER.get(str(x.get("prominence_tier") or "medium"), 1),
                 -int(x.get("prominence_score", 0)),
                 -int(x.get("max_elo", 0)),
+                -int(x.get("total_matches", 0)),
                 x["last_age_min"] if x["last_age_min"] is not None else 9999,
                 x["alias"].lower(),
             )
@@ -3651,6 +3681,7 @@ def _build_category_lists(
                 PROMINENCE_TIER_ORDER.get(str(x.get("prominence_tier") or "medium"), 1),
                 -int(x.get("prominence_score", 0)),
                 -int(x.get("max_elo", 0)),
+                -int(x.get("total_matches", 0)),
                 x["alias"].lower(),
             )
         )
@@ -3659,6 +3690,7 @@ def _build_category_lists(
                 PROMINENCE_TIER_ORDER.get(str(x.get("prominence_tier") or "medium"), 1),
                 -int(x.get("prominence_score", 0)),
                 -int(x.get("max_elo", 0)),
+                -int(x.get("total_matches", 0)),
                 x["last_age_min"] if x["last_age_min"] is not None else 9999,
                 x["alias"].lower(),
             )
