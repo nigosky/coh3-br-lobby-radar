@@ -22603,16 +22603,6 @@
       "steam_id": "76561198170196775",
       "total_matches": 18
     },
-    "793116": {
-      "alias": "Beltrao",
-      "br_source": "alias_history",
-      "last_match_date": 1792285407,
-      "last_seen_online_ts": 0,
-      "max_elo": 0,
-      "profile_id": 793116,
-      "steam_id": "76561198059582047",
-      "total_matches": 8
-    },
     "795016": {
       "alias": "Juquinha",
       "br_source": "alias_history",
@@ -28572,7 +28562,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794789287,
       "last_seen_ingame_ts": 1795182844,
-      "last_seen_ingame_webapi_ts": 1795470720,
+      "last_seen_ingame_webapi_ts": 1795492578,
       "last_seen_online_ts": 1795491297,
       "max_elo": 1155,
       "profile_id": 1066445,
@@ -28887,7 +28877,7 @@
       "alias": "Warhawk",
       "br_source": "open_data_matches",
       "last_match_date": 1795275493,
-      "last_seen_online_ts": 1795490697,
+      "last_seen_online_ts": 1795492578,
       "max_elo": 1000,
       "profile_id": 1115257,
       "steam_games_hidden": true,
@@ -28952,7 +28942,7 @@
       "last_match_date": 1795470226,
       "last_seen_ingame_ts": 1795189556,
       "last_seen_ingame_webapi_ts": 1795488897,
-      "last_seen_online_ts": 1795490697,
+      "last_seen_online_ts": 1795492578,
       "max_elo": 1049,
       "profile_id": 1123905,
       "steam_id": "76561198020133377",
@@ -29590,14 +29580,14 @@
     "1214004": {
       "alias": "Major Caveira",
       "br_source": "open_data_lb",
-      "last_match_date": 1795454667,
+      "last_match_date": 1795492569,
       "last_seen_online_ts": 1795491597,
       "max_elo": 1013,
       "profile_id": 1214004,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795406101,
+      "steam_gd_checked_ts": 1795492578,
       "steam_id": "76561198854581943",
-      "total_matches": 795
+      "total_matches": 796
     },
     "1215326": {
       "alias": "Buzungo",
@@ -32735,7 +32725,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794611055,
       "last_seen_ingame_webapi_ts": 1795478095,
-      "last_seen_online_ts": 1795490697,
+      "last_seen_online_ts": 1795492578,
       "max_elo": 1000,
       "profile_id": 1451832,
       "steam_games_hidden": false,
@@ -33667,7 +33657,7 @@
       "alias": "THEGUARDSMAN",
       "br_source": "open_data_matches",
       "last_match_date": 1794805139,
-      "last_seen_online_ts": 1795490697,
+      "last_seen_online_ts": 1795492578,
       "max_elo": 989,
       "profile_id": 1467000,
       "steam_games_hidden": true,
@@ -34869,7 +34859,7 @@
       "last_match_date": 1795459987,
       "last_seen_ingame_ts": 1795173967,
       "last_seen_ingame_webapi_ts": 1795447532,
-      "last_seen_online_ts": 1795490697,
+      "last_seen_online_ts": 1795492578,
       "max_elo": 1238,
       "profile_id": 17906,
       "steam_games_hidden": false,
@@ -36134,7 +36124,7 @@
       "alias": "HellSeeksProtein",
       "br_source": "alias_history",
       "last_match_date": 1795394583,
-      "last_seen_online_ts": 1795490697,
+      "last_seen_online_ts": 1795492578,
       "max_elo": 1162,
       "profile_id": 421250,
       "steam_id": "76561198040857816",
@@ -37570,6 +37560,16 @@
       "steam_id": "76561199099161214",
       "total_matches": 21
     },
+    "793116": {
+      "alias": "Beltrao",
+      "br_source": "alias_history",
+      "last_match_date": 1795363625,
+      "last_seen_online_ts": 1795492578,
+      "max_elo": 1000,
+      "profile_id": 793116,
+      "steam_id": "76561198059582047",
+      "total_matches": 70
+    },
     "795009": {
       "alias": "Kotuka Theu Ku",
       "br_source": "open_data_matches",
@@ -38994,14 +38994,14 @@
       "alias": "Warmech11",
       "br_source": "steam_location",
       "flag_country": "py",
-      "last_match_date": 1795490751,
+      "last_match_date": 1795492492,
       "last_seen_online_ts": 1795491597,
       "max_elo": 1155,
       "profile_id": 999940,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795464310,
       "steam_id": "76561198074249692",
-      "total_matches": 668
+      "total_matches": 669
     }
   },
   "schema_version": 3,
