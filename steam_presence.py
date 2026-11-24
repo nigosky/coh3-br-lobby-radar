@@ -504,6 +504,12 @@ _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 1115599, "steam_id": "76561197966038733", "original_alias": "Paisano", "country": "br"},
     {"profile_id": 942935, "steam_id": "76561198066317871", "original_alias": "SrLmo", "country": "br", "known_aliases": ["SrLmo", "8===D", "Tsugiro kimimame", "Renan Santos 2026"]},
     {"profile_id": 26172, "steam_id": "76561198092618442", "original_alias": "SmiLeYxBR", "country": "br"},
+    {"profile_id": 1214336, "steam_id": "76561198358905086", "original_alias": "Carp", "country": "br", "known_aliases": ["Carp", "Carpdiem", "CarpDiiem"]},
+    {"profile_id": 304013, "steam_id": "76561197984619024", "original_alias": "Napa", "country": "us", "flag_country": "us", "known_aliases": ["Napa", "Naporest", "Napster", "Z3rO", "Z3r0", "Doenti 5", "Zero"]},
+    {"profile_id": 1295138, "steam_id": "76561198959730121", "original_alias": "Salïty", "country": "br", "known_aliases": ["Salïty", "Lilith"]},
+    {"profile_id": 22246, "steam_id": "76561197971282128", "original_alias": "Açucar Macabro", "country": "br", "known_aliases": ["Açucar Macabro", "Macabre Sugar", "FazueL", "NooBR"]},
+    {"profile_id": 6696, "steam_id": "76561198182964383", "original_alias": "Roda", "country": "br", "known_aliases": ["Roda", "★ Roda", "[※] Roda"]},
+    {"profile_id": 502544, "steam_id": "76561198049822246", "original_alias": "Arthoumadbro", "country": "br"},
 ]
 
 # Alias retrocompatível para o fallback da 3ª categoria (`monitorados`)
@@ -515,7 +521,6 @@ _FALLBACK_OUTROS_BR_EMIGRADOS: list[dict[str, Any]] = [
     {"profile_id": 312670, "steam_id": "76561197978279848", "original_alias": "TNF", "country": "au", "flag_country": "au"},
     {"profile_id": 263517, "steam_id": "76561197994925919", "original_alias": "Angel of Death", "country": "jp", "flag_country": "jp"},
     {"profile_id": 26237, "steam_id": "76561198036822207", "original_alias": "[EL] Queue", "country": "us", "flag_country": "us", "known_aliases": ["Qpid™", "[EL] Queue"]},
-    {"profile_id": 304013, "steam_id": "76561197984619024", "original_alias": "Napa", "country": "us", "flag_country": "us"},
     {"profile_id": 76165, "steam_id": "76561197961890785", "original_alias": "1337", "country": "ee", "flag_country": "ee"},
     {"profile_id": 1480421, "steam_id": "76561198070841504", "original_alias": "ShadBlack", "country": "au", "flag_country": "au"},
     {"profile_id": 4805, "steam_id": "76561198048811566", "original_alias": "MDCCC", "country": "us", "flag_country": "us"},
@@ -1890,6 +1895,7 @@ class SteamPresenceClient:
         raw_key = os.environ.get("STEAM_WEB_API_KEY", "") if api_key is None else str(api_key or "")
         clean_key = raw_key.strip()
         self._api_key = clean_key if STEAM_API_KEY_VALID_RE.fullmatch(clean_key) else ""
+        self.last_web_api_rate_limited: bool = False
 
     def __repr__(self) -> str:
         return f"SteamPresenceClient(uses_web_api={self.uses_web_api})"
@@ -1905,12 +1911,15 @@ class SteamPresenceClient:
         enrich_free_online_xml: bool = True,
         max_xml_enrich: int = 45,
         skip_xml_enrich_sids: set[str] | frozenset[str] | None = None,
+        chunk_pace_sec: float = 0.25,
+        max_429_retries: int = 2,
     ) -> dict[str, dict[str, Any]] | None:
         """
         Consulta até 100 perfis por requisição em `api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/`
         retornando `personastate` exato (`Ocupado`, `Ausente`, `Ausente zZz`, `Online`), jogo e nick atuais.
-        Retorna `None` em caso de falha da API para acionar fallback automático para XML.
+        Retorna `None` em caso de falha completa da API no 1º lote para acionar fallback opcional para XML.
         """
+        self.last_web_api_rate_limited = False
         if not self._api_key:
             return None
         unique_sids = list(dict.fromkeys(str(s).replace("/steam/", "").strip() for s in steam_ids if s))
@@ -1926,10 +1935,12 @@ class SteamPresenceClient:
         result: dict[str, dict[str, Any]] = {}
         chunk_size = 100
         total_chunks = (len(valid_sids) + chunk_size - 1) // chunk_size
+        pace_between_chunks = max(0.0, min(float(chunk_pace_sec), 2.0))
+        retries_429 = max(0, min(int(max_429_retries), 4))
 
         for chunk_num, idx in enumerate(range(0, len(valid_sids), chunk_size), start=1):
-            if chunk_num > 1:
-                time.sleep(0.12)
+            if chunk_num > 1 and pace_between_chunks > 0.0:
+                time.sleep(pace_between_chunks)
             chunk = valid_sids[idx : idx + chunk_size]
             qs = urllib.parse.urlencode({"key": self._api_key, "steamids": ",".join(chunk), "format": "json"})
             url = f"{STEAM_API_SUMMARIES_URL}?{qs}"
@@ -1941,7 +1952,8 @@ class SteamPresenceClient:
             )
             chunk_ok = False
             rate_limited_stop = False
-            for attempt in range(3):
+            max_attempts = max(2, retries_429 + 1)
+            for attempt in range(max_attempts):
                 req = urllib.request.Request(url, headers=headers, method="GET")
                 try:
                     with _get_relic_opener().open(req, timeout=12) as resp:
@@ -1969,13 +1981,14 @@ class SteamPresenceClient:
                         )
                         return result if result else None
                     if exc.code == 429:
-                        if attempt < 2:
+                        if attempt < retries_429:
                             retry_hdr = str(getattr(exc, "headers", {}).get("Retry-After") or "").strip() if getattr(exc, "headers", None) else ""
-                            wait_sec = 1.5 * (attempt + 1)
+                            wait_sec = min(12.0, 2.0 * (2 ** attempt))
                             if retry_hdr.isdigit():
-                                wait_sec = max(1.0, min(float(int(retry_hdr)), 8.0))
+                                wait_sec = max(1.0, min(float(int(retry_hdr)), 15.0))
                             time.sleep(wait_sec)
                             continue
+                        self.last_web_api_rate_limited = True
                         if result:
                             logger.warning(
                                 "Steam Web API retornou HTTP 429 no lote %d/%d; preservando %d perfis já coletados sem acionar fallback XML.",
@@ -1985,7 +1998,12 @@ class SteamPresenceClient:
                             )
                             rate_limited_stop = True
                             break
-                        logger.warning("Steam Web API falhou com HTTP 429; usando fallback XML público.")
+                        logger.warning(
+                            "Steam Web API retornou HTTP 429 no lote %d/%d após %d tentativa(s).",
+                            chunk_num,
+                            total_chunks,
+                            attempt + 1,
+                        )
                         return None
                     if attempt == 0:
                         time.sleep(0.5)
@@ -2120,6 +2138,10 @@ class SteamPresenceClient:
         rate_limit_threshold: int = 3,
         require_xml_details: bool = False,
         skip_xml_enrich_sids: set[str] | frozenset[str] | None = None,
+        enrich_free_online_xml: bool = True,
+        chunk_pace_sec: float = 0.25,
+        max_429_retries: int = 2,
+        allow_xml_fallback: bool = True,
     ) -> dict[str, dict[str, Any]]:
         unique_sids = list(dict.fromkeys(str(s).replace("/steam/", "").strip() for s in steam_ids if s))
         valid_sids = [s for s in unique_sids if STEAM_ID64_VALID_RE.fullmatch(s)]
@@ -2129,10 +2151,15 @@ class SteamPresenceClient:
         if self._api_key and not require_xml_details:
             api_result = self.fetch_web_api_presence_batch(
                 valid_sids,
+                enrich_free_online_xml=enrich_free_online_xml,
                 skip_xml_enrich_sids=skip_xml_enrich_sids,
+                chunk_pace_sec=chunk_pace_sec,
+                max_429_retries=max_429_retries,
             )
             if api_result:
                 return api_result
+            if not allow_xml_fallback:
+                return {}
 
         workers = max(1, min(int(max_workers), len(valid_sids), 8))
         pace = max(0.0, min(float(pace_delay_sec), 1.0))
