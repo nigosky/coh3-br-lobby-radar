@@ -935,7 +935,7 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
 
         self.assertEqual(OTHER_BR_ACTIVE_COH3_DAYS, 15)
         self.assertEqual(OTHER_BR_DORMANT_RETENTION_DAYS, 0)
-        for expected_grp in ("companybr", "CoH2BR", "cohbr", "COH2-BR", "cohcentral", "br_febcoh", "BR-CoH2"):
+        for expected_grp in ("companybr", "CoH2BR", "battlecentral", "cohbr", "COH2-BR", "cohcentral", "br_febcoh", "BR-CoH2"):
             self.assertIn(expected_grp, BRAZILIAN_COH_STEAM_GROUPS)
 
         now = 1_800_000_000
