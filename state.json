@@ -88,13 +88,13 @@
     "99722": 1000,
     "999940": 1155
   },
-  "elo_cache_ts": 1795505226,
+  "elo_cache_ts": 1795505525,
   "last_alert_coh3_pids": [],
   "last_alert_ts": 1795494077,
-  "last_digest": "(([], [(1226910, '', False, False, False, 'Lupus Alba', '', '', 'br', False), (5768, '', False, False, False, 'The Dog', '', '', 'br', False), (58737, 'TBH: Task Bar Hero', True, True, False, 'INFIEL', '', '', 'br', False), (59864, '', True, True, False, 'Lion Heart', '', '', 'br', False), (975688, '', True, True, False, 'Kefbr', '', '', 'br', False)], []), ([(212034, False, True, True, False, 'XAPA KENTE', '', '', 'ca', False)], [(312670, 'ARC Raiders', False, False, False, 'TNF', '', '', 'au', False), (263517, '', True, False, False, 'Angel of Death', '', '', 'jp', False), (24963, '', True, False, False, 'Eduardo A.', '', '', 'sa', False), (1480421, '', True, False, False, 'ShadBlack', '', '', 'au', False)], []), ([], [], [(383796, 'Vanghoul', '', '', 'br', False), (1285745, 'maathmunix', '', '', 'br', False)]))",
-  "last_steam_fast_sig": "(\"([], [('76561197993922195', 'TBH: Task Bar Hero', True, True, False, 'INFIEL'), ('76561197994245218', '', True, True, False, 'Kefbr'), ('76561198123446420', '', True, True, False, 'Lion Heart'), ('76561198140782132', '', False, False, False, 'Lupus Alba'), ('76561198205052385', '', False, False, False, 'The Dog')])\", \"([('76561198207565088', True, True, False, 'XAPA KENTE')], [('76561197978279848', 'ARC Raiders', False, False, False, 'TNF'), ('76561197987674520', '', True, False, False, 'Eduardo A.'), ('76561197994925919', '', True, False, False, 'Angel of Death'), ('76561198070841504', '', True, False, False, 'ShadBlack')])\")",
+  "last_digest": "(([], [(1226910, '', False, False, False, 'Lupus Alba', '', '', 'br', False), (5768, '', False, False, False, 'The Dog', '', '', 'br', False), (58737, 'TBH: Task Bar Hero', True, True, False, 'INFIEL', '', '', 'br', False), (59864, '', True, True, False, 'Lion Heart', '', '', 'br', False), (975688, '', True, True, False, 'Kefbr', '', '', 'br', False)], []), ([(212034, False, True, True, False, 'XAPA KENTE', '', '', 'ca', False)], [(24963, '', False, False, False, 'Eduardo A.', '', '', 'sa', False), (312670, 'ARC Raiders', False, False, False, 'TNF', '', '', 'au', False), (263517, '', True, False, False, 'Angel of Death', '', '', 'jp', False), (1480421, '', True, False, False, 'ShadBlack', '', '', 'au', False)], []), ([], [], [(383796, 'Vanghoul', '', '', 'br', False), (1285745, 'maathmunix', '', '', 'br', False)]))",
+  "last_steam_fast_sig": "(\"([], [('76561197993922195', 'TBH: Task Bar Hero', True, True, False, 'INFIEL'), ('76561197994245218', '', True, True, False, 'Kefbr'), ('76561198123446420', '', True, True, False, 'Lion Heart'), ('76561198140782132', '', False, False, False, 'Lupus Alba'), ('76561198205052385', '', False, False, False, 'The Dog')])\", \"([('76561198207565088', True, True, False, 'XAPA KENTE')], [('76561197978279848', 'ARC Raiders', False, False, False, 'TNF'), ('76561197987674520', '', False, False, False, 'Eduardo A.'), ('76561197994925919', '', True, False, False, 'Angel of Death'), ('76561198070841504', '', True, False, False, 'ShadBlack')])\")",
   "last_steam_groups_scan_ts": 1795485156,
-  "last_sync_ts": 1795505226,
+  "last_sync_ts": 1795505525,
   "layout_version": 13,
   "manual_other_br_checked_pids": [
     11033,
@@ -120,16 +120,16 @@
   ],
   "manual_other_br_checked_ts": 1795494978,
   "other_br_rotation_offset": 0,
-  "panel_links_message_id": "1574687918365347865",
-  "panel_message_id": "1574687910186455071",
+  "panel_links_message_id": "1574689155991085174",
+  "panel_message_id": "1574689151364763658",
   "panel_message_ids": [
-    "1574687910186455071",
-    "1574687912761499668",
-    "1574687917161447424",
-    "1574687918365347865"
+    "1574689151364763658",
+    "1574689153335955496",
+    "1574689154976059523",
+    "1574689155991085174"
   ],
-  "panel_monitorados_message_id": "1574687912761499668",
-  "panel_outros_message_id": "1574687917161447424",
+  "panel_monitorados_message_id": "1574689153335955496",
+  "panel_outros_message_id": "1574689154976059523",
   "steam_gd_cache": {
     "76561197994245218": {
       "hidden": true,
