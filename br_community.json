@@ -40791,14 +40791,14 @@
       "alias": "Ouvido Albino",
       "avatar_url": "https://avatars.steamstatic.com/a9f5e31de84f6eb7c1f8b0e4baf2688ad5993b02_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795473328,
+      "last_match_date": 1795558966,
       "last_seen_ingame_ts": 1795198164,
       "last_seen_ingame_webapi_ts": 1795555863,
       "last_seen_online_ts": 1795557663,
       "max_elo": 1002,
       "profile_id": 1285769,
       "steam_id": "76561198803826426",
-      "total_matches": 823
+      "total_matches": 824
     },
     "1285871": {
       "alias": "Dreamed",
@@ -42787,7 +42787,6 @@
       "alias": "acolavite",
       "avatar_url": "https://avatars.steamstatic.com/a5fe0f3275248d6fa43f2c58f1156c0921ad8501_medium.jpg",
       "br_source": "open_data_matches",
-      "current_alias": "corolla XEI 2008 prata",
       "last_match_date": 1794613740,
       "last_seen_ingame_ts": 1795126020,
       "last_seen_ingame_webapi_ts": 1795231703,
@@ -47188,7 +47187,7 @@
       "last_match_date": 1795468519,
       "last_seen_ingame_ts": 1795181045,
       "last_seen_ingame_webapi_ts": 1795545686,
-      "last_seen_online_ts": 1795556163,
+      "last_seen_online_ts": 1795558980,
       "max_elo": 952,
       "profile_id": 738999,
       "steam_games_hidden": false,
