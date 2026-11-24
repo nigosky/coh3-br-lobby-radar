@@ -39875,12 +39875,12 @@
       "avatar_url": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "br_source": "alias_history",
       "current_alias": "西村",
-      "last_match_date": 1795553736,
+      "last_match_date": 1795560334,
       "last_seen_online_ts": 1795559881,
       "max_elo": 1013,
       "profile_id": 1200092,
       "steam_id": "76561198789788154",
-      "total_matches": 140
+      "total_matches": 141
     },
     "1200197": {
       "alias": "Spotlight",
@@ -40384,7 +40384,7 @@
       "avatar_url": "https://avatars.steamstatic.com/a759483b0ed468481ea70b4996e0f902729f7f76_medium.jpg",
       "br_source": "open_data_matches",
       "last_match_date": 1795476506,
-      "last_seen_online_ts": 1795558562,
+      "last_seen_online_ts": 1795560481,
       "max_elo": 1000,
       "profile_id": 1246298,
       "steam_games_hidden": true,
@@ -40994,12 +40994,12 @@
       "alias": "AVESTRUZ TE SEDUZ",
       "avatar_url": "https://avatars.steamstatic.com/e223b7ad75b90f0c88fe25f1ae07d511c5b31b91_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795550109,
+      "last_match_date": 1795560250,
       "last_seen_online_ts": 0,
       "max_elo": 1285,
       "profile_id": 1297870,
       "steam_id": "76561198047131936",
-      "total_matches": 1748
+      "total_matches": 1749
     },
     "1298464": {
       "alias": "Maçã",
@@ -43751,14 +43751,14 @@
       "alias": "[BGD] Panella",
       "avatar_url": "https://avatars.steamstatic.com/918a2802e2507b140707303f176e70096e7b13f6_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795555764,
+      "last_match_date": 1795559729,
       "last_seen_ingame_ts": 1795523058,
       "last_seen_ingame_webapi_ts": 1795544392,
       "last_seen_online_ts": 1795559881,
       "max_elo": 1050,
       "profile_id": 1456842,
       "steam_id": "76561198272287621",
-      "total_matches": 83
+      "total_matches": 85
     },
     "1457577": {
       "alias": "Karyu",
@@ -44752,7 +44752,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1795507512,
       "last_seen_ingame_ts": 1795495277,
-      "last_seen_ingame_webapi_ts": 1795490997,
+      "last_seen_ingame_webapi_ts": 1795560481,
       "last_seen_online_ts": 1795559881,
       "max_elo": 1073,
       "profile_id": 1475932,
@@ -44906,7 +44906,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1795050735,
       "last_seen_ingame_ts": 1795172995,
-      "last_seen_ingame_webapi_ts": 1795471319,
+      "last_seen_ingame_webapi_ts": 1795560481,
       "last_seen_online_ts": 1795559881,
       "max_elo": 1000,
       "profile_id": 1476791,
