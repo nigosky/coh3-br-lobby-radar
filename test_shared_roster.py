@@ -52,7 +52,8 @@ class TestSharedPlayersRoster(unittest.TestCase):
         tot_v, uniq_v, tot_m = manage_roster.validate_roster_doc(doc)
         self.assertEqual(tot_v, 48)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
-        self.assertEqual(tot_m, 81)
+        self.assertEqual(tot_m, 158)
+        self.assertEqual(len(doc.get("outros_br_emigrados") or []), 18)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr e Tracker presentes; Lem22/Generick US e XAPA KENTE CA
         vet_by_pid = {int(r["profile_id"]): r for r in CORE_BR_ROSTER}
@@ -115,14 +116,20 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Players Monitorados (81 contas): todos os citados/movidos/emigrados do projeto CoH3 (zero duplicidade com Veteranos)
-        from steam_presence import MONITORED_BR_PLAYERS
+        # Players Monitorados (158 contas): citados/movidos + Top 100 BR >1300 + amigos + APENAS XAPA KENTE e icewarp entre emigrados
+        from steam_presence import MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS
 
         self.assertIs(MANUAL_OTHER_BR_PLAYERS, MONITORED_BR_PLAYERS)
         mon_by_pid = {int(r["profile_id"]): r for r in MONITORED_BR_PLAYERS}
-        self.assertEqual(len(mon_by_pid), 81)
+        exp_by_pid = {int(r["profile_id"]): r for r in OUTROS_BR_EMIGRADOS}
+        self.assertEqual(len(mon_by_pid), 158)
+        self.assertEqual(len(exp_by_pid), 18)
+        self.assertEqual(
+            {pid for pid, r in mon_by_pid.items() if str(r.get("flag_country") or r.get("country") or "br").lower() != "br"},
+            {212034, 7448},
+            "Apenas XAPA KENTE (212034) e icewarp (7448) devem permanecer como emigrados em Players Monitorados.",
+        )
         for mon_pid in (
-            33487,
             16867,
             19747,
             23250,
@@ -138,17 +145,13 @@ class TestSharedPlayersRoster(unittest.TestCase):
             1297804,
             164152,
             212034,
-            110593,
-            1304336,
-            1168460,
-            11033,
-            24963,
+            7448,
             1076221,
             941524,
             40833,
             991551,
             667564,
-            # 42 jogadores citados/investigados no projeto migrados de Outros Brasileiros para Players Monitorados
+            # Jogadores citados/investigados no projeto
             357310,
             17169,
             1178218,
@@ -191,28 +194,67 @@ class TestSharedPlayersRoster(unittest.TestCase):
             4517,
             624624,
             59671,
+            # Novos Top 100 BR >1300 ELO + parceiros recorrentes + amigos Steam CoH3 BR
+            649535,
+            765837,
+            975900,
+            890394,
+            7375,
+            87314,
+            6880,
+            383796,
+            396850,
+            946312,
+            12522,
+            5296,
+            1162890,
+            716376,
+            409715,
+            316794,
+            946322,
+            892947,
+            1156831,
+            1330031,
+            3888,
+            656815,
+            86675,
         ):
             self.assertIn(mon_pid, mon_by_pid)
             self.assertNotIn(mon_pid, vet_by_pid)
+            self.assertNotIn(mon_pid, exp_by_pid)
         self.assertEqual(mon_by_pid[212034]["original_alias"], "XAPA KENTE")
         self.assertEqual(mon_by_pid[212034]["steam_id"], "76561198207565088")
         self.assertEqual(mon_by_pid[212034].get("flag_country"), "ca")
+        self.assertEqual(mon_by_pid[7448]["original_alias"], "icewarp")
+        self.assertEqual(mon_by_pid[7448].get("flag_country"), "za")
+
+        # Os 18 emigrados movidos para Outros Brasileiros (fora de Monitorados e Veteranos, com bandeira real preservada!)
         for exp_pid, exp_alias, exp_ctry in (
+            (33487, "Generick", "us"),
+            (91827, "[★General★] Apollo", "au"),
+            (312670, "TNF", "au"),
+            (263517, "Angel of Death", "jp"),
+            (26237, "[EL] Queue", "us"),
+            (304013, "Napa", "us"),
+            (76165, "1337", "ee"),
+            (1480421, "ShadBlack", "au"),
+            (4805, "MDCCC", "us"),
+            (29737, "PABLO FLEXCOBAR", "ar"),
+            (999940, "Warmech11", "py"),
+            (812247, "Texugo", "th"),
+            (229162, "Sombra", "us"),
             (110593, "Ethan Hunt", "us"),
             (1304336, "V.I.T.O.X", "us"),
             (1168460, "Nonô", "ca"),
             (11033, "Coka", "jp"),
             (24963, "Eduardo A.", "sa"),
-            (7448, "icewarp", "za"),
-            (91827, "[★General★] Apollo", "au"),
-            (263517, "Angel of Death", "jp"),
-            (29737, "PABLO FLEXCOBAR", "ar"),
-            (999940, "Warmech11", "py"),
-            (76165, "1337", "ee"),
-            (812247, "Texugo", "th"),
         ):
-            self.assertEqual(mon_by_pid[exp_pid]["original_alias"], exp_alias)
-            self.assertEqual(mon_by_pid[exp_pid].get("flag_country"), exp_ctry)
+            self.assertIn(exp_pid, exp_by_pid)
+            self.assertNotIn(exp_pid, mon_by_pid)
+            self.assertNotIn(exp_pid, vet_by_pid)
+            self.assertEqual(exp_by_pid[exp_pid]["original_alias"], exp_alias)
+            self.assertEqual(exp_by_pid[exp_pid].get("flag_country"), exp_ctry)
+            self.assertEqual(get_configured_flag_country(exp_pid), exp_ctry)
         self.assertEqual(mon_by_pid[16867]["original_alias"], "Golden Cobra")
         self.assertIn("COHBRAMACHINE", mon_by_pid[16867].get("known_aliases") or [])
         self.assertIn("Nargoth de Bebbanburg", mon_by_pid[23250].get("known_aliases") or [])
@@ -470,7 +512,11 @@ class TestSharedPlayersRoster(unittest.TestCase):
             manage_roster.validate_roster_doc(doc_final)
 
     def test_fallback_parity_and_strict_smurf_of_validation(self) -> None:
-        from steam_presence import _FALLBACK_CORE_BR_ROSTER, _FALLBACK_MONITORED_BR_PLAYERS
+        from steam_presence import (
+            _FALLBACK_CORE_BR_ROSTER,
+            _FALLBACK_MONITORED_BR_PLAYERS,
+            _FALLBACK_OUTROS_BR_EMIGRADOS,
+        )
 
         doc = manage_roster.load_roster_doc(PLAYERS_ROSTER_PATH)
 
@@ -491,14 +537,26 @@ class TestSharedPlayersRoster(unittest.TestCase):
 
         self.assertEqual(_norm(doc["veteranos"]), _norm(_FALLBACK_CORE_BR_ROSTER))
         self.assertEqual(_norm(doc["monitorados"]), _norm(_FALLBACK_MONITORED_BR_PLAYERS))
+        self.assertEqual(_norm(doc["outros_br_emigrados"]), _norm(_FALLBACK_OUTROS_BR_EMIGRADOS))
 
-        # Rejeita rótulos legados, smurf com pin_alias e divergência entre original_alias e smurf_of
+        # Rejeita rótulos legados, smurf com pin_alias, country=='br' em outros_br_emigrados e divergência em smurf_of
         base_vet = {
             "profile_id": 79327,
             "steam_id": "76561197963172584",
             "original_alias": "Chacineiro",
             "country": "br",
         }
+        with self.assertRaises(ValueError):
+            manage_roster.validate_roster_doc(
+                {
+                    "schema_version": 2,
+                    "veteranos": [base_vet],
+                    "monitorados": [],
+                    "outros_br_emigrados": [
+                        {"profile_id": 999999, "steam_id": "76561198000999999", "original_alias": "NaoEmigrado", "country": "br"}
+                    ],
+                }
+            )
         for bad_entry in (
             {**base_vet, "original_alias": "General Winter (Principal)"},
             {**base_vet, "original_alias": "General Winter (Smurf 1)"},

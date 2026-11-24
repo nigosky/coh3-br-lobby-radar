@@ -74,6 +74,7 @@ from smurf_detector import (
     DEFAULT_MATCH_DAYS,
     DEFAULT_MIN_PROBABILITY_PCT,
     DEFAULT_TOP_N_BR,
+    MAX_SMURF_MATCH_DAYS,
     CohDBBattlegroupClient,
     SmurfTelemetryCollector,
     detect_top50_br_smurfs,
@@ -87,6 +88,7 @@ from steam_presence import (
     BRAZILIAN_SISTER_RTS_STEAM_GROUPS,
     MANUAL_OTHER_BR_PLAYERS,
     OTHER_BR_ACTIVE_COH3_DAYS,
+    OUTROS_BR_EMIGRADOS,
     SOUTH_AMERICA_REGION_ID,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
@@ -102,6 +104,7 @@ from steam_presence import (
 configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("coh3_br.lobby.discovery")
 
+DEFAULT_DISCOVERY_MATCH_DAYS = 30
 DEFAULT_MAX_STEAM_VERIFY = 750
 DEFAULT_MAX_FRIEND_SEEDS = 500
 DEFAULT_RELIC_SA_PAGES = 14
@@ -188,7 +191,7 @@ def run_deep_br_discovery(
     relic_client: RelicActivityClient | None = None,
     presence_client: SteamPresenceClient | None = None,
     cohdb_client: Any = None,
-    match_days: int = DEFAULT_MATCH_DAYS,
+    match_days: int = DEFAULT_DISCOVERY_MATCH_DAYS,
     max_steam_verify: int = DEFAULT_MAX_STEAM_VERIFY,
     max_friend_seeds: int = DEFAULT_MAX_FRIEND_SEEDS,
     friend_hops: int = 2,
@@ -228,7 +231,7 @@ def run_deep_br_discovery(
     state = load_state(state_path)
     vet_roster, _ = _resolve_veteranos_roster(state, r_client)
     vet_pids, vet_sids = extract_roster_id_sets(vet_roster)
-    manual_pids, _ = extract_roster_id_sets(MANUAL_OTHER_BR_PLAYERS)
+    manual_pids, _ = extract_roster_id_sets(list(MANUAL_OTHER_BR_PLAYERS) + list(OUTROS_BR_EMIGRADOS))
 
     community_cache = load_community_cache(community_cache_path)
     prev_friends_cursor = max(0, int(community_cache.get("friends_cursor_offset", 0) or 0))
@@ -657,10 +660,10 @@ def run_deep_br_discovery(
             steam_verified_count,
         )
 
-    # 4c. Brasileiros confirmados no exterior (`MANUAL_OTHER_BR_PLAYERS`) resolvidos direto na Relic API
+    # 4c. Brasileiros monitorados e emigrados confirmados (`MANUAL_OTHER_BR_PLAYERS` + `OUTROS_BR_EMIGRADOS`) resolvidos direto na Relic API
     manual_resolved = resolve_manual_other_br_entries(
         r_client,
-        MANUAL_OTHER_BR_PLAYERS,
+        list(MANUAL_OTHER_BR_PLAYERS) + list(OUTROS_BR_EMIGRADOS),
         vet_pids=vet_pids,
         vet_sids=vet_sids,
     )
@@ -1353,7 +1356,7 @@ def run_deep_br_discovery(
         hist_dirty = ingest_local_database(
             alias_history_doc,
             roster_rows=vet_roster,
-            manual_other_rows=MANUAL_OTHER_BR_PLAYERS,
+            manual_other_rows=list(MANUAL_OTHER_BR_PLAYERS) + list(OUTROS_BR_EMIGRADOS),
             community_cache=out_cache_snapshot,
             now_ts=now,
         )
@@ -1383,7 +1386,7 @@ def run_deep_br_discovery(
 
         focus_hist_pids = list(
             dict.fromkeys(
-                [int(r["profile_id"]) for r in (list(vet_roster) + list(MANUAL_OTHER_BR_PLAYERS)) if int(r.get("profile_id", 0) or 0) > 0]
+                [int(r["profile_id"]) for r in (list(vet_roster) + list(MANUAL_OTHER_BR_PLAYERS) + list(OUTROS_BR_EMIGRADOS)) if int(r.get("profile_id", 0) or 0) > 0]
                 + [int(p) for p in top50_br_pids_to_save if int(p or 0) > 0]
             )
         )
@@ -1678,7 +1681,12 @@ def main() -> int:
     )
     parser.add_argument("--cache", type=Path, default=DEFAULT_COMMUNITY_CACHE_PATH, help="Caminho para br_community.json")
     parser.add_argument("--state", type=Path, default=DEFAULT_STATE_PATH, help="Caminho para state.json")
-    parser.add_argument("--match-days", type=int, default=DEFAULT_MATCH_DAYS, help="Dias de dumps Open Data Matches (1..30)")
+    parser.add_argument(
+        "--match-days",
+        type=int,
+        default=DEFAULT_DISCOVERY_MATCH_DAYS,
+        help=f"Dias de dumps Open Data Matches (1..{MAX_SMURF_MATCH_DAYS}; padrão: {DEFAULT_DISCOVERY_MATCH_DAYS})",
+    )
     parser.add_argument("--max-steam-verify", type=int, default=DEFAULT_MAX_STEAM_VERIFY, help="Máximo de perfis verificados no XML Steam")
     parser.add_argument("--max-friend-seeds", type=int, default=DEFAULT_MAX_FRIEND_SEEDS, help="Máximo de contas BR consultadas no grafo de amigos Steam")
     parser.add_argument("--friend-hops", type=int, default=2, help="Profundidade do grafo de amigos Steam (1 ou 2 graus; padrão 2 com Web API)")

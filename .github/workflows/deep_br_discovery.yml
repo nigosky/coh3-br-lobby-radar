@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       match_days:
-        description: "Dias de dumps Open Data Matches (1 a 30)"
+        description: "Dias de dumps Open Data Matches (1 a 120; padrao diario 30)"
         required: false
         default: "30"
         type: string
@@ -72,7 +72,7 @@ jobs:
 
           # Validacao numerica estrita contra injecao
           MATCH_DAYS=30
-          if [[ "${INPUT_MATCH_DAYS:-}" =~ ^[0-9]+$ ]] && [ "${INPUT_MATCH_DAYS}" -ge 1 ] && [ "${INPUT_MATCH_DAYS}" -le 30 ]; then
+          if [[ "${INPUT_MATCH_DAYS:-}" =~ ^[0-9]+$ ]] && [ "${INPUT_MATCH_DAYS}" -ge 1 ] && [ "${INPUT_MATCH_DAYS}" -le 120 ]; then
             MATCH_DAYS="${INPUT_MATCH_DAYS}"
           fi
 

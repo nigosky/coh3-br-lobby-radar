@@ -636,12 +636,16 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
 
     def test_manual_other_br_generick_us_expat_resolved_and_preserved(self) -> None:
         from lobby_radar import resolve_manual_other_br_entries
-        from steam_presence import MANUAL_OTHER_BR_PLAYERS
+        from steam_presence import MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS
 
         now = 1_800_000_000
         self.assertTrue(
-            any(int(r.get("profile_id", 0) or 0) == 33487 for r in MANUAL_OTHER_BR_PLAYERS),
-            "Generick (pid=33487) deve estar cadastrado em MANUAL_OTHER_BR_PLAYERS.",
+            any(int(r.get("profile_id", 0) or 0) == 33487 for r in OUTROS_BR_EMIGRADOS),
+            "Generick (pid=33487) deve estar cadastrado em OUTROS_BR_EMIGRADOS.",
+        )
+        self.assertFalse(
+            any(int(r.get("profile_id", 0) or 0) == 33487 for r in MONITORED_BR_PLAYERS),
+            "Generick (pid=33487) deve ficar em Outros Brasileiros, fora de Players Monitorados.",
         )
 
         class _FakeRelicGenerick:
@@ -693,7 +697,7 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
 
         resolved = resolve_manual_other_br_entries(
             _FakeRelicGenerick(),
-            MANUAL_OTHER_BR_PLAYERS,
+            list(MONITORED_BR_PLAYERS) + list(OUTROS_BR_EMIGRADOS),
             vet_pids=set(),
             vet_sids=set(),
         )

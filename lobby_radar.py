@@ -56,6 +56,7 @@ from steam_presence import (
     MONITORED_BR_PLAYERS,
     OTHER_BR_ACTIVE_COH3_DAYS,
     OTHER_BR_DORMANT_RETENTION_DAYS,
+    OUTROS_BR_EMIGRADOS,
     PROMINENCE_TIER_ORDER,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
@@ -1257,8 +1258,10 @@ def run_lobby_radar_sync(
                 return True
         return False
 
+    expat_outros_pids_set, _ = extract_roster_id_sets(OUTROS_BR_EMIGRADOS)
+
     def _is_leaked_foreign_cache_row(row_obj: dict[str, Any], row_pid: int) -> bool:
-        if row_pid in mon_pids_set:
+        if row_pid in mon_pids_set or row_pid in expat_outros_pids_set:
             return False
         if str(row_obj.get("br_source") or "").strip() != "alias_history":
             return False
@@ -1308,6 +1311,52 @@ def run_lobby_radar_sync(
             community_players[str(rpid)] = dormant_players.pop(k)
             community_dirty = True
             reactivated_count += 1
+
+    # Garante presença dos brasileiros emigrados movidos para `Outros Brasileiros` (`OUTROS_BR_EMIGRADOS`)
+    # preservando bandeira real de residência + badge `BR EXT` sem colocá-los em `Players Monitorados`
+    for exp_row in OUTROS_BR_EMIGRADOS:
+        epid = int(exp_row.get("profile_id", 0) or 0)
+        esid = str(exp_row.get("steam_id") or "").replace("/steam/", "").strip()
+        if (
+            epid <= 0
+            or epid in curated_pids_set
+            or not STEAM_ID64_VALID_RE.fullmatch(esid)
+            or esid in curated_sids_set
+        ):
+            continue
+        eflag = normalize_flag_country(exp_row.get("flag_country") or exp_row.get("country"))
+        existing_exp = community_players.get(str(epid)) or dormant_players.get(str(epid))
+        if isinstance(existing_exp, dict):
+            if eflag and eflag != "br" and existing_exp.get("flag_country") != eflag:
+                existing_exp["flag_country"] = eflag
+                community_dirty = True
+            continue
+        hrec_exp = hist_players_map.get(str(epid)) if isinstance(hist_players_map, dict) else None
+        elmd = int(hrec_exp.get("coh3_last_match_date", 0) or 0) if isinstance(hrec_exp, dict) else 0
+        ematches = int(hrec_exp.get("coh3_total_matches", 0) or 0) if isinstance(hrec_exp, dict) else 0
+        e_alias = str(exp_row.get("original_alias") or "").strip() or f"Jogador {epid}"
+        exp_seed: dict[str, Any] = {
+            "profile_id": epid,
+            "steam_id": esid,
+            "alias": e_alias,
+            "max_elo": 0,
+            "last_match_date": elmd,
+            "total_matches": ematches,
+            "br_source": "manual_other_br",
+        }
+        if eflag and eflag != "br":
+            exp_seed["flag_country"] = eflag
+        target_pool_exp = community_players if elmd >= active_coh3_cutoff else dormant_players
+        min_lmd_exp = active_coh3_cutoff if elmd >= active_coh3_cutoff else 0
+        if _merge_player_into_community(
+            target_pool_exp,
+            exp_seed,
+            vet_pids=curated_pids_set,
+            vet_sids=curated_sids_set,
+            min_last_match_date=min_lmd_exp,
+            replace_matches=False,
+        ):
+            community_dirty = True
 
     # Sincroniza TODOS os brasileiros de CoH3 catalogados em `alias_history.json` para monitoramento contínuo:
     # ativos <=15d em `community_players`; inativos (>15d, inclusive >90d/sem partida recente) em `dormant_players`

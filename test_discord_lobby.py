@@ -516,7 +516,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             )
             self.assertTrue(summary["panel_updated"])
             self.assertEqual(summary["alerts_pruned"], 1)
-            self.assertEqual(summary["monitorados_total"], 81)
+            self.assertEqual(summary["monitorados_total"], 158)
             self.assertEqual(summary["other_br_catalog_total"], 3)
             self.assertEqual(summary["other_br_in_coh3"], 1)
             self.assertEqual(summary["other_br_online_steam"], 1)
@@ -1131,6 +1131,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         from steam_presence import (
             CORE_BR_ROSTER,
             MANUAL_OTHER_BR_PLAYERS,
+            OUTROS_BR_EMIGRADOS,
             build_lobby_radar_snapshot,
             get_configured_flag_country,
         )
@@ -1143,7 +1144,10 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             any(int(r.get("profile_id", 0) or 0) == 366826 and r.get("flag_country") == "us" for r in CORE_BR_ROSTER)
         )
         self.assertTrue(
-            any(int(r.get("profile_id", 0) or 0) == 33487 and r.get("flag_country") == "us" for r in MANUAL_OTHER_BR_PLAYERS)
+            any(int(r.get("profile_id", 0) or 0) == 33487 and r.get("flag_country") == "us" for r in OUTROS_BR_EMIGRADOS)
+        )
+        self.assertFalse(
+            any(int(r.get("profile_id", 0) or 0) == 33487 for r in MANUAL_OTHER_BR_PLAYERS)
         )
 
         # 2. Verifica distinção visual real entre bandeira EUA (listras vermelhas + cantão azul) e bandeira BR (verde)

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Base unica compartilhada de jogadores CoH3 Brasil (Radar, Scheduler, Tracker e Ranking) em 3 categorias: 'veteranos' (topo, consumida pelo Ranking com in_ranking=true), 'monitorados' (Players Monitorados — categoria intermediaria com todos os players citados/movidos) e Outros Brasileiros (descobertos automaticamente).",
+  "description": "Base unica compartilhada de jogadores CoH3 Brasil (Radar, Scheduler, Tracker e Ranking) em 3 categorias: 'veteranos' (topo, consumida pelo Ranking com in_ranking=true), 'monitorados' (Players Monitorados — categoria intermediaria com players citados/movidos, Top 100 BR >1300 ELO e amigos, e emigrados XAPA KENTE e icewarp) e Outros Brasileiros (descobertos automaticamente + 'outros_br_emigrados' com bandeira real de residencia e badge BR EXT).",
   "naming_convention": {
     "main_account": "<NomeOriginal> (sem indicacao '(Principal)')",
     "smurf_account": "<NickAtualDaSmurf> (Smurf: <NomeOriginal>) com smurf_of=<NomeOriginal>",
@@ -428,12 +428,6 @@
   ],
   "monitorados": [
     {
-      "profile_id": 33487,
-      "steam_id": "76561197995712470",
-      "original_alias": "Generick",
-      "country": "us"
-    },
-    {
       "profile_id": 16867,
       "steam_id": "76561198874381986",
       "original_alias": "Golden Cobra",
@@ -642,128 +636,10 @@
       "country": "za"
     },
     {
-      "profile_id": 91827,
-      "steam_id": "76561198031697638",
-      "original_alias": "[★General★] Apollo",
-      "country": "au",
-      "known_aliases": [
-        "General Apolo",
-        "[★General★] Apollo"
-      ]
-    },
-    {
-      "profile_id": 312670,
-      "steam_id": "76561197978279848",
-      "original_alias": "TNF",
-      "country": "au"
-    },
-    {
-      "profile_id": 263517,
-      "steam_id": "76561197994925919",
-      "original_alias": "Angel of Death",
-      "country": "jp"
-    },
-    {
-      "profile_id": 26237,
-      "steam_id": "76561198036822207",
-      "original_alias": "[EL] Queue",
-      "country": "us",
-      "known_aliases": [
-        "Qpid™",
-        "[EL] Queue"
-      ]
-    },
-    {
-      "profile_id": 304013,
-      "steam_id": "76561197984619024",
-      "original_alias": "Napa",
-      "country": "us"
-    },
-    {
-      "profile_id": 76165,
-      "steam_id": "76561197961890785",
-      "original_alias": "1337",
-      "country": "ee"
-    },
-    {
-      "profile_id": 1480421,
-      "steam_id": "76561198070841504",
-      "original_alias": "ShadBlack",
-      "country": "au"
-    },
-    {
-      "profile_id": 4805,
-      "steam_id": "76561198048811566",
-      "original_alias": "MDCCC",
-      "country": "us"
-    },
-    {
-      "profile_id": 29737,
-      "steam_id": "76561198158934331",
-      "original_alias": "PABLO FLEXCOBAR",
-      "country": "ar",
-      "known_aliases": [
-        "NegroS0rete",
-        "PABLO FLEXCOBAR"
-      ]
-    },
-    {
-      "profile_id": 999940,
-      "steam_id": "76561198074249692",
-      "original_alias": "Warmech11",
-      "country": "py"
-    },
-    {
-      "profile_id": 812247,
-      "steam_id": "76561198062044957",
-      "original_alias": "Texugo",
-      "country": "th"
-    },
-    {
-      "profile_id": 229162,
-      "steam_id": "76561198089247149",
-      "original_alias": "Sombra",
-      "country": "us"
-    },
-    {
       "profile_id": 212034,
       "steam_id": "76561198207565088",
       "original_alias": "XAPA KENTE",
       "country": "ca"
-    },
-    {
-      "profile_id": 110593,
-      "steam_id": "76561198414864681",
-      "original_alias": "Ethan Hunt",
-      "country": "us"
-    },
-    {
-      "profile_id": 1304336,
-      "steam_id": "76561198043710924",
-      "original_alias": "V.I.T.O.X",
-      "country": "us"
-    },
-    {
-      "profile_id": 1168460,
-      "steam_id": "76561198012821540",
-      "original_alias": "Nonô",
-      "country": "ca",
-      "known_aliases": [
-        "Killer_BR",
-        "Nonô"
-      ]
-    },
-    {
-      "profile_id": 11033,
-      "steam_id": "76561198009533220",
-      "original_alias": "Coka",
-      "country": "jp"
-    },
-    {
-      "profile_id": 24963,
-      "steam_id": "76561197987674520",
-      "original_alias": "Eduardo A.",
-      "country": "sa"
     },
     {
       "profile_id": 357310,
@@ -1131,6 +1007,874 @@
         "Gurenn",
         "ttv/gurennplays"
       ]
+    },
+    {
+      "profile_id": 649535,
+      "steam_id": "76561197974916464",
+      "original_alias": "pensss",
+      "country": "br",
+      "known_aliases": [
+        "pensss",
+        "pensss_ideal"
+      ]
+    },
+    {
+      "profile_id": 765837,
+      "steam_id": "76561197990946349",
+      "original_alias": "Southland",
+      "country": "br"
+    },
+    {
+      "profile_id": 975900,
+      "steam_id": "76561198326055603",
+      "original_alias": "[COHBR/RJ]Roney",
+      "country": "br",
+      "known_aliases": [
+        "[COHBR/RJ]Roney",
+        "[COHBR]Roney",
+        "[BR/RJ]Roney"
+      ]
+    },
+    {
+      "profile_id": 890394,
+      "steam_id": "76561198049023794",
+      "original_alias": "TheKat",
+      "country": "br",
+      "known_aliases": [
+        "TheKat",
+        "Liez \"The Kat\"",
+        "Dois Lule Numa Moto"
+      ]
+    },
+    {
+      "profile_id": 7375,
+      "steam_id": "76561198047826077",
+      "original_alias": "pigote",
+      "country": "br",
+      "known_aliases": [
+        "pigote",
+        "mr. got",
+        "pigoteiro"
+      ]
+    },
+    {
+      "profile_id": 87314,
+      "steam_id": "76561197986521921",
+      "original_alias": "Pedro Jedi",
+      "country": "br"
+    },
+    {
+      "profile_id": 6880,
+      "steam_id": "76561198078150897",
+      "original_alias": "ArguS",
+      "country": "br",
+      "known_aliases": [
+        "ArguS",
+        "VonDun #Trump2016"
+      ]
+    },
+    {
+      "profile_id": 383796,
+      "steam_id": "76561197982976352",
+      "original_alias": "Vanghoul",
+      "country": "br",
+      "known_aliases": [
+        "Vanghoul",
+        "darkcostaxxx"
+      ]
+    },
+    {
+      "profile_id": 396850,
+      "steam_id": "76561198148238879",
+      "original_alias": "Thiklitsa",
+      "country": "br"
+    },
+    {
+      "profile_id": 946312,
+      "steam_id": "76561198259733766",
+      "original_alias": "colgatti",
+      "country": "br"
+    },
+    {
+      "profile_id": 12522,
+      "steam_id": "76561198108513961",
+      "original_alias": "Caramez",
+      "country": "br"
+    },
+    {
+      "profile_id": 5296,
+      "steam_id": "76561198154353245",
+      "original_alias": "vasointupido",
+      "country": "br"
+    },
+    {
+      "profile_id": 1162890,
+      "steam_id": "76561198117168962",
+      "original_alias": "Fauzix",
+      "country": "br"
+    },
+    {
+      "profile_id": 716376,
+      "steam_id": "76561198099054871",
+      "original_alias": "TrueLothar",
+      "country": "br"
+    },
+    {
+      "profile_id": 409715,
+      "steam_id": "76561198083043687",
+      "original_alias": "Rapo",
+      "country": "br",
+      "known_aliases": [
+        "Rapo",
+        "Memento Mori",
+        "Querido Raposo"
+      ]
+    },
+    {
+      "profile_id": 316794,
+      "steam_id": "76561198086650941",
+      "original_alias": "Masguer",
+      "country": "br"
+    },
+    {
+      "profile_id": 946322,
+      "steam_id": "76561198135260753",
+      "original_alias": "phconzatti",
+      "country": "br"
+    },
+    {
+      "profile_id": 892947,
+      "steam_id": "76561198121504561",
+      "original_alias": "Macfly2001",
+      "country": "br"
+    },
+    {
+      "profile_id": 1156831,
+      "steam_id": "76561198135522044",
+      "original_alias": "DAk120",
+      "country": "br"
+    },
+    {
+      "profile_id": 1330031,
+      "steam_id": "76561198076583881",
+      "original_alias": "Thinkker",
+      "country": "br"
+    },
+    {
+      "profile_id": 911313,
+      "steam_id": "76561198010387961",
+      "original_alias": "El Pollo Diablo",
+      "country": "br"
+    },
+    {
+      "profile_id": 153485,
+      "steam_id": "76561198060873557",
+      "original_alias": "Juninho",
+      "country": "br",
+      "known_aliases": [
+        "Juninho",
+        "SpaceBoy_Br"
+      ]
+    },
+    {
+      "profile_id": 1231517,
+      "steam_id": "76561198132222485",
+      "original_alias": "Mustang7412",
+      "country": "br"
+    },
+    {
+      "profile_id": 167270,
+      "steam_id": "76561198149193970",
+      "original_alias": "CPU - Wrong one to garden with",
+      "country": "br"
+    },
+    {
+      "profile_id": 1134857,
+      "steam_id": "76561198818470958",
+      "original_alias": "guilhermemariano20",
+      "country": "br"
+    },
+    {
+      "profile_id": 1361626,
+      "steam_id": "76561198155881999",
+      "original_alias": "Giota",
+      "country": "br"
+    },
+    {
+      "profile_id": 1201954,
+      "steam_id": "76561198124850127",
+      "original_alias": "Corvo",
+      "country": "br"
+    },
+    {
+      "profile_id": 1332786,
+      "steam_id": "76561198093892211",
+      "original_alias": "Katana Man",
+      "country": "br"
+    },
+    {
+      "profile_id": 122829,
+      "steam_id": "76561198061075119",
+      "original_alias": "Guardiola de Peruca",
+      "country": "br",
+      "known_aliases": [
+        "Guardiola de Peruca",
+        "GuardioladePeruca",
+        "DevilboyEx"
+      ]
+    },
+    {
+      "profile_id": 1286523,
+      "steam_id": "76561198417833011",
+      "original_alias": "Megumula",
+      "country": "br",
+      "known_aliases": [
+        "Megumula",
+        "Gugouf"
+      ]
+    },
+    {
+      "profile_id": 1461766,
+      "steam_id": "76561198067634756",
+      "original_alias": "Hugola",
+      "country": "br"
+    },
+    {
+      "profile_id": 71274,
+      "steam_id": "76561198092092480",
+      "original_alias": "Tavares",
+      "country": "br",
+      "known_aliases": [
+        "Tavares",
+        "Wonder of U"
+      ]
+    },
+    {
+      "profile_id": 1046646,
+      "steam_id": "76561198868863447",
+      "original_alias": "Viktor Maia",
+      "country": "br",
+      "known_aliases": [
+        "Viktor Maia",
+        "Vickeh"
+      ]
+    },
+    {
+      "profile_id": 145299,
+      "steam_id": "76561198017254697",
+      "original_alias": "Andre",
+      "country": "br"
+    },
+    {
+      "profile_id": 677441,
+      "steam_id": "76561198013484803",
+      "original_alias": "Resilient",
+      "country": "br"
+    },
+    {
+      "profile_id": 173761,
+      "steam_id": "76561198873253024",
+      "original_alias": "EUSOU",
+      "country": "br",
+      "known_aliases": [
+        "EUSOU",
+        "EU SOU",
+        "EU SOU - I AM"
+      ]
+    },
+    {
+      "profile_id": 1232389,
+      "steam_id": "76561198372477752",
+      "original_alias": "caralhassauro",
+      "country": "br"
+    },
+    {
+      "profile_id": 1024394,
+      "steam_id": "76561198431410480",
+      "original_alias": "MOKUJIN",
+      "country": "br"
+    },
+    {
+      "profile_id": 893197,
+      "steam_id": "76561198048254869",
+      "original_alias": "Alexandre",
+      "country": "br"
+    },
+    {
+      "profile_id": 902305,
+      "steam_id": "76561198098458214",
+      "original_alias": "Vanigas",
+      "country": "br",
+      "known_aliases": [
+        "Vanigas",
+        "Brazilian Monkey"
+      ]
+    },
+    {
+      "profile_id": 1043198,
+      "steam_id": "76561198017121369",
+      "original_alias": "Immortalxw",
+      "country": "br"
+    },
+    {
+      "profile_id": 5434,
+      "steam_id": "76561198031004739",
+      "original_alias": "Mazu",
+      "country": "br"
+    },
+    {
+      "profile_id": 84816,
+      "steam_id": "76561198159203637",
+      "original_alias": "ChadVader",
+      "country": "br",
+      "known_aliases": [
+        "ChadVader",
+        "Degrelle"
+      ]
+    },
+    {
+      "profile_id": 3888,
+      "steam_id": "76561198854785478",
+      "original_alias": "Pepe Popo",
+      "country": "br",
+      "known_aliases": [
+        "Pepe Popo",
+        "Gótica não-rabuda",
+        "Gotosa do company"
+      ]
+    },
+    {
+      "profile_id": 1707,
+      "steam_id": "76561197998487466",
+      "original_alias": "Anhangá",
+      "country": "br",
+      "known_aliases": [
+        "Anhangá",
+        "Luiz Coke"
+      ]
+    },
+    {
+      "profile_id": 9799,
+      "steam_id": "76561198097076285",
+      "original_alias": "✠ Führercoach ®",
+      "country": "br",
+      "known_aliases": [
+        "✠ Führercoach ®",
+        "☭ COREIA DO NORT ☭",
+        "Ironbitch ®",
+        "Ironfox ©"
+      ]
+    },
+    {
+      "profile_id": 656815,
+      "steam_id": "76561199366015251",
+      "original_alias": "Botson",
+      "country": "br",
+      "known_aliases": [
+        "Botson",
+        "Botson (cimento)"
+      ]
+    },
+    {
+      "profile_id": 13934,
+      "steam_id": "76561198340401196",
+      "original_alias": "Duro de Mamar",
+      "country": "br",
+      "known_aliases": [
+        "Duro de Mamar",
+        "Apenas um ass"
+      ]
+    },
+    {
+      "profile_id": 85746,
+      "steam_id": "76561198045288427",
+      "original_alias": "[IRON] Kabal-PE",
+      "country": "br"
+    },
+    {
+      "profile_id": 36206,
+      "steam_id": "76561198144804075",
+      "original_alias": "Sentinela",
+      "country": "br"
+    },
+    {
+      "profile_id": 8764,
+      "steam_id": "76561198155662761",
+      "original_alias": "Maverick",
+      "country": "br",
+      "known_aliases": [
+        "Maverick",
+        "Jukki"
+      ]
+    },
+    {
+      "profile_id": 27052,
+      "steam_id": "76561199055548856",
+      "original_alias": "gleison-luan",
+      "country": "br"
+    },
+    {
+      "profile_id": 220378,
+      "steam_id": "76561198074392592",
+      "original_alias": "Edimar.",
+      "country": "br"
+    },
+    {
+      "profile_id": 31405,
+      "steam_id": "76561198122862152",
+      "original_alias": "[IRON]ViROX",
+      "country": "br",
+      "known_aliases": [
+        "[IRON]ViROX",
+        "[COHBR]ViROX",
+        "ViROX"
+      ]
+    },
+    {
+      "profile_id": 85670,
+      "steam_id": "76561198025162176",
+      "original_alias": "Stig",
+      "country": "br",
+      "known_aliases": [
+        "Stig",
+        "YanKee"
+      ]
+    },
+    {
+      "profile_id": 664781,
+      "steam_id": "76561198412321280",
+      "original_alias": "Flatline🔰",
+      "country": "br",
+      "known_aliases": [
+        "Flatline🔰",
+        "Flatline"
+      ]
+    },
+    {
+      "profile_id": 840769,
+      "steam_id": "76561198082125321",
+      "original_alias": "Ricardin_ihuull",
+      "country": "br",
+      "known_aliases": [
+        "Ricardin_ihuull",
+        "SABUGO"
+      ]
+    },
+    {
+      "profile_id": 756737,
+      "steam_id": "76561198001254162",
+      "original_alias": "JonyCalcinha",
+      "country": "br"
+    },
+    {
+      "profile_id": 11112,
+      "steam_id": "76561198024371602",
+      "original_alias": "RazumAzul",
+      "country": "br"
+    },
+    {
+      "profile_id": 31916,
+      "steam_id": "76561198013738008",
+      "original_alias": "El Patada [Br]🦜",
+      "country": "br"
+    },
+    {
+      "profile_id": 124729,
+      "steam_id": "76561198015179885",
+      "original_alias": "Mawll",
+      "country": "br",
+      "known_aliases": [
+        "Mawll",
+        "[D.T.B] Mawll"
+      ]
+    },
+    {
+      "profile_id": 3414,
+      "steam_id": "76561198111168811",
+      "original_alias": "[SE:VH] Queiroz",
+      "country": "br"
+    },
+    {
+      "profile_id": 956645,
+      "steam_id": "76561198119663404",
+      "original_alias": "Magraiver",
+      "country": "br"
+    },
+    {
+      "profile_id": 32791,
+      "steam_id": "76561198355821508",
+      "original_alias": "FALAV",
+      "country": "br"
+    },
+    {
+      "profile_id": 741345,
+      "steam_id": "76561198108658944",
+      "original_alias": "defanteinfante",
+      "country": "br"
+    },
+    {
+      "profile_id": 20491,
+      "steam_id": "76561198893359627",
+      "original_alias": "Captan_Igor",
+      "country": "br",
+      "known_aliases": [
+        "Captan_Igor",
+        "BruxoSagaz"
+      ]
+    },
+    {
+      "profile_id": 893019,
+      "steam_id": "76561198193551428",
+      "original_alias": "Chuck Norris",
+      "country": "br"
+    },
+    {
+      "profile_id": 996815,
+      "steam_id": "76561198388487203",
+      "original_alias": "richard.eop",
+      "country": "br"
+    },
+    {
+      "profile_id": 111954,
+      "steam_id": "76561198019263316",
+      "original_alias": "Marques",
+      "country": "br",
+      "known_aliases": [
+        "Marques",
+        "[IRON]Marques"
+      ]
+    },
+    {
+      "profile_id": 1123905,
+      "steam_id": "76561198020133377",
+      "original_alias": "Wintermute",
+      "country": "br",
+      "known_aliases": [
+        "Wintermute",
+        "Wintermute #t.420",
+        "Wintermute420"
+      ]
+    },
+    {
+      "profile_id": 764130,
+      "steam_id": "76561198260873423",
+      "original_alias": "Indra",
+      "country": "br",
+      "known_aliases": [
+        "Indra",
+        "General Grievous"
+      ]
+    },
+    {
+      "profile_id": 29436,
+      "steam_id": "76561198048274930",
+      "original_alias": "edergabriel",
+      "country": "br"
+    },
+    {
+      "profile_id": 128231,
+      "steam_id": "76561198022850599",
+      "original_alias": "E5p4rTaN0",
+      "country": "br"
+    },
+    {
+      "profile_id": 24539,
+      "steam_id": "76561198020353566",
+      "original_alias": "VONPESTER",
+      "country": "br",
+      "known_aliases": [
+        "VONPESTER",
+        "CURA GAY",
+        "TERMINATOR GAY",
+        "WOODY WOODDICK"
+      ]
+    },
+    {
+      "profile_id": 780673,
+      "steam_id": "76561198034277846",
+      "original_alias": "VenturadeJesus",
+      "country": "br"
+    },
+    {
+      "profile_id": 12326,
+      "steam_id": "76561199046113981",
+      "original_alias": "HEROI",
+      "country": "br",
+      "known_aliases": [
+        "HEROI",
+        "danielvianaredex"
+      ]
+    },
+    {
+      "profile_id": 767932,
+      "steam_id": "76561198166203065",
+      "original_alias": "Ritalino",
+      "country": "br"
+    },
+    {
+      "profile_id": 24660,
+      "steam_id": "76561198150674760",
+      "original_alias": "bonicius10",
+      "country": "br"
+    },
+    {
+      "profile_id": 135138,
+      "steam_id": "76561198028166152",
+      "original_alias": "WeliWest",
+      "country": "br"
+    },
+    {
+      "profile_id": 135141,
+      "steam_id": "76561198039466768",
+      "original_alias": "[PWA]-ForceMaster",
+      "country": "br",
+      "known_aliases": [
+        "[PWA]-ForceMaster",
+        "ForceMaster"
+      ]
+    },
+    {
+      "profile_id": 8427,
+      "steam_id": "76561197990778045",
+      "original_alias": "Tom_BR",
+      "country": "br"
+    },
+    {
+      "profile_id": 87903,
+      "steam_id": "76561199112478566",
+      "original_alias": "Daniloparre",
+      "country": "br"
+    },
+    {
+      "profile_id": 26736,
+      "steam_id": "76561198002634846",
+      "original_alias": "Arkymendes",
+      "country": "br"
+    },
+    {
+      "profile_id": 1383106,
+      "steam_id": "76561199017071156",
+      "original_alias": "weed4i20",
+      "country": "br"
+    },
+    {
+      "profile_id": 86675,
+      "steam_id": "76561198079508454",
+      "original_alias": "Fred",
+      "country": "br"
+    },
+    {
+      "profile_id": 655548,
+      "steam_id": "76561198037528747",
+      "original_alias": "Garm",
+      "country": "br",
+      "known_aliases": [
+        "Garm",
+        "Galva",
+        "lrs"
+      ]
+    },
+    {
+      "profile_id": 3917,
+      "steam_id": "76561197967668319",
+      "original_alias": "[IRON] ManchaNegra",
+      "country": "br",
+      "known_aliases": [
+        "[IRON] ManchaNegra",
+        "BlackSpot_BR",
+        "Mancha Negra"
+      ]
+    },
+    {
+      "profile_id": 207951,
+      "steam_id": "76561198183965757",
+      "original_alias": "≫ Last_Night",
+      "country": "br",
+      "known_aliases": [
+        "≫ Last_Night",
+        "»BAIN« Last_Night"
+      ]
+    },
+    {
+      "profile_id": 838813,
+      "steam_id": "76561198022258604",
+      "original_alias": "heitorcorrea",
+      "country": "br"
+    },
+    {
+      "profile_id": 993209,
+      "steam_id": "76561198053754717",
+      "original_alias": "BobGon",
+      "country": "br"
+    },
+    {
+      "profile_id": 39939,
+      "steam_id": "76561198008329858",
+      "original_alias": "Romioul",
+      "country": "br",
+      "known_aliases": [
+        "Romioul",
+        "TOM E JEBA",
+        "Rômioul"
+      ]
+    },
+    {
+      "profile_id": 96129,
+      "steam_id": "76561198016825303",
+      "original_alias": "Gerhard",
+      "country": "br",
+      "known_aliases": [
+        "Gerhard",
+        "G_e_h_4_r_d"
+      ]
+    },
+    {
+      "profile_id": 766215,
+      "steam_id": "76561197997896382",
+      "original_alias": "L3ooW",
+      "country": "br"
+    },
+    {
+      "profile_id": 143443,
+      "steam_id": "76561198149823284",
+      "original_alias": "Ted",
+      "country": "br"
+    },
+    {
+      "profile_id": 29557,
+      "steam_id": "76561198144606355",
+      "original_alias": "Rylanor",
+      "country": "br",
+      "known_aliases": [
+        "Rylanor",
+        "Rylanor, Cavalo Forte"
+      ]
+    }
+  ],
+  "outros_br_emigrados": [
+    {
+      "profile_id": 33487,
+      "steam_id": "76561197995712470",
+      "original_alias": "Generick",
+      "country": "us"
+    },
+    {
+      "profile_id": 91827,
+      "steam_id": "76561198031697638",
+      "original_alias": "[★General★] Apollo",
+      "country": "au",
+      "known_aliases": [
+        "General Apolo",
+        "[★General★] Apollo"
+      ]
+    },
+    {
+      "profile_id": 312670,
+      "steam_id": "76561197978279848",
+      "original_alias": "TNF",
+      "country": "au"
+    },
+    {
+      "profile_id": 263517,
+      "steam_id": "76561197994925919",
+      "original_alias": "Angel of Death",
+      "country": "jp"
+    },
+    {
+      "profile_id": 26237,
+      "steam_id": "76561198036822207",
+      "original_alias": "[EL] Queue",
+      "country": "us",
+      "known_aliases": [
+        "Qpid™",
+        "[EL] Queue"
+      ]
+    },
+    {
+      "profile_id": 304013,
+      "steam_id": "76561197984619024",
+      "original_alias": "Napa",
+      "country": "us"
+    },
+    {
+      "profile_id": 76165,
+      "steam_id": "76561197961890785",
+      "original_alias": "1337",
+      "country": "ee"
+    },
+    {
+      "profile_id": 1480421,
+      "steam_id": "76561198070841504",
+      "original_alias": "ShadBlack",
+      "country": "au"
+    },
+    {
+      "profile_id": 4805,
+      "steam_id": "76561198048811566",
+      "original_alias": "MDCCC",
+      "country": "us"
+    },
+    {
+      "profile_id": 29737,
+      "steam_id": "76561198158934331",
+      "original_alias": "PABLO FLEXCOBAR",
+      "country": "ar",
+      "known_aliases": [
+        "NegroS0rete",
+        "PABLO FLEXCOBAR"
+      ]
+    },
+    {
+      "profile_id": 999940,
+      "steam_id": "76561198074249692",
+      "original_alias": "Warmech11",
+      "country": "py"
+    },
+    {
+      "profile_id": 812247,
+      "steam_id": "76561198062044957",
+      "original_alias": "Texugo",
+      "country": "th"
+    },
+    {
+      "profile_id": 229162,
+      "steam_id": "76561198089247149",
+      "original_alias": "Sombra",
+      "country": "us"
+    },
+    {
+      "profile_id": 110593,
+      "steam_id": "76561198414864681",
+      "original_alias": "Ethan Hunt",
+      "country": "us"
+    },
+    {
+      "profile_id": 1304336,
+      "steam_id": "76561198043710924",
+      "original_alias": "V.I.T.O.X",
+      "country": "us"
+    },
+    {
+      "profile_id": 1168460,
+      "steam_id": "76561198012821540",
+      "original_alias": "Nonô",
+      "country": "ca",
+      "known_aliases": [
+        "Killer_BR",
+        "Nonô"
+      ]
+    },
+    {
+      "profile_id": 11033,
+      "steam_id": "76561198009533220",
+      "original_alias": "Coka",
+      "country": "jp"
+    },
+    {
+      "profile_id": 24963,
+      "steam_id": "76561197987674520",
+      "original_alias": "Eduardo A.",
+      "country": "sa"
     }
   ]
 }
