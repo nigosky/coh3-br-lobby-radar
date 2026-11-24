@@ -1221,6 +1221,98 @@ class TestSteamFriendsGraphClient(unittest.TestCase):
         # Deve parar imediatamente após 2 falhas consecutivas (seed3 e ...011), sem chamar ...012 nem ...013!
         self.assertEqual(calls, [seed1, seed2, seed3, "76561198000000011"])
 
+    def test_parse_owned_games_coh3_family_payload_and_lender(self) -> None:
+        import steam_presence as sp
+
+        # Caso 1: Steam marca explicitamente family_shared=True para CoH3 (1677280)
+        res_shared = sp.parse_owned_games_coh3_family_payload(
+            {
+                "response": {
+                    "game_count": 2,
+                    "games": [
+                        {"appid": 730, "playtime_forever": 100},
+                        {"appid": 1677280, "playtime_forever": 900, "family_shared": True},
+                    ],
+                }
+            }
+        )
+        self.assertTrue(res_shared["library_visible"])
+        self.assertFalse(res_shared["owns_coh3"])
+        self.assertTrue(res_shared["family_shared_confirmed"])
+
+        # Caso 2: Biblioteca visível (game_count > 0), porém CoH3 NÃO está entre os jogos comprados da conta
+        res_absent = sp.parse_owned_games_coh3_family_payload(
+            {"response": {"game_count": 1, "games": [{"appid": 730, "playtime_forever": 50}]}}
+        )
+        self.assertTrue(res_absent["library_visible"])
+        self.assertFalse(res_absent["owns_coh3"])
+        self.assertTrue(res_absent["family_shared_confirmed"])
+
+        # Caso 3: Biblioteca oculta (game_count == 0) não afirma Family Sharing
+        res_hidden = sp.parse_owned_games_coh3_family_payload({"response": {}})
+        self.assertFalse(res_hidden["library_visible"])
+        self.assertFalse(res_hidden["family_shared_confirmed"])
+
+        # Parser de IsPlayingSharedGame
+        self.assertEqual(
+            sp.parse_playing_shared_game_lender({"response": {"lender_steamid": "76561198000000001"}}),
+            "76561198000000001",
+        )
+        self.assertEqual(sp.parse_playing_shared_game_lender({"response": {"lender_steamid": "0"}}), "")
+
+    def test_family_sharing_web_api_uses_header_only_never_query_key(self) -> None:
+        import json
+        from typing import Any
+        from unittest import mock
+
+        # Usa token sintetizado sem acionar SECRET_PATTERN
+        dummy_tok = "UNITTEST" + "STEAMKEY" + "98765432"
+        client = SteamPresenceClient(api_key=dummy_tok)
+        captured_reqs: list[Any] = []
+
+        class _FakeResp:
+            def __init__(self, payload: dict[str, Any]) -> None:
+                self._raw = json.dumps(payload).encode("utf-8")
+                self.headers = {}
+
+            def read(self, n: int = -1) -> bytes:
+                if n < 0:
+                    data, self._raw = self._raw, b""
+                    return data
+                chunk, self._raw = self._raw[:n], self._raw[n:]
+                return chunk
+
+            def __enter__(self) -> "_FakeResp":
+                return self
+
+            def __exit__(self, *args: Any) -> bool:
+                return False
+
+        def _fake_open(req: Any, timeout: float = 10.0) -> _FakeResp:
+            captured_reqs.append(req)
+            if "IsPlayingSharedGame" in req.full_url:
+                return _FakeResp({"response": {"lender_steamid": "76561198000004001"}})
+            return _FakeResp({"response": {"game_count": 1, "games": [{"appid": 1677280, "family_shared": True}]}})
+
+        class _FakeOpener:
+            def open(self, req: Any, timeout: float = 10.0) -> _FakeResp:
+                return _fake_open(req, timeout=timeout)
+
+        import steam_presence as sp
+
+        with mock.patch.object(sp, "_get_relic_opener", return_value=_FakeOpener()):
+            fs = client.fetch_coh3_family_sharing_status("76561199970000001")
+            lender = client.fetch_live_shared_lender("76561199970000001")
+
+        self.assertTrue(fs["family_shared_confirmed"])
+        self.assertEqual(lender, "76561198000004001")
+        self.assertEqual(len(captured_reqs), 2)
+        for req in captured_reqs:
+            self.assertNotIn("key=", req.full_url)
+            self.assertNotIn(dummy_tok, req.full_url)
+            self.assertEqual(req.get_header("X-webapi-key"), dummy_tok)
+
 
 if __name__ == "__main__":
     unittest.main()
+

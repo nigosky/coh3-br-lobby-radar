@@ -54,6 +54,7 @@ from steam_presence import (
     MANUAL_OTHER_BR_PLAYERS,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
+    SteamPresenceClient,
     extract_smurf_owner_and_nick,
     resolve_nick_change_display,
 )
@@ -405,33 +406,76 @@ def _extract_cosmetic_items_by_pid(match_items: Any) -> dict[int, set[int]]:
 
 class SteamProfileOSINTClient:
     """
-    Cliente HTTPS endurecido (somente-leitura, zero API key) para consultar o XML público
-    `https://steamcommunity.com/profiles/<steam_id>?xml=1` e extrair sinais anti-disfarce multi-gênero
-    (perfil privado/novo, avatar padrão `?`, hash de avatar idêntico, vazamento de `<location>` no Brasil).
+    Cliente HTTPS endurecido (somente-leitura, anti-redirect, limites rígidos) para OSINT Steam e detecção de
+    **Steam Family Sharing** multi-camada:
+    1. XML público `?xml=1` (zero API key, funciona até em perfis privados): `<isLimitedAccount>1</isLimitedAccount>`,
+       `<memberSince>` (inclusive sem ano = conta criada no ano corrente), `<location>` no Brasil e hash SHA-1 do avatar.
+    2. HTML público `/profiles/<sid>/` (somente quando público e sem customURL, zero redirect, <=256 KB):
+       Steam Level (`0–2`), contagem de amigos e insígnias.
+    3. Steam Web API opcional (somente se `STEAM_WEB_API_KEY` estiver configurada via header `x-webapi-key`):
+       `IPlayerService/GetOwnedGames/v1` (`include_family_licenses=1`) + `IPlayerService/IsPlayingSharedGame/v1` (`lender_steamid`).
     """
 
     _PRIVACY_RE = re.compile(r"<privacyState>([^<]{1,32})</privacyState>", re.I)
-    _MEMBER_YEAR_RE = re.compile(r"<memberSince>[^<]*\b(20\d{2})\b[^<]*</memberSince>", re.I)
+    _LIMITED_RE = re.compile(r"<isLimitedAccount>\s*([01])\s*</isLimitedAccount>", re.I)
+    _MEMBER_SINCE_RAW_RE = re.compile(r"<memberSince>([^<]{1,48})</memberSince>", re.I)
+    _YEAR_4_RE = re.compile(r"\b(20\d{2})\b")
+    _MONTH_DAY_RE = re.compile(
+        r"\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}\b",
+        re.I,
+    )
+    _CUSTOM_URL_RE = re.compile(r"<customURL>(?:<!\[CDATA\[)?([^<\]]{0,80})(?:\]\]>)?</customURL>", re.I)
     _LOCATION_RE = re.compile(r"<location>(?:<!\[CDATA\[)?([^<\]]{1,120})(?:\]\]>)?</location>", re.I)
     _AVATAR_RE = re.compile(r"<avatarMedium>(?:<!\[CDATA\[)?(https://[^\s<\]]+)(?:\]\]>)?</avatarMedium>", re.I)
     _AVATAR_HASH_RE = re.compile(r"/([0-9a-f]{40})(?:_medium|_full)?\.(?:jpg|jpeg|png|webp)$", re.I)
     _GAME_NAME_RE = re.compile(r"<gameName>(?:<!\[CDATA\[)?([^<\]]{1,120})(?:\]\]>)?</gameName>", re.I)
+    _HTML_LEVEL_RE = re.compile(r'friendPlayerLevelNum">(\d{1,4})<')
+    _HTML_FRIENDS_RE = re.compile(r'/friends/"[^>]*>.*?profile_count_link_total">\s*([\d,]+)\s*<', re.S)
+    _HTML_BADGES_RE = re.compile(r'/badges/"[^>]*>.*?profile_count_link_total">\s*([\d,]+)\s*<', re.S)
+    _HTML_GAMES_RE = re.compile(r'/games/\?tab=all"[^>]*>.*?profile_count_link_total">\s*([\d,]+)\s*<', re.S)
+    _PROFILE_HTML_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/?$")
 
-    def __init__(self, *, pace_delay_sec: float = 0.12) -> None:
+    def __init__(
+        self,
+        *,
+        pace_delay_sec: float = 0.12,
+        web_api_client: SteamPresenceClient | None = None,
+        fetch_public_html: bool = True,
+    ) -> None:
         self.pace_delay_sec = max(0.05, float(pace_delay_sec))
+        self.fetch_public_html = bool(fetch_public_html)
         self._opener = build_no_redirect_https_opener()
+        self._web_api = web_api_client if web_api_client is not None else SteamPresenceClient()
         self._cache: dict[str, dict[str, Any]] = {}
         self._consecutive_errors = 0
         self._circuit_open = False
 
     @classmethod
-    def parse_profile_xml(cls, xml_body: str) -> dict[str, Any]:
-        """Extrai métricas OSINT seguras do XML público de perfil Steam."""
+    def parse_profile_xml(cls, xml_body: str, *, current_year: int | None = None) -> dict[str, Any]:
+        """Extrai métricas OSINT e sinais de Steam Family Sharing do XML público de perfil Steam."""
         body = str(xml_body or "")
+        cur_yr = int(current_year) if current_year is not None else datetime.now(tz=timezone.utc).year
         priv_m = cls._PRIVACY_RE.search(body)
         privacy = priv_m.group(1).strip().lower() if priv_m else ""
-        yr_m = cls._MEMBER_YEAR_RE.search(body)
-        member_year = int(yr_m.group(1)) if yr_m else 0
+        lim_m = cls._LIMITED_RE.search(body)
+        is_limited = bool(lim_m and lim_m.group(1) == "1")
+
+        ms_m = cls._MEMBER_SINCE_RAW_RE.search(body)
+        member_since_raw = strip_unsafe_chars(ms_m.group(1))[:40] if ms_m else ""
+        member_year = 0
+        member_since_current_year = False
+        if member_since_raw:
+            yr_m = cls._YEAR_4_RE.search(member_since_raw)
+            if yr_m:
+                member_year = int(yr_m.group(1))
+                member_since_current_year = member_year == cur_yr
+            elif cls._MONTH_DAY_RE.search(member_since_raw):
+                # Steam omite o ano em <memberSince> (ex.: "May 25", "March 23") quando a conta foi criada neste mesmo ano!
+                member_year = cur_yr
+                member_since_current_year = True
+
+        cu_m = cls._CUSTOM_URL_RE.search(body)
+        custom_url = strip_unsafe_chars(cu_m.group(1))[:64] if cu_m else ""
         loc_m = cls._LOCATION_RE.search(body)
         location = strip_unsafe_chars(loc_m.group(1))[:80] if loc_m else ""
         is_br_loc = bool(location and _STEAM_BR_LOCATION_RE.search(location))
@@ -443,16 +487,47 @@ class SteamProfileOSINTClient:
                 av_hash = hm.group(1).lower()
         games_visible = len(cls._GAME_NAME_RE.findall(body))
         return {
-            "ok": bool(privacy or av_hash or member_year),
+            "ok": bool(privacy or av_hash or member_year or is_limited),
             "privacy_state": privacy,
             "is_private": bool(privacy and privacy != "public"),
+            "is_limited_account": is_limited,
+            "member_since_raw": member_since_raw,
             "member_since_year": member_year,
+            "member_since_current_year": member_since_current_year,
+            "custom_url": custom_url,
             "location": location,
             "is_br_location": is_br_loc,
             "avatar_hash": av_hash,
             "is_default_avatar": bool(av_hash == STEAM_DEFAULT_AVATAR_HASH),
             "games_visible_count": games_visible,
+            "steam_level": -1,
+            "friends_count": -1,
+            "badges_count": -1,
+            "games_owned_count": -1,
+            "family_shared_api_confirmed": False,
+            "lender_steam_id": "",
         }
+
+    @classmethod
+    def parse_profile_html_footprint(cls, html_body: str) -> dict[str, int]:
+        """Extrai pegada mínima de conta burner/Family Sharing do HTML público (`steam_level`, `friends_count`, `badges_count`)."""
+        body = str(html_body or "")
+        out = {"steam_level": -1, "friends_count": -1, "badges_count": -1, "games_owned_count": -1}
+        if not body or "profile_private_info" in body:
+            return out
+        for key, rx in (
+            ("steam_level", cls._HTML_LEVEL_RE),
+            ("friends_count", cls._HTML_FRIENDS_RE),
+            ("badges_count", cls._HTML_BADGES_RE),
+            ("games_owned_count", cls._HTML_GAMES_RE),
+        ):
+            m = rx.search(body)
+            if m:
+                try:
+                    out[key] = int(m.group(1).replace(",", ""))
+                except ValueError:
+                    pass
+        return out
 
     def fetch_profile_osint(self, steam_id: str) -> dict[str, Any]:
         sid = str(steam_id or "").replace("/steam/", "").strip()
@@ -483,8 +558,6 @@ class SteamProfileOSINTClient:
                 raw = read_bounded_http_body(resp, MAX_STEAM_XML_BYTES)
             self._consecutive_errors = 0
             parsed = self.parse_profile_xml(raw.decode("utf-8", errors="replace"))
-            self._cache[sid] = parsed
-            return dict(parsed)
         except Exception as exc:
             self._consecutive_errors += 1
             if self._consecutive_errors >= 4:
@@ -492,6 +565,73 @@ class SteamProfileOSINTClient:
                 logger.warning("[STEAM OSINT] Circuit-breaker ativado após erros: %s", redact_secrets(exc))
             self._cache[sid] = {}
             return {}
+
+        # Pegada pública HTML (apenas quando público e sem customURL -> HTTP 200 direto, zero redirect!)
+        if self.fetch_public_html and parsed.get("privacy_state") == "public" and not parsed.get("custom_url"):
+            html_url = f"https://steamcommunity.com/profiles/{sid}/"
+            try:
+                validate_https_endpoint(
+                    html_url,
+                    ALLOWED_STEAM_PROFILE_HOSTS,
+                    path_prefix="/profiles/",
+                    path_regex=self._PROFILE_HTML_PATH_RE,
+                    allow_query=False,
+                )
+                time.sleep(0.05)
+                hreq = urllib.request.Request(
+                    html_url,
+                    headers={
+                        "User-Agent": "CoH3-BR-Lobby-Radar/1.4",
+                        "Accept": "text/html",
+                        "Accept-Encoding": "gzip",
+                    },
+                    method="GET",
+                )
+                with self._opener.open(hreq, timeout=8) as hresp:
+                    hraw = read_bounded_http_body(hresp, 262_144)
+                parsed.update(self.parse_profile_html_footprint(hraw.decode("utf-8", errors="replace")))
+            except Exception:
+                pass
+
+        # Enriquecimento opcional Steam Web API (GetOwnedGames + IsPlayingSharedGame) se STEAM_WEB_API_KEY estiver ativa
+        if getattr(self._web_api, "uses_web_api", False):
+            try:
+                if hasattr(self._web_api, "fetch_coh3_family_sharing_status"):
+                    fs = self._web_api.fetch_coh3_family_sharing_status(sid)
+                    if isinstance(fs, dict) and fs.get("family_shared_confirmed"):
+                        parsed["family_shared_api_confirmed"] = True
+                if hasattr(self._web_api, "fetch_live_shared_lender"):
+                    lender = self._web_api.fetch_live_shared_lender(sid)
+                    if lender:
+                        parsed["lender_steam_id"] = lender
+            except Exception:
+                pass
+
+        self._cache[sid] = parsed
+        return dict(parsed)
+
+
+def _load_persisted_shared_lender_map(state_path: Path | None = None) -> dict[str, str]:
+    """Lê vínculos `{borrower_steam_id: lender_steam_id}` capturados ao vivo pelo Radar de Lobby em `state.json`."""
+    p = state_path if state_path is not None else (Path(__file__).resolve().parent / "state.json")
+    if not p.is_file() or p.is_symlink():
+        return {}
+    try:
+        if p.stat().st_size > 2 * 1024 * 1024:
+            return {}
+        doc = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    hits = doc.get("shared_lender_hits") if isinstance(doc, dict) else None
+    if not isinstance(hits, dict):
+        return {}
+    out: dict[str, str] = {}
+    for b_sid, info in hits.items():
+        bs = str(b_sid or "").strip()
+        ls = str((info or {}).get("lender_steam_id") or "").strip() if isinstance(info, dict) else str(info or "").strip()
+        if STEAM_ID64_VALID_RE.fullmatch(bs) and STEAM_ID64_VALID_RE.fullmatch(ls) and bs != ls:
+            out[bs] = ls
+    return out
 
 
 class CohDBBattlegroupClient:
@@ -1817,12 +1957,14 @@ def score_smurf_pair(
     historical_br_pids: set[int] | frozenset[int] | None = None,
     country_migration_by_pid: dict[int, dict[str, Any]] | None = None,
     steam_osint_by_pid: dict[int, dict[str, Any]] | None = None,
+    shared_lender_by_sid: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """
     Calcula a probabilidade forense (`0..99%`) de `cand` ser uma smurf de `main`, com evidências detalhadas em português.
     Calibrado pelos 4 modelos reais brasileiros (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`) e expandido
     com critérios multi-gênero anti-disfarce (velocidade de ELO/streaks, sandbagging/tanking, Combat DNA multi-eixo,
-    alternância de dias exclusivos, ciclo circadiano BRT, leetspeak/trigramas/PT-BR, cosméticos burner e OSINT Steam).
+    alternância de dias exclusivos, ciclo circadiano BRT, leetspeak/trigramas/PT-BR, cosméticos burner, OSINT Steam
+    e sinais de **Steam Family Sharing**).
     """
     cand_pid = int(cand.get("profile_id", 0) or 0)
     main_pid = int(main.get("profile_id", 0) or 0)
@@ -1921,6 +2063,12 @@ def score_smurf_pair(
         and cand_av_hash != STEAM_DEFAULT_AVATAR_HASH
     )
     steam_br_location_leak = bool(cand_osint.get("is_br_location"))
+    resolved_lender_sid = str(
+        cand_osint.get("lender_steam_id")
+        or ((shared_lender_by_sid or {}).get(cand_sid) if cand_sid else "")
+        or ""
+    ).strip()
+    direct_family_sharing_lender = bool(resolved_lender_sid and main_sid and resolved_lender_sid == main_sid)
 
     shared_steam_friends = 0
     same_steam_friend_penalty = False
@@ -1935,7 +2083,7 @@ def score_smurf_pair(
     temporal_info = _analyze_temporal_anti_disguise(cand_tel, main_tel)
 
     # Guarda de bandeira estrangeira (agora perfurável por sinais anti-disfarce concretos: histórico BR,
-    # Steam <location> no Brasil, avatar custom idêntico, nick PT-BR + horário BRT, squad BR, handoffs ou nick)
+    # prova direta Family Sharing lender, Steam <location> no Brasil, avatar custom idêntico, nick PT-BR + horário BRT, squad BR ou nick)
     is_cand_historical_br = bool(
         (historical_br_pids and cand_pid in historical_br_pids)
         or (country_migration_by_pid and cand_pid in country_migration_by_pid)
@@ -1946,7 +2094,8 @@ def score_smurf_pair(
         ca >= 3 and ma >= 3 for _, ca, ma, _ in shared_allies_info
     )
     has_anti_disguise_br_nexus = (
-        steam_br_location_leak
+        direct_family_sharing_lender
+        or steam_br_location_leak
         or same_custom_avatar
         or (ptbr_nick_hit and float(temporal_info["cand_brt_prime"]) >= 0.40)
     )
@@ -2179,6 +2328,36 @@ def score_smurf_pair(
         evidence.append(
             f"Perfil público Steam revela localização no Brasil ('{cand_osint.get('location')}') apesar da bandeira '{cand_ctry or '??'}'."
         )
+
+    # Sinal 7B: Steam Family Sharing (Passo 1 XML/HTML público + Passo 2 Steam Web API IPlayerService)
+    is_limited_account = bool(cand_osint.get("is_limited_account"))
+    family_shared_api = bool(cand_osint.get("family_shared_api_confirmed"))
+    member_since_cur_year = bool(cand_osint.get("member_since_current_year"))
+    steam_level = int(cand_osint.get("steam_level", -1) if cand_osint.get("steam_level") is not None else -1)
+    friends_cnt = int(cand_osint.get("friends_count", -1) if cand_osint.get("friends_count") is not None else -1)
+    badges_cnt = int(cand_osint.get("badges_count", -1) if cand_osint.get("badges_count") is not None else -1)
+
+    if direct_family_sharing_lender:
+        score = max(score, 99.0)
+        behavioral_signals += 2
+        identity_anchor_signals += 2
+        evidence.append(
+            f"PROVA DIRETA Steam Family Sharing (IsPlayingSharedGame): conta jogando CoH3 emprestado da biblioteca Steam de {main.get('alias') or main_pid}."
+        )
+    else:
+        fs_pts = 0.0
+        fs_notes: list[str] = []
+        if is_limited_account:
+            fs_pts += 12.0
+            fs_notes.append("conta limitada (<isLimitedAccount>1 — nunca gastou US$ 5 na Steam jogando CoH3 pago)")
+        if family_shared_api:
+            fs_pts += 14.0
+            fs_notes.append("licença emprestada confirmada via Steam Web API (GetOwnedGames/include_family_licenses)")
+        if fs_pts > 0.0:
+            score += min(18.0, fs_pts)
+            behavioral_signals += 1
+            evidence.append("Steam Family Sharing detectado: " + "; ".join(fs_notes) + ".")
+
     osint_burner_notes: list[str] = []
     osint_burner_pts = 0.0
     if cand_osint.get("is_default_avatar") and cand_elo >= 1300:
@@ -2189,12 +2368,28 @@ def score_smurf_pair(
         osint_burner_notes.append("perfil Steam privado em conta nova de ELO alto")
     cur_year = datetime.now(tz=timezone.utc).year
     mem_yr = int(cand_osint.get("member_since_year", 0) or 0)
-    if mem_yr >= cur_year - 2 and cand_elo >= 1350:
+    if member_since_cur_year and cand_elo >= 1250:
+        osint_burner_pts += 8.0
+        raw_ms = str(cand_osint.get("member_since_raw") or cur_year)
+        osint_burner_notes.append(f"conta Steam criada neste ano ({raw_ms})")
+    elif mem_yr >= cur_year - 2 and cand_elo >= 1350:
         osint_burner_pts += 4.0
         osint_burner_notes.append(f"conta Steam criada recentemente ({mem_yr})")
+    if (
+        0 <= steam_level <= 2
+        and cand_elo >= 1300
+        and ((0 <= friends_cnt <= 15) or (0 <= badges_cnt <= 2))
+    ):
+        osint_burner_pts += 4.0
+        lvl_parts = [f"Steam Nível {steam_level}"]
+        if friends_cnt >= 0:
+            lvl_parts.append(f"{friends_cnt} amigo(s)")
+        if badges_cnt >= 0:
+            lvl_parts.append(f"{badges_cnt} insígnia(s)")
+        osint_burner_notes.append(" / ".join(lvl_parts))
     if osint_burner_pts > 0.0:
-        score += min(10.0, osint_burner_pts)
-        evidence.append("OSINT Steam (padrão burner): " + ", ".join(osint_burner_notes) + ".")
+        score += min(14.0, osint_burner_pts)
+        evidence.append("OSINT Steam (padrão burner/Family Sharing): " + ", ".join(osint_burner_notes) + ".")
 
     if same_steam_friend_penalty:
         score -= 10.0  # Contas smurf raramente se adicionam, embora aconteça; penalidade leve
@@ -2319,6 +2514,7 @@ def score_smurf_pair(
         and not shared_allies_info
         and handoff_cnt == 0
         and alias_pts == 0
+        and not direct_family_sharing_lender
         and not (apm_strong_match and (bg_pts >= 6.0 or combat_dna_strong))
     ):
         cand_team_games = cand_tel.games - cand_tel.mode_counts.get("1v1", 0)
@@ -2326,10 +2522,14 @@ def score_smurf_pair(
         if cand_team_games >= 10 and main_team_games >= 10:
             score -= 12.0
 
+    # Prova determinística de empréstimo via Steam Web API prevalece sobre deduções secundárias
+    if direct_family_sharing_lender:
+        score = max(score, 99.0)
+
     # Guarda Anti-Ruído Meta:
     # Exige ao menos 2 sinais comportamentais independentes E ao menos 1 âncora de identidade/tempo/rede
     # (squad em comum, handoff <=25m, horários UTC >=68%, 0 confrontos no mesmo ELO alto, dormancy swap corroborado,
-    # nick/leetspeak/clã, avatar Steam idêntico, localização BR Steam ou amigos Steam).
+    # nick/leetspeak/clã, avatar Steam idêntico, localização BR Steam, amigos Steam ou prova direta Family Sharing).
     if behavioral_signals < 2:
         score = min(score, 34.0)
     elif identity_anchor_signals < 1:
@@ -2380,6 +2580,11 @@ def score_smurf_pair(
             "cand_brt_prime_ratio": temporal_info["cand_brt_prime"],
             "same_custom_avatar": same_custom_avatar,
             "steam_br_location_leak": steam_br_location_leak,
+            "is_limited_account": is_limited_account,
+            "family_shared_api_confirmed": family_shared_api,
+            "direct_family_sharing_lender": direct_family_sharing_lender,
+            "member_since_current_year": member_since_cur_year,
+            "steam_level": steam_level,
         },
     }
 
@@ -2747,6 +2952,7 @@ def detect_top50_br_smurfs(
     steam_aliases_by_sid: dict[str, str] | None = None,
     alias_history_doc: dict[str, Any] | None = None,
     steam_osint_by_pid: dict[int, dict[str, Any]] | None = None,
+    shared_lender_by_sid: dict[str, str] | None = None,
     top_n: int = DEFAULT_TOP_N_BR,
     min_probability_pct: int = DEFAULT_MIN_PROBABILITY_PCT,
     include_known_smurfs: bool = False,
@@ -2757,8 +2963,13 @@ def detect_top50_br_smurfs(
     e a rotina complementar de detecção de mudança de nick / nome de usuário sobre toda a base brasileira.
     - Monitora automaticamente novos brasileiros que entrarem no Top 50.
     - Ignora candidatas cujo vínculo mais provável pertença a jogadores fora do Top 50 (`#51+`).
-    - Cruza o histórico persistente multi-era (CoH1, CoH2, CoH3, CoHDB e Steam) e migrações de país (BR->ext).
+    - Cruza o histórico persistente multi-era (CoH1, CoH2, CoH3, CoHDB e Steam), Steam Family Sharing e migrações de país (BR->ext).
     """
+    active_lender_map = (
+        dict(shared_lender_by_sid)
+        if shared_lender_by_sid is not None
+        else _load_persisted_shared_lender_map()
+    )
     alias_history_by_pid, historical_br_pids, country_migration_by_pid, country_migrations = _extract_historical_br_context(
         alias_history_doc
     )
@@ -2828,7 +3039,12 @@ def detect_top50_br_smurfs(
     for pid, row in (extra_candidates or {}).items():
         pid_i = int(pid or 0)
         if pid_i > 0 and pid_i not in candidate_pool and isinstance(row, dict):
-            if bool(row.get("in_br_arranged_team")) or int(row.get("br_teammate_count", 0) or 0) >= 5:
+            row_sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+            if (
+                bool(row.get("in_br_arranged_team"))
+                or int(row.get("br_teammate_count", 0) or 0) >= 5
+                or (row_sid and row_sid in active_lender_map)
+            ):
                 candidate_pool[pid_i] = dict(row)
 
     suspects: list[dict[str, Any]] = []
@@ -2839,7 +3055,13 @@ def detect_top50_br_smurfs(
         if restrict_candidate_pids is not None and cpid not in restrict_candidate_pids:
             continue
         cand_tel = telemetry.players.get(cpid)
-        if not _is_smurf_candidate(
+        cand_sid_clean = str(cand.get("steam_id") or "").replace("/steam/", "").strip()
+        has_live_lender_hit = bool(
+            cand_sid_clean
+            and cand_sid_clean in active_lender_map
+            and (include_known_smurfs or (cpid not in known_smurfs and cpid not in excluded_roster))
+        )
+        if not has_live_lender_hit and not _is_smurf_candidate(
             cand,
             cand_tel,
             known_smurf_pids=known_smurfs,
@@ -2867,6 +3089,7 @@ def detect_top50_br_smurfs(
                 historical_br_pids=historical_br_pids,
                 country_migration_by_pid=country_migration_by_pid,
                 steam_osint_by_pid=steam_osint_by_pid,
+                shared_lender_by_sid=active_lender_map or None,
             )
             if int(scored["probability_pct"]) >= min_probability_pct:
                 top50_scores.append(scored)
@@ -2896,6 +3119,7 @@ def detect_top50_br_smurfs(
                 historical_br_pids=historical_br_pids,
                 country_migration_by_pid=country_migration_by_pid,
                 steam_osint_by_pid=steam_osint_by_pid,
+                shared_lender_by_sid=active_lender_map or None,
             )
             if int(out_scored["probability_pct"]) > best_outside_prob:
                 best_outside_prob = int(out_scored["probability_pct"])
@@ -2992,6 +3216,7 @@ def verify_suspects_with_relic(
     roster_rows: list[dict[str, Any]] | None = None,
     steam_aliases_by_sid: dict[str, str] | None = None,
     alias_history_doc: dict[str, Any] | None = None,
+    shared_lender_by_sid: dict[str, str] | None = None,
     live_stats_out: dict[int, dict[str, Any]] | None = None,
     top_n: int = DEFAULT_TOP_N_BR,
     min_probability_pct: int = DEFAULT_MIN_PROBABILITY_PCT,
@@ -3128,7 +3353,7 @@ def verify_suspects_with_relic(
             except Exception as exc:
                 logger.debug("[SMURF STAGE 2] Falha em cohdb pid=%d: %s", pid, redact_secrets(exc))
 
-    # 3B. Coleta OSINT público Steam XML (avatar padrão/idêntico, perfil privado/novo, localização BR)
+    # 3B. Coleta OSINT público Steam XML/HTML + Steam Web API Family Sharing opcional
     steam_osint_map: dict[int, dict[str, Any]] = {}
     if isinstance(relic_client, RelicActivityClient):
         osint_client = SteamProfileOSINTClient(pace_delay_sec=0.10)
@@ -3140,7 +3365,7 @@ def verify_suspects_with_relic(
                 if info.get("ok"):
                     steam_osint_map[pid] = info
 
-    # 4. Reavalia a shortlist com telemetria completa (APM + Combat DNA + Battlegroups + OSINT Steam + Relic)
+    # 4. Reavalia a shortlist com telemetria completa (APM + Combat DNA + Battlegroups + Steam Family Sharing + Relic)
     verified = detect_top50_br_smurfs(
         all_br_players=enriched_br,
         telemetry=telemetry,
@@ -3154,6 +3379,7 @@ def verify_suspects_with_relic(
         steam_aliases_by_sid=steam_aliases_by_sid,
         alias_history_doc=alias_history_doc,
         steam_osint_by_pid=steam_osint_map or None,
+        shared_lender_by_sid=shared_lender_by_sid,
         top_n=top_n,
         min_probability_pct=min_probability_pct,
         include_known_smurfs=include_known_smurfs,
@@ -3178,7 +3404,7 @@ def evaluate_model_benchmarks(
 ) -> list[dict[str, Any]]:
     """
     Executa avaliação forense direta sobre os 4 modelos reais de referência
-    (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`) usando Relic + cohdb + OSINT Steam.
+    (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`) usando Relic + cohdb + OSINT Steam + Family Sharing.
     """
     all_pids = sorted(
         {
@@ -3218,6 +3444,7 @@ def evaluate_model_benchmarks(
                 if info.get("ok"):
                     steam_osint_map[pid] = info
 
+    persisted_lenders = _load_persisted_shared_lender_map()
     ally_pop = col.build_ally_popularity()
     roster_by_pid = {
         int(r.get("profile_id", 0) or 0): r
@@ -3257,6 +3484,7 @@ def evaluate_model_benchmarks(
                 ally_popularity=ally_pop,
                 pid_aliases=col.pid_aliases,
                 steam_osint_by_pid=steam_osint_map or None,
+                shared_lender_by_sid=persisted_lenders or None,
             )
             smurf_roster = roster_by_pid.get(spid_i)
             if smurf_roster:

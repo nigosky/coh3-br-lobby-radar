@@ -2096,6 +2096,54 @@ def run_lobby_radar_sync(
     except Exception as exc:
         logger.debug("Atualização passiva de alias_history.json ignorada: %s", redact_secrets(exc))
 
+    # 6B. Captura passiva ao vivo de Steam Family Sharing (`IsPlayingSharedGame`) para contas jogando CoH3 agora
+    if getattr(p_client, "uses_web_api", False) and hasattr(p_client, "fetch_live_shared_lender"):
+        try:
+            shared_hits = state.get("shared_lender_hits")
+            if not isinstance(shared_hits, dict):
+                shared_hits = {}
+            live_in_coh3_sids: list[tuple[str, str]] = []
+            for pres_map in (other_presence_map, vet_presence_map):
+                for sid_k, pres_v in (pres_map or {}).items():
+                    if not isinstance(pres_v, dict) or not pres_v.get("is_in_coh3"):
+                        continue
+                    if not STEAM_ID64_VALID_RE.fullmatch(str(sid_k)):
+                        continue
+                    prev_hit = shared_hits.get(sid_k)
+                    if isinstance(prev_hit, dict) and str(prev_hit.get("lender_steam_id") or ""):
+                        continue
+                    live_in_coh3_sids.append((str(sid_k), str(pres_v.get("steam_alias") or "")[:40]))
+            probed_shared = 0
+            for b_sid, b_alias in live_in_coh3_sids[:6]:
+                lender_sid = p_client.fetch_live_shared_lender(b_sid)
+                probed_shared += 1
+                if lender_sid and STEAM_ID64_VALID_RE.fullmatch(lender_sid) and lender_sid != b_sid:
+                    shared_hits[b_sid] = {
+                        "lender_steam_id": lender_sid,
+                        "detected_at": now,
+                        "borrower_alias": b_alias,
+                    }
+                    # Mantém no máximo 200 registros mais recentes em state.json
+                    if len(shared_hits) > 200:
+                        trimmed = sorted(
+                            shared_hits.items(),
+                            key=lambda kv: int((kv[1] or {}).get("detected_at", 0) or 0),
+                            reverse=True,
+                        )[:200]
+                        shared_hits = dict(trimmed)
+                    state["shared_lender_hits"] = shared_hits
+                    state_dirty = True
+                    logger.info(
+                        "[FAMILY SHARING] Cópia de CoH3 emprestada detectada ao vivo: %s (%s) <- dono Steam %s.",
+                        b_alias or b_sid,
+                        b_sid,
+                        lender_sid,
+                    )
+                if probed_shared < len(live_in_coh3_sids[:6]):
+                    time.sleep(0.05)
+        except Exception as exc:
+            logger.debug("[FAMILY SHARING] Falha transitória na sonda ao vivo: %s", redact_secrets(exc))
+
     if state_dirty:
         save_state(state_path, state)
 
