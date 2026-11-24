@@ -1259,11 +1259,14 @@ def score_smurf_pair(
     steam_friends_by_pid: dict[int, set[str]] | None = None,
     main_family_pids: set[int] | frozenset[int] | None = None,
     alias_history_by_pid: dict[int, set[str]] | None = None,
+    historical_br_pids: set[int] | frozenset[int] | None = None,
+    country_migration_by_pid: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """
     Calcula a probabilidade forense (`0..99%`) de `cand` ser uma smurf de `main`, com evidências detalhadas em português.
     Calibrado pelos 4 modelos reais brasileiros (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`),
-    incluindo biometria de APM, escolha de Battlegroups (Relic + cohdb) e histórico persistente de nicks (CoH1/CoH2/CoH3/Steam).
+    incluindo biometria de APM, escolha de Battlegroups (Relic + cohdb), histórico de nicks (CoH1/CoH2/CoH3/Steam)
+    e continuidade de origem brasileira em casos de mudança de país/bandeira (ex.: `icewarp`).
     """
     cand_pid = int(cand.get("profile_id", 0) or 0)
     main_pid = int(main.get("profile_id", 0) or 0)
@@ -1355,8 +1358,13 @@ def score_smurf_pair(
             shared_steam_friends = len(cf & mf)
 
     # Guarda de bandeira estrangeira: conta explicitamente não-BR (ar/bo/de/cn/us/pt/...) precisa ter
-    # vínculo social/identitário sólido (>=2 aliados recorrentes em comum OU >=3x com mesmo aliado BR, nick ou Steam)
-    is_explicit_foreign = bool(cand_ctry and cand_ctry not in ("br", "??", "unknown"))
+    # vínculo social/identitário sólido — EXCETO se já tiver origem brasileira comprovada em CoH1/CoH2/Steam!
+    is_cand_historical_br = bool(
+        (historical_br_pids and cand_pid in historical_br_pids)
+        or (country_migration_by_pid and cand_pid in country_migration_by_pid)
+        or cand.get("is_historical_br")
+    )
+    is_explicit_foreign = bool(cand_ctry and cand_ctry not in ("br", "??", "unknown") and not is_cand_historical_br)
     has_strong_foreign_squad = len(shared_allies_info) >= 2 or any(
         ca >= 3 and ma >= 3 for _, ca, ma, _ in shared_allies_info
     )
@@ -1371,6 +1379,19 @@ def score_smurf_pair(
     behavioral_signals = 0
     identity_anchor_signals = 0
     evidence: list[str] = []
+
+    if is_cand_historical_br and cand_ctry and cand_ctry not in ("br", "??", "unknown"):
+        evidence.append(f"Histórico multi-era CoH1/CoH2/Steam confirma origem brasileira apesar da bandeira atual '{cand_ctry}'.")
+        main_mig = (country_migration_by_pid or {}).get(main_pid)
+        main_ctry_cur = str(
+            (main_mig.get("current_country") if isinstance(main_mig, dict) else "")
+            or main.get("country")
+            or ""
+        ).strip().lower()
+        if main_ctry_cur and main_ctry_cur == cand_ctry and main_ctry_cur != "br":
+            score += 8.0
+            identity_anchor_signals += 1
+            evidence.append(f"Mesma mudança de país/bandeira entre as contas (br -> {cand_ctry}).")
 
     cand_elo = int(cand.get("max_elo", 0) or 0)
     main_elo = int(main.get("max_elo", 0) or 0)
@@ -1959,14 +1980,25 @@ def detect_nick_changes(
     return changes
 
 
-def _extract_alias_history_sets(alias_history_doc: dict[str, Any] | None) -> dict[int, set[str]]:
-    """Extrai `{profile_id: set(nicks_historicos)}` de `alias_history.json` para cruzamento forense no detector de smurfs."""
-    out: dict[int, set[str]] = {}
+def _extract_historical_br_context(
+    alias_history_doc: dict[str, Any] | None,
+) -> tuple[dict[int, set[str]], set[int], dict[int, dict[str, Any]], list[dict[str, Any]]]:
+    """
+    Extrai de `alias_history.json`:
+    1. `alias_history_by_pid`: `{coh3_pid: set(nicks históricos CoH1/CoH2/CoH3/CoHDB/Steam)}`;
+    2. `historical_br_pids`: `coh3_pid`s com origem brasileira comprovada (CoH1/CoH2 `br` ou migração confirmada);
+    3. `country_migration_by_pid`: `{coh3_pid: migration_dict}`;
+    4. `country_migrations`: lista ordenada de brasileiros que mudaram de país/bandeira (`br -> ext`).
+    """
+    aliases_out: dict[int, set[str]] = {}
+    historical_br_pids: set[int] = set()
+    mig_by_pid: dict[int, dict[str, Any]] = {}
+    migrations_list: list[dict[str, Any]] = []
     if not isinstance(alias_history_doc, dict):
-        return out
+        return aliases_out, historical_br_pids, mig_by_pid, migrations_list
     players = alias_history_doc.get("players")
     if not isinstance(players, dict):
-        return out
+        return aliases_out, historical_br_pids, mig_by_pid, migrations_list
     for raw_pid, rec in players.items():
         if not isinstance(rec, dict):
             continue
@@ -1984,8 +2016,31 @@ def _extract_alias_history_sets(alias_history_doc: dict[str, Any] | None) -> dic
                 if v and not _is_placeholder_alias(v):
                     s.add(v)
         if s:
-            out[pid] = s
-    return out
+            aliases_out[pid] = s
+
+        c1 = str(rec.get("coh1_country") or "").strip().lower()
+        c2 = str(rec.get("coh2_country") or "").strip().lower()
+        c3 = str(rec.get("coh3_country") or "").strip().lower()
+        mig = rec.get("country_migration")
+        if c1 == "br" or c2 == "br" or c3 == "br" or isinstance(mig, dict):
+            historical_br_pids.add(pid)
+        if isinstance(mig, dict) and str(mig.get("current_country") or "").strip().lower() not in ("", "br"):
+            mig_by_pid[pid] = dict(mig)
+            migrations_list.append(
+                {
+                    "profile_id": pid,
+                    "steam_id": str(rec.get("steam_id") or "").strip(),
+                    "alias": str(rec.get("current_alias") or rec.get("canonical_alias") or f"Player {pid}"),
+                    "from_country": str(mig.get("from_country") or "br"),
+                    "current_country": str(mig.get("current_country") or ""),
+                    "evidence": str(mig.get("evidence") or ""),
+                    "source_eras": list(mig.get("source_eras") or []),
+                    "coh2_br_teammates": int(mig.get("coh2_br_teammates", 0) or 0),
+                    "steam_location": str(mig.get("steam_location") or ""),
+                }
+            )
+    migrations_list.sort(key=lambda m: (-int(m.get("coh2_br_teammates", 0) or 0), str(m.get("alias") or "").casefold()))
+    return aliases_out, historical_br_pids, mig_by_pid, migrations_list
 
 
 def detect_top50_br_smurfs(
@@ -2011,25 +2066,33 @@ def detect_top50_br_smurfs(
     e a rotina complementar de detecção de mudança de nick / nome de usuário sobre toda a base brasileira.
     - Monitora automaticamente novos brasileiros que entrarem no Top 50.
     - Ignora candidatas cujo vínculo mais provável pertença a jogadores fora do Top 50 (`#51+`).
-    - Cruza o histórico persistente multi-era (CoH1, CoH2, CoH3, CoHDB e Steam) na afinidade de nicks.
+    - Cruza o histórico persistente multi-era (CoH1, CoH2, CoH3, CoHDB e Steam) e migrações de país (BR->ext).
     """
-    alias_history_by_pid = _extract_alias_history_sets(alias_history_doc)
+    alias_history_by_pid, historical_br_pids, country_migration_by_pid, country_migrations = _extract_historical_br_context(
+        alias_history_doc
+    )
     merged_all_br: dict[int, dict[str, Any]] = {int(k): dict(v) for k, v in all_br_players.items() if isinstance(v, dict)}
     if isinstance(alias_history_doc, dict) and isinstance(alias_history_doc.get("players"), dict):
         for raw_pid, hrec in alias_history_doc["players"].items():
             if not isinstance(hrec, dict):
                 continue
             hpid = int(hrec.get("profile_id", 0) or (int(raw_pid) if str(raw_pid).isdigit() else 0))
-            if hpid > 0 and hpid not in merged_all_br:
+            if hpid <= 0:
+                continue
+            h_ctry = str(hrec.get("coh3_country") or "").strip().lower() or "br"
+            if hpid not in merged_all_br:
                 merged_all_br[hpid] = {
                     "profile_id": hpid,
                     "steam_id": str(hrec.get("steam_id") or "").replace("/steam/", "").strip(),
                     "alias": str(hrec.get("current_alias") or hrec.get("canonical_alias") or f"Player {hpid}"),
                     "original_alias": str(hrec.get("canonical_alias") or ""),
-                    "country": "br",
+                    "country": h_ctry,
+                    "is_historical_br": hpid in historical_br_pids,
                     "max_elo": 0,
-                    "total_matches": 0,
+                    "total_matches": int(hrec.get("coh3_total_matches", 0) or 0),
                 }
+            elif hpid in historical_br_pids:
+                merged_all_br[hpid]["is_historical_br"] = True
 
     known_smurfs = set(known_smurf_pids) if known_smurf_pids is not None else extract_known_smurf_pids(roster_rows)
     excluded_roster = (
@@ -2066,7 +2129,7 @@ def detect_top50_br_smurfs(
     ally_pop = telemetry.build_ally_popularity()
     family_map = extract_main_family_map(roster_rows, all_br_players=merged_all_br)
 
-    # Pool de candidatas: TODOS os BRs conhecidos (incluindo base completa do histórico) + candidatos não-BR com vínculo forte de squad BR
+    # Pool de candidatas: TODOS os BRs conhecidos (incluindo base completa do histórico e emigrados) + candidatos não-BR com vínculo forte de squad BR
     candidate_pool: dict[int, dict[str, Any]] = {}
     for pid, row in merged_all_br.items():
         if isinstance(row, dict):
@@ -2110,6 +2173,8 @@ def detect_top50_br_smurfs(
                 steam_friends_by_pid=steam_friends_by_pid,
                 main_family_pids=family_map.get(mpid),
                 alias_history_by_pid=alias_history_by_pid,
+                historical_br_pids=historical_br_pids,
+                country_migration_by_pid=country_migration_by_pid,
             )
             if int(scored["probability_pct"]) >= min_probability_pct:
                 top50_scores.append(scored)
@@ -2136,6 +2201,8 @@ def detect_top50_br_smurfs(
                 steam_friends_by_pid=steam_friends_by_pid,
                 main_family_pids=family_map.get(ompid),
                 alias_history_by_pid=alias_history_by_pid,
+                historical_br_pids=historical_br_pids,
+                country_migration_by_pid=country_migration_by_pid,
             )
             if int(out_scored["probability_pct"]) > best_outside_prob:
                 best_outside_prob = int(out_scored["probability_pct"])
@@ -2210,6 +2277,8 @@ def detect_top50_br_smurfs(
         "ignored_outside_top50_count": ignored_outside_top50,
         "relic_verified": False,
         "cohdb_verified": False,
+        "country_migrations_count": len(country_migrations),
+        "country_migrations": country_migrations,
         "nick_changes_count": len(nick_changes),
         "nick_changes": nick_changes,
         "suspects": suspects,
@@ -2511,13 +2580,14 @@ def format_smurf_report_text(report: dict[str, Any]) -> str:
     else:
         ver_tag = ""
     nick_changes = report.get("nick_changes") or []
+    country_migs = report.get("country_migrations") or []
     lines.append(
         f"[DETECÇÃO DE SMURFS — TOP {report.get('top_n', 50)} BR RELIC] "
         f"Monitorados: {report.get('top50_count', 0)} (ELO {report.get('top50_min_elo', 0)}..{report.get('top50_max_elo', 0)}) | "
         f"Partidas analisadas: {report.get('matches_observed', 0)} | "
         f"Candidatas avaliadas: {report.get('candidates_evaluated', 0)} | "
         f"Ignoradas (fora do Top 50): {report.get('ignored_outside_top50_count', 0)} | "
-        f"Mudanças de nick: {len(nick_changes)}{ver_tag}"
+        f"Mudanças de nick: {len(nick_changes)} | Migrações país (BR->ext): {len(country_migs)}{ver_tag}"
     )
 
     newly = report.get("newly_entered_top50") or []
@@ -2527,6 +2597,24 @@ def format_smurf_report_text(report: dict[str, Any]) -> str:
             for p in newly[:15]
         )
         lines.append(f"[NOVOS NO TOP 50 BR (+{len(newly)}) -> monitoramento de smurfs ativado]: {entered_lbl}")
+
+    if country_migs:
+        lines.append(f"[BRASILEIROS COM MUDANÇA DE PAÍS / BANDEIRA ({len(country_migs)})]:")
+        for m in country_migs[:25]:
+            extras = []
+            if m.get("source_eras"):
+                extras.append(f"eras_br={','.join(m['source_eras'])}")
+            if int(m.get("coh2_br_teammates", 0) or 0) > 0:
+                extras.append(f"parceiros_coh2_br={int(m['coh2_br_teammates'])}")
+            if m.get("steam_location"):
+                extras.append(f"steam='{m['steam_location']}'")
+            extra_s = (" | " + ", ".join(extras)) if extras else ""
+            lines.append(
+                f"  • {m['alias']} ({m.get('from_country', 'br')} -> {m.get('current_country', '??')} | "
+                f"pid={m['profile_id']} | Steam {m.get('steam_id') or 'N/D'} | {m.get('evidence', '')}{extra_s})"
+            )
+        if len(country_migs) > 25:
+            lines.append(f"  ... e mais {len(country_migs) - 25} migração(ões) salva(s) no JSON.")
 
     if nick_changes:
         lines.append(f"[MUDANÇAS DE NICK / NOME DE USUÁRIO DETECTADAS ({len(nick_changes)})]:")
@@ -2582,7 +2670,7 @@ def format_smurf_report_text(report: dict[str, Any]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Detecção forense sob demanda de contas Smurf do Top 50 brasileiro na Relic API (com APM, Battlegroups e Mudança de Nick)."
+        description="Detecção forense sob demanda de contas Smurf do Top 50 brasileiro na Relic API (com APM, Battlegroups, Histórico CoH1/CoH2/CoH3 e Migrações de País)."
     )
     parser.add_argument("--days", type=int, default=DEFAULT_MATCH_DAYS, help="Dias de Open Data Matches (1..30)")
     parser.add_argument("--top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado (padrão: 50)")
@@ -2636,8 +2724,33 @@ def main() -> int:
                 "max_elo": 0,
                 "total_matches": 0,
             }
+    for hrec in (alias_history_doc.get("players") or {}).values():
+        if not isinstance(hrec, dict):
+            continue
+        pid = int(hrec.get("profile_id", 0) or 0)
+        if pid > 0 and pid not in all_br:
+            all_br[pid] = {
+                "profile_id": pid,
+                "steam_id": str(hrec.get("steam_id") or ""),
+                "alias": str(hrec.get("current_alias") or hrec.get("canonical_alias") or f"Player {pid}"),
+                "original_alias": str(hrec.get("canonical_alias") or ""),
+                "country": str(hrec.get("coh3_country") or "br"),
+                "is_historical_br": True,
+                "max_elo": 0,
+                "total_matches": int(hrec.get("coh3_total_matches", 0) or 0),
+            }
 
-    # Atualiza ELO/stats diretamente na Relic SA + getPersonalStat para o elenco cadastrado
+    # Atualiza ELO/stats via COH3 Stats Open Data (16 leaderboards globais) + Relic SA + getPersonalStat
+    lb_br, lb_cand, _ = r_client.discover_br_and_candidates_from_open_data(now_ts=now)
+    for pid, item in (lb_br or {}).items():
+        prev = all_br.get(pid)
+        if prev is None:
+            all_br[pid] = dict(item)
+        else:
+            all_br[pid]["max_elo"] = max(int(prev.get("max_elo", 0) or 0), int(item.get("max_elo", 0) or 0))
+            all_br[pid]["total_matches"] = max(int(prev.get("total_matches", 0) or 0), int(item.get("total_matches", 0) or 0))
+            all_br[pid]["last_match_date"] = max(int(prev.get("last_match_date", 0) or 0), int(item.get("last_match_date", 0) or 0))
+
     sa_br, sa_cand = r_client.discover_br_and_candidates_from_relic_sa(max_pages_per_board=10, use_dynamic_boards=True)
     for pid, item in sa_br.items():
         prev = all_br.get(pid)
@@ -2647,10 +2760,20 @@ def main() -> int:
                 merged["original_alias"] = str(prev["alias"]).strip()
             all_br[pid] = merged
 
-    need_stats = [pid for pid, row in all_br.items() if int(row.get("max_elo", 0) or 0) <= 0]
+    # Prioriza busca de ELO real para Veteranos, manual_other_br e emigrados (country_migration) sem ELO
+    migrated_pids = {
+        int(rec.get("profile_id", 0) or 0)
+        for rec in (alias_history_doc.get("players") or {}).values()
+        if isinstance(rec, dict) and isinstance(rec.get("country_migration"), dict)
+    }
+    roster_pid_set = {int(r.get("profile_id", 0) or 0) for r in list(CORE_BR_ROSTER) + list(MANUAL_OTHER_BR_PLAYERS)}
+    need_stats = sorted(
+        [pid for pid, row in all_br.items() if int(row.get("max_elo", 0) or 0) <= 0],
+        key=lambda p: (0 if (p in roster_pid_set or p in migrated_pids) else 1, -int(all_br[p].get("total_matches", 0) or 0), p),
+    )
     live_stats_initial: dict[int, dict[str, Any]] = {}
     if need_stats:
-        fetched_stats = r_client.fetch_profile_stats_batch(need_stats[:200], pace_delay_sec=0.15)
+        fetched_stats = r_client.fetch_profile_stats_batch(need_stats[:250], pace_delay_sec=0.14)
         live_stats_initial.update(fetched_stats)
         for pid, st in fetched_stats.items():
             if pid in all_br:
@@ -2676,7 +2799,7 @@ def main() -> int:
             all_br[pid]["max_elo"] = max(int(all_br[pid].get("max_elo", 0) or 0), int(item.get("max_elo", 0) or 0))
             all_br[pid]["total_matches"] = max(int(all_br[pid].get("total_matches", 0) or 0), int(item.get("total_matches", 0) or 0))
 
-    extra_cands = {**sa_cand, **m_cand}
+    extra_cands = {**(lb_cand or {}), **sa_cand, **m_cand}
     min_prob = max(1, min(99, int(args.min_prob)))
     stage1_min_prob = min_prob if args.no_relic_verify else max(35, min_prob - 8)
     report = detect_top50_br_smurfs(

@@ -32,6 +32,7 @@ from alias_history import (
     COHDB_ALIASES_TTL_SEC,
     DEFAULT_ALIAS_HISTORY_PATH,
     STEAM_ALIASES_TTL_SEC,
+    detect_country_migrations,
     enrich_legacy_coh_sources,
     ingest_coh3stats_opendata,
     ingest_cohdb_observations,
@@ -40,6 +41,7 @@ from alias_history import (
     ingest_steam_alias_histories,
     ingest_steam_presence,
     load_alias_history,
+    promote_legacy_br_to_coh3,
     save_alias_history,
     select_stale_pids_for_source,
 )
@@ -834,6 +836,16 @@ def run_deep_br_discovery(
             )
             if legacy_res.get("dirty"):
                 hist_dirty = True
+
+        if promote_legacy_br_to_coh3(alias_history_doc, pid_by_steam=pid_by_steam):
+            hist_dirty = True
+        mig_changed, _ = detect_country_migrations(
+            alias_history_doc,
+            steam_presence_by_sid=steam_pres_map,
+            now_ts=now,
+        )
+        if mig_changed:
+            hist_dirty = True
 
         if hist_dirty and not dry_run:
             save_alias_history(hist_path, alias_history_doc, now_ts=now)

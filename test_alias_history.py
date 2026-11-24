@@ -18,6 +18,7 @@ from pathlib import Path
 
 from alias_history import (
     MAX_ALIASES_PER_PLAYER,
+    detect_country_migrations,
     format_alias_history_entry,
     format_alias_history_report,
     ingest_coh1_relic_stats,
@@ -31,7 +32,9 @@ from alias_history import (
     ingest_steam_alias_histories,
     ingest_steam_presence,
     load_alias_history,
+    promote_legacy_br_to_coh3,
     query_alias_history,
+    record_legacy_br_player,
     record_player_alias,
     save_alias_history,
     sync_persistent_alias_history,
@@ -50,6 +53,8 @@ from steam_presence import (
     COH1STATS_PLAYER_PATH_RE,
     COH2STATS_MATCHES_PATH_RE,
     extract_coh2_aliases_from_matches_payload,
+    extract_coh2_br_and_aliases_from_matches_payload,
+    extract_team_statgroup_network,
     parse_coh1stats_player_payload,
     parse_steam_ajax_aliases_payload,
     validate_https_endpoint,
@@ -220,27 +225,29 @@ class TestPersistentAliasHistory(unittest.TestCase):
         other_sid = "76561198000000001"
         pid = 232030
 
-        # CoH2Stats Open Data matches parser
+        # CoH2Stats Open Data matches parser (inclui extração de BRs + targets)
         coh2_payload = {
             "matches": [
                 {
                     "completiontime": 1_710_000_000,
                     "matchhistoryreportresults": [
-                        {"profile": {"name": f"/steam/{sid}", "alias": "GabeCoH2"}},
-                        {"profile": {"name": f"/steam/{other_sid}", "alias": "IgnoredPlayer"}},
+                        {"profile": {"name": f"/steam/{sid}", "alias": "GabeCoH2", "country": "br", "profile_id": 40386}},
+                        {"profile": {"name": f"/steam/{other_sid}", "alias": "IgnoredPlayer", "country": "us", "profile_id": 999}},
                     ],
                 },
                 {
                     "completiontime": 1_720_000_000,
                     "matchhistoryreportresults": [
-                        {"profile": {"name": f"/steam/{sid}", "alias": "GabeCoH2New"}},
+                        {"profile": {"name": f"/steam/{sid}", "alias": "GabeCoH2New", "country": "br", "profile_id": 40386}},
                     ],
                 },
             ]
         }
-        parsed_c2 = extract_coh2_aliases_from_matches_payload(coh2_payload, {sid})
-        self.assertEqual(list(parsed_c2.keys()), [sid])
+        br_c2, parsed_c2 = extract_coh2_br_and_aliases_from_matches_payload(coh2_payload, {sid})
+        self.assertIn(sid, br_c2)
+        self.assertNotIn(other_sid, br_c2)
         self.assertEqual(parsed_c2[sid], [("GabeCoH2", 1_710_000_000), ("GabeCoH2New", 1_720_000_000)])
+        self.assertEqual(extract_coh2_aliases_from_matches_payload(coh2_payload, {sid}), parsed_c2)
 
         # CoH1Stats public API parser
         coh1_payload = {
@@ -267,7 +274,7 @@ class TestPersistentAliasHistory(unittest.TestCase):
         self.assertTrue(
             ingest_coh2_relic_stats(
                 doc,
-                {sid: {"profile_id": 40386, "steam_id": sid, "alias": "GabeRelicCoH2", "last_match_date": 1_650_000_000}},
+                {sid: {"profile_id": 40386, "steam_id": sid, "alias": "GabeRelicCoH2", "country": "br", "last_match_date": 1_650_000_000}},
                 pid_by_steam=pid_map,
                 checked_sids=[sid],
                 now_ts=1_800_000_000,
@@ -277,7 +284,7 @@ class TestPersistentAliasHistory(unittest.TestCase):
         self.assertTrue(
             ingest_coh1_relic_stats(
                 doc,
-                {sid: {"profile_id": 2022369, "steam_id": sid, "alias": "Gabe444", "last_match_date": 1_580_000_000}},
+                {sid: {"profile_id": 2022369, "steam_id": sid, "alias": "Gabe444", "country": "br", "last_match_date": 1_580_000_000}},
                 pid_by_steam=pid_map,
                 checked_sids=[sid],
                 now_ts=1_800_000_000,
@@ -287,7 +294,9 @@ class TestPersistentAliasHistory(unittest.TestCase):
 
         rec = doc["players"][str(pid)]
         self.assertEqual(rec["coh2_profile_id"], 40386)
+        self.assertEqual(rec["coh2_country"], "br")
         self.assertEqual(rec["coh1_profile_id"], 2022369)
+        self.assertEqual(rec["coh1_country"], "br")
         formatted = format_alias_history_entry(rec)
         self.assertIn("coh2_pid=40386", formatted)
         self.assertIn("coh1_pid=2022369", formatted)
@@ -325,6 +334,124 @@ class TestPersistentAliasHistory(unittest.TestCase):
                 path_regex=COH2STATS_MATCHES_PATH_RE,
                 allow_query=False,
             )
+
+    def test_legacy_br_catalog_promotion_team_network_and_country_migrations(self) -> None:
+        # 1. Extração de rede de equipes pré-formadas no CoH2 (caso real: `icewarp` `za` com parceiros BR)
+        ice_sid = "76561198002516537"
+        br1_sid = "76561198095301909"
+        br2_sid = "76561197962304188"
+        legacy_only_sid = "76561198011111111"
+        coh2_personal_payload = {
+            "statGroups": [
+                {
+                    "id": 3126300,
+                    "members": [
+                        {"profile_id": 55333, "name": f"/steam/{ice_sid}", "alias": "icewarp", "country": "za"},
+                        {"profile_id": 645249, "name": f"/steam/{br1_sid}", "alias": "Fioti", "country": "br"},
+                    ],
+                },
+                {
+                    "id": 3126301,
+                    "members": [
+                        {"profile_id": 55333, "name": f"/steam/{ice_sid}", "alias": "icewarp", "country": "za"},
+                        {"profile_id": 10002, "name": f"/steam/{br2_sid}", "alias": "Kurt", "country": "br"},
+                        {"profile_id": 10003, "name": f"/steam/{legacy_only_sid}", "alias": "VeteranoCoH2Inativo", "country": "br"},
+                    ],
+                },
+            ]
+        }
+        br_mates: dict = {}
+        non_br_mates: dict = {}
+        extract_team_statgroup_network(coh2_personal_payload, br_mates, non_br_mates)
+        self.assertEqual(set(br_mates.keys()), {br1_sid, br2_sid, legacy_only_sid})
+        self.assertIn(ice_sid, non_br_mates)
+        self.assertEqual(len(non_br_mates[ice_sid]["br_partners"]), 3)
+
+        # 2. Catálogo legado CoH1/CoH2 sem CoH3 + busca + promoção automática ao entrar no CoH3
+        doc = load_alias_history(Path("/nonexistent/alias_history.json"))
+        self.assertTrue(
+            record_legacy_br_player(
+                doc,
+                steam_id=legacy_only_sid,
+                alias="VeteranoCoH1",
+                source="relic_coh1_api",
+                era="coh1",
+                profile_id=3001,
+                country="br",
+                seen_ts=1_450_000_000,
+            )
+        )
+        self.assertTrue(
+            record_legacy_br_player(
+                doc,
+                steam_id=legacy_only_sid,
+                alias="VeteranoCoH2Inativo",
+                source="relic_coh2_api",
+                era="coh2",
+                profile_id=10003,
+                country="br",
+                seen_ts=1_620_000_000,
+            )
+        )
+        self.assertIn(legacy_only_sid, doc["legacy_br_players"])
+        self.assertEqual(doc["legacy_br_players"][legacy_only_sid]["scope"], "legacy_coh1_coh2_br")
+        self.assertEqual(len(query_alias_history(doc, "VeteranoCoH1")), 1)
+
+        # Quando ele compra CoH3 com bandeira alemã (`de`), promoção preserva CoH1/CoH2 (`br`) e detecta migração `br -> de`!
+        ingest_relic_stats(
+            doc,
+            {88001: {"profile_id": 88001, "steam_id": legacy_only_sid, "alias": "VeteranoEmigrado", "country": "de", "last_match_date": 1_800_000_000}},
+            now_ts=1_800_000_000,
+        )
+        self.assertTrue(promote_legacy_br_to_coh3(doc, pid_by_steam={legacy_only_sid: 88001}))
+        self.assertNotIn(legacy_only_sid, doc["legacy_br_players"])
+        self.assertEqual(doc["players"]["88001"]["coh1_country"], "br")
+        self.assertEqual(doc["players"]["88001"]["coh2_country"], "br")
+        self.assertEqual(doc["players"]["88001"]["coh3_country"], "de")
+
+        # Caso `icewarp`: bandeira `za` no CoH2 e CoH3, mas 3+ parceiros BR em Arranged Teams no CoH2 + Steam `Sao Paulo, Brazil`
+        ingest_relic_stats(
+            doc,
+            {7448: {"profile_id": 7448, "steam_id": ice_sid, "alias": "icewarp", "country": "za", "total_matches": 4168, "last_match_date": 1_800_000_000}},
+            now_ts=1_800_000_000,
+        )
+        mig_dirty, migrations = detect_country_migrations(
+            doc,
+            coh2_network_non_br=non_br_mates,
+            steam_presence_by_sid={
+                ice_sid: {"ok": True, "is_steam_brazil": True, "has_brazil_steam_group": True, "location": "Sao Paulo, Brazil"}
+            },
+            now_ts=1_800_000_000,
+        )
+        self.assertTrue(mig_dirty)
+        mig_by_pid = {m["profile_id"]: m for m in migrations}
+        self.assertEqual(mig_by_pid[88001]["evidence"], "era_country_shift")
+        self.assertEqual(mig_by_pid[88001]["current_country"], "de")
+        self.assertEqual(mig_by_pid[7448]["evidence"], "coh2_network_steam_confirmed")
+        self.assertEqual(mig_by_pid[7448]["current_country"], "za")
+        self.assertEqual(mig_by_pid[7448]["coh2_br_teammates"], 3)
+        self.assertIn("migração: br->za", format_alias_history_entry(doc["players"]["7448"]))
+
+        # 3. score_smurf_pair não desqualifica brasileiro emigrado (`de`/`za`) como estrangeiro e aplica bônus se mesma migração
+        cand_expat = {"profile_id": 88001, "steam_id": legacy_only_sid, "alias": "VeteranoEmigrado", "country": "de", "max_elo": 1650, "total_matches": 50}
+        main_expat = {"profile_id": 99001, "steam_id": "76561198099999999", "alias": "MainEmigrado", "country": "de", "max_elo": 1700, "total_matches": 1200}
+        blocked_as_foreign = score_smurf_pair(cand_expat, main_expat, None, None)
+        self.assertEqual(blocked_as_foreign["disqualified_reason"], "estrangeiro_sem_vinculo_social_br")
+
+        allowed_as_hist_br = score_smurf_pair(
+            cand_expat,
+            main_expat,
+            None,
+            None,
+            historical_br_pids={88001, 99001},
+            country_migration_by_pid={
+                88001: {"from_country": "br", "current_country": "de"},
+                99001: {"from_country": "br", "current_country": "de"},
+            },
+        )
+        self.assertEqual(allowed_as_hist_br["disqualified_reason"], "")
+        self.assertIn("br -> de", " ".join(allowed_as_hist_br["evidence"]).lower())
+        self.assertIn("BRASILEIROS COM MUDANÇA DE PAÍS", format_smurf_report_text({"country_migrations": migrations, "nick_changes": [], "suspects": []}))
 
     def test_smurf_detector_uses_coh1_coh2_alias_history_and_all_br_catalog(self) -> None:
         # Conta principal com nick atual genérico "Gabe", mas nick histórico CoH1 "Gabe444" -> smurf "gabe444arg"
@@ -416,7 +543,7 @@ class TestPersistentAliasHistory(unittest.TestCase):
 
             def fetch_profile_stats_batch(self, pids, pace_delay_sec=0.12):
                 return {
-                    79327: {"profile_id": 79327, "steam_id": "76561197963172584", "alias": "Chacineiro", "last_match_date": 1_800_000_000}
+                    79327: {"profile_id": 79327, "steam_id": "76561197963172584", "alias": "Chacineiro", "country": "br", "last_match_date": 1_800_000_000}
                 }
 
             def fetch_coh2_profile_stats_by_steam_ids(self, sids, pace_delay_sec=0.14):
@@ -425,6 +552,7 @@ class TestPersistentAliasHistory(unittest.TestCase):
                         "profile_id": 40386,
                         "steam_id": "76561197963172584",
                         "alias": "Kam aka Chacineiro",
+                        "country": "br",
                         "last_match_date": 1_640_000_000,
                     }
                 }
@@ -435,6 +563,7 @@ class TestPersistentAliasHistory(unittest.TestCase):
                         "profile_id": 112233,
                         "steam_id": "76561197963172584",
                         "alias": "KamCoH1",
+                        "country": "br",
                         "last_match_date": 1_450_000_000,
                     }
                 }
