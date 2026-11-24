@@ -4,10 +4,11 @@ Presença Steam (Web API oficial + fallback XML público) + Descoberta da Comuni
 1. Consulta presença Steam via `ISteamUser/GetPlayerSummaries/v2` (quando `STEAM_WEB_API_KEY` está configurada)
    com fallback transparente para `https://steamcommunity.com/profiles/<SteamID64>/?xml=1` (TLS 1.2+, allowlist estrita),
    dando prioridade absoluta para os **Veteranos** (`players_roster.json`) e, em seguida, para **Outros Brasileiros**
-   ativos nos últimos 15 dias (com vigília silenciosa de reativação para inativos de 16–90 dias).
+   ativos nos últimos 15 dias (com vigília silenciosa permanente para TODOS os demais brasileiros inativos, sem expiração).
 2. Descobre automaticamente todos os demais jogadores brasileiros de CoH3 (`country == "br"`) via:
    - COH3 Stats Open Data (`storage.coh3stats.com/leaderboards/...` e `matches/...`);
    - API oficial da Relic (`getLeaderboard2`, região América do Sul `2074438`);
+   - Grupos públicos brasileiros de Company of Heroes na Steam (`BRAZILIAN_COH_STEAM_GROUPS`);
    - Descoberta passiva em tempo real nos participantes `country == "br"` das partidas dos Veteranos.
 3. Detecta jogadores **invisíveis / Steam privada / jogos ocultos** ativos no CoH3 nos últimos 35 min cruzando
    `getRecentMatchHistoryByProfileId` (Veteranos + customizadas) e `getPersonalStat` em lote (`lastmatchdate`).
@@ -70,12 +71,19 @@ _RELIC_JSON_HEADERS: dict[str, str] = {
 SOUTH_AMERICA_REGION_ID = 2074438
 COH2_SA_REGION_ID = 4
 BRAZILIAN_COH_STEAM_GROUPS: tuple[str, ...] = (
-    "CoH2BR",
-    "companybr",
-    "cohbr",
-    "companyofheroesbrasil",
-    "cohbrasil",
-    "COH2Brasil",
+    "companybr",              # Company of Heroes - Brasil
+    "CoH2BR",                 # Company of Heroes 2 Brasil
+    "cohbr",                  # Company of Heroes Brasil
+    "COH2-BR",                # Company of Heroes 2 - Brasil
+    "cohcentral",             # CoHCentral Brasil
+    "companyofheroesbrasil",  # Company of Heroes - BR
+    "cohbrasil",              # COHBR
+    "br_febcoh",              # [BR] FEB_CoH
+    "BR-CoH2",                # Company of Heroes 2 . Brasil
+    "COH2Brasil",             # Company of Heroes 2 BR
+    "sidneyrs",               # ELITE.BRASIL.COH
+    "companyofheroesativos",  # Company of Heroes - jogadores ativos
+    "BRCOH2",                 # COMPANY OF BR
 )
 COH2_RANKED_LEADERBOARD_IDS: tuple[int, ...] = (
     4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 51, 52, 53, 54,
@@ -121,7 +129,9 @@ COH2STATS_MATCHES_PATH_RE = re.compile(r"^/matches/matches-\d{9,11}\.json$")
 COH1STATS_PLAYER_PATH_RE = re.compile(r"^/api/player/7656119\d{10}$")
 
 _STEAM_BRAZIL_LOC_RE = re.compile(r"(?i)\b(?:brazil|brasil)\b")
-_STEAM_BRAZIL_GROUP_RE = re.compile(r"(?i)\b(?:brazil|brasil|brasileir[oa]s?|coh2br|companybr|cohbr|gamersclub)\b")
+_STEAM_BRAZIL_GROUP_RE = re.compile(
+    r"(?i)\b(?:brazil|brasil|brasileir[oa]s?|coh2br|companybr|cohbr|cohcentral|feb_?coh|brcoh2?|companyofheroesativos|gamersclub)\b"
+)
 _EXPLICIT_BR_TAG_RE = re.compile(
     r"(?i)(?:[\[\(\{]\s*(?:br|cohbr|br\s*[-/]\s*[a-z]{2}|cohbr\s*[-/]\s*[a-z]{2}|feb)\s*[\]\)\}]"
     r"|(?:^|[\s._|-])(?:brasil|brazil|cohbr|huebr)(?:$|[\s._|-])"
@@ -333,6 +343,40 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
         "country": "br",
         "known_aliases": ["seu pai", "Sgt.Yoda", "seu pai (Sgt.Yoda)", "seu pai (Smurf: Sgt.Yoda)"],
     },
+    {"profile_id": 7448, "steam_id": "76561198002516537", "original_alias": "icewarp", "country": "za", "flag_country": "za"},
+    {
+        "profile_id": 91827,
+        "steam_id": "76561198031697638",
+        "original_alias": "[★General★] Apollo",
+        "country": "au",
+        "flag_country": "au",
+        "known_aliases": ["General Apolo", "[★General★] Apollo"],
+    },
+    {"profile_id": 312670, "steam_id": "76561197978279848", "original_alias": "TNF", "country": "au", "flag_country": "au"},
+    {"profile_id": 263517, "steam_id": "76561197994925919", "original_alias": "Angel of Death", "country": "jp", "flag_country": "jp"},
+    {
+        "profile_id": 26237,
+        "steam_id": "76561198036822207",
+        "original_alias": "[EL] Queue",
+        "country": "us",
+        "flag_country": "us",
+        "known_aliases": ["Qpid™", "[EL] Queue"],
+    },
+    {"profile_id": 304013, "steam_id": "76561197984619024", "original_alias": "Napa", "country": "us", "flag_country": "us"},
+    {"profile_id": 76165, "steam_id": "76561197961890785", "original_alias": "1337", "country": "ee", "flag_country": "ee"},
+    {"profile_id": 1480421, "steam_id": "76561198070841504", "original_alias": "ShadBlack", "country": "au", "flag_country": "au"},
+    {"profile_id": 4805, "steam_id": "76561198048811566", "original_alias": "MDCCC", "country": "us", "flag_country": "us"},
+    {
+        "profile_id": 29737,
+        "steam_id": "76561198158934331",
+        "original_alias": "PABLO FLEXCOBAR",
+        "country": "ar",
+        "flag_country": "ar",
+        "known_aliases": ["NegroS0rete", "PABLO FLEXCOBAR"],
+    },
+    {"profile_id": 999940, "steam_id": "76561198074249692", "original_alias": "Warmech11", "country": "py", "flag_country": "py"},
+    {"profile_id": 812247, "steam_id": "76561198062044957", "original_alias": "Texugo", "country": "th", "flag_country": "th"},
+    {"profile_id": 229162, "steam_id": "76561198089247149", "original_alias": "Sombra", "country": "us", "flag_country": "us"},
 ]
 
 
@@ -1723,11 +1767,11 @@ class SteamPresenceClient:
         group_slug: str,
         *,
         max_pages: int = 5,
-        pace_delay_sec: float = 0.25,
+        pace_delay_sec: float = 0.45,
     ) -> list[str]:
         """
         Coleta os SteamID64 dos membros de um grupo público Steam via `memberslistxml/?xml=1`
-        com allowlist estrita (`steamcommunity.com`), proteção anti-XXE e limite de páginas.
+        com allowlist estrita (`steamcommunity.com`), proteção anti-XXE, limite de páginas e retry cortês em HTTP 429.
         """
         slug = str(group_slug or "").strip()
         if not re.fullmatch(r"[A-Za-z0-9_-]{2,64}", slug):
@@ -1738,7 +1782,7 @@ class SteamPresenceClient:
             "Accept-Encoding": "gzip",
         }
         pages_cap = max(1, min(int(max_pages), 8))
-        pace = max(0.0, min(float(pace_delay_sec), 1.0))
+        pace = max(0.0, min(float(pace_delay_sec), 3.0))
         all_sids: list[str] = []
         seen: set[str] = set()
 
@@ -1753,22 +1797,34 @@ class SteamPresenceClient:
                 path_prefix="/groups/",
                 path_regex=STEAM_GROUP_MEMBERS_PATH_RE,
             )
-            try:
-                req = urllib.request.Request(url, headers=headers, method="GET")
-                with _get_relic_opener().open(req, timeout=15) as resp:
-                    raw = read_bounded_http_body(resp, MAX_STEAM_GROUP_XML_BYTES)
-                sids, curr_page, total_pages = parse_steam_group_members_xml(raw.decode("utf-8", errors="ignore"))
-                for sid in sids:
-                    if sid not in seen:
-                        seen.add(sid)
-                        all_sids.append(sid)
-                if curr_page >= total_pages or not sids:
+            page_ok = False
+            curr_page = page
+            total_pages = page
+            sids: list[str] = []
+            for attempt in range(2):
+                try:
+                    req = urllib.request.Request(url, headers=headers, method="GET")
+                    with _get_relic_opener().open(req, timeout=15) as resp:
+                        raw = read_bounded_http_body(resp, MAX_STEAM_GROUP_XML_BYTES)
+                    sids, curr_page, total_pages = parse_steam_group_members_xml(raw.decode("utf-8", errors="ignore"))
+                    page_ok = True
                     break
-            except urllib.error.HTTPError as exc:
-                logger.warning("Grupo Steam %s (p.%d) retornou HTTP %d.", slug, page, exc.code)
+                except urllib.error.HTTPError as exc:
+                    if exc.code == 429 and attempt == 0:
+                        time.sleep(2.5)
+                        continue
+                    logger.warning("Grupo Steam %s (p.%d) retornou HTTP %d.", slug, page, exc.code)
+                    break
+                except Exception as exc:
+                    logger.warning("Falha ao ler grupo Steam %s (p.%d): %s", slug, page, redact_secrets(exc))
+                    break
+            if not page_ok:
                 break
-            except Exception as exc:
-                logger.warning("Falha ao ler grupo Steam %s (p.%d): %s", slug, page, redact_secrets(exc))
+            for sid in sids:
+                if sid not in seen:
+                    seen.add(sid)
+                    all_sids.append(sid)
+            if curr_page >= total_pages or not sids:
                 break
 
         return all_sids
@@ -3219,8 +3275,8 @@ class RelicActivityClient:
         return br_catalog
 
 
-OTHER_BR_ACTIVE_COH3_DAYS = 15  # Máximo de 15 dias sem jogar CoH3 para constar em "Outros Brasileiros"
-OTHER_BR_DORMANT_RETENTION_DAYS = 90  # Retém inativos (16-90d) em cache silencioso para reativação imediata ao voltar ao CoH3
+OTHER_BR_ACTIVE_COH3_DAYS = 15  # Máximo de 15 dias sem jogar CoH3 para constar visível em "Outros Brasileiros"
+OTHER_BR_DORMANT_RETENTION_DAYS = 0  # 0 = sem expiração: retém TODOS os brasileiros inativos em vigília silenciosa permanente para reativação instantânea ao voltar ao CoH3
 RELIC_PUBLIC_XML_LAG_PROMOTE_SEC = 300  # 5 min: cobre atraso de cache do XML Steam para perfis com detalhes públicos
 PROMINENCE_TIER_ORDER: dict[str, int] = {"high": 0, "medium": 1, "low": 2}
 

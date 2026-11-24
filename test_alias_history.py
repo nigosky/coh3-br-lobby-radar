@@ -654,6 +654,68 @@ class TestPersistentAliasHistory(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 save_alias_history(link_p, load_alias_history(hp))
 
+    def test_passive_timestamp_throttle_and_steam_group_legacy_recording(self) -> None:
+        doc = load_alias_history(Path("/nonexistent/alias_history_throttle_test.json"))
+        sid_c3 = "76561198000777001"
+        sid_grp = "76561198000777002"
+        t0 = 1_800_000_000
+
+        self.assertTrue(
+            ingest_steam_presence(
+                doc,
+                {sid_c3: {"ok": True, "steam_alias": "NickEstavel", "source": "web_api"}},
+                pid_by_steam={sid_c3: 777001},
+                now_ts=t0,
+                min_ts_refresh_sec=86400,
+            )
+        )
+        # 5 min depois com o MESMO nick: não marca dirty (zero churn em alias_history.json)
+        self.assertFalse(
+            ingest_steam_presence(
+                doc,
+                {sid_c3: {"ok": True, "steam_alias": "NickEstavel", "source": "web_api"}},
+                pid_by_steam={sid_c3: 777001},
+                now_ts=t0 + 300,
+                min_ts_refresh_sec=86400,
+            )
+        )
+        # 5 min depois com NOVO nick: marca dirty e grava imediatamente!
+        self.assertTrue(
+            ingest_steam_presence(
+                doc,
+                {sid_c3: {"ok": True, "steam_alias": "NickMudadoAgora", "source": "web_api"}},
+                pid_by_steam={sid_c3: 777001},
+                now_ts=t0 + 600,
+                min_ts_refresh_sec=86400,
+            )
+        )
+        self.assertEqual(doc["players"]["777001"]["current_alias"], "NickMudadoAgora")
+
+        # Membro de grupo Steam BR sem CoH3 é gravado em legacy_br_players e tem nick preenchido via Web API
+        self.assertTrue(
+            record_legacy_br_player(
+                doc,
+                steam_id=sid_grp,
+                alias="",
+                source="steam_group_br",
+                era="steam_group",
+                country="br",
+                seen_ts=t0,
+            )
+        )
+        self.assertIn(sid_grp, doc["legacy_br_players"])
+        self.assertTrue(doc["legacy_br_players"][sid_grp].get("steam_br_group"))
+        self.assertTrue(
+            ingest_steam_presence(
+                doc,
+                {sid_grp: {"ok": True, "steam_alias": "MembroGrupoCoHBR", "source": "web_api"}},
+                pid_by_steam={},
+                now_ts=t0 + 60,
+                min_ts_refresh_sec=86400,
+            )
+        )
+        self.assertEqual(doc["legacy_br_players"][sid_grp]["canonical_alias"], "MembroGrupoCoHBR")
+
 
 if __name__ == "__main__":
     unittest.main()

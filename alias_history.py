@@ -215,6 +215,7 @@ def record_player_alias(
     scope: str = "",
     smurf_of: str = "",
     is_live_current: bool = False,
+    min_ts_refresh_sec: int = 0,
 ) -> bool:
     """
     Registra uma observação de nick no histórico persistente de `profile_id`.
@@ -278,6 +279,7 @@ def record_player_alias(
     ts_first = max(0, int(first_seen_ts or 0)) or ts_last
     if ts_first > 0 and ts_last > 0 and ts_first > ts_last:
         ts_first, ts_last = ts_last, ts_first
+    refresh_min = max(0, int(min_ts_refresh_sec or 0))
 
     if clean_alias:
         aliases_list: list[dict[str, Any]] = rec.setdefault("aliases", [])
@@ -305,10 +307,12 @@ def record_player_alias(
                 found["first_seen"] = ts_first
                 changed = True
             if ts_last > old_last:
-                found["last_seen"] = ts_last
-                if found.get("alias") != clean_alias:
-                    found["alias"] = clean_alias
-                changed = True
+                alias_case_diff = found.get("alias") != clean_alias
+                if alias_case_diff or refresh_min <= 0 or old_last == 0 or (ts_last - old_last) >= refresh_min:
+                    found["last_seen"] = ts_last
+                    if alias_case_diff:
+                        found["alias"] = clean_alias
+                    changed = True
             srcs = [str(s) for s in (found.get("sources") or []) if str(s)]
             if clean_src not in srcs:
                 srcs.append(clean_src)
@@ -321,9 +325,11 @@ def record_player_alias(
             if rec.get("current_alias") != clean_alias:
                 rec["current_alias"] = clean_alias
                 changed = True
-        if ts_last > int(rec.get("last_checked_at", 0) or 0) and clean_src in _LIVE_CURRENT_SOURCES:
-            rec["last_checked_at"] = ts_last
-            changed = True
+        prev_checked = int(rec.get("last_checked_at", 0) or 0)
+        if ts_last > prev_checked and clean_src in _LIVE_CURRENT_SOURCES:
+            if changed or refresh_min <= 0 or prev_checked == 0 or (ts_last - prev_checked) >= refresh_min:
+                rec["last_checked_at"] = ts_last
+                changed = True
 
         if changed:
             aliases_list.sort(
@@ -345,6 +351,7 @@ def ingest_local_database(
     manual_other_rows: list[dict[str, Any]] | None = None,
     community_cache: dict[str, Any] | None = None,
     now_ts: int | None = None,
+    min_ts_refresh_sec: int = 0,
 ) -> bool:
     """Fonte 1: ingere `players_roster.json` (Veteranos + manual_other_br) e `br_community.json`."""
     changed = False
@@ -374,6 +381,7 @@ def ingest_local_database(
                 scope=scope,
                 smurf_of=owner,
                 is_live_current=False,
+                min_ts_refresh_sec=min_ts_refresh_sec,
             ):
                 changed = True
             for ka in row.get("known_aliases") or []:
@@ -391,6 +399,7 @@ def ingest_local_database(
                     scope=scope,
                     smurf_of=owner,
                     is_live_current=False,
+                    min_ts_refresh_sec=min_ts_refresh_sec,
                 ):
                     changed = True
 
@@ -420,6 +429,7 @@ def ingest_local_database(
                         canonical_alias=base_al,
                         scope="outros_brasileiros",
                         is_live_current=not bool(cur_al),
+                        min_ts_refresh_sec=min_ts_refresh_sec,
                     ):
                         changed = True
                 if cur_al:
@@ -433,6 +443,7 @@ def ingest_local_database(
                         canonical_alias=base_al or cur_al,
                         scope="outros_brasileiros",
                         is_live_current=True,
+                        min_ts_refresh_sec=min_ts_refresh_sec,
                     ):
                         changed = True
     return changed
@@ -523,31 +534,79 @@ def ingest_steam_presence(
     *,
     pid_by_steam: dict[str, int],
     now_ts: int | None = None,
+    min_ts_refresh_sec: int = 0,
 ) -> bool:
-    """Fonte 3a: ingere `personaname` ao vivo da Steam Key API (`web_api`) ou fallback XML (`xml`)."""
-    if not isinstance(presence_by_steam, dict) or not pid_by_steam:
+    """Fonte 3a: ingere `personaname` ao vivo da Steam Key API (`web_api`) ou fallback XML (`xml`), inclusive para legados."""
+    if not isinstance(presence_by_steam, dict):
         return False
     now = int(now_ts) if now_ts is not None else int(time.time())
+    refresh_min = max(0, int(min_ts_refresh_sec or 0))
+    legacy_map = doc.get("legacy_br_players") if isinstance(doc.get("legacy_br_players"), dict) else {}
+    if not pid_by_steam and not legacy_map:
+        return False
     changed = False
     for sid, pres in presence_by_steam.items():
         if not isinstance(pres, dict) or not pres.get("ok"):
             continue
         clean_sid = str(sid or "").replace("/steam/", "").strip()
-        pid = int(pid_by_steam.get(clean_sid, 0) or 0)
         al = str(pres.get("steam_alias") or "").strip()
-        if pid <= 0 or not al:
+        if not al:
             continue
         src = "steam_web_api" if str(pres.get("source") or "").strip().lower() == "web_api" else "steam_xml"
-        if record_player_alias(
-            doc,
-            profile_id=pid,
-            alias=al,
-            source=src,
-            seen_ts=now,
-            steam_id=clean_sid,
-            is_live_current=True,
-        ):
+        pid = int(pid_by_steam.get(clean_sid, 0) or 0)
+        if pid > 0:
+            if record_player_alias(
+                doc,
+                profile_id=pid,
+                alias=al,
+                source=src,
+                seen_ts=now,
+                steam_id=clean_sid,
+                is_live_current=True,
+                min_ts_refresh_sec=refresh_min,
+            ):
+                changed = True
+            continue
+        # Conta legada (CoH1/CoH2/Grupo Steam BR sem CoH3): atualiza nick real e histórico na Steam
+        lrec = legacy_map.get(clean_sid)
+        if not isinstance(lrec, dict):
+            continue
+        clean_al = _clean_alias_for_history(al)
+        if not clean_al:
+            continue
+        cur_canon = str(lrec.get("canonical_alias") or "").strip()
+        if not cur_canon or cur_canon.startswith("Steam "):
+            lrec["canonical_alias"] = clean_al
             changed = True
+        if lrec.get("current_alias") != clean_al:
+            lrec["current_alias"] = clean_al
+            changed = True
+        aliases_list: list[dict[str, Any]] = lrec.setdefault("aliases", [])
+        found = next(
+            (x for x in aliases_list if isinstance(x, dict) and str(x.get("alias") or "").casefold() == clean_al.casefold()),
+            None,
+        )
+        if found is None:
+            aliases_list.append({"alias": clean_al, "first_seen": now, "last_seen": now, "sources": [src]})
+            changed = True
+        else:
+            old_last = int(found.get("last_seen", 0) or 0)
+            if now > old_last and (
+                found.get("alias") != clean_al
+                or refresh_min <= 0
+                or old_last == 0
+                or (now - old_last) >= refresh_min
+            ):
+                found["last_seen"] = now
+                if found.get("alias") != clean_al:
+                    found["alias"] = clean_al
+                changed = True
+            srcs = [str(s) for s in (found.get("sources") or []) if str(s)]
+            if src not in srcs:
+                srcs.append(src)
+                srcs.sort()
+                found["sources"] = srcs
+                changed = True
     return changed
 
 
@@ -913,14 +972,18 @@ def record_legacy_br_player(
             is_live_current=False,
         ):
             changed = True
-        if _update_era_metadata(
-            (doc.get("players") or {}).get(str(coh3_pid)),
+        target_c3 = (doc.get("players") or {}).get(str(coh3_pid))
+        if era in ("coh1", "coh2", "coh3") and _update_era_metadata(
+            target_c3,
             era=era,
             profile_id=profile_id,
             country=country,
             total_matches=total_matches,
             last_match_date=ts_val,
         ):
+            changed = True
+        if era == "steam_group" and isinstance(target_c3, dict) and not target_c3.get("steam_br_group"):
+            target_c3["steam_br_group"] = True
             changed = True
         legacy_map = doc.get("legacy_br_players")
         if isinstance(legacy_map, dict) and clean_sid in legacy_map:
@@ -932,7 +995,7 @@ def record_legacy_br_player(
     rec = legacy_map.get(clean_sid)
     changed = False
     if not isinstance(rec, dict):
-        if not clean_alias and int(profile_id or 0) <= 0:
+        if not clean_alias and int(profile_id or 0) <= 0 and era != "steam_group":
             return False
         rec = {
             "steam_id": clean_sid,
@@ -943,14 +1006,18 @@ def record_legacy_br_player(
         }
         legacy_map[clean_sid] = rec
         changed = True
-    elif era == "coh2" and rec.get("scope") == "legacy_coh1_br":
-        rec["scope"] = "legacy_coh1_coh2_br"
+    elif era == "coh2" and rec.get("scope") in ("legacy_coh1_br", "legacy_steam_group_br"):
+        rec["scope"] = "legacy_coh1_coh2_br" if rec.get("scope") == "legacy_coh1_br" else "legacy_coh2_br"
         changed = True
-    elif era == "coh1" and rec.get("scope") == "legacy_coh2_br":
-        rec["scope"] = "legacy_coh1_coh2_br"
+    elif era == "coh1" and rec.get("scope") in ("legacy_coh2_br", "legacy_steam_group_br"):
+        rec["scope"] = "legacy_coh1_coh2_br" if rec.get("scope") == "legacy_coh2_br" else "legacy_coh1_br"
         changed = True
 
-    if _update_era_metadata(
+    if era == "steam_group" and not rec.get("steam_br_group"):
+        rec["steam_br_group"] = True
+        changed = True
+
+    if era in ("coh1", "coh2", "coh3") and _update_era_metadata(
         rec,
         era=era,
         profile_id=profile_id,
@@ -1017,16 +1084,6 @@ def promote_legacy_br_to_coh3(doc: dict[str, Any], *, pid_by_steam: dict[str, in
         if not isinstance(lrec, dict):
             continue
         changed = True
-        target = (doc.get("players") or {}).get(str(coh3_pid))
-        for era in ("coh1", "coh2"):
-            _update_era_metadata(
-                target,
-                era=era,
-                profile_id=int(lrec.get(f"{era}_profile_id", 0) or 0),
-                country=str(lrec.get(f"{era}_country") or ""),
-                total_matches=int(lrec.get(f"{era}_total_matches", 0) or 0),
-                last_match_date=int(lrec.get(f"{era}_last_match_date", 0) or 0),
-            )
         for item in lrec.get("aliases") or []:
             if not isinstance(item, dict):
                 continue
@@ -1044,6 +1101,32 @@ def promote_legacy_br_to_coh3(doc: dict[str, Any], *, pid_by_steam: dict[str, in
                     steam_id=sid,
                     is_live_current=False,
                 )
+        target = (doc.get("players") or {}).get(str(coh3_pid))
+        if not isinstance(target, dict):
+            fallback_al = str(lrec.get("canonical_alias") or lrec.get("current_alias") or f"Jogador {coh3_pid}").strip()
+            record_player_alias(
+                doc,
+                profile_id=coh3_pid,
+                alias=fallback_al,
+                source="local_db",
+                seen_ts=0,
+                steam_id=sid,
+                canonical_alias=fallback_al,
+                scope="outros_brasileiros",
+                is_live_current=False,
+            )
+            target = (doc.get("players") or {}).get(str(coh3_pid))
+        for era in ("coh1", "coh2"):
+            _update_era_metadata(
+                target,
+                era=era,
+                profile_id=int(lrec.get(f"{era}_profile_id", 0) or 0),
+                country=str(lrec.get(f"{era}_country") or ""),
+                total_matches=int(lrec.get(f"{era}_total_matches", 0) or 0),
+                last_match_date=int(lrec.get(f"{era}_last_match_date", 0) or 0),
+            )
+        if isinstance(target, dict) and lrec.get("steam_br_group"):
+            target["steam_br_group"] = True
     return changed
 
 
@@ -1425,22 +1508,60 @@ def sync_persistent_alias_history(
     if (include_all_br_catalog or include_all_eras) and hasattr(p_client, "fetch_group_member_steam_ids"):
         seen_gs: set[str] = set()
         for grp in BRAZILIAN_COH_STEAM_GROUPS:
-            for sid in p_client.fetch_group_member_steam_ids(grp, max_pages=6, pace_delay_sec=0.16):
+            for sid in p_client.fetch_group_member_steam_ids(grp, max_pages=6, pace_delay_sec=0.45):
                 if sid not in seen_gs:
                     seen_gs.add(sid)
                     steam_group_all_sids.append(sid)
-        existing_sids = set(_build_pid_by_steam_map(doc).keys())
+        pid_by_steam_pre = _build_pid_by_steam_map(doc)
+        existing_sids = set(pid_by_steam_pre.keys())
         new_group_sids = [s for s in steam_group_all_sids if s not in existing_sids]
+        grp_coh3_sids: set[str] = set()
         if new_group_sids and hasattr(r_client, "fetch_profile_stats_by_steam_ids"):
-            grp_stats = r_client.fetch_profile_stats_by_steam_ids(new_group_sids[:2000], pace_delay_sec=0.14)
-            br_grp_stats = {
-                pid: st
-                for pid, st in (grp_stats or {}).items()
-                if isinstance(st, dict) and str(st.get("country") or "").strip().lower() in ("br", "")
-            }
+            grp_stats = r_client.fetch_profile_stats_by_steam_ids(new_group_sids[:4000], pace_delay_sec=0.14)
+            br_grp_stats: dict[int, dict[str, Any]] = {}
+            foreign_grp_stats: dict[int, dict[str, Any]] = {}
+            for pid, st in (grp_stats or {}).items():
+                if not isinstance(st, dict):
+                    continue
+                st_sid = str(st.get("steam_id") or "").replace("/steam/", "").strip()
+                if st_sid:
+                    grp_coh3_sids.add(st_sid)
+                ctry = str(st.get("country") or "").strip().lower()
+                if ctry in ("br", ""):
+                    br_grp_stats[int(pid)] = st
+                elif st_sid:
+                    foreign_grp_stats[int(pid)] = st
+            if foreign_grp_stats and hasattr(p_client, "fetch_batch_presence"):
+                fg_sids = [str(st.get("steam_id") or "").strip() for st in foreign_grp_stats.values() if st.get("steam_id")]
+                fg_pres = p_client.fetch_batch_presence(
+                    fg_sids[:250],
+                    max_workers=4,
+                    pace_delay_sec=0.08,
+                    stop_on_rate_limit=True,
+                    require_xml_details=True,
+                )
+                for pid, st in foreign_grp_stats.items():
+                    pres = (fg_pres or {}).get(str(st.get("steam_id") or "").strip())
+                    if isinstance(pres, dict) and pres.get("is_steam_brazil"):
+                        br_grp_stats[int(pid)] = st
             all_br_discovered += len(br_grp_stats)
             if ingest_relic_stats(doc, br_grp_stats, now_ts=now):
                 dirty = True
+            pid_by_steam_pre = _build_pid_by_steam_map(doc)
+        # Marca `steam_br_group=True` nos CoH3 BRs encontrados nos grupos e registra membros sem CoH3 em `legacy_br_players`
+        for sid in steam_group_all_sids:
+            if sid in pid_by_steam_pre or sid not in grp_coh3_sids:
+                if record_legacy_br_player(
+                    doc,
+                    steam_id=sid,
+                    alias="",
+                    source="steam_group_br",
+                    era="steam_group",
+                    country="br",
+                    seen_ts=now,
+                    pid_by_steam=pid_by_steam_pre,
+                ):
+                    dirty = True
 
     # 2. Relic API CoH3 (getPersonalStat em lote para todos os perfis em foco + sem `coh3_country` em modo all-eras)
     relic_fetched = 0

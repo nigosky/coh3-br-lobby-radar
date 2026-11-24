@@ -1449,8 +1449,9 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             saved1 = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertTrue(saved1["steam_gd_cache"][bineto_sid]["hidden"])
 
-            # Ciclo 2 (10 min depois): Bineto já está em `skip_xml_enrich_sids`, mas o cache 24h preserva hidden=True!
+            # Ciclo 2 (10 min depois): Bineto já está em `skip_xml_enrich_sids` no lote de Veteranos, e o cache 24h preserva hidden=True!
             r_client.current_now = now2
+            skips_before_c2 = len(p_client.seen_skips)
             s2 = run_lobby_radar_sync(
                 state_path=state_path,
                 community_cache_path=comm_path,
@@ -1459,7 +1460,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                 relic_client=r_client,  # type: ignore[arg-type]
                 now_ts=now2,
             )
-            self.assertIn(bineto_sid, p_client.seen_skips[-1])
+            self.assertTrue(any(bineto_sid in s for s in p_client.seen_skips[skips_before_c2:]))
             self.assertEqual(s2["in_coh3"], 1)
             self.assertEqual(s2["online_steam"], 0)
 
@@ -1745,7 +1746,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             pres = _WebApiReactivationPresence()
             relic = _ReactivationRelic()
 
-            # Ciclo 1: corte <=15d esconde dormentes (20d e 25d) mesmo online na Steam e descarta >90d (95d)
+            # Ciclo 1: corte <=15d esconde TODOS os inativos (20d, 25d e 95d) do card mesmo online na Steam,
+            # mas MANTÉM todos (inclusive >90d!) em monitoramento silencioso permanente (`dormant_players`)!
             s1 = run_lobby_radar_sync(
                 state_path=state_path,
                 community_cache_path=comm_path,
@@ -1758,17 +1760,19 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(s1["other_br_in_coh3"], 0)
             self.assertEqual(s1["other_br_online_steam"], 1)
             self.assertEqual(s1["other_br_reactivated"], 0)
-            # Garante zero chamadas XML para dormentes monitorados via Web API
+            # Garante zero chamadas XML para TODOS os dormentes (inclusive >90d!) monitorados via Web API
             self.assertIn(sid_dorm_steam, pres.last_skip_xml)
             self.assertIn(sid_dorm_relic, pres.last_skip_xml)
+            self.assertIn(sid_expirado, pres.last_skip_xml)
 
             comm1 = json.loads(comm_path.read_text(encoding="utf-8"))
             self.assertEqual(sorted(comm1["players"].keys()), ["950001"])
-            self.assertEqual(sorted(comm1["dormant_players"].keys()), ["950002", "950003"])
+            self.assertIn("950002", comm1["dormant_players"])
+            self.assertIn("950003", comm1["dormant_players"])
+            self.assertIn("950004", comm1["dormant_players"])
             self.assertNotIn("950004", comm1["players"])
-            self.assertNotIn("950004", comm1["dormant_players"])
 
-            # Verifica texto explícito de 15 dias nos embeds do Discord
+            # Verifica texto explícito de 15 dias nos embeds do Discord e que nenhum inativo aparece no card
             links_posts = [p for m, _, p, f in fake_disc.calls if m == "POST" and not f and p and p.get("embeds")]
             oth_embed = links_posts[-1]["embeds"][1]
             self.assertIn("≤15 DIAS", oth_embed["title"])
@@ -1776,6 +1780,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertIn("Ativo14d", oth_embed["description"])
             self.assertNotIn("Dormente20dSteam", oth_embed["description"])
             self.assertNotIn("Dormente25dRelic", oth_embed["description"])
+            self.assertNotIn("Expirado95d", oth_embed["description"])
 
             # Ciclo 2: Dormente20dSteam abre CoH3 (Web API) + Dormente25dRelic joga partida (jogos ocultos via Relic) -> ambos reativados!
             now2 = now + 600
@@ -1796,7 +1801,9 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
 
             comm2 = json.loads(comm_path.read_text(encoding="utf-8"))
             self.assertEqual(sorted(comm2["players"].keys()), ["950001", "950002", "950003"])
-            self.assertEqual(comm2["dormant_players"], {})
+            self.assertNotIn("950002", comm2["dormant_players"])
+            self.assertNotIn("950003", comm2["dormant_players"])
+            self.assertIn("950004", comm2["dormant_players"])
             self.assertEqual(comm2["players"]["950002"]["last_match_date"], now2)
             self.assertEqual(comm2["players"]["950003"]["last_match_date"], now2 - 300)
 
@@ -1814,6 +1821,236 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(s3["other_br_catalog_total"], 3)
             self.assertEqual(s3["other_br_in_coh3"], 0)
             self.assertEqual(s3["other_br_online_steam"], 3)
+
+    def test_full_catalog_silent_monitoring_legacy_promotion_and_steam_group_discovery(self) -> None:
+        from lobby_radar import COMMUNITY_SCHEMA_VERSION
+
+        now = 1_800_500_000
+        sid_old_coh3 = "76561198000960001"     # CoH3 BR inativo há 400 dias no alias_history.json
+        sid_legacy_coh2 = "76561198000960002"  # Brasileiro legado CoH2 sem CoH3 no alias_history.json
+        sid_grp_coh3 = "76561198000960003"     # Brasileiro inédito descoberto via grupo Steam BR com CoH3 inativo
+        sid_grp_no_coh3 = "76561198000960004"  # Brasileiro inédito descoberto via grupo Steam BR sem CoH3 ainda
+
+        class _FullMonitorPresence:
+            uses_web_api = True
+
+            def __init__(self) -> None:
+                self.legacy_in_coh3 = False
+                self.last_scanned: list[str] = []
+                self.last_skip_xml: set[str] = set()
+
+            def fetch_group_member_steam_ids(self, slug: str, *, max_pages: int = 6) -> list[str]:
+                _ = max_pages
+                if slug == "COH2-BR":
+                    return [sid_grp_coh3, sid_grp_no_coh3]
+                return []
+
+            def fetch_batch_presence(
+                self,
+                steam_ids: list[str],
+                *,
+                max_workers: int = 5,
+                pace_delay_sec: float = 0.05,
+                stop_on_rate_limit: bool = True,
+                skip_xml_enrich_sids: set[str] | frozenset[str] | None = None,
+            ) -> dict[str, dict[str, Any]]:
+                _ = (max_workers, pace_delay_sec, stop_on_rate_limit)
+                self.last_scanned = list(steam_ids)
+                self.last_skip_xml = set(skip_xml_enrich_sids or set())
+                out: dict[str, dict[str, Any]] = {}
+                for sid in steam_ids:
+                    if sid == sid_old_coh3:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "source": "web_api",
+                            "privacy_state": "public",
+                            "is_in_coh3": False,
+                            "is_online_steam": True,
+                            "other_game": "",
+                            "steam_alias": "VeteranoInativo400d",
+                        }
+                    elif sid == sid_legacy_coh2:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "source": "web_api",
+                            "privacy_state": "public",
+                            "is_in_coh3": self.legacy_in_coh3,
+                            "is_online_steam": True,
+                            "other_game": "" if self.legacy_in_coh3 else "Company of Heroes 2",
+                            "steam_alias": "LendaCoH2BR",
+                        }
+                    else:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "source": "web_api",
+                            "privacy_state": "public",
+                            "is_in_coh3": False,
+                            "is_online_steam": False,
+                            "other_game": "",
+                            "steam_alias": "",
+                        }
+                return out
+
+        class _FullMonitorRelic:
+            def fetch_latest_matches_batch(self, profile_ids: list[int], **_kw: Any) -> dict[int, dict[str, Any]]:
+                _ = profile_ids
+                return {}
+
+            def fetch_profile_stats_batch(self, profile_ids: list[int], **_kw: Any) -> dict[int, dict[str, Any]]:
+                _ = profile_ids
+                return {}
+
+            def fetch_profile_stats_by_steam_ids(
+                self, steam_ids: list[str], **_kw: Any
+            ) -> dict[int, dict[str, Any]]:
+                out: dict[int, dict[str, Any]] = {}
+                if sid_grp_coh3 in steam_ids:
+                    out[960003] = {
+                        "profile_id": 960003,
+                        "steam_id": sid_grp_coh3,
+                        "alias": "DescobertoGrupoSteamBR",
+                        "country": "br",
+                        "max_elo": 1410,
+                        "last_match_date": now - 180 * 86400,
+                        "total_matches": 55,
+                    }
+                if sid_legacy_coh2 in steam_ids:
+                    out[960002] = {
+                        "profile_id": 960002,
+                        "steam_id": sid_legacy_coh2,
+                        "alias": "LendaCoH2BR",
+                        "country": "br",
+                        "max_elo": 1520,
+                        "last_match_date": now,
+                        "total_matches": 1,
+                    }
+                return out
+
+            def fetch_peak_elo_by_profile_ids(self, profile_ids: list[int]) -> dict[int, int]:
+                _ = profile_ids
+                return {}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = Path(tmp) / "state.json"
+            comm_path = Path(tmp) / "br_community.json"
+            hist_path = Path(tmp) / "alias_history.json"
+            comm_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": COMMUNITY_SCHEMA_VERSION,
+                        "updated_at": now,
+                        "source": "test",
+                        "players": {},
+                        "dormant_players": {},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            hist_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "updated_at": now - 3600,
+                        "sources_summary": {},
+                        "players": {
+                            "960001": {
+                                "profile_id": 960001,
+                                "steam_id": sid_old_coh3,
+                                "canonical_alias": "VeteranoInativo400d",
+                                "current_alias": "VeteranoInativo400d",
+                                "scope": "outros_brasileiros",
+                                "coh3_country": "br",
+                                "coh3_last_match_date": now - 400 * 86400,
+                                "coh3_total_matches": 40,
+                                "aliases": [
+                                    {
+                                        "alias": "VeteranoInativo400d",
+                                        "first_seen": now - 500 * 86400,
+                                        "last_seen": now - 400 * 86400,
+                                        "sources": ["coh3stats_opendata"],
+                                    }
+                                ],
+                            }
+                        },
+                        "legacy_br_players": {
+                            sid_legacy_coh2: {
+                                "steam_id": sid_legacy_coh2,
+                                "canonical_alias": "LendaCoH2BR",
+                                "current_alias": "LendaCoH2BR",
+                                "scope": "legacy_coh2_br",
+                                "coh2_profile_id": 444222,
+                                "coh2_country": "br",
+                                "aliases": [
+                                    {
+                                        "alias": "LendaCoH2BR",
+                                        "first_seen": now - 900 * 86400,
+                                        "last_seen": now - 100 * 86400,
+                                        "sources": ["relic_coh2_api"],
+                                    }
+                                ],
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            fake_disc = _FakeDiscordClient()
+            pres = _FullMonitorPresence()
+            relic = _FullMonitorRelic()
+
+            # Ciclo 1:
+            # - Semeia 960001 (inativo 400d!) em dormant_players
+            # - Descobre 960003 (CoH3 inativo 180d) e sid_grp_no_coh3 (legado) via grupo Steam BR COH2-BR
+            # - Monitora TODOS silenciosamente via Web API (skip_xml), SEM exibir nenhum inativo no card do Radar!
+            s1 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                alias_history_path=hist_path,
+                discord_client=fake_disc,
+                presence_client=pres,  # type: ignore[arg-type]
+                relic_client=relic,  # type: ignore[arg-type]
+                now_ts=now,
+            )
+            self.assertEqual(s1["other_br_in_coh3"], 0)
+            self.assertEqual(s1["other_br_online_steam"], 0)
+            self.assertIn(sid_old_coh3, pres.last_skip_xml)
+            self.assertIn(sid_legacy_coh2, pres.last_skip_xml)
+            self.assertIn(sid_grp_coh3, pres.last_skip_xml)
+            self.assertIn(sid_grp_no_coh3, pres.last_skip_xml)
+
+            comm1 = json.loads(comm_path.read_text(encoding="utf-8"))
+            self.assertEqual(comm1["players"], {})
+            self.assertIn("960001", comm1["dormant_players"])
+            self.assertIn("960003", comm1["dormant_players"])
+            hist1 = json.loads(hist_path.read_text(encoding="utf-8"))
+            self.assertIn(sid_grp_no_coh3, hist1["legacy_br_players"])
+            self.assertGreaterEqual(s1["legacy_br_monitored"], 2)
+
+            # Ciclo 2: Brasileiro legado de CoH2 (`LendaCoH2BR`) abre o CoH3 pela 1ª vez ->
+            # promovido instantaneamente ao lobby ativo (`players`) E promovido em `alias_history.json` preservando coh2_profile_id!
+            now2 = now + 300
+            pres.legacy_in_coh3 = True
+            s2 = run_lobby_radar_sync(
+                state_path=state_path,
+                community_cache_path=comm_path,
+                alias_history_path=hist_path,
+                discord_client=fake_disc,
+                presence_client=pres,  # type: ignore[arg-type]
+                relic_client=relic,  # type: ignore[arg-type]
+                now_ts=now2,
+            )
+            self.assertEqual(s2["other_br_in_coh3"], 1)
+            self.assertEqual(s2["other_br_reactivated"], 1)
+            comm2 = json.loads(comm_path.read_text(encoding="utf-8"))
+            self.assertIn("960002", comm2["players"])
+            self.assertEqual(comm2["players"]["960002"]["br_source"], "legacy_br_coh3_return")
+            hist2 = json.loads(hist_path.read_text(encoding="utf-8"))
+            self.assertNotIn(sid_legacy_coh2, hist2["legacy_br_players"])
+            self.assertIn("960002", hist2["players"])
+            self.assertEqual(hist2["players"]["960002"].get("coh2_profile_id"), 444222)
 
     def test_smurf_long_names_never_truncated_in_cards_links_or_alerts(self) -> None:
         from PIL import ImageDraw

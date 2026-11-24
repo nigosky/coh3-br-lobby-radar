@@ -501,6 +501,96 @@
         "seu pai (Sgt.Yoda)",
         "seu pai (Smurf: Sgt.Yoda)"
       ]
+    },
+    {
+      "profile_id": 7448,
+      "steam_id": "76561198002516537",
+      "original_alias": "icewarp",
+      "country": "za"
+    },
+    {
+      "profile_id": 91827,
+      "steam_id": "76561198031697638",
+      "original_alias": "[★General★] Apollo",
+      "country": "au",
+      "known_aliases": [
+        "General Apolo",
+        "[★General★] Apollo"
+      ]
+    },
+    {
+      "profile_id": 312670,
+      "steam_id": "76561197978279848",
+      "original_alias": "TNF",
+      "country": "au"
+    },
+    {
+      "profile_id": 263517,
+      "steam_id": "76561197994925919",
+      "original_alias": "Angel of Death",
+      "country": "jp"
+    },
+    {
+      "profile_id": 26237,
+      "steam_id": "76561198036822207",
+      "original_alias": "[EL] Queue",
+      "country": "us",
+      "known_aliases": [
+        "Qpid™",
+        "[EL] Queue"
+      ]
+    },
+    {
+      "profile_id": 304013,
+      "steam_id": "76561197984619024",
+      "original_alias": "Napa",
+      "country": "us"
+    },
+    {
+      "profile_id": 76165,
+      "steam_id": "76561197961890785",
+      "original_alias": "1337",
+      "country": "ee"
+    },
+    {
+      "profile_id": 1480421,
+      "steam_id": "76561198070841504",
+      "original_alias": "ShadBlack",
+      "country": "au"
+    },
+    {
+      "profile_id": 4805,
+      "steam_id": "76561198048811566",
+      "original_alias": "MDCCC",
+      "country": "us"
+    },
+    {
+      "profile_id": 29737,
+      "steam_id": "76561198158934331",
+      "original_alias": "PABLO FLEXCOBAR",
+      "country": "ar",
+      "known_aliases": [
+        "NegroS0rete",
+        "PABLO FLEXCOBAR"
+      ]
+    },
+    {
+      "profile_id": 999940,
+      "steam_id": "76561198074249692",
+      "original_alias": "Warmech11",
+      "country": "py"
+    },
+    {
+      "profile_id": 812247,
+      "steam_id": "76561198062044957",
+      "original_alias": "Texugo",
+      "country": "th"
+    },
+    {
+      "profile_id": 229162,
+      "steam_id": "76561198089247149",
+      "original_alias": "Sombra",
+      "country": "us"
     }
   ]
 }
