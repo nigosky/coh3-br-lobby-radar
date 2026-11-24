@@ -42873,14 +42873,14 @@
     "1456842": {
       "alias": "[BGD] Panella",
       "br_source": "open_data_lb",
-      "last_match_date": 1795522025,
+      "last_match_date": 1795523741,
       "last_seen_ingame_ts": 1795523058,
       "last_seen_ingame_webapi_ts": 1795522758,
       "last_seen_online_ts": 1795522758,
       "max_elo": 1050,
       "profile_id": 1456842,
       "steam_id": "76561198272287621",
-      "total_matches": 73
+      "total_matches": 74
     },
     "1457577": {
       "alias": "Karyu",
@@ -44217,14 +44217,14 @@
     "1483034": {
       "alias": "vitor_piovan",
       "br_source": "open_data_matches",
-      "last_match_date": 1795487372,
+      "last_match_date": 1795523717,
       "last_seen_online_ts": 1795522758,
       "max_elo": 908,
       "profile_id": 1483034,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795464310,
       "steam_id": "76561199820474577",
-      "total_matches": 26
+      "total_matches": 27
     },
     "1483091": {
       "alias": "R4PTHOR",
@@ -47496,14 +47496,14 @@
     "900421": {
       "alias": "tzimypepp",
       "br_source": "open_data_lb",
-      "last_match_date": 1795522011,
+      "last_match_date": 1795523741,
       "last_seen_online_ts": 1795522758,
       "max_elo": 1000,
       "profile_id": 900421,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795459751,
       "steam_id": "76561198988058062",
-      "total_matches": 2694
+      "total_matches": 2695
     },
     "900961": {
       "alias": "MEStre",
