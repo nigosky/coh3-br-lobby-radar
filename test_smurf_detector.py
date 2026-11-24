@@ -1051,6 +1051,151 @@ class TestTop50SmurfDetector(unittest.TestCase):
             loaded = sd._load_persisted_shared_lender_map(p)
             self.assertEqual(loaded, {"76561199970000001": "76561198000004001"})
 
+    def test_regional_br_sa_matchmaking_pierces_foreign_flag_and_penalizes_fake_br(self) -> None:
+        from collections import Counter
+
+        # 1. Smurf BR disfarçada com bandeira 'de', mas com alta densidade de encontros BR/SA no Automatch + horário BRT
+        col = sd.SmurfTelemetryCollector()
+        base_t = 1_760_047_200  # 2025-10-09 22:00 UTC -> 19:00 BRT (prime time brasileiro)
+        matches: list[dict[str, Any]] = []
+        for i in range(10):
+            t0 = base_t + i * 86400
+            opp_ctry = "br" if i < 4 else "ar"
+            matches.append(
+                _make_match(
+                    5000 + i,
+                    t0,
+                    t0 + 1200,
+                    [(1_980_001, "FakeGermanBR", "de", 1, 1420 + i * 16, 1)],
+                    [(80000 + i, f"OppSA_{i}", opp_ctry, 2, 1410 + i * 15, 0)],
+                    matchtype_id=1,
+                )
+            )
+        col.observe_matches_payload({"matches": matches}, known_br_pids={1_980_001, 80000, 80001, 80002, 80003})
+        t_cand = col.players[1_980_001]
+        self.assertEqual(t_cand.regional_observed_games, 10)
+        self.assertGreaterEqual(t_cand.sa_match_rate(), 0.9)
+        self.assertGreaterEqual(t_cand.br_opp_match_rate(), 0.9)
+        t_cand.apm_values = [95.0] * 8
+        t_cand.apm_by_mode["1v1"] = [95.0] * 8
+
+        t_main = sd.PlayerMatchTelemetry(
+            profile_id=5001,
+            games=16,
+            wins=10,
+            mode_counts=Counter({"1v1": 16}),
+            mode_faction_counts=Counter({("1v1", 1): 16}),
+            mode_elo_max={"1v1": 1560},
+            hour_counts=Counter(t_cand.hour_counts),
+            brt_hour_counts=Counter(t_cand.brt_hour_counts),
+            intervals=[(base_t + i * 86400 + 7200, base_t + i * 86400 + 8400, 9000 + i) for i in range(10)],
+            apm_values=[96.0] * 10,
+        )
+        t_main.apm_by_mode["1v1"] = [96.0] * 10
+
+        res_disguised = sd.score_smurf_pair(
+            {"profile_id": 1_980_001, "steam_id": "76561199980000001", "alias": "FakeGermanBR", "country": "de", "max_elo": 1564, "total_matches": 35},
+            {"profile_id": 5001, "steam_id": "76561198000005001", "alias": "MainVet1v1", "country": "br", "max_elo": 1560, "total_matches": 2100, "relic_br_rank": 10},
+            t_cand,
+            t_main,
+            coh2_matches_by_pid={5001: 2400},
+        )
+        self.assertEqual(res_disguised["disqualified_reason"], "")
+        self.assertGreaterEqual(res_disguised["probability_pct"], 70)
+        self.assertGreaterEqual(res_disguised["metrics"]["elo_gain_per_game"], 10.0)
+        self.assertTrue(any("Matchmaking regional/ping Relic revela presença na América do Sul" in e for e in res_disguised["evidence"]))
+        self.assertTrue(any("Padrão legado CoH2→CoH3" in e for e in res_disguised["evidence"]))
+
+        # 2. Conta com bandeira 'br' falsa (0% BR/SA no MM e horário fora do BRT) sofre penalidade regional
+        t_fake_br = sd.PlayerMatchTelemetry(
+            profile_id=1_980_002,
+            games=16,
+            wins=10,
+            mode_counts=Counter({"1v1": 16}),
+            mode_faction_counts=Counter({("1v1", 1): 16}),
+            mode_elo_max={"1v1": 1540},
+            hour_counts=Counter({12: 8, 13: 8}),
+            brt_hour_counts=Counter({9: 8, 10: 8}),  # 0% BRT prime
+            regional_observed_games=16,
+            br_match_count=0,
+            sa_match_count=0,
+            br_opp_match_count=0,
+            apm_values=[95.0] * 10,
+        )
+        res_fake = sd.score_smurf_pair(
+            {"profile_id": 1_980_002, "steam_id": "76561199980000002", "alias": "FakeBRAsian", "country": "br", "max_elo": 1540, "total_matches": 140},
+            {"profile_id": 5001, "steam_id": "76561198000005001", "alias": "MainVet1v1", "country": "br", "max_elo": 1560, "total_matches": 2100, "relic_br_rank": 10},
+            t_fake_br,
+            t_main,
+        )
+        self.assertTrue(any("Contra-evidência regional/ping" in e for e in res_fake["evidence"]))
+        self.assertLess(res_fake["probability_pct"], 45)
+
+    def test_coh2_heavy_veteran_guard_and_rapid_elo_slope(self) -> None:
+        from collections import Counter
+
+        t_main = sd.PlayerMatchTelemetry(
+            profile_id=79327,
+            games=20,
+            wins=13,
+            mode_counts=Counter({"1v1": 20}),
+            mode_faction_counts=Counter({("1v1", 0): 20}),
+            mode_elo_max={"1v1": 1560},
+            hour_counts=Counter({23: 10, 0: 10}),
+            apm_values=[90.0] * 10,
+        )
+        # Caso real tipo Tokai Teio (#40833): conta antiga com 7.407 jogos no CoH2 não deve ser acusada como smurf nova
+        t_vet_coh2 = sd.PlayerMatchTelemetry(
+            profile_id=40833,
+            games=18,
+            wins=13,
+            mode_counts=Counter({"1v1": 18}),
+            mode_faction_counts=Counter({("1v1", 0): 18}),
+            mode_elo_max={"1v1": 1533},
+            hour_counts=Counter({23: 9, 0: 9}),
+            apm_values=[91.0] * 10,
+        )
+        res_vet = sd.score_smurf_pair(
+            {"profile_id": 40833, "steam_id": "76561198216174113", "alias": "TokaiTeioVet", "country": "br", "max_elo": 1533, "total_matches": 320},
+            {"profile_id": 79327, "steam_id": "76561197963172584", "alias": "Chacineiro", "country": "br", "max_elo": 1560, "total_matches": 1836, "relic_br_rank": 5},
+            t_vet_coh2,
+            t_main,
+            coh2_matches_by_pid={40833: 7407, 79327: 174},
+        )
+        self.assertEqual(res_vet["disqualified_reason"], "conta_veterana_coh2")
+        self.assertEqual(res_vet["probability_pct"], 0)
+
+        # Velocidade de ELO em conta recém-criada (7 jogos, +10.1 ELO/jogo, modelo Vog)
+        t_vog = sd.PlayerMatchTelemetry(
+            profile_id=1_482_961,
+            games=7,
+            wins=6,
+            elo_history=[(1_760_000_000 + i * 1800, 1, 1200 + i * 11, 1211 + i * 11) for i in range(7)],
+        )
+        vel = sd._analyze_skill_velocity_and_tanking(t_vog, {"max_elo": 1277, "total_matches": 7})
+        self.assertGreaterEqual(vel["elo_gain_per_game"], 10.0)
+        self.assertTrue(vel["strong_velocity"])
+        self.assertGreaterEqual(vel["velocity_pts"], 10.0)
+
+        # Benchmarks expandidos incluem arc (3 smurfs confirmadas), Gabe e Colossus
+        model_names = {b["model_name"] for b in sd.MODEL_SMURF_BENCHMARKS}
+        self.assertTrue({"Chacineiro", "General Winter", "Alekel", "『V』SKOBADARK", "arc", "Gabe", "Colossus"}.issubset(model_names))
+
+    def test_family_interval_overlap_disqualifies_smurf_pair(self) -> None:
+        t_main = sd.PlayerMatchTelemetry(profile_id=1005730, intervals=[(1_760_000_000, 1_760_001_800, 1)])
+        t_cand = sd.PlayerMatchTelemetry(profile_id=1_999_999, intervals=[(1_760_050_000, 1_760_051_800, 2)])
+        # Sem sobreposição com a principal, mas sobrepõe com outra smurf já confirmada da mesma família!
+        res = sd.score_smurf_pair(
+            {"profile_id": 1_999_999, "steam_id": "76561199999999999", "alias": "NotArc", "country": "br", "max_elo": 1500, "total_matches": 40},
+            {"profile_id": 1005730, "steam_id": "76561199791811246", "alias": "arc", "country": "br", "max_elo": 1560, "total_matches": 1292},
+            t_cand,
+            t_main,
+            main_family_pids={1005730, 1423426, 1487738, 1482961},
+            main_family_intervals=[(1_760_050_100, 1_760_051_700, 3)],
+        )
+        self.assertEqual(res["disqualified_reason"], "sobreposicao_simultanea")
+        self.assertEqual(res["probability_pct"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
