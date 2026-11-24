@@ -1397,6 +1397,192 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertEqual(diag["days_requested"], 90)
         self.assertEqual(len(seen_urls), 90)
 
+    def test_rivalry_nemesis_fregues_and_kryptonite_signal_and_antifp_guards(self) -> None:
+        # 1. Smurf com WR global inflado (72% vs 50% da main) deve convergir em Nêmesis, Freguês e Criptonitas/Facilidades!
+        main_tel = sd.PlayerMatchTelemetry(profile_id=7001, games=60, wins=30)
+        cand_tel = sd.PlayerMatchTelemetry(profile_id=17001, games=36, wins=26)  # ~72% WR subindo ladder
+        for h in (22, 23, 0, 1):
+            main_tel.hour_counts[h] += 10
+            cand_tel.hour_counts[h] += 8
+        for i in range(6):
+            main_tel.apm_values.append(88.0)
+            cand_tel.apm_values.append(86.5)
+
+        # Nêmesis em comum (#9001: ambos apanham) e Freguês em comum (#9002: ambos dominam)
+        main_tel.opp_wl[9001] = [1, 5]
+        main_tel.opp_days[9001] = {20100, 20102, 20105}
+        cand_tel.opp_wl[9001] = [0, 3]
+        cand_tel.opp_days[9001] = {20110, 20112}
+
+        main_tel.opp_wl[9002] = [6, 1]
+        main_tel.opp_days[9002] = {20101, 20104}
+        cand_tel.opp_wl[9002] = [3, 0]
+        cand_tel.opp_days[9002] = {20111, 20113}
+
+        # Mapas + BGs inimigos + Matchups: mesmas Criptonitas e mesmas Facilidades relativas ao WR base de cada conta
+        main_tel.map_wl = {
+            "Foggia Airfield": [2, 8],       # 20% vs 50% base -> Criptonita
+            "El Alamein": [2, 7],            # 22% vs 50% base -> Criptonita
+            "Pachino Farmlands": [9, 2],     # 82% vs 50% base -> Facilidade
+            "Langres": [8, 2],               # 80% vs 50% base -> Facilidade
+        }
+        cand_tel.map_wl = {
+            "Foggia Airfield": [1, 4],       # 20% vs 72% base -> Criptonita mesmo com WR alto!
+            "El Alamein": [1, 3],            # 25% vs 72% base -> Criptonita
+            "Pachino Farmlands": [8, 0],     # 100% vs 72% base -> Facilidade
+            "Langres": [7, 0],               # 100% vs 72% base -> Facilidade
+        }
+        main_tel.enemy_bg_wl = {
+            "Italian Coastal": [1, 6],
+            "Mechanized": [7, 1],
+        }
+        cand_tel.enemy_bg_wl = {
+            "Italian Coastal": [1, 4],
+            "Mechanized": [6, 0],
+        }
+        aliases = {9001: "TerrorDoElo", 9002: "FreguesClassico"}
+
+        rk = sd._compare_rivalry_and_kryptonite_profile(cand_tel, main_tel, pid_aliases=aliases)
+        self.assertEqual(len(rk["shared_nemeses"]), 1)
+        self.assertEqual(rk["shared_nemeses"][0]["alias"], "TerrorDoElo")
+        self.assertEqual(len(rk["shared_fregueses"]), 1)
+        self.assertEqual(rk["shared_fregueses"][0]["alias"], "FreguesClassico")
+        self.assertTrue(rk["matchup_profile_valid"])
+        self.assertGreaterEqual(rk["matchup_profile_sim"], 0.85)
+        self.assertGreaterEqual(len(rk["shared_kryptonites"]), 2)
+        self.assertGreaterEqual(len(rk["shared_strengths"]), 2)
+        self.assertEqual(rk["total_pts"], 16.0)
+        self.assertTrue(rk["adds_behavioral"])
+        self.assertTrue(rk["adds_identity_anchor"])
+
+        cand_meta = {"profile_id": 17001, "steam_id": "76561199991700100", "alias": "SmurfKrypt", "country": "br", "max_elo": 1540, "total_matches": 90}
+        main_meta = {"profile_id": 7001, "steam_id": "76561198000700100", "alias": "VetMain", "country": "br", "max_elo": 1580, "total_matches": 900, "relic_br_rank": 10}
+        scored_with = sd.score_smurf_pair(cand_meta, main_meta, cand_tel, main_tel, pid_aliases=aliases)
+        self.assertGreaterEqual(scored_with["probability_pct"], 65)
+        self.assertEqual(scored_with["metrics"]["rivalry_kryptonite_pts"], 16.0)
+        self.assertTrue(any("Nêmesis em comum" in ev for ev in scored_with["evidence"]))
+        self.assertTrue(any("Freguês em comum" in ev for ev in scored_with["evidence"]))
+        self.assertTrue(any("Criptonitas/Facilidades convergente" in ev for ev in scored_with["evidence"]))
+
+        # 2. Contra-evidência: rivalidades invertidas + Criptonitas opostas em regime estável (>=30 jogos, WR <72%) penalizam!
+        opp_cand_tel = sd.PlayerMatchTelemetry(profile_id=17002, games=44, wins=22)
+        opp_cand_tel.opp_wl[9001] = [4, 0]   # Domina o Nêmesis da main!
+        opp_cand_tel.opp_wl[9002] = [0, 4]   # Apanha do Freguês da main!
+        opp_cand_tel.map_wl = {
+            "Foggia Airfield": [8, 1],
+            "El Alamein": [7, 1],
+            "Pachino Farmlands": [1, 7],
+            "Langres": [1, 7],
+            "Djebel Pass": [6, 1],
+            "Torrente": [1, 6],
+        }
+        main_tel.map_wl["Djebel Pass"] = [1, 7]
+        main_tel.map_wl["Torrente"] = [7, 1]
+        opp_cand_tel.enemy_bg_wl = {
+            "Italian Coastal": [6, 1],
+            "Mechanized": [1, 6],
+        }
+        rk_opp = sd._compare_rivalry_and_kryptonite_profile(opp_cand_tel, main_tel, pid_aliases=aliases)
+        self.assertEqual(len(rk_opp["inverted_rivalries"]), 2)
+        self.assertLess(rk_opp["matchup_profile_sim"], -0.70)
+        self.assertEqual(rk_opp["total_pts"], -8.0)
+
+        # 3. Guarda de concordância mista (50% compartilhadas vs 50% invertidas -> 0 pts e sem âncora)
+        mixed_cand = sd.PlayerMatchTelemetry(profile_id=17004, games=40, wins=20)
+        mixed_main = sd.PlayerMatchTelemetry(profile_id=7004, games=60, wins=30)
+        # 2 compartilhadas (9101 Nêmesis, 9102 Freguês) + 2 invertidas (9103, 9104) => 50% concordância -> bloqueado!
+        mixed_cand.opp_wl = {9101: [0, 3], 9102: [3, 0], 9103: [4, 0], 9104: [0, 4]}
+        mixed_main.opp_wl = {9101: [1, 4], 9102: [5, 1], 9103: [1, 4], 9104: [4, 1]}
+        rk_mixed = sd._compare_rivalry_and_kryptonite_profile(mixed_cand, mixed_main)
+        self.assertEqual(rk_mixed["rivalry_pts"], 0.0)
+        self.assertFalse(rk_mixed["adds_identity_anchor"])
+
+        # 4. Guarda Anti-FP: apenas Criptonitas parecidas (sem âncora de identidade nem 2º sinal comportamental) NUNCA passa de 38%
+        krypt_only_cand = sd.PlayerMatchTelemetry(profile_id=17003, games=36, wins=18)
+        krypt_only_cand.map_wl = dict(main_tel.map_wl)
+        krypt_only_cand.enemy_bg_wl = dict(main_tel.enemy_bg_wl)
+        scored_fp = sd.score_smurf_pair(
+            {"profile_id": 17003, "steam_id": "76561199991700300", "alias": "RandomBR", "country": "br", "max_elo": 1550, "total_matches": 180},
+            main_meta,
+            krypt_only_cand,
+            main_tel,
+            pid_aliases=aliases,
+        )
+        self.assertLessEqual(scored_fp["probability_pct"], 38)
+
+    def test_telemetry_and_cohdb_collect_rivalry_and_kryptonite_profiles(self) -> None:
+        col = sd.SmurfTelemetryCollector()
+        base_ts = 1_760_000_000
+        # Open Data Automatch 1v1 payload
+        col.observe_matches_payload(
+            {
+                "matches": [
+                    {
+                        "id": 50001,
+                        "matchtype_id": 1,
+                        "mapname": "foggia_airfield_winter_6p",
+                        "startgametime": base_ts,
+                        "completiontime": base_ts + 1200,
+                        "matchhistoryreportresults": [
+                            {"profile_id": 1001, "teamid": 0, "race_id": 129494, "resulttype": 0, "profile": {"profile_id": 1001, "alias": "MainBR", "country": "br"}},
+                            {"profile_id": 2001, "teamid": 1, "race_id": 198437, "resulttype": 1, "profile": {"profile_id": 2001, "alias": "NemesisDAK", "country": "de"}},
+                        ],
+                    }
+                ]
+            },
+            known_br_pids={1001},
+        )
+        # Relic direct match history payload (new match_id 50002)
+        col.observe_relic_match_history(
+            1001,
+            {
+                "profiles": [
+                    {"profile_id": 1001, "alias": "MainBR", "country": "br"},
+                    {"profile_id": 2001, "alias": "NemesisDAK", "country": "de"},
+                ],
+                "matchHistoryStats": [
+                    {
+                        "id": 50002,
+                        "matchtype_id": 1,
+                        "mapname": "rural_town_4p",
+                        "startgametime": base_ts + 86400,
+                        "completiontime": base_ts + 87600,
+                        "matchhistoryreportresults": [
+                            {"profile_id": 1001, "teamid": 0, "race_id": 129494, "resulttype": 1},
+                            {"profile_id": 2001, "teamid": 1, "race_id": 137123, "resulttype": 0},
+                        ],
+                    }
+                ],
+            },
+            known_br_pids={1001},
+        )
+        tel = col.players[1001]
+        self.assertEqual(tel.opp_wl[2001], [1, 1])
+        self.assertEqual(len(tel.opp_days[2001]), 2)
+        self.assertEqual(tel.map_wl["Foggia Airfield"], [0, 1])
+        self.assertEqual(tel.map_wl["Pachino Farmlands"], [1, 0])
+        self.assertEqual(tel.matchup_wl[("USF", "DAK")], [0, 1])
+        self.assertEqual(tel.matchup_wl[("USF", "Wehr")], [1, 0])
+
+        # CohDB parser: extrai W/L e lado (Allies vs Axis) para enemy_bg_wl com 0 HTTP extras
+        matches_html = (
+            '<title>cohdb – MainBR — Matches</title>'
+            '<tr data-href="/replays/8881"><td><span class="badge"> L </span></td></tr>'
+            '<tr data-href="/replays/8882"><td><span class="badge"> W </span></td></tr>'
+        )
+        outcomes = sd.CohDBBattlegroupClient.parse_matches_page_outcomes(matches_html)
+        self.assertEqual(outcomes, {8881: False, 8882: True})
+        replay_html = (
+            '<div data-player-card><a href="/players/1001">MainBR</a>'
+            '<img src="/assets/races/american/icon.webp">'
+            '<img src="/assets/races/american/battlegroups/armored_us.webp"></div>'
+            '<div data-player-card><a href="/players/2001">NemesisDAK</a>'
+            '<img src="/assets/races/afrika_corps/icon.webp">'
+            '<img src="/assets/races/afrika_corps/battlegroups/armored_ak.webp"></div>'
+        )
+        sides = sd.CohDBBattlegroupClient.parse_replay_player_sides(replay_html)
+        self.assertEqual(sides, {1001: "allies", 2001: "axis"})
+
 
 if __name__ == "__main__":
     unittest.main()

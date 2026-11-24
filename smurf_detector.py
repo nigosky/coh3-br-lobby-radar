@@ -178,6 +178,142 @@ _MATCHTYPE_TO_MODE: dict[int, str] = {
     23: "4v4",
 }
 
+_RACE_ID_TO_FACTION_SHORT: dict[int, str] = {
+    129494: "USF",
+    181726: "USF",
+    137123: "Wehr",
+    196502: "Wehr",
+    2056968: "Wehr",
+    197345: "UKF",
+    203852: "UKF",
+    211661: "UKF",
+    2057044: "UKF",
+    198437: "DAK",
+    2057043: "DAK",
+    2057045: "DAK",
+}
+
+_MAP_PLAYER_PREFIX_RE = re.compile(r"^\s*\(\d+\)\s*")
+_MAP_SIZE_SUFFIX_RE = re.compile(r"_(2p|4p|6p|8p)(?=_|$)", re.IGNORECASE)
+_MAP_MK_SUFFIX_RE = re.compile(r"_(mkii|mkiii|mkiv|mkv|redux|mm)(?=_|$)", re.IGNORECASE)
+_MAP_LOWERCASE_WORDS: frozenset[str] = frozenset({"in", "the", "of", "to", "and", "el", "della", "de", "da", "do", "du"})
+
+OFFICIAL_COH3_MAP_NAMES: dict[str, str] = {
+    "across_the_rhine_6p": "Across the Savio",
+    "alamein_4p": "El Alamein",
+    "ancona_railyard_2p": "Ancona Railyard",
+    "angoville_farms_2p": "Angoville Farms",
+    "benghazi_6p": "Benghazi",
+    "black_gold_8p": "Black Gold",
+    "bologna_2p": "Bologna",
+    "butcher_and_bolt_2p": "Butcher & Bolt",
+    "castello_8p": "Castello della Nebbia",
+    "catania_crossing_6p": "Catania Crossing",
+    "cliff_crossing_2p": "Taranto Coastline",
+    "crossing_in_the_woods_2p": "Crossing in the Woods",
+    "crossing_in_the_woods_4p": "Crossing in the Woods",
+    "day_101_4p": "Day 101",
+    "desert_airfield_6p_mkii": "Gazala Landing Ground",
+    "desert_village_2p_mkiii": "Road to Tunis",
+    "djebel_2p": "Djebel Pass",
+    "djebel_4p": "Djebel Pass",
+    "egletons_2p": "Égletons",
+    "eindhoven": "Operation Eindhoven",
+    "elst_outskirts_4p": "Elst Outskirts",
+    "faymonville": "Faymonville",
+    "foggia_airfield_winter_6p": "Foggia Airfield",
+    "gabes_gap_6p": "Gabès Gap",
+    "gardens_2p": "Gardens",
+    "gardens_2p_mm": "Gardens",
+    "gothic_line_8p": "The Gothic Line",
+    "halfa_8p": "Alam el Halfa",
+    "hill_400_8p": "Hill 400",
+    "hoff_dam": "Dam Busters",
+    "hoff_desert": "Qattara Depression",
+    "hoff_forest": "The Alpine Wall",
+    "hoff_gela_outskirts": "Gela Beachhead",
+    "hoff_sousse_wetlands": "Fall of Sousse",
+    "hoff_torrente": "Torrente Ruins",
+    "industrial_railyard_6p_mkii": "L'Aquila",
+    "langres_2p": "Langres",
+    "langres_winter_2p": "Langres Winter",
+    "longstop_hill_6p": "Longstop Hill",
+    "lorraine_4p": "Lorraine",
+    "mammut_8p": "Radarstation Mammut",
+    "mignano_6p": "Mignano Summit",
+    "mignano_6p_redux": "Mignano Summit",
+    "monte_cavo_8p": "Monte Cavo",
+    "montherme_6p": "Montherme",
+    "mountain_ruins_6p": "Mignano Summit",
+    "mountain_ruins_8p_mkii": "Mignano Gap",
+    "oasis_depot_8p": "Oasis Depot",
+    "oliveto_citra_8p": "Oliveto Citra",
+    "pachino_2p": "Pachino Stalemate",
+    "pisa_centrale_4p": "Pisa Centrale",
+    "powderkeg_8p": "Powderkeg",
+    "primosole_4p": "Road to Primosole",
+    "primosole_6p": "Road to Primosole",
+    "rails_and_sand_4p": "Campbell's Convoy",
+    "rapido_river_8p": "Rapido River Crossing",
+    "rapido_river_8p_redux": "Rapido River Crossing",
+    "red_ball_express_8p": "Red Ball Express",
+    "rural_castle_4p": "Aere Perennius",
+    "rural_castle_winter_4p": "Aere Perennius Winter",
+    "rural_town_2p_mkii": "Pachino Farmlands",
+    "rural_town_4p": "Pachino Farmlands",
+    "sangro_river_crossing_6p": "Sangro River Crossing",
+    "santuario_4p": "Santuario",
+    "sedjenane_6p": "Sedjenane Marshes",
+    "semois_2p": "Semois",
+    "semois_4p": "Semois",
+    "sousse_stronghold_8p": "Sousse Stronghold",
+    "sousse_wetlands_8p": "Sousse Wetlands",
+    "steppe_8p": "Steppes",
+    "torrente_4p_mkiii": "Torrente",
+    "turin_8p": "Turin Steelworks",
+    "tuscan_vineyard_2p": "Tuscan Vineyards",
+    "twin_beach_2p_mkii": "Twin Beaches",
+    "villa_fiore_2p_mkii": "Villa Fiore",
+    "vire_river_valley_4p": "Vire River Valley",
+    "wadi_darnah_4p": "Wadi Darnah",
+    "winter_line_8p_mkii": "Winter Line",
+}
+_OFFICIAL_MAP_BASE_LOOKUP: dict[str, str] = {
+    _MAP_MK_SUFFIX_RE.sub("", k): v for k, v in OFFICIAL_COH3_MAP_NAMES.items()
+}
+
+
+def _clean_map_name(raw_map: str) -> str:
+    """Resolve o nome oficial do mapa no CoH3 (alinhado ao coh3-br-tracker)."""
+    raw = strip_unsafe_chars(str(raw_map or "")).strip()
+    if not raw:
+        return ""
+    key = raw.lower()
+    official = OFFICIAL_COH3_MAP_NAMES.get(key)
+    if official:
+        return official
+    base_key = _MAP_MK_SUFFIX_RE.sub("", key)
+    official_base = _OFFICIAL_MAP_BASE_LOOKUP.get(base_key)
+    if official_base:
+        return official_base
+    cleaned = _MAP_PLAYER_PREFIX_RE.sub("", raw)
+    cleaned = _MAP_SIZE_SUFFIX_RE.sub("", cleaned)
+    cleaned = _MAP_MK_SUFFIX_RE.sub("", cleaned)
+    cleaned = re.sub(r"[_]+", " ", cleaned).strip()
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    if not cleaned:
+        return raw[:64]
+    words = cleaned.split(" ")
+    formatted: list[str] = []
+    for idx, word in enumerate(words):
+        lw = word.lower()
+        if idx > 0 and lw in _MAP_LOWERCASE_WORDS:
+            formatted.append(lw)
+        else:
+            formatted.append(word.capitalize() if word.islower() or word.isupper() else word)
+    return " ".join(formatted)[:64]
+
+
 _PAREN_TAG_RE = re.compile(r"^(.+?)\s+\(([^()]+)\)$")
 
 
@@ -728,6 +864,7 @@ class CohDBBattlegroupClient:
     """
 
     _ROW_FULL_RE = re.compile(r'<tr[^>]*data-href="/replays/(\d{1,12})"[^>]*>(.*?)</tr>', re.I | re.S)
+    _ROW_WL_RE = re.compile(r">\s*([WL])\s*</span>")
     _TITLE_ALIAS_RE = re.compile(r"<title[^>]*>\s*cohdb\s*[–-]\s*([^<\n]{1,80}?)\s*[—-]\s*Matches\s*</title>", re.I)
     _UTC_TITLE_RE = re.compile(
         r'title="([A-Za-z]{3,9})\s+(\d{1,2}),\s+(20\d{2}),\s+(\d{1,2}):(\d{2})\s+([AP]M)\s+UTC"',
@@ -736,17 +873,23 @@ class CohDBBattlegroupClient:
     _REPLAY_DATE_RE = re.compile(r"\b([A-Za-z]{3,9})\s+(\d{1,2}),\s+(20\d{2})\b")
     _PLAYER_LINK_RE = re.compile(r'href="/players/(\d{1,12})"')
     _PLAYER_LINK_TEXT_RE = re.compile(r'href="/players/(\d{1,12})"[^>]*>([^<]{1,80})</a>', re.I)
+    _CARD_RACE_RE = re.compile(r'/assets/races/([a-z0-9_]+)/', re.I)
     _BG_ICON_RE = re.compile(r'/assets/races/[^/"]+/battlegroups/([a-z0-9_]+?)(?:-[0-9a-f]+)?\.webp', re.I)
     _BG_NAME_RE = re.compile(r"Battlegroup</div>\s*<div[^>]*>([^<]{1,80})</div>", re.I)
+    _ALLIES_RACES: frozenset[str] = frozenset({"american", "us", "usf", "british", "uk", "ukf"})
+    _AXIS_RACES: frozenset[str] = frozenset({"german", "wehrmacht", "wehr", "afrika_corps", "afrikakorps", "dak", "ak"})
 
     def __init__(self, *, pace_delay_sec: float = 0.12, max_replays_per_player: int = 8) -> None:
         self.pace_delay_sec = max(0.05, float(pace_delay_sec))
         self.max_replays_per_player = max(1, min(15, int(max_replays_per_player)))
         self._opener = build_no_redirect_https_opener()
         self._replay_cache: dict[int, dict[int, str]] = {}
+        self._replay_sides_cache: dict[int, dict[int, str]] = {}
         self._replay_aliases_cache: dict[int, tuple[dict[int, str], int]] = {}
         self._matches_meta_cache: dict[int, tuple[str, list[tuple[int, int]]]] = {}
+        self._matches_outcomes_cache: dict[int, dict[int, bool]] = {}
         self._player_cache: dict[int, Counter[str]] = {}
+        self._player_enemy_bg_wl_cache: dict[int, dict[str, list[int]]] = {}
         self._consecutive_errors = 0
         self._circuit_open = False
 
@@ -849,6 +992,19 @@ class CohDBBattlegroupClient:
         return current_alias, rows
 
     @classmethod
+    def parse_matches_page_outcomes(cls, html_body: str) -> dict[int, bool]:
+        """Extrai `{replay_id: won_bool}` das linhas W/L em `/players/<id>/matches`."""
+        outcomes: dict[int, bool] = {}
+        for rm in cls._ROW_FULL_RE.finditer(html_body or ""):
+            rid = int(rm.group(1))
+            if rid <= 0 or rid in outcomes:
+                continue
+            wlm = cls._ROW_WL_RE.search(rm.group(2))
+            if wlm:
+                outcomes[rid] = wlm.group(1).upper() == "W"
+        return outcomes
+
+    @classmethod
     def parse_replay_player_aliases(cls, html_body: str) -> tuple[dict[int, str], int]:
         """Extrai `({profile_id: alias_no_replay}, replay_ts_utc)` de uma página `/replays/<id>` do cohdb."""
         out: dict[int, str] = {}
@@ -889,6 +1045,27 @@ class CohDBBattlegroupClient:
                 out[pid] = lbl
         return out
 
+    @classmethod
+    def parse_replay_player_sides(cls, html_body: str) -> dict[int, str]:
+        """Extrai `{profile_id: 'allies' | 'axis'}` de uma página `/replays/<id>` do cohdb."""
+        out: dict[int, str] = {}
+        for card in (html_body or "").split("<div data-player-card")[1:]:
+            pm = cls._PLAYER_LINK_RE.search(card)
+            if not pm:
+                continue
+            pid = int(pm.group(1))
+            if pid <= 0:
+                continue
+            rm = cls._CARD_RACE_RE.search(card)
+            if not rm:
+                continue
+            rkey = rm.group(1).strip().lower()
+            if rkey in cls._ALLIES_RACES:
+                out[pid] = "allies"
+            elif rkey in cls._AXIS_RACES:
+                out[pid] = "axis"
+        return out
+
     def _get_matches_meta(self, pid: int) -> tuple[str, list[tuple[int, int]]]:
         if pid in self._matches_meta_cache:
             return self._matches_meta_cache[pid]
@@ -897,9 +1074,11 @@ class CohDBBattlegroupClient:
         matches_html = self._fetch_html(f"/players/{pid}/matches", COHDB_PLAYER_MATCHES_PATH_RE)
         if not matches_html:
             self._matches_meta_cache[pid] = ("", [])
+            self._matches_outcomes_cache[pid] = {}
             return "", []
         meta = self.parse_matches_page_metadata(matches_html)
         self._matches_meta_cache[pid] = meta
+        self._matches_outcomes_cache[pid] = self.parse_matches_page_outcomes(matches_html)
         return meta
 
     def _fetch_replay_details(self, rid: int) -> tuple[dict[int, str], dict[int, str], int]:
@@ -910,16 +1089,19 @@ class CohDBBattlegroupClient:
         rhtml = self._fetch_html(f"/replays/{rid}", COHDB_REPLAY_PATH_RE)
         if not rhtml:
             self._replay_cache[rid] = {}
+            self._replay_sides_cache[rid] = {}
             self._replay_aliases_cache[rid] = ({}, 0)
             return {}, {}, 0
         bg_map = self.parse_replay_battlegroups(rhtml)
+        sides_map = self.parse_replay_player_sides(rhtml)
         alias_map, replay_ts = self.parse_replay_player_aliases(rhtml)
         self._replay_cache[rid] = bg_map
+        self._replay_sides_cache[rid] = sides_map
         self._replay_aliases_cache[rid] = (alias_map, replay_ts)
         return bg_map, alias_map, replay_ts
 
     def fetch_player_battlegroups(self, profile_id: int) -> Counter[str]:
-        """Coleta contagem dos Battlegroups efetivamente escolhidos em replays recentes no cohdb."""
+        """Coleta contagem dos Battlegroups efetivamente escolhidos e W/L contra BGs inimigos no cohdb."""
         pid = int(profile_id or 0)
         if pid <= 0:
             return Counter()
@@ -931,9 +1113,12 @@ class CohDBBattlegroupClient:
         _, replay_rows = self._get_matches_meta(pid)
         if not replay_rows:
             self._player_cache[pid] = Counter()
+            self._player_enemy_bg_wl_cache[pid] = {}
             return Counter()
 
+        outcomes = self._matches_outcomes_cache.get(pid) or {}
         bgs: Counter[str] = Counter()
+        enemy_bg_wl: dict[str, list[int]] = {}
         for rid, _ in replay_rows[: self.max_replays_per_player]:
             if self._circuit_open:
                 break
@@ -941,9 +1126,36 @@ class CohDBBattlegroupClient:
             lbl = bg_map.get(pid)
             if lbl:
                 bgs[lbl] += 1
+            won = outcomes.get(rid)
+            sides_map = self._replay_sides_cache.get(rid) or {}
+            my_side = sides_map.get(pid)
+            if won is not None and my_side:
+                seen_enemy_bgs: set[str] = set()
+                for op_pid, op_bg in bg_map.items():
+                    if op_pid == pid or not op_bg:
+                        continue
+                    op_side = sides_map.get(op_pid)
+                    if op_side and op_side != my_side:
+                        seen_enemy_bgs.add(op_bg)
+                for ebg in seen_enemy_bgs:
+                    rec = enemy_bg_wl.setdefault(ebg, [0, 0])
+                    if won:
+                        rec[0] += 1
+                    else:
+                        rec[1] += 1
 
         self._player_cache[pid] = Counter(bgs)
+        self._player_enemy_bg_wl_cache[pid] = enemy_bg_wl
         return bgs
+
+    def fetch_player_enemy_bg_wl(self, profile_id: int) -> dict[str, list[int]]:
+        """Retorna `{enemy_bg_label: [wins, losses]}` já extraído dos replays em cache do cohdb (0 HTTP extras)."""
+        pid = int(profile_id or 0)
+        if pid <= 0:
+            return {}
+        if pid not in self._player_enemy_bg_wl_cache:
+            self.fetch_player_battlegroups(pid)
+        return {k: [int(v[0]), int(v[1])] for k, v in (self._player_enemy_bg_wl_cache.get(pid) or {}).items()}
 
     def fetch_player_alias_observations(
         self,
@@ -1031,9 +1243,96 @@ class PlayerMatchTelemetry:
     sa_match_count: int = 0
     br_opp_match_count: int = 0
     distinct_br_sa_opps: set[int] = field(default_factory=set)
+    # Perfil de Nêmesis, Freguês & Criptonitas / Facilidades (Automatch 1v1..4v4)
+    opp_wl: dict[int, list[int]] = field(default_factory=dict)  # opp_pid -> [wins, losses]
+    opp_days: dict[int, set[int]] = field(default_factory=dict)  # opp_pid -> {utc_day, ...}
+    ally_wl: dict[int, list[int]] = field(default_factory=dict)  # ally_pid -> [wins, losses]
+    map_wl: dict[str, list[int]] = field(default_factory=dict)  # clean_map -> [wins, losses]
+    my_faction_wl: dict[str, list[int]] = field(default_factory=dict)  # USF/UKF/Wehr/DAK -> [wins, losses]
+    enemy_faction_wl: dict[str, list[int]] = field(default_factory=dict)  # enemy fac -> [wins, losses]
+    matchup_wl: dict[tuple[str, str], list[int]] = field(default_factory=dict)  # (my_fac, enemy_fac) -> [wins, losses]
+    enemy_bg_wl: dict[str, list[int]] = field(default_factory=dict)  # official BG -> [wins, losses]
 
     def winrate(self) -> float:
         return (self.wins / self.games) if self.games > 0 else 0.0
+
+    def record_match_outcome_profile(
+        self,
+        *,
+        won: bool,
+        ct: int,
+        my_race_id: int = -1,
+        map_name: str = "",
+        enemy_pids: list[int] | None = None,
+        enemy_race_ids: list[int] | None = None,
+        ally_pids: list[int] | None = None,
+        enemy_bgs: list[str] | None = None,
+    ) -> None:
+        """Registra resultados por adversário, mapa, facção/matchup, parceiro e BG inimigo para perfil Nêmesis/Freguês/Criptonitas."""
+        idx = 0 if won else 1
+        utc_day = int(ct or 0) // 86400 if int(ct or 0) > 0 else 0
+
+        if enemy_pids:
+            for op_pid in dict.fromkeys(int(p) for p in enemy_pids if int(p or 0) > 0 and int(p) != self.profile_id):
+                if op_pid in self.opp_wl or len(self.opp_wl) < 4000:
+                    rec = self.opp_wl.setdefault(op_pid, [0, 0])
+                    rec[idx] += 1
+                    if utc_day > 0:
+                        days = self.opp_days.setdefault(op_pid, set())
+                        if len(days) < 30:
+                            days.add(utc_day)
+
+        if ally_pids:
+            for ap_pid in dict.fromkeys(int(p) for p in ally_pids if int(p or 0) > 0 and int(p) != self.profile_id):
+                if ap_pid in self.ally_wl or len(self.ally_wl) < 2000:
+                    rec = self.ally_wl.setdefault(ap_pid, [0, 0])
+                    rec[idx] += 1
+
+        clean_map = _clean_map_name(map_name)
+        if clean_map and clean_map != "Mapa Desconhecido":
+            if clean_map in self.map_wl or len(self.map_wl) < 200:
+                rec = self.map_wl.setdefault(clean_map, [0, 0])
+                rec[idx] += 1
+
+        my_fac = _RACE_ID_TO_FACTION_SHORT.get(int(my_race_id), "")
+        if my_fac:
+            rec = self.my_faction_wl.setdefault(my_fac, [0, 0])
+            rec[idx] += 1
+
+        if enemy_race_ids:
+            enemy_facs = {
+                _RACE_ID_TO_FACTION_SHORT[int(rid)]
+                for rid in enemy_race_ids
+                if int(rid) in _RACE_ID_TO_FACTION_SHORT
+            }
+            for efac in enemy_facs:
+                rec = self.enemy_faction_wl.setdefault(efac, [0, 0])
+                rec[idx] += 1
+                if my_fac:
+                    mrec = self.matchup_wl.setdefault((my_fac, efac), [0, 0])
+                    mrec[idx] += 1
+
+        if enemy_bgs:
+            for raw_bg in dict.fromkeys(str(b or "").strip() for b in enemy_bgs if str(b or "").strip()):
+                lbl = normalize_battlegroup_label(raw_key=raw_bg, raw_name=raw_bg)
+                if lbl and (lbl in self.enemy_bg_wl or len(self.enemy_bg_wl) < 60):
+                    rec = self.enemy_bg_wl.setdefault(lbl, [0, 0])
+                    rec[idx] += 1
+
+    def merge_enemy_bg_wl(self, enemy_bg_wl: dict[str, list[int]] | None) -> None:
+        """Mescla contagem `{official_bg_name: [wins, losses]}` (ex.: vinda do cohdb) sem sobrescrever."""
+        if not enemy_bg_wl:
+            return
+        for raw_bg, pair in enemy_bg_wl.items():
+            if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+                continue
+            lbl = normalize_battlegroup_label(raw_key=str(raw_bg), raw_name=str(raw_bg))
+            if not lbl:
+                continue
+            if lbl in self.enemy_bg_wl or len(self.enemy_bg_wl) < 60:
+                rec = self.enemy_bg_wl.setdefault(lbl, [0, 0])
+                rec[0] += max(0, int(pair[0] or 0))
+                rec[1] += max(0, int(pair[1] or 0))
 
     def record_alias(self, alias: str, ts: int = 0) -> None:
         clean = strip_unsafe_chars(alias)[:48]
@@ -1145,7 +1444,7 @@ def _normalize_match_window(start_ts: Any, completion_ts: Any) -> tuple[int, int
 
 
 class SmurfTelemetryCollector:
-    """Coleta telemetria leve multi-gênero de partidas (APM, Combat DNA, ELO velocity, loadouts, MM BR/SA e Custom) sobre Open Data e Relic."""
+    """Coleta telemetria leve multi-gênero de partidas (APM, Combat DNA, ELO velocity, loadouts, MM BR/SA, Nêmesis/Criptonitas e Custom) sobre Open Data e Relic."""
 
     def __init__(self, *, max_intervals_per_player: int = 400) -> None:
         self.players: dict[int, PlayerMatchTelemetry] = {}
@@ -1183,6 +1482,8 @@ class SmurfTelemetryCollector:
         cosmetic_items: set[int] | None = None,
         is_custom: bool = False,
         co_player_regions: list[tuple[int, int, str, int, bool]] | None = None,
+        map_name: str = "",
+        co_player_races: list[tuple[int, int, int]] | None = None,
     ) -> bool:
         """Registra uma única observação deduplicada de partida na telemetria de `tel`."""
         if mid > 0 and mid in tel.seen_match_ids:
@@ -1216,6 +1517,38 @@ class SmurfTelemetryCollector:
                     tel.long_game_wins += 1
             if res_type != 1 and dur_sec >= 120 and len(tel.loss_durations_sec) < 200:
                 tel.loss_durations_sec.append(dur_sec)
+
+            enemy_pids: list[int] = []
+            ally_pids: list[int] = []
+            enemy_race_ids: list[int] = []
+            if co_player_races:
+                for op_pid, op_team, op_race in co_player_races:
+                    if op_pid <= 0 or op_pid == tel.profile_id:
+                        continue
+                    if team_id >= 0 and op_team == team_id:
+                        ally_pids.append(op_pid)
+                    elif team_id >= 0 and op_team >= 0 and op_team != team_id:
+                        enemy_pids.append(op_pid)
+                        if op_race >= 0:
+                            enemy_race_ids.append(op_race)
+            else:
+                for op_pid, op_team in co_players:
+                    if op_pid <= 0 or op_pid == tel.profile_id:
+                        continue
+                    if team_id >= 0 and op_team == team_id:
+                        ally_pids.append(op_pid)
+                    elif team_id >= 0 and op_team >= 0 and op_team != team_id:
+                        enemy_pids.append(op_pid)
+
+            tel.record_match_outcome_profile(
+                won=(res_type == 1),
+                ct=ct,
+                my_race_id=race_id,
+                map_name=map_name,
+                enemy_pids=enemy_pids,
+                enemy_race_ids=enemy_race_ids,
+                ally_pids=ally_pids,
+            )
 
             if co_player_regions:
                 observed_other = False
@@ -1333,7 +1666,9 @@ class SmurfTelemetryCollector:
             bg_by_pid = _extract_bg_loadout_by_pid(match.get("matchhistoryitems"))
             cos_by_pid = _extract_cosmetic_items_by_pid(match.get("matchhistoryitems"))
             utc_hour = datetime.fromtimestamp(ct, tz=timezone.utc).hour
+            map_name = str(match.get("mapname") or "")
             co_players = [(op_pid, op_team) for op_pid, op_team, *_ in participants]
+            co_player_races = [(op_pid, op_team, op_race) for op_pid, op_team, op_race, *_ in participants]
             co_player_regions = [
                 (op_pid, op_team, op_ctry, op_reg, (op_pid in br_set))
                 for op_pid, op_team, _, _, _, _, _, _, op_ctry, op_reg, _ in participants
@@ -1371,6 +1706,8 @@ class SmurfTelemetryCollector:
                     new_elo=new_r,
                     cosmetic_items=cos_by_pid.get(pid),
                     co_player_regions=co_player_regions,
+                    map_name=map_name,
+                    co_player_races=co_player_races,
                 )
 
     def observe_relic_match_history(
@@ -1382,7 +1719,7 @@ class SmurfTelemetryCollector:
     ) -> int:
         """
         Incorpora o histórico completo recente retornado por `getRecentMatchHistoryByProfileId`
-        para `target_pid` (Automatch + Custom `mt=0` para sobreposição/handoffs/squad/Combat DNA/MM BR-SA/cosméticos).
+        para `target_pid` (Automatch + Custom `mt=0` para sobreposição/handoffs/squad/Combat DNA/MM BR-SA/Nêmesis-Criptonitas/cosméticos).
         """
         pid = int(target_pid or 0)
         if pid <= 0 or not isinstance(data, dict):
@@ -1438,10 +1775,19 @@ class SmurfTelemetryCollector:
 
             bg_by_pid = _extract_bg_loadout_by_pid(match.get("matchhistoryitems"))
             cos_by_pid = _extract_cosmetic_items_by_pid(match.get("matchhistoryitems"))
+            map_name = str(match.get("mapname") or "")
             co_players = [
                 (
                     int(rep.get("profile_id", 0) or 0),
                     int(rep.get("teamid", -1) if rep.get("teamid") is not None else -1),
+                )
+                for rep in results
+            ]
+            co_player_races = [
+                (
+                    int(rep.get("profile_id", 0) or 0),
+                    int(rep.get("teamid", -1) if rep.get("teamid") is not None else -1),
+                    int(rep.get("race_id", -1) if rep.get("race_id") is not None else -1),
                 )
                 for rep in results
             ]
@@ -1474,6 +1820,8 @@ class SmurfTelemetryCollector:
                 cosmetic_items=cos_by_pid.get(pid),
                 is_custom=is_custom,
                 co_player_regions=co_player_regions,
+                map_name=map_name,
+                co_player_races=co_player_races,
             ):
                 added += 1
 
@@ -2121,6 +2469,315 @@ def _compare_battlegroup_signatures(
         )
         res["shared_cohdb_bgs"] = shared[:5]
 
+    return res
+
+
+def _is_rivalry_nemesis_wl(wins: int, losses: int) -> bool:
+    """True quando a conta perde regularmente para o adversário (alinhado ao limiar de Nêmesis do Tracker)."""
+    w = max(0, int(wins))
+    l = max(0, int(losses))
+    n = w + l
+    if n < 2 or l <= w:
+        return False
+    return (w == 0 and l >= 2) or ((l / float(n)) >= 0.65 and (l - w) >= 2) or ((l / float(n)) >= 0.60 and n >= 5)
+
+
+def _is_rivalry_fregues_wl(wins: int, losses: int) -> bool:
+    """True quando a conta vence regularmente o adversário (alinhado ao limiar de Freguês do Tracker)."""
+    w = max(0, int(wins))
+    l = max(0, int(losses))
+    n = w + l
+    if n < 2 or w <= l:
+        return False
+    return (l == 0 and w >= 2) or ((w / float(n)) >= 0.65 and (w - l) >= 2) or ((w / float(n)) >= 0.60 and n >= 5)
+
+
+def _compare_rivalry_and_kryptonite_profile(
+    cand_tel: PlayerMatchTelemetry | None,
+    main_tel: PlayerMatchTelemetry | None,
+    *,
+    exclude_pids: set[int] | frozenset[int] | None = None,
+    pid_aliases: dict[int, str] | None = None,
+) -> dict[str, Any]:
+    """
+    Sinal 10 — Perfil de Nêmesis, Freguês & Criptonitas / Facilidades (Matchup DNA):
+    Compara se candidata e principal compartilham as mesmas dificuldades e facilidades:
+      A) Nêmesis em comum (adversários que derrotam ambas as contas), Fregueses em comum
+         (adversários dominados por ambas) e contra-evidência de rivalidades invertidas;
+      B) Criptonitas e Facilidades em Mapas, Battlegroups inimigos, Matchups/Facções e Aliados,
+         usando deltas de WR com encolhimento Bayesiano centrados na taxa de vitória base de CADA
+         conta (`delta(k) = (w + 3*p0)/(n + 3) - p0`) para eliminar viés quando a smurf sobe com WR inflado.
+    """
+    res: dict[str, Any] = {
+        "rivalry_pts": 0.0,
+        "kryptonite_pts": 0.0,
+        "total_pts": 0.0,
+        "adds_behavioral": False,
+        "adds_identity_anchor": False,
+        "shared_nemeses": [],
+        "shared_fregueses": [],
+        "inverted_rivalries": [],
+        "shared_rivalry_count": 0,
+        "matchup_profile_sim": 0.0,
+        "matchup_profile_valid": False,
+        "compared_buckets": 0,
+        "shared_kryptonites": [],
+        "shared_strengths": [],
+        "opposing_buckets": [],
+    }
+    if not cand_tel or not main_tel:
+        return res
+
+    excl = set(exclude_pids or ())
+    excl.add(int(cand_tel.profile_id))
+    excl.add(int(main_tel.profile_id))
+    aliases = pid_aliases or {}
+
+    # ------------------------------------------------------------------
+    # Parte A: Nêmesis em comum, Fregueses em comum & Rivalidades Invertidas
+    # ------------------------------------------------------------------
+    shared_nemeses: list[dict[str, Any]] = []
+    shared_fregueses: list[dict[str, Any]] = []
+    inverted_rivalries: list[dict[str, Any]] = []
+
+    common_opps = (set(cand_tel.opp_wl.keys()) & set(main_tel.opp_wl.keys())) - excl
+    for opp_pid in common_opps:
+        c_pair = cand_tel.opp_wl.get(opp_pid) or [0, 0]
+        m_pair = main_tel.opp_wl.get(opp_pid) or [0, 0]
+        cw, cl = max(0, int(c_pair[0])), max(0, int(c_pair[1]))
+        mw, ml = max(0, int(m_pair[0])), max(0, int(m_pair[1]))
+        cn, mn = cw + cl, mw + ml
+        tot = cn + mn
+        if cn < 2 or mn < 2 or tot < 5:
+            continue
+        c_days = len(cand_tel.opp_days.get(opp_pid) or ())
+        m_days = len(main_tel.opp_days.get(opp_pid) or ())
+        opp_name = strip_unsafe_chars(aliases.get(opp_pid) or f"ID #{opp_pid}")[:36]
+        entry = {
+            "profile_id": int(opp_pid),
+            "alias": opp_name,
+            "cand_w": cw,
+            "cand_l": cl,
+            "main_w": mw,
+            "main_l": ml,
+            "cand_n": cn,
+            "main_n": mn,
+            "total": tot,
+            "cand_days": c_days,
+            "main_days": m_days,
+        }
+        if _is_rivalry_nemesis_wl(cw, cl) and _is_rivalry_nemesis_wl(mw, ml):
+            shared_nemeses.append(entry)
+        elif _is_rivalry_fregues_wl(cw, cl) and _is_rivalry_fregues_wl(mw, ml):
+            shared_fregueses.append(entry)
+        elif cn >= 3 and mn >= 3:
+            c_dom_w = (cw / float(cn)) >= 0.70 and (cw - cl) >= 2
+            c_dom_l = (cl / float(cn)) >= 0.70 and (cl - cw) >= 2
+            m_dom_w = (mw / float(mn)) >= 0.70 and (mw - ml) >= 2
+            m_dom_l = (ml / float(mn)) >= 0.70 and (ml - mw) >= 2
+            if (c_dom_w and m_dom_l) or (c_dom_l and m_dom_w):
+                inverted_rivalries.append(entry)
+
+    shared_nemeses.sort(key=lambda r: (-r["total"], -(r["cand_l"] + r["main_l"])))
+    shared_fregueses.sort(key=lambda r: (-r["total"], -(r["cand_w"] + r["main_w"])))
+    inverted_rivalries.sort(key=lambda r: -r["total"])
+
+    shared_riv_cnt = len(shared_nemeses) + len(shared_fregueses)
+    inv_riv_cnt = len(inverted_rivalries)
+    riv_total_eval = shared_riv_cnt + inv_riv_cnt
+    riv_concordance = (shared_riv_cnt / float(riv_total_eval)) if riv_total_eval > 0 else 0.0
+    part_a_pts = 0.0
+    rivalry_adds_behavioral = False
+    rivalry_adds_anchor = False
+
+    if shared_riv_cnt > 0 and riv_concordance >= 0.70:
+        if shared_riv_cnt >= 3:
+            part_a_pts = 12.0
+            rivalry_adds_behavioral = True
+            rivalry_adds_anchor = True
+        elif shared_riv_cnt == 2:
+            part_a_pts = 8.0
+            rivalry_adds_behavioral = True
+            rivalry_adds_anchor = True
+        elif shared_riv_cnt == 1:
+            only_riv = (shared_nemeses + shared_fregueses)[0]
+            if only_riv["total"] >= 6 or (only_riv["cand_n"] >= 3 and only_riv["main_n"] >= 3):
+                part_a_pts = 5.0
+                if (
+                    only_riv["cand_n"] >= 3
+                    and only_riv["main_n"] >= 3
+                    and only_riv["total"] >= 7
+                    and (only_riv["cand_days"] >= 2 or only_riv["main_days"] >= 2)
+                ):
+                    rivalry_adds_anchor = True
+            else:
+                part_a_pts = 3.0
+        if inv_riv_cnt >= 1:
+            part_a_pts = max(0.0, part_a_pts - 3.0 * inv_riv_cnt)
+    elif inv_riv_cnt > shared_riv_cnt:
+        part_a_pts = -6.0 if (inv_riv_cnt - shared_riv_cnt) >= 2 else -3.0
+
+    # ------------------------------------------------------------------
+    # Parte B: Criptonitas & Facilidades (Mapas, BGs inimigos, Matchups, Facções, Aliados)
+    # ------------------------------------------------------------------
+    cand_overall_p0 = min(0.80, max(0.20, cand_tel.winrate())) if cand_tel.games >= 5 else 0.50
+    main_overall_p0 = min(0.80, max(0.20, main_tel.winrate())) if main_tel.games >= 5 else 0.50
+
+    def _domain_baseline(wl_map: dict[Any, list[int]], fallback_p0: float) -> float:
+        tw = sum(max(0, int(v[0])) for v in wl_map.values() if len(v) >= 2)
+        tn = sum(max(0, int(v[0])) + max(0, int(v[1])) for v in wl_map.values() if len(v) >= 2)
+        if tn >= 8:
+            return min(0.80, max(0.20, tw / float(tn)))
+        return fallback_p0
+
+    cand_ally_clean = {k: v for k, v in cand_tel.ally_wl.items() if k not in excl}
+    main_ally_clean = {k: v for k, v in main_tel.ally_wl.items() if k not in excl}
+
+    domains: list[tuple[str, dict[Any, list[int]], dict[Any, list[int]], int, float]] = [
+        ("Mapa", cand_tel.map_wl, main_tel.map_wl, 3, 1.00),
+        ("BG", cand_tel.enemy_bg_wl, main_tel.enemy_bg_wl, 3, 1.15),
+        ("Matchup", cand_tel.matchup_wl, main_tel.matchup_wl, 4, 0.90),
+    ]
+
+    # Se não houver >=2 matchups diretos compartilhados (ex.: smurf cross-faction), usa contra-facção
+    shared_matchup_cnt = sum(
+        1
+        for k in (set(cand_tel.matchup_wl.keys()) & set(main_tel.matchup_wl.keys()))
+        if sum(cand_tel.matchup_wl[k][:2]) >= 4 and sum(main_tel.matchup_wl[k][:2]) >= 4
+    )
+    if shared_matchup_cnt < 2:
+        domains.append(("vs Facção", cand_tel.enemy_faction_wl, main_tel.enemy_faction_wl, 4, 0.75))
+
+    # Só compara facção jogada quando ambas jogam >=2 facções (peso reduzido se matchups diretos já cobrem as mesmas facções)
+    cand_multi_fac = sum(1 for v in cand_tel.my_faction_wl.values() if (int(v[0]) + int(v[1])) >= 4) >= 2
+    main_multi_fac = sum(1 for v in main_tel.my_faction_wl.values() if (int(v[0]) + int(v[1])) >= 4) >= 2
+    if cand_multi_fac and main_multi_fac:
+        fac_scale = 0.45 if shared_matchup_cnt >= 2 else 0.75
+        domains.append(("Facção", cand_tel.my_faction_wl, main_tel.my_faction_wl, 4, fac_scale))
+
+    domains.append(("Aliado", cand_ally_clean, main_ally_clean, 3, 0.85))
+
+    alpha = 3.0
+    w_dot = 0.0
+    w_nc = 0.0
+    w_nm = 0.0
+    w_sum = 0.0
+    compared_buckets = 0
+    shared_kryptonites: list[dict[str, Any]] = []
+    shared_strengths: list[dict[str, Any]] = []
+    opposing_buckets: list[dict[str, Any]] = []
+
+    for dim_kind, c_map, m_map, min_n, dim_scale in domains:
+        if not c_map or not m_map:
+            continue
+        p0_c = _domain_baseline(c_map, cand_overall_p0)
+        p0_m = _domain_baseline(m_map, main_overall_p0)
+        for key in set(c_map.keys()) & set(m_map.keys()):
+            cp = c_map[key]
+            mp = m_map[key]
+            cw, cl = max(0, int(cp[0])), max(0, int(cp[1]))
+            mw, ml = max(0, int(mp[0])), max(0, int(mp[1]))
+            cn, mn = cw + cl, mw + ml
+            if cn < min_n or mn < min_n:
+                continue
+
+            dc = (cw + alpha * p0_c) / (cn + alpha) - p0_c
+            dm = (mw + alpha * p0_m) / (mn + alpha) - p0_m
+            raw_dc = (cw / float(cn)) - p0_c
+            raw_dm = (mw / float(mn)) - p0_m
+
+            wt = dim_scale * math.sqrt(float(min(cn, mn)))
+            w_dot += wt * dc * dm
+            w_nc += wt * dc * dc
+            w_nm += wt * dm * dm
+            w_sum += wt
+            compared_buckets += 1
+
+            if dim_kind == "Matchup" and isinstance(key, tuple) and len(key) == 2:
+                label = f"{key[0]} vs {key[1]}"
+            elif dim_kind == "Aliado":
+                label = strip_unsafe_chars(aliases.get(int(key)) or f"ID #{key}")[:28]
+            else:
+                label = str(key)
+
+            bucket_entry = {
+                "kind": dim_kind,
+                "label": label,
+                "cand_w": cw,
+                "cand_l": cl,
+                "main_w": mw,
+                "main_l": ml,
+                "cand_delta": round(dc, 3),
+                "main_delta": round(dm, 3),
+            }
+            if dc <= -0.055 and dm <= -0.055 and raw_dc <= -0.08 and raw_dm <= -0.08 and (cl > cw or ml > mw):
+                shared_kryptonites.append(bucket_entry)
+            elif dc >= 0.055 and dm >= 0.055 and raw_dc >= 0.08 and raw_dm >= 0.08 and cw > cl and mw > ml:
+                shared_strengths.append(bucket_entry)
+            elif (
+                (dc <= -0.07 and raw_dc <= -0.10 and dm >= 0.07 and raw_dm >= 0.10)
+                or (dm <= -0.07 and raw_dm <= -0.10 and dc >= 0.07 and raw_dc >= 0.10)
+            ):
+                opposing_buckets.append(bucket_entry)
+
+    shared_kryptonites.sort(key=lambda b: (b["cand_delta"] + b["main_delta"]))
+    shared_strengths.sort(key=lambda b: -(b["cand_delta"] + b["main_delta"]))
+
+    part_b_pts = 0.0
+    krypt_adds_behavioral = False
+    matchup_profile_sim = 0.0
+    matchup_profile_valid = False
+    # Contra-evidência negativa exige amostra robusta em regime estável (evita penalizar smurfs
+    # em subida rápida de placement com <30 jogos ou WR >=72%, onde a ordem das facções distorce deltas)
+    steady_state_sample = (
+        cand_tel.games >= 30
+        and main_tel.games >= 30
+        and cand_tel.winrate() < 0.72
+    )
+
+    if compared_buckets >= 4 and w_sum > 0.0 and w_nc > 0.0 and w_nm > 0.0:
+        rms_c = math.sqrt(w_nc / w_sum)
+        rms_m = math.sqrt(w_nm / w_sum)
+        if rms_c >= 0.035 and rms_m >= 0.035:
+            matchup_profile_valid = True
+            matchup_profile_sim = round(max(-1.0, min(1.0, w_dot / math.sqrt(w_nc * w_nm))), 3)
+            concrete_shared = len(shared_kryptonites) + len(shared_strengths)
+            if matchup_profile_sim >= 0.58 and (concrete_shared >= 2 or compared_buckets >= 6):
+                part_b_pts = 8.0
+                krypt_adds_behavioral = True
+            elif matchup_profile_sim >= 0.40 and (concrete_shared >= 1 or compared_buckets >= 6):
+                part_b_pts = 4.0
+            elif steady_state_sample and compared_buckets >= 8 and matchup_profile_sim <= -0.50:
+                part_b_pts = -5.0
+
+    if part_b_pts == 0.0:
+        concrete_shared = len(shared_kryptonites) + len(shared_strengths)
+        if concrete_shared >= 2 and not opposing_buckets:
+            part_b_pts = 4.0
+        elif steady_state_sample and len(opposing_buckets) >= 3 and concrete_shared == 0:
+            part_b_pts = -4.0
+
+    total_pts = max(-8.0, min(16.0, part_a_pts + part_b_pts))
+
+    res.update(
+        {
+            "rivalry_pts": round(part_a_pts, 2),
+            "kryptonite_pts": round(part_b_pts, 2),
+            "total_pts": round(total_pts, 2),
+            "adds_behavioral": bool(rivalry_adds_behavioral or krypt_adds_behavioral),
+            "adds_identity_anchor": bool(rivalry_adds_anchor),
+            "shared_nemeses": shared_nemeses[:5],
+            "shared_fregueses": shared_fregueses[:5],
+            "inverted_rivalries": inverted_rivalries[:5],
+            "shared_rivalry_count": shared_riv_cnt,
+            "matchup_profile_sim": matchup_profile_sim,
+            "matchup_profile_valid": matchup_profile_valid,
+            "compared_buckets": compared_buckets,
+            "shared_kryptonites": shared_kryptonites[:5],
+            "shared_strengths": shared_strengths[:5],
+            "opposing_buckets": opposing_buckets[:5],
+        }
+    )
     return res
 
 
@@ -3047,6 +3704,83 @@ def score_smurf_pair(
             )
     score += min(20.0, bg_pts)
 
+    # Sinal 10: Nêmesis, Freguês & Criptonitas / Facilidades (Matchup DNA com encolhimento Bayesiano)
+    rivalry_krypt_info = _compare_rivalry_and_kryptonite_profile(
+        cand_tel,
+        main_tel,
+        exclude_pids=family_set | {cand_pid, main_pid},
+        pid_aliases=pid_aliases,
+    )
+    rk_pts = float(rivalry_krypt_info["total_pts"])
+    if rk_pts != 0.0:
+        score += rk_pts
+    if rivalry_krypt_info["adds_behavioral"]:
+        behavioral_signals += 1
+    if rivalry_krypt_info["adds_identity_anchor"]:
+        identity_anchor_signals += 1
+
+    if rivalry_krypt_info["shared_nemeses"] and float(rivalry_krypt_info["rivalry_pts"]) > 0.0:
+        nem_txt = ", ".join(
+            f"{r['alias']} (cand {r['cand_w']}V-{r['cand_l']}D / main {r['main_w']}V-{r['main_l']}D)"
+            for r in rivalry_krypt_info["shared_nemeses"][:3]
+        )
+        evidence.append(
+            f"Nêmesis em comum ({len(rivalry_krypt_info['shared_nemeses'])}): {nem_txt}."
+        )
+    if rivalry_krypt_info["shared_fregueses"] and float(rivalry_krypt_info["rivalry_pts"]) > 0.0:
+        freg_txt = ", ".join(
+            f"{r['alias']} (cand {r['cand_w']}V-{r['cand_l']}D / main {r['main_w']}V-{r['main_l']}D)"
+            for r in rivalry_krypt_info["shared_fregueses"][:3]
+        )
+        evidence.append(
+            f"Freguês em comum ({len(rivalry_krypt_info['shared_fregueses'])}): {freg_txt}."
+        )
+    if rivalry_krypt_info["inverted_rivalries"] and float(rivalry_krypt_info["rivalry_pts"]) < 0.0:
+        inv_txt = ", ".join(
+            f"{r['alias']} (cand {r['cand_w']}V-{r['cand_l']}D vs main {r['main_w']}V-{r['main_l']}D)"
+            for r in rivalry_krypt_info["inverted_rivalries"][:3]
+        )
+        evidence.append(
+            f"Contra-evidência de rivalidades invertidas ({len(rivalry_krypt_info['inverted_rivalries'])}): {inv_txt}."
+        )
+
+    krypt_pts = float(rivalry_krypt_info["kryptonite_pts"])
+    if krypt_pts > 0.0:
+        detail_parts: list[str] = []
+        if rivalry_krypt_info["shared_kryptonites"]:
+            k_items = ", ".join(
+                f"{b['kind']} {b['label']} ({b['cand_w']}V-{b['cand_l']}D / {b['main_w']}V-{b['main_l']}D)"
+                for b in rivalry_krypt_info["shared_kryptonites"][:3]
+            )
+            detail_parts.append(f"Criptonitas: {k_items}")
+        if rivalry_krypt_info["shared_strengths"]:
+            s_items = ", ".join(
+                f"{b['kind']} {b['label']} ({b['cand_w']}V-{b['cand_l']}D / {b['main_w']}V-{b['main_l']}D)"
+                for b in rivalry_krypt_info["shared_strengths"][:3]
+            )
+            detail_parts.append(f"Facilidades: {s_items}")
+        sim_prefix = (
+            f"sim={float(rivalry_krypt_info['matchup_profile_sim']) * 100:.0f}% em {rivalry_krypt_info['compared_buckets']} contextos"
+            if rivalry_krypt_info["matchup_profile_valid"]
+            else f"{rivalry_krypt_info['compared_buckets']} contextos comparados"
+        )
+        detail_suffix = f" — {'; '.join(detail_parts)}" if detail_parts else ""
+        evidence.append(
+            f"Perfil de Criptonitas/Facilidades convergente ({sim_prefix}{detail_suffix})."
+        )
+    elif krypt_pts < 0.0:
+        if rivalry_krypt_info["matchup_profile_valid"]:
+            evidence.append(
+                f"Contra-evidência de Criptonitas/Matchups divergentes "
+                f"(sim={float(rivalry_krypt_info['matchup_profile_sim']) * 100:.0f}% em {rivalry_krypt_info['compared_buckets']} contextos)."
+            )
+        elif rivalry_krypt_info["opposing_buckets"]:
+            opp_b = ", ".join(
+                f"{b['kind']} {b['label']} ({b['cand_w']}V-{b['cand_l']}D vs {b['main_w']}V-{b['main_l']}D)"
+                for b in rivalry_krypt_info["opposing_buckets"][:3]
+            )
+            evidence.append(f"Contra-evidência de Criptonitas opostas: {opp_b}.")
+
     # Deduções por contra-evidência
     if elo_diff > 350:
         score -= 15.0
@@ -3066,6 +3800,7 @@ def score_smurf_pair(
         and handoff_cnt == 0
         and alias_pts == 0
         and not direct_family_sharing_lender
+        and int(rivalry_krypt_info["shared_rivalry_count"]) < 2
         and not (apm_strong_match and (bg_pts >= 6.0 or combat_dna_strong))
     ):
         cand_team_games = cand_tel.games - cand_tel.mode_counts.get("1v1", 0)
@@ -3080,7 +3815,8 @@ def score_smurf_pair(
     # Guarda Anti-Ruído Meta:
     # Exige ao menos 2 sinais comportamentais independentes E ao menos 1 âncora de identidade/tempo/rede
     # (squad em comum, handoff <=25m, horários UTC >=68%, 0 confrontos no mesmo ELO alto, dormancy swap corroborado,
-    # nick/leetspeak/clã, avatar Steam idêntico, localização BR Steam, MM regional BR/SA, amigos Steam ou prova direta Family Sharing).
+    # nick/leetspeak/clã, avatar Steam idêntico, localização BR Steam, MM regional BR/SA, amigos Steam,
+    # Nêmesis/Freguês recorrente em comum ou prova direta Family Sharing).
     if behavioral_signals < 2:
         score = min(score, 34.0)
     elif identity_anchor_signals < 1:
@@ -3124,6 +3860,25 @@ def score_smurf_pair(
             "cohdb_bg_similarity": cohdb_bg_sim,
             "shared_battlegroups": shared_bgs,
             "combat_dna_similarity": dna_info["dna_sim"] if dna_info["valid"] else None,
+            "shared_nemeses": [
+                f"{r['alias']} ({r['cand_w']}V-{r['cand_l']}D/{r['main_w']}V-{r['main_l']}D)"
+                for r in rivalry_krypt_info["shared_nemeses"]
+            ],
+            "shared_fregueses": [
+                f"{r['alias']} ({r['cand_w']}V-{r['cand_l']}D/{r['main_w']}V-{r['main_l']}D)"
+                for r in rivalry_krypt_info["shared_fregueses"]
+            ],
+            "inverted_rivalries_count": len(rivalry_krypt_info["inverted_rivalries"]),
+            "matchup_profile_similarity": (
+                rivalry_krypt_info["matchup_profile_sim"] if rivalry_krypt_info["matchup_profile_valid"] else None
+            ),
+            "shared_kryptonites": [
+                f"{b['kind']}:{b['label']}" for b in rivalry_krypt_info["shared_kryptonites"]
+            ],
+            "shared_strengths": [
+                f"{b['kind']}:{b['label']}" for b in rivalry_krypt_info["shared_strengths"]
+            ],
+            "rivalry_kryptonite_pts": rk_pts,
             "net_elo_gain": vel_info["net_elo_gain"],
             "elo_gain_per_game": vel_info["elo_gain_per_game"],
             "max_win_streak": vel_info["max_win_streak"],
@@ -4017,9 +4772,11 @@ def verify_suspects_with_relic(
         for pid in pids_to_verify[:40]:
             try:
                 bgs = active_cohdb.fetch_player_battlegroups(pid)
+                tel = telemetry._get(pid)
                 if bgs:
-                    tel = telemetry._get(pid)
                     tel.cohdb_battlegroups.update(bgs)
+                if hasattr(active_cohdb, "fetch_player_enemy_bg_wl"):
+                    tel.merge_enemy_bg_wl(active_cohdb.fetch_player_enemy_bg_wl(pid))
             except Exception as exc:
                 logger.debug("[SMURF STAGE 2] Falha em cohdb pid=%d: %s", pid, redact_secrets(exc))
 
@@ -4116,8 +4873,11 @@ def evaluate_model_benchmarks(
     if active_cohdb is not None and hasattr(active_cohdb, "fetch_player_battlegroups"):
         for pid in all_pids:
             bgs = active_cohdb.fetch_player_battlegroups(pid)
+            tel = col._get(pid)
             if bgs:
-                col._get(pid).cohdb_battlegroups.update(bgs)
+                tel.cohdb_battlegroups.update(bgs)
+            if hasattr(active_cohdb, "fetch_player_enemy_bg_wl"):
+                tel.merge_enemy_bg_wl(active_cohdb.fetch_player_enemy_bg_wl(pid))
 
     steam_osint_map: dict[int, dict[str, Any]] = {}
     if isinstance(relic_client, RelicActivityClient):
@@ -4328,15 +5088,27 @@ def main() -> int:
     r_client = RelicActivityClient()
     if args.evaluate_models:
         bench_rows = evaluate_model_benchmarks(relic_client=r_client, enable_cohdb=not bool(args.no_cohdb))
-        print(f"[CALIBRAÇÃO NOS {len(MODEL_SMURF_BENCHMARKS)} MODELOS REAIS CONFIRMADOS (APM + BG + SQUAD + HORÁRIO + MM BR/SA + ELO/JOGO + CoH2)]")
+        print(
+            f"[CALIBRAÇÃO NOS {len(MODEL_SMURF_BENCHMARKS)} MODELOS REAIS CONFIRMADOS "
+            f"(APM + BG + SQUAD + HORÁRIO + MM BR/SA + ELO/JOGO + CoH2 + NÊMESIS/FREGUÊS/CRIPTONITAS)]"
+        )
         for row in bench_rows:
             m = row["metrics"]
+            rk_pts = float(m.get("rivalry_kryptonite_pts", 0.0) or 0.0)
+            nem_cnt = len(m.get("shared_nemeses") or ())
+            freg_cnt = len(m.get("shared_fregueses") or ())
+            mp_sim = m.get("matchup_profile_similarity")
+            rk_tag = (
+                f" | Nem/Freg={nem_cnt}/{freg_cnt} Krypt={mp_sim:+.2f}({rk_pts:+.0f}pt)"
+                if mp_sim is not None
+                else (f" | Nem/Freg={nem_cnt}/{freg_cnt}({rk_pts:+.0f}pt)" if (nem_cnt or freg_cnt or rk_pts) else "")
+            )
             print(
                 f"  • {row['model']:<15} | {row['smurf_alias']:<34} -> {row['probability_pct']:2d}% ({row['confidence_tier']}) | "
                 f"APM {m.get('cand_apm', 0)} vs {m.get('main_apm', 0)} (Δ={m.get('delta_apm')}) | "
                 f"ELO/g={m.get('elo_gain_per_game', 0):+.1f} | SA_MM={float(m.get('sa_match_rate', 0)) * 100:.0f}% | "
                 f"CoH2={m.get('cand_coh2_matches', 0)}/{m.get('main_coh2_matches', 0)} | "
-                f"BG loadout={m.get('bg_loadout_similarity', 0):.2f} cohdb={m.get('cohdb_bg_similarity', 0):.2f}"
+                f"BG loadout={m.get('bg_loadout_similarity', 0):.2f} cohdb={m.get('cohdb_bg_similarity', 0):.2f}{rk_tag}"
             )
             for ev in row["evidence"]:
                 print(f"      - {ev}")
