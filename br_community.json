@@ -43334,11 +43334,11 @@
       "alias": "velasque",
       "br_source": "open_data_matches",
       "last_match_date": 1795292573,
-      "last_seen_online_ts": 1795397850,
+      "last_seen_online_ts": 1795494077,
       "max_elo": 1041,
       "profile_id": 1454779,
       "steam_games_hidden": true,
-      "steam_gd_checked_ts": 1795374088,
+      "steam_gd_checked_ts": 1795494077,
       "steam_id": "76561198009345196",
       "total_matches": 25
     },
@@ -43529,7 +43529,7 @@
     "146203": {
       "alias": "Galactic_Dragoon",
       "br_source": "open_data_matches",
-      "last_match_date": 1795491799,
+      "last_match_date": 1795493824,
       "last_seen_ingame_ts": 1795145992,
       "last_seen_ingame_webapi_ts": 1795490697,
       "last_seen_online_ts": 1795493178,
@@ -43538,7 +43538,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795209124,
       "steam_id": "76561198011660899",
-      "total_matches": 387
+      "total_matches": 388
     },
     "1462054": {
       "alias": "Quárak",
@@ -44607,7 +44607,6 @@
     "1478243": {
       "alias": "HEADSHOT : MAGISK",
       "br_source": "open_data_matches",
-      "current_alias": "dontrySHOT",
       "last_match_date": 1794802027,
       "last_seen_ingame_ts": 1795181945,
       "last_seen_ingame_webapi_ts": 1795393286,
