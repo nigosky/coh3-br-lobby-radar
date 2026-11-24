@@ -73294,7 +73294,7 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1056541,
-      "scope": "outros_brasileiros",
+      "scope": "manual_other_br",
       "smurf_of": "",
       "steam_id": "76561198064149997"
     },
@@ -74301,7 +74301,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1760050360,
       "coh3_total_matches": 13,
-      "current_alias": "bourne",
+      "current_alias": "Bourne",
       "last_checked_at": 1795545985,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -84921,8 +84921,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1746477337,
       "coh3_total_matches": 3,
-      "current_alias": "mooch",
-      "last_checked_at": 1795542893,
+      "current_alias": "Mooch",
+      "last_checked_at": 1795546285,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1118507,
@@ -92232,8 +92232,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1754886916,
       "coh3_total_matches": 32,
-      "current_alias": "maurilioazyzzs",
-      "last_checked_at": 1795539198,
+      "current_alias": "Maurilioazyzzs",
+      "last_checked_at": 1795546285,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1165921,
@@ -113006,8 +113006,8 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1292305,
-      "scope": "outros_brasileiros",
-      "smurf_of": "",
+      "scope": "manual_other_br",
+      "smurf_of": "rafaeldjx",
       "steam_id": "76561198121355576"
     },
     "1292313": {
@@ -140586,7 +140586,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795545985,
+      "last_checked_at": 1795546285,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -149412,6 +149412,7 @@
           "last_seen": 1736478379,
           "sources": [
             "coh3stats_opendata",
+            "local_db",
             "relic_coh1_api",
             "relic_coh2_api"
           ]
@@ -149427,9 +149428,17 @@
             "steam_web_api",
             "steam_xml"
           ]
+        },
+        {
+          "alias": "BrazilianHunter (Hunter)",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "local_db"
+          ]
         }
       ],
-      "canonical_alias": "Hunter",
+      "canonical_alias": "BrazilianHunter (Hunter)",
       "coh1_country": "br",
       "coh1_last_match_date": 1674086720,
       "coh1_profile_id": 212951,
@@ -149448,7 +149457,7 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 2185,
-      "scope": "outros_brasileiros",
+      "scope": "manual_other_br",
       "smurf_of": "",
       "steam_id": "76561197999712702"
     },
@@ -154462,7 +154471,7 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 2821,
-      "scope": "outros_brasileiros",
+      "scope": "manual_other_br",
       "smurf_of": "",
       "steam_id": "76561198051332729"
     },
@@ -158227,6 +158236,22 @@
             "steam_web_api",
             "steam_xml"
           ]
+        },
+        {
+          "alias": "Pac Man",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "local_db"
+          ]
+        },
+        {
+          "alias": "PacMan",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "local_db"
+          ]
         }
       ],
       "canonical_alias": ".:PacMan:.",
@@ -158245,7 +158270,7 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 31992,
-      "scope": "outros_brasileiros",
+      "scope": "manual_other_br",
       "smurf_of": "",
       "steam_id": "76561198060948936"
     },
@@ -164895,7 +164920,8 @@
           "first_seen": 1760035677,
           "last_seen": 1760035678,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -164904,6 +164930,7 @@
           "last_seen": 1777088896,
           "sources": [
             "coh3stats_opendata",
+            "local_db",
             "relic_coh2_api"
           ]
         },
@@ -164912,7 +164939,8 @@
           "first_seen": 1779677946,
           "last_seen": 1781579740,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         }
       ],
@@ -164935,7 +164963,7 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 4005,
-      "scope": "outros_brasileiros",
+      "scope": "manual_other_br",
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561197999564490"
@@ -171137,6 +171165,7 @@
           "first_seen": 1463187654,
           "last_seen": 1463187654,
           "sources": [
+            "local_db",
             "relic_coh2_api"
           ]
         },
@@ -171173,7 +171202,7 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 5128,
-      "scope": "outros_brasileiros",
+      "scope": "manual_other_br",
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198047280225"
@@ -174966,6 +174995,7 @@
           "first_seen": 1627104530,
           "last_seen": 1672300224,
           "sources": [
+            "local_db",
             "relic_coh1_api",
             "relic_coh2_api"
           ]
@@ -174975,7 +175005,8 @@
           "first_seen": 1701811073,
           "last_seen": 1702443167,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -174983,7 +175014,8 @@
           "first_seen": 1723604416,
           "last_seen": 1724811983,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -174999,7 +175031,7 @@
           ]
         }
       ],
-      "canonical_alias": "Ʊ ElektroStomper ☭",
+      "canonical_alias": "ElektroStomper",
       "coh1_country": "ar",
       "coh1_last_match_date": 1672300224,
       "coh1_profile_id": 278282,
@@ -175018,7 +175050,7 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 5882,
-      "scope": "outros_brasileiros",
+      "scope": "manual_other_br",
       "smurf_of": "",
       "steam_id": "76561198034364786"
     },
@@ -183170,7 +183202,7 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 702745,
-      "scope": "outros_brasileiros",
+      "scope": "manual_other_br",
       "smurf_of": "",
       "steam_id": "76561199239019193"
     },
@@ -183367,6 +183399,7 @@
           "first_seen": 1581296592,
           "last_seen": 1581296592,
           "sources": [
+            "local_db",
             "relic_coh2_api"
           ]
         },
@@ -183375,7 +183408,8 @@
           "first_seen": 1722822580,
           "last_seen": 1723331249,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -183559,7 +183593,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1757727000,
       "coh3_total_matches": 44,
-      "current_alias": "BillFurY",
+      "current_alias": "Billfury",
       "last_checked_at": 1795545985,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
@@ -208245,6 +208279,7 @@
           "last_seen": 1784259168,
           "sources": [
             "coh3stats_opendata",
+            "local_db",
             "relic_coh1_api",
             "relic_coh2_api"
           ]
@@ -208281,7 +208316,7 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 83244,
-      "scope": "outros_brasileiros",
+      "scope": "manual_other_br",
       "smurf_of": "",
       "steam_id": "76561198064709981"
     },
@@ -212286,7 +212321,7 @@
       "coh3_last_match_date": 1794526879,
       "coh3_total_matches": 4,
       "current_alias": "Qi 124",
-      "last_checked_at": 1795545985,
+      "last_checked_at": 1795546285,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -213654,8 +213689,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1756674722,
       "coh3_total_matches": 3,
-      "current_alias": "Muller",
-      "last_checked_at": 1795539198,
+      "current_alias": "muller",
+      "last_checked_at": 1795546285,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 887149,
@@ -234002,5 +234037,5 @@
     "steam_web_api": 7388,
     "steam_xml": 6734
   },
-  "updated_at": 1795545985
+  "updated_at": 1795546285
 }
