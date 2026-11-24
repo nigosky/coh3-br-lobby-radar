@@ -10,6 +10,7 @@ on:
     paths:
       - "**.py"
       - "players_roster.json"
+      - "suspected_foreign_br.json"
       - "assets/**"
       - ".github/workflows/**"
   repository_dispatch:

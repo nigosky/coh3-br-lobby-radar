@@ -552,10 +552,26 @@ def _split_prominent_and_low(
     return prominent, low
 
 
+def _resolve_expat_flag_code(pl: dict[str, Any]) -> str:
+    """Retorna o código ISO-2 (ex.: 'ca', 'us', 'za') se o jogador for brasileiro emigrado (flag_country != 'br')."""
+    raw = str(pl.get("flag_country") or "").strip().lower()
+    norm = FLAG_CODE_ALIASES.get(raw, raw)
+    if norm and norm != "br" and SAFE_FLAG_CODE_RE.fullmatch(norm):
+        return norm
+    return ""
+
+
+def _is_smurf_entry(pl: dict[str, Any]) -> bool:
+    return bool(str(pl.get("smurf_of") or "").strip()) or "(smurf:" in str(pl.get("alias") or "").lower()
+
+
 def _format_low_player_token(pl: dict[str, Any], *, show_age_min: bool = False) -> str:
     alias = strip_unsafe_chars(str(pl.get("alias") or "BR"))[:48] or "BR"
+    expat_cc = _resolve_expat_flag_code(pl)
+    if expat_cc:
+        alias = f"{alias} [BR·{expat_cc.upper()}]"
     if pl.get("suspected_foreign_flag"):
-        alias = f"{alias} [EXT?]"
+        alias = f"{alias} [VPN?]"
     elo = int(pl.get("max_elo", 0) or 0)
     parts: list[str] = []
     if elo > 0:
@@ -653,6 +669,56 @@ def _draw_gold_elo_pill(
     return x0
 
 
+def _draw_flag_with_expat_badge(
+    img: Image.Image,
+    draw: ImageDraw.ImageDraw,
+    pl: dict[str, Any],
+    *,
+    x: int,
+    flag_y: int,
+    flag_w: int,
+    flag_h: int,
+    gap_after: int = 6,
+    compact: bool = False,
+) -> int:
+    """
+    Desenha a bandeira real do jogador e, quando se trata de brasileiro emigrado (`flag_country != 'br'`),
+    exibe imediatamente ao lado um selo verde-e-ouro `BR EXT` sinalizando brasileiro no exterior.
+    Retorna a coordenada X inicial disponível para o nome do jogador.
+    """
+    pl_flag = get_country_flag(pl.get("flag_country"), w=flag_w, h=flag_h)
+    img.paste(pl_flag, (x, flag_y), pl_flag)
+    expat_cc = _resolve_expat_flag_code(pl)
+    if not expat_cc:
+        return x + flag_w + gap_after
+
+    lbl = "BR EXT"
+    f_sz = 11 if compact else 12
+    fnt = pick_font(lbl, size=f_sz, bold=True, condensed=True)
+    tw = int(text_width(draw, lbl, fnt))
+    pad_x = 4 if compact else 5
+    pill_w = tw + pad_x * 2
+    pill_h = max(flag_h + 1, f_sz + 5)
+    px0 = x + flag_w + 4
+    py0 = flag_y + (flag_h - pill_h) // 2
+    draw.rounded_rectangle(
+        (px0, py0, px0 + pill_w, py0 + pill_h),
+        radius=4,
+        fill=(14, 54, 36, 255),
+        outline=(250, 204, 21, 225),
+        width=1,
+    )
+    bb = draw.textbbox((0, 0), lbl, font=fnt)
+    th = bb[3] - bb[1]
+    draw.text(
+        (px0 + pad_x, py0 + (pill_h - th) / 2 - bb[1]),
+        lbl,
+        font=fnt,
+        fill=(187, 247, 208, 255),
+    )
+    return px0 + pill_w + max(6, gap_after - 2)
+
+
 def _resolve_presence_badge(pl: dict[str, Any]) -> tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]] | None:
     """Retorna `(label, fill, outline, text_color)` para badges Steam `OCUPADO` ou `zZz` (Ausente)."""
     if pl.get("is_busy"):
@@ -667,10 +733,10 @@ def _resolve_foreign_flag_badge(
     *,
     is_veteranos: bool = False,
 ) -> tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]] | None:
-    """Retorna selo âmbar compacto `EXT?` quando a conta tem flag BR mas fortes indícios de outra nacionalidade."""
+    """Retorna selo âmbar compacto `VPN?` quando a conta tem flag BR mas fortes indícios de estrangeiro usando VPN."""
     if is_veteranos or not bool(pl.get("suspected_foreign_flag")):
         return None
-    return ("EXT?", (68, 38, 16, 255), (251, 146, 60, 235), (253, 186, 116, 255))
+    return ("VPN?", (74, 34, 14, 255), (251, 146, 60, 240), (253, 186, 116, 255))
 
 
 def _resolve_player_badges(
@@ -680,6 +746,8 @@ def _resolve_player_badges(
     include_presence: bool = True,
 ) -> list[tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]]]:
     badges: list[tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]]] = []
+    if _is_smurf_entry(pl) and "(smurf:" not in str(pl.get("alias") or "").lower():
+        badges.append(("SMURF", (16, 46, 68, 255), (56, 189, 248, 230), (186, 230, 253, 255)))
     fb = _resolve_foreign_flag_badge(pl, is_veteranos=is_veteranos)
     if fb is not None:
         badges.append(fb)
@@ -1001,8 +1069,17 @@ def _draw_category_block(
                             ring_color=ring_c,
                         )
                         img.paste(av_im, (cx0, ry + 8), av_im)
-                        pl_flag = get_country_flag(pl.get("flag_country"), w=22, h=15)
-                        img.paste(pl_flag, (cx0 + 50, ry + 11), pl_flag)
+                        name_x = _draw_flag_with_expat_badge(
+                            img,
+                            draw,
+                            pl,
+                            x=cx0 + 50,
+                            flag_y=ry + 11,
+                            flag_w=22,
+                            flag_h=15,
+                            gap_after=6,
+                            compact=True,
+                        )
 
                         elo_val = int(pl.get("max_elo", 0) or 0)
                         ew = 0
@@ -1022,7 +1099,6 @@ def _draw_category_block(
                                 ew = int(text_width(draw, elo_tag, ef))
                                 draw.text((cx_limit - ew, ry + 9), elo_tag, font=ef, fill=(226, 232, 240, 255))
 
-                        name_x = cx0 + 78
                         row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=True)
                         pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=13) + 6 for b in row_badges)
                         badge_pad = (26 if is_veteranos else 8) + pill_reserve
@@ -1033,7 +1109,11 @@ def _draw_category_block(
                             size=name_2col_size,
                             bold=True,
                         )
-                        nm_col = (254, 249, 195, 255) if is_high else (240, 253, 244, 255)
+                        nm_col = (
+                            (186, 230, 253, 255)
+                            if _is_smurf_entry(pl)
+                            else ((254, 249, 195, 255) if is_high else (240, 253, 244, 255))
+                        )
                         draw.text((name_x, ry + 6 + a_dy), disp_alias, font=a_fnt, fill=nm_col)
                         next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
                         if is_veteranos:
@@ -1077,8 +1157,17 @@ def _draw_category_block(
                             ring_color=ring_c,
                         )
                         img.paste(av_im, (28, y + 8), av_im)
-                        pl_flag = get_country_flag(pl.get("flag_country"), w=26, h=18)
-                        img.paste(pl_flag, (82, y + 21), pl_flag)
+                        alias_x = _draw_flag_with_expat_badge(
+                            img,
+                            draw,
+                            pl,
+                            x=82,
+                            flag_y=y + 21,
+                            flag_w=26,
+                            flag_h=18,
+                            gap_after=10,
+                            compact=False,
+                        )
 
                         elo_val = int(pl.get("max_elo", 0) or 0)
                         note_raw = str(pl.get("status_note") or "Com Company of Heroes 3 aberto agora")
@@ -1106,9 +1195,13 @@ def _draw_category_block(
                         row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=True)
                         pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=14) + 10 for b in row_badges)
                         badge_pad = (34 if is_veteranos else 10) + pill_reserve
-                        max_alias_px = max(110, int(elo_x - 118 - badge_pad))
+                        max_alias_px = max(110, int(elo_x - alias_x - badge_pad))
                         alias_sz = 23 if (is_veteranos or is_high) else 21
-                        alias_col = (254, 249, 195, 255) if is_high else (240, 253, 244, 255)
+                        alias_col = (
+                            (186, 230, 253, 255)
+                            if _is_smurf_entry(pl)
+                            else ((254, 249, 195, 255) if is_high else (240, 253, 244, 255))
+                        )
                         disp_alias, a_fnt, a_dy = fit_alias_to_px(
                             draw,
                             str(pl.get("alias") or ""),
@@ -1116,8 +1209,8 @@ def _draw_category_block(
                             size=alias_sz,
                             bold=True,
                         )
-                        draw.text((118, y + (15 if alias_sz >= 22 else 17) + a_dy), disp_alias, font=a_fnt, fill=alias_col)
-                        next_x = int(118 + text_width(draw, disp_alias, a_fnt) + 8)
+                        draw.text((alias_x, y + (15 if alias_sz >= 22 else 17) + a_dy), disp_alias, font=a_fnt, fill=alias_col)
+                        next_x = int(alias_x + text_width(draw, disp_alias, a_fnt) + 8)
                         if is_veteranos:
                             img.paste(vet_sm, (next_x, y + 18), vet_sm)
                             next_x += 29
@@ -1236,8 +1329,17 @@ def _draw_category_block(
                         ring_color=ring_c,
                     )
                     img.paste(av_im, (cx0, ry + 8), av_im)
-                    pl_flag = get_country_flag(pl.get("flag_country"), w=22, h=15)
-                    img.paste(pl_flag, (cx0 + 48, ry + 11), pl_flag)
+                    name_x = _draw_flag_with_expat_badge(
+                        img,
+                        draw,
+                        pl,
+                        x=cx0 + 48,
+                        flag_y=ry + 11,
+                        flag_w=22,
+                        flag_h=15,
+                        gap_after=6,
+                        compact=True,
+                    )
 
                     elo_val = int(pl.get("max_elo", 0) or 0)
                     elo_w = 0
@@ -1257,7 +1359,6 @@ def _draw_category_block(
                             elo_w = int(text_width(draw, elo_tag, ef))
                             draw.text((cx_limit - elo_w, ry + 9), elo_tag, font=ef, fill=(203, 213, 225, 255))
 
-                    name_x = cx0 + 76
                     row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=True)
                     pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=13) + 6 for b in row_badges)
                     badge_pad = (26 if is_veteranos else 8) + pill_reserve
@@ -1275,6 +1376,8 @@ def _draw_category_block(
                         nm_col = (254, 202, 202, 255)
                     elif is_away:
                         nm_col = (147, 197, 253, 235)
+                    elif _is_smurf_entry(pl):
+                        nm_col = (186, 230, 253, 255)
                     elif is_high:
                         nm_col = (254, 249, 195, 255)
                     else:
@@ -1388,8 +1491,17 @@ def _draw_category_block(
                         ring_color=(250, 204, 21, 255) if is_high else (245, 184, 46, 235),
                     )
                     img.paste(av_im, (cx0, ry + 8), av_im)
-                    pl_flag = get_country_flag(pl.get("flag_country"), w=22, h=15)
-                    img.paste(pl_flag, (cx0 + 46, ry + 10), pl_flag)
+                    name_x = _draw_flag_with_expat_badge(
+                        img,
+                        draw,
+                        pl,
+                        x=cx0 + 46,
+                        flag_y=ry + 10,
+                        flag_w=22,
+                        flag_h=15,
+                        gap_after=6,
+                        compact=True,
+                    )
 
                     elo_val = int(pl.get("max_elo", 0) or 0)
                     ew = 0
@@ -1409,7 +1521,6 @@ def _draw_category_block(
                             ew = int(text_width(draw, elo_tag, ef))
                             draw.text((cx_limit - ew, ry + 8), elo_tag, font=ef, fill=(226, 232, 240, 255))
 
-                    name_x = cx0 + 74
                     row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=False)
                     pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=12) + 6 for b in row_badges)
                     badge_pad = (24 if is_veteranos else 8) + pill_reserve
@@ -1420,7 +1531,12 @@ def _draw_category_block(
                         size=max(18, name_2col_size - 1),
                         bold=True,
                     )
-                    draw.text((name_x, ry + 5 + a_dy), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
+                    rec_nm_col = (
+                        (186, 230, 253, 255)
+                        if _is_smurf_entry(pl)
+                        else ((254, 249, 195, 255) if is_high else (254, 243, 199, 255))
+                    )
+                    draw.text((name_x, ry + 5 + a_dy), disp_alias, font=a_fnt, fill=rec_nm_col)
                     next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
                     if is_veteranos:
                         img.paste(vet_xs, (next_x, ry + 6), vet_xs)
@@ -1447,8 +1563,17 @@ def _draw_category_block(
                         ring_color=(250, 204, 21, 255) if is_high else (245, 184, 46, 235),
                     )
                     img.paste(av_im, (28, y + 8), av_im)
-                    pl_flag = get_country_flag(pl.get("flag_country"), w=26, h=18)
-                    img.paste(pl_flag, (76, y + 18), pl_flag)
+                    alias_x = _draw_flag_with_expat_badge(
+                        img,
+                        draw,
+                        pl,
+                        x=76,
+                        flag_y=y + 18,
+                        flag_w=26,
+                        flag_h=18,
+                        gap_after=10,
+                        compact=False,
+                    )
 
                     note_r = str(pl.get("status_note") or "Partida recente na Relic")
                     nd, nf = truncate_to_px(draw, note_r, max_px=520, size=17, bold=True)
@@ -1481,12 +1606,17 @@ def _draw_category_block(
                     disp_alias, a_fnt, a_dy = fit_alias_to_px(
                         draw,
                         str(pl.get("alias") or ""),
-                        max_px=max(100, int(right_limit_x - 112 - badge_pad)),
+                        max_px=max(100, int(right_limit_x - alias_x - badge_pad)),
                         size=20,
                         bold=True,
                     )
-                    draw.text((112, y + 15 + a_dy), disp_alias, font=a_fnt, fill=(254, 249, 195, 255) if is_high else (254, 243, 199, 255))
-                    next_x = int(112 + text_width(draw, disp_alias, a_fnt) + 7)
+                    rec1_nm_col = (
+                        (186, 230, 253, 255)
+                        if _is_smurf_entry(pl)
+                        else ((254, 249, 195, 255) if is_high else (254, 243, 199, 255))
+                    )
+                    draw.text((alias_x, y + 15 + a_dy), disp_alias, font=a_fnt, fill=rec1_nm_col)
+                    next_x = int(alias_x + text_width(draw, disp_alias, a_fnt) + 7)
                     if is_veteranos:
                         img.paste(vet_sm, (next_x, y + 16), vet_sm)
                         next_x += 29
@@ -1730,18 +1860,19 @@ def _render_single_category_card_png(
 
     draw.rectangle((rail_w, y, width, total_h), fill=(15, 18, 24, 255))
     draw.line([(rail_w, y), (width, y)], fill=(42, 48, 60, 255), width=1)
+    all_cat_players = bucket["in_coh3"] + bucket["online_steam"] + bucket["recent_relic"]
+    has_any_expat = any(bool(_resolve_expat_flag_code(p)) for p in all_cat_players)
+    expat_leg = "  •  BR EXT = brasileiro no exterior" if has_any_expat else ""
     if is_veteranos:
-        foot_txt = f"Veteranos: todos os {total_cat} monitorados exibidos sem filtro  •  Links Steam abaixo"
+        foot_txt = f"Veteranos: todos os {total_cat} monitorados exibidos sem filtro{expat_leg}  •  Links Steam abaixo"
     else:
         cat_count_lbl = f" ({total_cat})" if total_cat > 0 else ""
-        has_any_foreign = any(
-            bool(p.get("suspected_foreign_flag"))
-            for p in (bucket["in_coh3"] + bucket["online_steam"] + bucket["recent_relic"])
-        )
-        foreign_leg = "  •  EXT? possível outra nac." if has_any_foreign else ""
+        has_any_foreign = any(bool(p.get("suspected_foreign_flag")) for p in all_cat_players)
+        foreign_leg = "  •  VPN? possível estrangeiro usando VPN" if has_any_foreign else ""
+        expat_short_leg = "  •  BR EXT = BR no exterior" if has_any_expat else ""
         foot_txt = (
-            f"Somente ativos no CoH3 nos últimos {active_days} dias{cat_count_lbl}"
-            f"  •  ★ ELO alto + ativos{foreign_leg}  •  Links Steam abaixo"
+            f"Somente ativos no CoH3 ≤{active_days}d{cat_count_lbl}"
+            f"  •  ★ ELO alto{expat_short_leg}{foreign_leg}  •  Links Steam abaixo"
         )
     f_fnt = pick_font(foot_txt, size=15, bold=False)
     if text_width(draw, foot_txt, f_fnt) > (width - 52):

@@ -1,0 +1,1520 @@
+{
+  "check_interval_days": 3,
+  "confirmed_recheck_interval_days": 14,
+  "excluded_from_rankings_pids": [
+    3984,
+    5563,
+    5935,
+    21011,
+    47214,
+    154301,
+    310028,
+    416040,
+    448521,
+    682793,
+    743575,
+    811294,
+    865785,
+    944737,
+    1026771,
+    1027727,
+    1096783,
+    1142621,
+    1157276,
+    1159891,
+    1187116,
+    1302582,
+    1304022,
+    1312071
+  ],
+  "min_confirm_br_checks": 2,
+  "min_confirm_br_span_days": 3.0,
+  "min_confirm_foreign_checks": 3,
+  "min_confirm_foreign_span_days": 6.0,
+  "players": {
+    "1026771": {
+      "alias": "赛利斯鼠人",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.0,
+        "br_allies_matches": 0,
+        "brt_prime_share": 1.0,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 0,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 1,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Vienna, Wien, Austria",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 85,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 85,
+          "reasons": [
+            "steam_loc:Vienna, Wien, Austria",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1026771,
+      "reasons": [
+        "steam_loc:Vienna, Wien, Austria",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198856746875"
+    },
+    "1027727": {
+      "alias": "Code002",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.581,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.097,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 61,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 31,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "China",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 100,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:China",
+            "foreign_script_allies:61",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1027727,
+      "reasons": [
+        "steam_loc:China",
+        "foreign_script_allies:61",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198845178567"
+    },
+    "1041470": {
+      "alias": "芋サラダ",
+      "br_score": 100,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.0,
+        "br_allies_matches": 11,
+        "brt_prime_share": 0.857,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 0,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 7,
+        "steam_br_groups": true,
+        "steam_friends_br_count": 2,
+        "steam_friends_br_pct": 0.182,
+        "steam_friends_total": 11,
+        "steam_location": "Porto Alegre, Rio Grande do Sul, Brazil",
+        "unique_br_allies": 2
+      },
+      "exclude_from_rankings": false,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 0,
+      "history": [
+        {
+          "br_score": 100,
+          "foreign_score": 0,
+          "reasons": [
+            "steam_location_brazil",
+            "steam_group_brazil",
+            "br_squadmates:2"
+          ],
+          "ts": 1795496818,
+          "verdict": "confirmed_br"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1041470,
+      "reasons": [
+        "steam_location_brazil",
+        "steam_group_brazil",
+        "br_squadmates:2"
+      ],
+      "span_days": 0.0,
+      "status": "confirmed_br",
+      "steam_id": "76561198125923649"
+    },
+    "1096783": {
+      "alias": "Чимичанги",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.0,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.0,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 1,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 3,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Saint Petersburg, Saint Petersburg City, Russian Federation",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 65,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 65,
+          "reasons": [
+            "steam_loc:Saint Petersburg, Saint ",
+            "steam_summary_foreign_script"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1096783,
+      "reasons": [
+        "steam_loc:Saint Petersburg, Saint ",
+        "steam_summary_foreign_script"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198269130037"
+    },
+    "1142621": {
+      "alias": "Nocturne",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.833,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.042,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 41,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 24,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 9,
+        "steam_location": "",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 90,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 90,
+          "reasons": [
+            "foreign_script_allies:41",
+            "asia_peak_hours:83pct",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1142621,
+      "reasons": [
+        "foreign_script_allies:41",
+        "asia_peak_hours:83pct",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561199152224993"
+    },
+    "1157276": {
+      "alias": "Ферстаппен",
+      "br_score": 45,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.647,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.088,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 29,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 34,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 24,
+        "steam_location": "Porto Alegre, Rio Grande do Sul, Brazil",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 65,
+      "history": [
+        {
+          "br_score": 45,
+          "foreign_score": 65,
+          "reasons": [
+            "steam_location_brazil",
+            "zero_br_steam_friends:0/24",
+            "foreign_script_allies:29",
+            "asia_peak_hours:65pct"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1157276,
+      "reasons": [
+        "steam_location_brazil",
+        "zero_br_steam_friends:0/24",
+        "foreign_script_allies:29",
+        "asia_peak_hours:65pct"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198333607275"
+    },
+    "1159891": {
+      "alias": "GDI",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.2,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.0,
+        "coh1_country": "",
+        "coh2_country": "cn",
+        "coh2_matches": 43,
+        "foreign_script_allies_matches": 28,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 10,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 6,
+        "steam_location": "Nara, Nara, Japan",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 100,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Nara, Nara, Japan",
+            "foreign_script_allies:28",
+            "coh2_cn"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1159891,
+      "reasons": [
+        "steam_loc:Nara, Nara, Japan",
+        "foreign_script_allies:28",
+        "coh2_cn"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561199473666246"
+    },
+    "1187116": {
+      "alias": "هبت رياح العاصفة",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": null,
+        "br_allies_matches": 0,
+        "brt_prime_share": null,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 0,
+        "live_relic_country": "",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 0,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 40,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 40,
+          "reasons": [
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1187116,
+      "reasons": [
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198069882184"
+    },
+    "1302582": {
+      "alias": "math",
+      "br_score": 15,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.0,
+        "br_allies_matches": 1,
+        "brt_prime_share": 1.0,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 3,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 9,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 1
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 40,
+      "history": [
+        {
+          "br_score": 15,
+          "foreign_score": 40,
+          "reasons": [
+            "brt_prime_hours:100pct",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1302582,
+      "reasons": [
+        "brt_prime_hours:100pct",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198140310469"
+    },
+    "1304022": {
+      "alias": "英雄联盟高手",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.2,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.3,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 22,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 65,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 65,
+          "reasons": [
+            "foreign_script_allies:22",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1304022,
+      "reasons": [
+        "foreign_script_allies:22",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198102437472"
+    },
+    "1312071": {
+      "alias": "Karla Kush",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 1.0,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.0,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 3,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 1,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 1,
+        "steam_location": "",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 40,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 40,
+          "reasons": [
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 1312071,
+      "reasons": [
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561199866765657"
+    },
+    "154301": {
+      "alias": "Palmarx",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.077,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.462,
+        "coh1_country": "ve",
+        "coh2_country": "ve",
+        "coh2_matches": 6261,
+        "foreign_script_allies_matches": 16,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 13,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 80,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 80,
+          "reasons": [
+            "foreign_script_allies:16",
+            "coh2_ve"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 154301,
+      "reasons": [
+        "foreign_script_allies:16",
+        "coh2_ve"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198063857337"
+    },
+    "20523": {
+      "alias": "Goa Trance Mix",
+      "br_score": 100,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.175,
+        "br_allies_matches": 3,
+        "brt_prime_share": 0.45,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 1111,
+        "foreign_script_allies_matches": 28,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": true,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Goiania, Goias, Brazil",
+        "unique_br_allies": 3
+      },
+      "exclude_from_rankings": false,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 0,
+      "history": [
+        {
+          "br_score": 100,
+          "foreign_score": 0,
+          "reasons": [
+            "steam_location_brazil",
+            "br_squadmates:3",
+            "coh2_br:1111m",
+            "ptbr_alias_tokens"
+          ],
+          "ts": 1795496818,
+          "verdict": "confirmed_br"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 20523,
+      "reasons": [
+        "steam_location_brazil",
+        "br_squadmates:3",
+        "coh2_br:1111m",
+        "ptbr_alias_tokens"
+      ],
+      "span_days": 0.0,
+      "status": "confirmed_br",
+      "steam_id": "76561198044964084"
+    },
+    "21011": {
+      "alias": "Wywtigerking",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.25,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.325,
+        "coh1_country": "cn",
+        "coh2_country": "cn",
+        "coh2_matches": 140,
+        "foreign_script_allies_matches": 24,
+        "live_relic_country": "cn",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "China",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 100,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:China",
+            "relic_country_changed:cn",
+            "foreign_script_allies:24",
+            "coh2_cn"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 21011,
+      "reasons": [
+        "steam_loc:China",
+        "relic_country_changed:cn",
+        "foreign_script_allies:24",
+        "coh2_cn"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198003393637"
+    },
+    "28570": {
+      "alias": "Paulo220V",
+      "br_score": 100,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.0,
+        "br_allies_matches": 43,
+        "brt_prime_share": 0.725,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 247,
+        "foreign_script_allies_matches": 3,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": true,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Olinda, Pernambuco, Brazil",
+        "unique_br_allies": 3
+      },
+      "exclude_from_rankings": false,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 0,
+      "history": [
+        {
+          "br_score": 100,
+          "foreign_score": 0,
+          "reasons": [
+            "steam_location_brazil",
+            "steam_group_brazil",
+            "br_squadmates:3",
+            "brt_prime_hours:72pct",
+            "coh2_br:247m"
+          ],
+          "ts": 1795496818,
+          "verdict": "confirmed_br"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 28570,
+      "reasons": [
+        "steam_location_brazil",
+        "steam_group_brazil",
+        "br_squadmates:3",
+        "brt_prime_hours:72pct",
+        "coh2_br:247m"
+      ],
+      "span_days": 0.0,
+      "status": "confirmed_br",
+      "steam_id": "76561198060258379"
+    },
+    "310028": {
+      "alias": "Qing",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.85,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.0,
+        "coh1_country": "cn",
+        "coh2_country": "br",
+        "coh2_matches": 100,
+        "foreign_script_allies_matches": 73,
+        "live_relic_country": "cn",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 90,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 90,
+          "reasons": [
+            "foreign_script_allies:73",
+            "asia_peak_hours:85pct",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 310028,
+      "reasons": [
+        "foreign_script_allies:73",
+        "asia_peak_hours:85pct",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198328787882"
+    },
+    "3984": {
+      "alias": "克鲁杰7分钟800人力就1v2",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.6,
+        "br_allies_matches": 1,
+        "brt_prime_share": 0.15,
+        "coh1_country": "cn",
+        "coh2_country": "cn",
+        "coh2_matches": 3911,
+        "foreign_script_allies_matches": 46,
+        "live_relic_country": "cn",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Pearl City, Hawaii, United States",
+        "unique_br_allies": 1
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 100,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Pearl City, Hawaii, Unit",
+            "relic_country_changed:cn",
+            "asia_peak_hours:60pct",
+            "cjk_alias_history",
+            "coh2_cn"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 3984,
+      "reasons": [
+        "steam_loc:Pearl City, Hawaii, Unit",
+        "relic_country_changed:cn",
+        "asia_peak_hours:60pct",
+        "cjk_alias_history",
+        "coh2_cn"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198319696040"
+    },
+    "416040": {
+      "alias": "AAA药材批发 永远亭八意永琳",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.893,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.107,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 5,
+        "foreign_script_allies_matches": 55,
+        "live_relic_country": "ua",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 28,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Haikou, Hainan, China",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 90,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 90,
+          "reasons": [
+            "foreign_script_allies:55",
+            "asia_peak_hours:89pct",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 416040,
+      "reasons": [
+        "foreign_script_allies:55",
+        "asia_peak_hours:89pct",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198275374020"
+    },
+    "448521": {
+      "alias": "stop",
+      "br_score": 30,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.275,
+        "br_allies_matches": 18,
+        "brt_prime_share": 0.425,
+        "coh1_country": "br",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 5,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 4
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 40,
+      "history": [
+        {
+          "br_score": 30,
+          "foreign_score": 40,
+          "reasons": [
+            "br_squadmates:4",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 448521,
+      "reasons": [
+        "br_squadmates:4",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198831175531"
+    },
+    "47214": {
+      "alias": "KUKU Monkey",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.88,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.0,
+        "coh1_country": "",
+        "coh2_country": "cn",
+        "coh2_matches": 342,
+        "foreign_script_allies_matches": 37,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 25,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 192,
+        "steam_location": "",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 100,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "zero_br_steam_friends:0/192",
+            "foreign_script_allies:37",
+            "asia_peak_hours:88pct",
+            "cjk_alias_history",
+            "coh2_cn"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 47214,
+      "reasons": [
+        "zero_br_steam_friends:0/192",
+        "foreign_script_allies:37",
+        "asia_peak_hours:88pct",
+        "cjk_alias_history",
+        "coh2_cn"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198063423983"
+    },
+    "5563": {
+      "alias": "kohid",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.3,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.25,
+        "coh1_country": "by",
+        "coh2_country": "lk",
+        "coh2_matches": 2588,
+        "foreign_script_allies_matches": 28,
+        "live_relic_country": "kg",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Belarus",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 100,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Belarus",
+            "relic_country_changed:kg",
+            "foreign_script_allies:28",
+            "coh2_lk"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 5563,
+      "reasons": [
+        "steam_loc:Belarus",
+        "relic_country_changed:kg",
+        "foreign_script_allies:28",
+        "coh2_lk"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198269418461"
+    },
+    "5935": {
+      "alias": "王塔蒂亚娜和王亚历山",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.125,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.225,
+        "coh1_country": "by",
+        "coh2_country": "az",
+        "coh2_matches": 2521,
+        "foreign_script_allies_matches": 11,
+        "live_relic_country": "az",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 7,
+        "steam_location": "Gushi, Henan, China",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 100,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Gushi, Henan, China",
+            "steam_summary_foreign_script",
+            "relic_country_changed:az",
+            "foreign_script_allies:11",
+            "cjk_alias_history",
+            "coh2_az"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 5935,
+      "reasons": [
+        "steam_loc:Gushi, Henan, China",
+        "steam_summary_foreign_script",
+        "relic_country_changed:az",
+        "foreign_script_allies:11",
+        "cjk_alias_history",
+        "coh2_az"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198798108377"
+    },
+    "682793": {
+      "alias": "用石頭切割深海魚",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.625,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.075,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 38,
+        "live_relic_country": "jp",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 15,
+        "steam_location": "Nakhon Phanom, Thailand",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 100,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Nakhon Phanom, Thailand",
+            "zero_br_steam_friends:0/15",
+            "relic_country_changed:jp",
+            "foreign_script_allies:38",
+            "asia_peak_hours:62pct",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 682793,
+      "reasons": [
+        "steam_loc:Nakhon Phanom, Thailand",
+        "zero_br_steam_friends:0/15",
+        "relic_country_changed:jp",
+        "foreign_script_allies:38",
+        "asia_peak_hours:62pct",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561199571326941"
+    },
+    "743575": {
+      "alias": "Reisキングス",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": null,
+        "br_allies_matches": 0,
+        "brt_prime_share": null,
+        "coh1_country": "br",
+        "coh2_country": "br",
+        "coh2_matches": 13,
+        "foreign_script_allies_matches": 0,
+        "live_relic_country": "",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 0,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 40,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 40,
+          "reasons": [
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 743575,
+      "reasons": [
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198254319565"
+    },
+    "779143": {
+      "alias": "ニコラス",
+      "br_score": 90,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.067,
+        "br_allies_matches": 14,
+        "brt_prime_share": 0.733,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 3,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 15,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 2,
+        "steam_friends_br_pct": 0.067,
+        "steam_friends_total": 30,
+        "steam_location": "Sao Paulo, Brazil",
+        "unique_br_allies": 2
+      },
+      "exclude_from_rankings": false,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 0,
+      "history": [
+        {
+          "br_score": 90,
+          "foreign_score": 0,
+          "reasons": [
+            "steam_location_brazil",
+            "br_squadmates:2",
+            "brt_prime_hours:73pct"
+          ],
+          "ts": 1795496818,
+          "verdict": "confirmed_br"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 779143,
+      "reasons": [
+        "steam_location_brazil",
+        "br_squadmates:2",
+        "brt_prime_hours:73pct"
+      ],
+      "span_days": 0.0,
+      "status": "confirmed_br",
+      "steam_id": "76561198874288631"
+    },
+    "811294": {
+      "alias": "你说是，那便是吧",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.55,
+        "br_allies_matches": 0,
+        "brt_prime_share": 0.025,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 75,
+        "foreign_script_allies_matches": 45,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 40,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 70,
+        "steam_location": "Chengdu, Sichuan, China",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 80,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 80,
+          "reasons": [
+            "zero_br_steam_friends:0/70",
+            "foreign_script_allies:45",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 811294,
+      "reasons": [
+        "zero_br_steam_friends:0/70",
+        "foreign_script_allies:45",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198108427703"
+    },
+    "865785": {
+      "alias": "マキマ",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.0,
+        "br_allies_matches": 1,
+        "brt_prime_share": 0.0,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 0,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 1,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Tokyo, Japan",
+        "unique_br_allies": 1
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 85,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 85,
+          "reasons": [
+            "steam_loc:Tokyo, Japan",
+            "cjk_alias_history"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 865785,
+      "reasons": [
+        "steam_loc:Tokyo, Japan",
+        "cjk_alias_history"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561199053797489"
+    },
+    "940355": {
+      "alias": "SacanaLord",
+      "br_score": 100,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.067,
+        "br_allies_matches": 14,
+        "brt_prime_share": 0.8,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 1010,
+        "foreign_script_allies_matches": 7,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": true,
+        "recent_matches_analyzed": 15,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 19,
+        "steam_friends_br_pct": 0.396,
+        "steam_friends_total": 48,
+        "steam_location": "",
+        "unique_br_allies": 3
+      },
+      "exclude_from_rankings": false,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 10,
+      "history": [
+        {
+          "br_score": 100,
+          "foreign_score": 10,
+          "reasons": [
+            "steam_br_friends:19/48",
+            "br_squadmates:3",
+            "brt_prime_hours:80pct",
+            "isolated_cjk_meme_alias",
+            "coh2_br:1010m",
+            "ptbr_alias_tokens"
+          ],
+          "ts": 1795496818,
+          "verdict": "confirmed_br"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 940355,
+      "reasons": [
+        "steam_br_friends:19/48",
+        "br_squadmates:3",
+        "brt_prime_hours:80pct",
+        "isolated_cjk_meme_alias",
+        "coh2_br:1010m",
+        "ptbr_alias_tokens"
+      ],
+      "span_days": 0.0,
+      "status": "confirmed_br",
+      "steam_id": "76561198018536980"
+    },
+    "944737": {
+      "alias": "Red Hot Chilly Pepper",
+      "br_score": 30,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.3,
+        "br_allies_matches": 6,
+        "brt_prime_share": 0.5,
+        "coh1_country": "",
+        "coh2_country": "dz",
+        "coh2_matches": 1080,
+        "foreign_script_allies_matches": 14,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 30,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 6
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 55,
+      "history": [
+        {
+          "br_score": 30,
+          "foreign_score": 55,
+          "reasons": [
+            "br_squadmates:6",
+            "coh2_dz"
+          ],
+          "ts": 1795496818,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 944737,
+      "reasons": [
+        "br_squadmates:6",
+        "coh2_dz"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198117984620"
+    },
+    "952854": {
+      "alias": "乂卂丨",
+      "br_score": 100,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.0,
+        "br_allies_matches": 4,
+        "brt_prime_share": 1.0,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 137,
+        "foreign_script_allies_matches": 0,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 4,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 1,
+        "steam_friends_br_pct": 0.002,
+        "steam_friends_total": 489,
+        "steam_location": "Curitiba, Parana, Brazil",
+        "unique_br_allies": 1
+      },
+      "exclude_from_rankings": false,
+      "first_flagged_at": 1795496818,
+      "foreign_score": 0,
+      "history": [
+        {
+          "br_score": 100,
+          "foreign_score": 0,
+          "reasons": [
+            "steam_location_brazil",
+            "steam_summary_ptbr",
+            "br_squadmates:1",
+            "coh2_br:137m"
+          ],
+          "ts": 1795496818,
+          "verdict": "confirmed_br"
+        }
+      ],
+      "last_checked_at": 1795496818,
+      "profile_id": 952854,
+      "reasons": [
+        "steam_location_brazil",
+        "steam_summary_ptbr",
+        "br_squadmates:1",
+        "coh2_br:137m"
+      ],
+      "span_days": 0.0,
+      "status": "confirmed_br",
+      "steam_id": "76561198131209135"
+    }
+  },
+  "schema_version": 1,
+  "updated_at": 1795496818
+}

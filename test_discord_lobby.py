@@ -2309,12 +2309,20 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertTrue(any(r > 150 and g < 70 and b < 70 for r, g, b in crop_px), "Esperava vermelho da bandeira do Canadá em XAPA KENTE.")
             self.assertFalse(any(g > 130 and r < 50 and b < 90 for r, g, b in crop_px), "XAPA KENTE não pode renderizar verde da bandeira do Brasil.")
 
-        # Links Discord exibem 🇨🇦, 🇿🇦 e 🇸🇦!
+        # Links Discord exibem bandeira + texto explicativo de emigrado brasileiro!
         links_payload = build_lobby_radar_links_payload(snap)
         oth_desc = links_payload["embeds"][1]["description"]
-        self.assertIn("🇨🇦", oth_desc)
-        self.assertIn("🇿🇦", oth_desc)
-        self.assertIn("🇸🇦", oth_desc)
+        self.assertIn("🇨🇦 *(BR no Canadá)*", oth_desc)
+        self.assertIn("🇿🇦 *(BR na África do Sul)*", oth_desc)
+        self.assertIn("🇸🇦 *(BR na Arábia Saudita)*", oth_desc)
+
+        # Card PNG: ao lado direito da bandeira de XAPA KENTE (x=112..154) há pixels do selo verde-e-ouro `BR EXT`
+        with Image.open(io.BytesIO(oth_png)) as im:
+            badge_px = list(im.crop((110, 134, 158, 158)).getdata())
+            self.assertTrue(
+                any(r > 200 and g > 170 and b < 80 for r, g, b in badge_px),
+                "Esperava borda dourada do selo 'BR EXT' junto à bandeira do Canadá em XAPA KENTE.",
+            )
 
     def test_suspected_foreign_br_flag_signals_nocturne_and_similar_without_false_positives(self) -> None:
         from steam_presence import (
@@ -2359,6 +2367,16 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                 current_aliases=["你说是，那便是吧"],
                 coh2_country="br",
                 coh2_matches=75,
+            )[0]
+        )
+        # Veredito `confirmed_br` da rotina periódica limpa imediatamente qualquer falso positivo
+        self.assertFalse(
+            detect_suspected_foreign_br_flag(
+                profile_id=20523,
+                flag_country="br",
+                current_aliases=["Goa Trance Mix"],
+                historical_aliases=["东风浩荡进行曲", "Fera demais cara"],
+                verified_foreign_status="confirmed_br",
             )[0]
         )
 
@@ -2424,7 +2442,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         links = build_lobby_radar_links_payload(snap_flagged)
         oth_desc = links["embeds"][1]["description"]
         self.assertIn("Nocturne", oth_desc)
-        self.assertIn("possível outra nacionalidade", oth_desc)
+        self.assertIn("possível estrangeiro usando VPN", oth_desc)
         self.assertNotIn("Московский метро** ↗](https://steamcommunity.com/profiles/76561198000970468) 🌐", oth_desc)
 
         _, oth_png = render_lobby_radar_cards_png(snap_flagged, SteamAvatarProvider(allow_network=False))
