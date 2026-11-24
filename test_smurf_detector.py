@@ -1583,6 +1583,135 @@ class TestTop50SmurfDetector(unittest.TestCase):
         sides = sd.CohDBBattlegroupClient.parse_replay_player_sides(replay_html)
         self.assertEqual(sides, {1001: "allies", 2001: "axis"})
 
+    def test_rivalry_family_consolidation_multiday_guard_and_wr_excess(self) -> None:
+        # 1. Consolidação da família (main + smurf catalogada) exclui a própria candidata e une Nêmesis/Criptonitas
+        main_tel = sd.PlayerMatchTelemetry(profile_id=79327, games=40, wins=20)
+        main_tel.opp_wl[660001] = [1, 1]
+        main_tel.opp_days[660001] = {20100, 20101}
+
+        fam_smurf_tel = sd.PlayerMatchTelemetry(profile_id=1333418, games=35, wins=18)
+        fam_smurf_tel.opp_wl[660001] = [0, 3]
+        fam_smurf_tel.opp_days[660001] = {20102, 20103}
+        fam_smurf_tel.map_wl = {
+            "Foggia Airfield": [1, 6],
+            "El Alamein": [1, 5],
+            "Pachino Farmlands": [7, 1],
+            "Langres": [6, 1],
+        }
+        fam_smurf_tel.enemy_bg_wl = {"Italian Coastal": [1, 5], "Mechanized": [6, 1]}
+
+        cand_tel = sd.PlayerMatchTelemetry(profile_id=1996001, games=32, wins=22)
+        cand_tel.opp_wl[660001] = [0, 3]
+        cand_tel.opp_days[660001] = {20150, 20152}
+        cand_tel.map_wl = {
+            "Foggia Airfield": [1, 4],
+            "El Alamein": [1, 3],
+            "Pachino Farmlands": [6, 0],
+            "Langres": [5, 0],
+        }
+        cand_tel.enemy_bg_wl = {"Italian Coastal": [1, 4], "Mechanized": [5, 0]}
+
+        rk_solo = sd._compare_rivalry_and_kryptonite_profile(cand_tel, main_tel, pid_aliases={660001: "MaXiS"})
+        self.assertEqual(len(rk_solo["shared_nemeses"]), 0)
+        self.assertEqual(rk_solo["total_pts"], 0.0)
+
+        rk_fam = sd._compare_rivalry_and_kryptonite_profile(
+            cand_tel,
+            main_tel,
+            main_family_tels=[fam_smurf_tel, cand_tel],
+            pid_aliases={660001: "MaXiS"},
+        )
+        self.assertEqual(rk_fam["main_family_sources"], 2)
+        self.assertEqual(len(rk_fam["shared_nemeses"]), 1)
+        self.assertEqual(rk_fam["shared_nemeses"][0]["main_l"], 4)
+        self.assertGreaterEqual(rk_fam["kryptonite_pts"], 4.0)
+        self.assertGreaterEqual(rk_fam["total_pts"], 11.0)
+
+        # 2. Guarda >=2 dias UTC distintos bloqueia rematches de um único dia
+        sd_main = sd.PlayerMatchTelemetry(profile_id=7001, games=40, wins=20)
+        sd_cand = sd.PlayerMatchTelemetry(profile_id=17001, games=30, wins=15)
+        sd_main.opp_wl[88001] = [0, 3]
+        sd_main.opp_days[88001] = {20200}
+        sd_cand.opp_wl[88001] = [0, 2]
+        sd_cand.opp_days[88001] = {20200}
+        rk_same_day = sd._compare_rivalry_and_kryptonite_profile(sd_cand, sd_main)
+        self.assertEqual(rk_same_day["shared_rivalry_count"], 0)
+        self.assertEqual(rk_same_day["rivalry_pts"], 0.0)
+        self.assertEqual(rk_same_day["rivalry_dir_same"], 0)
+
+        sd_cand.opp_days[88001].add(20201)
+        rk_two_days = sd._compare_rivalry_and_kryptonite_profile(sd_cand, sd_main)
+        self.assertEqual(rk_two_days["shared_rivalry_count"], 1)
+        self.assertGreater(rk_two_days["rivalry_pts"], 0.0)
+
+        # 3. Excesso direcional ajustado ao WR base (captura encontros 1-jogo sem criar âncora isolada)
+        ex_main = sd.PlayerMatchTelemetry(profile_id=7010, games=80, wins=40)
+        ex_cand = sd.PlayerMatchTelemetry(profile_id=17010, games=36, wins=26)  # ~72% WR
+        for idx, opp in enumerate((801, 802, 803, 804)):
+            ex_main.opp_wl[opp] = [0, 5]
+            ex_main.opp_days[opp] = {20100, 20102}
+            ex_cand.opp_wl[opp] = [1, 0] if idx == 3 else [0, 1]
+            ex_cand.opp_days[opp] = {20120}
+        for opp in (805, 806, 807):
+            ex_main.opp_wl[opp] = [5, 0]
+            ex_main.opp_days[opp] = {20101, 20103}
+            ex_cand.opp_wl[opp] = [1, 0]
+            ex_cand.opp_days[opp] = {20121}
+
+        rk_ex = sd._compare_rivalry_and_kryptonite_profile(ex_cand, ex_main)
+        self.assertEqual(rk_ex["shared_rivalry_count"], 0)
+        self.assertEqual(rk_ex["rivalry_dir_same"], 6)
+        self.assertEqual(rk_ex["rivalry_dir_diff"], 1)
+        self.assertGreaterEqual(rk_ex["rivalry_mean_excess"], 0.18)
+        self.assertEqual(rk_ex["rivalry_excess_pts"], 4.0)
+        self.assertFalse(rk_ex["adds_identity_anchor"])
+
+        scored_ex = sd.score_smurf_pair(
+            {"profile_id": 17010, "steam_id": "76561199991701000", "alias": "SmurfEx", "country": "br", "max_elo": 1550, "total_matches": 60},
+            {"profile_id": 7010, "steam_id": "76561198000701000", "alias": "MainEx", "country": "br", "max_elo": 1580, "total_matches": 600, "relic_br_rank": 15},
+            ex_cand,
+            ex_main,
+            main_family_tels=[fam_smurf_tel],
+        )
+        self.assertTrue(any("Concordância direcional contra adversários comuns acima do WR base" in ev for ev in scored_ex["evidence"]))
+        self.assertEqual(scored_ex["metrics"]["rivalry_main_family_sources"], 2)
+        self.assertEqual(scored_ex["metrics"]["rivalry_dir_same"], 6)
+
+        # Anti-FP: conta aleatória 80% WR que vence tanto Fregueses quanto Nêmesis da main => 0 pts
+        fp_main = sd.PlayerMatchTelemetry(profile_id=7011, games=80, wins=40)
+        fp_cand = sd.PlayerMatchTelemetry(profile_id=17011, games=45, wins=36)
+        for opp in range(901, 907):
+            fp_main.opp_wl[opp] = [4, 0]
+            fp_main.opp_days[opp] = {20100, 20102}
+            fp_cand.opp_wl[opp] = [1, 0]
+            fp_cand.opp_days[opp] = {20130}
+        for opp in (907, 908):
+            fp_main.opp_wl[opp] = [0, 4]
+            fp_main.opp_days[opp] = {20101, 20103}
+            fp_cand.opp_wl[opp] = [1, 0]
+            fp_cand.opp_days[opp] = {20131}
+        rk_fp_ex = sd._compare_rivalry_and_kryptonite_profile(fp_cand, fp_main)
+        self.assertLess(rk_fp_ex["rivalry_mean_excess"], 0.12)
+        self.assertEqual(rk_fp_ex["rivalry_excess_pts"], 0.0)
+        self.assertEqual(rk_fp_ex["rivalry_pts"], 0.0)
+
+        # Contra-evidência: polaridade sistematicamente invertida em >=6 adversários comuns (1 jogo cada) => -4.0 pts
+        inv_ex_cand = sd.PlayerMatchTelemetry(profile_id=17012, games=40, wins=20)
+        for opp in (801, 802, 803, 804):
+            inv_ex_cand.opp_wl[opp] = [1, 0]
+            inv_ex_cand.opp_days[opp] = {20140}
+        for opp in (805, 806, 807):
+            inv_ex_cand.opp_wl[opp] = [0, 1]
+            inv_ex_cand.opp_days[opp] = {20141}
+        scored_inv_ex = sd.score_smurf_pair(
+            {"profile_id": 17012, "steam_id": "76561199991701200", "alias": "InvEx", "country": "br", "max_elo": 1550, "total_matches": 90},
+            {"profile_id": 7010, "steam_id": "76561198000701000", "alias": "MainEx", "country": "br", "max_elo": 1580, "total_matches": 600, "relic_br_rank": 15},
+            inv_ex_cand,
+            ex_main,
+        )
+        self.assertEqual(scored_inv_ex["metrics"]["rivalry_kryptonite_pts"], -4.0)
+        self.assertTrue(any("Contra-evidência de polaridade invertida em adversários comuns" in ev for ev in scored_inv_ex["evidence"]))
+
 
 if __name__ == "__main__":
     unittest.main()
