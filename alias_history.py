@@ -47,7 +47,7 @@ logger = logging.getLogger("coh3_br.alias_history")
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_ALIAS_HISTORY_PATH = BASE_DIR / "alias_history.json"
 ALIAS_HISTORY_SCHEMA_VERSION = 1
-MAX_ALIAS_HISTORY_JSON_BYTES = 32 * 1024 * 1024
+MAX_ALIAS_HISTORY_JSON_BYTES = 48 * 1024 * 1024
 MAX_ALIASES_PER_PLAYER = 40
 
 STEAM_ALIASES_TTL_SEC = 24 * 3600
@@ -104,11 +104,12 @@ def _empty_alias_history_doc() -> dict[str, Any]:
         "updated_at": 0,
         "sources_summary": {},
         "players": {},
+        "legacy_br_players": {},
     }
 
 
 def load_alias_history(history_path: Path = DEFAULT_ALIAS_HISTORY_PATH) -> dict[str, Any]:
-    """Carrega `alias_history.json` com proteção anti-symlink (`O_NOFOLLOW`) e limite de 32 MB."""
+    """Carrega `alias_history.json` com proteção anti-symlink (`O_NOFOLLOW`) e limite de 48 MB."""
     try:
         parsed = read_bounded_json_file(history_path, max_bytes=MAX_ALIAS_HISTORY_JSON_BYTES)
         if isinstance(parsed, dict) and isinstance(parsed.get("players"), dict):
@@ -116,6 +117,8 @@ def load_alias_history(history_path: Path = DEFAULT_ALIAS_HISTORY_PATH) -> dict[
             parsed.setdefault("updated_at", 0)
             if not isinstance(parsed.get("sources_summary"), dict):
                 parsed["sources_summary"] = {}
+            if not isinstance(parsed.get("legacy_br_players"), dict):
+                parsed["legacy_br_players"] = {}
             return parsed
     except FileNotFoundError:
         return _empty_alias_history_doc()
@@ -130,22 +133,23 @@ def load_alias_history(history_path: Path = DEFAULT_ALIAS_HISTORY_PATH) -> dict[
 
 def _recompute_sources_summary(doc: dict[str, Any]) -> dict[str, int]:
     counts: dict[str, int] = {}
-    players = doc.get("players") or {}
-    if not isinstance(players, dict):
-        return counts
-    for rec in players.values():
-        if not isinstance(rec, dict):
+    for bucket_name in ("players", "legacy_br_players"):
+        bucket = doc.get(bucket_name)
+        if not isinstance(bucket, dict):
             continue
-        player_sources: set[str] = set()
-        for item in rec.get("aliases") or []:
-            if not isinstance(item, dict):
+        for rec in bucket.values():
+            if not isinstance(rec, dict):
                 continue
-            for src in item.get("sources") or []:
-                s = str(src or "").strip()
-                if s:
-                    player_sources.add(s)
-        for src in player_sources:
-            counts[src] = counts.get(src, 0) + 1
+            player_sources: set[str] = set()
+            for item in rec.get("aliases") or []:
+                if not isinstance(item, dict):
+                    continue
+                for src in item.get("sources") or []:
+                    s = str(src or "").strip()
+                    if s:
+                        player_sources.add(s)
+            for src in player_sources:
+                counts[src] = counts.get(src, 0) + 1
     return dict(sorted(counts.items()))
 
 
@@ -158,6 +162,8 @@ def save_alias_history(
     """Atualiza metadados de resumo e grava `alias_history.json` atomicamente."""
     doc["schema_version"] = ALIAS_HISTORY_SCHEMA_VERSION
     doc["updated_at"] = int(now_ts) if now_ts is not None else int(time.time())
+    if not isinstance(doc.get("legacy_br_players"), dict):
+        doc["legacy_br_players"] = {}
     doc["sources_summary"] = _recompute_sources_summary(doc)
     serialized = json.dumps(doc, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     atomic_write_text(history_path, serialized)
@@ -432,6 +438,43 @@ def ingest_local_database(
     return changed
 
 
+def _update_era_metadata(
+    rec: dict[str, Any] | None,
+    *,
+    era: str,
+    profile_id: int = 0,
+    country: str = "",
+    total_matches: int = 0,
+    last_match_date: int = 0,
+) -> bool:
+    """Atualiza metadados por era (`coh1`/`coh2`/`coh3`: país, profile_id legado, jogos, última partida)."""
+    if not isinstance(rec, dict):
+        return False
+    changed = False
+    clean_ctry = strip_unsafe_chars(country).strip().lower()[:4]
+    if clean_ctry:
+        ctry_key = f"{era}_country"
+        if rec.get(ctry_key) != clean_ctry:
+            rec[ctry_key] = clean_ctry
+            changed = True
+    if era in ("coh1", "coh2") and int(profile_id or 0) > 0:
+        pid_key = f"{era}_profile_id"
+        if int(rec.get(pid_key, 0) or 0) != int(profile_id):
+            rec[pid_key] = int(profile_id)
+            changed = True
+    if int(total_matches or 0) > 0:
+        m_key = f"{era}_total_matches"
+        if int(total_matches) > int(rec.get(m_key, 0) or 0):
+            rec[m_key] = int(total_matches)
+            changed = True
+    if int(last_match_date or 0) > 0:
+        l_key = f"{era}_last_match_date"
+        if int(last_match_date) > int(rec.get(l_key, 0) or 0):
+            rec[l_key] = int(last_match_date)
+            changed = True
+    return changed
+
+
 def ingest_relic_stats(
     doc: dict[str, Any],
     relic_stats_by_pid: dict[int, dict[str, Any]] | None,
@@ -461,6 +504,14 @@ def ingest_relic_stats(
             first_seen_ts=lmd if (0 < lmd <= now) else now,
             steam_id=sid,
             is_live_current=True,
+        ):
+            changed = True
+        if _update_era_metadata(
+            (doc.get("players") or {}).get(str(pid)),
+            era="coh3",
+            country=str(st.get("country") or ""),
+            total_matches=int(st.get("total_matches", 0) or 0),
+            last_match_date=lmd,
         ):
             changed = True
     return changed
@@ -569,6 +620,14 @@ def ingest_coh3stats_opendata(
                     is_live_current=False,
                 ):
                     changed = True
+                if _update_era_metadata(
+                    (doc.get("players") or {}).get(str(pid)),
+                    era="coh3",
+                    country=str(row.get("country") or ""),
+                    total_matches=int(row.get("total_matches", 0) or 0),
+                    last_match_date=lmd,
+                ):
+                    changed = True
 
     tel_players = getattr(telemetry, "players", None)
     if isinstance(tel_players, dict):
@@ -632,8 +691,8 @@ def _ingest_legacy_relic_stats(
     stats_by_sid: dict[str, dict[str, Any]] | None,
     *,
     pid_by_steam: dict[str, int],
+    era: str,
     source: str,
-    profile_id_field: str,
     timestamp_field: str,
     checked_sids: list[str] | set[str] | None = None,
     now_ts: int | None = None,
@@ -664,14 +723,20 @@ def _ingest_legacy_relic_stats(
         if pid <= 0:
             continue
         legacy_pid = int(st.get("profile_id", 0) or 0)
+        lmd = int(st.get("last_match_date", 0) or 0)
         rec = players.get(str(pid))
-        if legacy_pid > 0 and isinstance(rec, dict) and int(rec.get(profile_id_field, 0) or 0) != legacy_pid:
-            rec[profile_id_field] = legacy_pid
+        if _update_era_metadata(
+            rec,
+            era=era,
+            profile_id=legacy_pid,
+            country=str(st.get("country") or ""),
+            total_matches=int(st.get("total_matches", 0) or 0),
+            last_match_date=lmd,
+        ):
             changed = True
         al = str(st.get("alias") or "").strip()
         if not al:
             continue
-        lmd = int(st.get("last_match_date", 0) or 0)
         if record_player_alias(
             doc,
             profile_id=pid,
@@ -698,8 +763,8 @@ def ingest_coh2_relic_stats(
         doc,
         coh2_by_sid,
         pid_by_steam=pid_by_steam,
+        era="coh2",
         source="relic_coh2_api",
-        profile_id_field="coh2_profile_id",
         timestamp_field="last_coh2_relic_at",
         checked_sids=checked_sids,
         now_ts=now_ts,
@@ -719,8 +784,8 @@ def ingest_coh1_relic_stats(
         doc,
         coh1_by_sid,
         pid_by_steam=pid_by_steam,
+        era="coh1",
         source="relic_coh1_api",
-        profile_id_field="coh1_profile_id",
         timestamp_field="last_coh1_relic_at",
         checked_sids=checked_sids,
         now_ts=now_ts,
@@ -809,6 +874,279 @@ def ingest_coh1stats_aliases(
     )
 
 
+def record_legacy_br_player(
+    doc: dict[str, Any],
+    *,
+    steam_id: str,
+    alias: str,
+    source: str,
+    era: str,
+    profile_id: int = 0,
+    country: str = "br",
+    seen_ts: int = 0,
+    total_matches: int = 0,
+    pid_by_steam: dict[str, int] | None = None,
+) -> bool:
+    """
+    Registra um jogador brasileiro de CoH1/CoH2 (mesmo inativo ou sem CoH3).
+    - Se o SteamID64 já possui conta CoH3 em `doc['players']`, mescla diretamente na conta CoH3.
+    - Caso contrário, persiste em `doc['legacy_br_players'][steam_id]` preservando todo histórico multi-era.
+    """
+    clean_sid = str(steam_id or "").replace("/steam/", "").strip()
+    if not STEAM_ID64_VALID_RE.fullmatch(clean_sid):
+        return False
+    clean_alias = _clean_alias_for_history(alias)
+    clean_src = strip_unsafe_chars(source)[:32] or f"relic_{era}_api"
+    ts_val = max(0, int(seen_ts or 0))
+
+    # Se já existe conta CoH3 mapeada, mescla nela e remove eventual duplicata legada
+    coh3_pid = int((pid_by_steam or {}).get(clean_sid, 0) or 0)
+    if coh3_pid > 0:
+        changed = False
+        if clean_alias and record_player_alias(
+            doc,
+            profile_id=coh3_pid,
+            alias=clean_alias,
+            source=clean_src,
+            seen_ts=ts_val,
+            steam_id=clean_sid,
+            is_live_current=False,
+        ):
+            changed = True
+        if _update_era_metadata(
+            (doc.get("players") or {}).get(str(coh3_pid)),
+            era=era,
+            profile_id=profile_id,
+            country=country,
+            total_matches=total_matches,
+            last_match_date=ts_val,
+        ):
+            changed = True
+        legacy_map = doc.get("legacy_br_players")
+        if isinstance(legacy_map, dict) and clean_sid in legacy_map:
+            del legacy_map[clean_sid]
+            changed = True
+        return changed
+
+    legacy_map = doc.setdefault("legacy_br_players", {})
+    rec = legacy_map.get(clean_sid)
+    changed = False
+    if not isinstance(rec, dict):
+        if not clean_alias and int(profile_id or 0) <= 0:
+            return False
+        rec = {
+            "steam_id": clean_sid,
+            "canonical_alias": clean_alias or f"Steam {clean_sid[-6:]}",
+            "current_alias": clean_alias or f"Steam {clean_sid[-6:]}",
+            "scope": f"legacy_{era}_br",
+            "aliases": [],
+        }
+        legacy_map[clean_sid] = rec
+        changed = True
+    elif era == "coh2" and rec.get("scope") == "legacy_coh1_br":
+        rec["scope"] = "legacy_coh1_coh2_br"
+        changed = True
+    elif era == "coh1" and rec.get("scope") == "legacy_coh2_br":
+        rec["scope"] = "legacy_coh1_coh2_br"
+        changed = True
+
+    if _update_era_metadata(
+        rec,
+        era=era,
+        profile_id=profile_id,
+        country=country,
+        total_matches=total_matches,
+        last_match_date=ts_val,
+    ):
+        changed = True
+
+    if clean_alias:
+        aliases: list[dict[str, Any]] = rec.setdefault("aliases", [])
+        cf = clean_alias.casefold()
+        found = next((a for a in aliases if isinstance(a, dict) and str(a.get("alias") or "").casefold() == cf), None)
+        if found is None:
+            aliases.append(
+                {
+                    "alias": clean_alias,
+                    "first_seen": ts_val,
+                    "last_seen": ts_val,
+                    "sources": [clean_src],
+                }
+            )
+            changed = True
+        else:
+            if ts_val > 0:
+                if int(found.get("first_seen", 0) or 0) <= 0 or ts_val < int(found["first_seen"]):
+                    found["first_seen"] = ts_val
+                    changed = True
+                if ts_val > int(found.get("last_seen", 0) or 0):
+                    found["last_seen"] = ts_val
+                    changed = True
+            srcs = list(found.get("sources") or [])
+            if clean_src not in srcs:
+                srcs.append(clean_src)
+                srcs.sort()
+                found["sources"] = srcs
+                changed = True
+        aliases.sort(
+            key=lambda x: (
+                int(x.get("first_seen", 0) or 0) or 9_999_999_999,
+                int(x.get("last_seen", 0) or 0) or 9_999_999_999,
+                str(x.get("alias") or "").casefold(),
+            )
+        )
+        _trim_player_aliases(rec)
+        if ts_val >= max((int(a.get("last_seen", 0) or 0) for a in aliases), default=0):
+            if rec.get("current_alias") != clean_alias:
+                rec["current_alias"] = clean_alias
+                changed = True
+    return changed
+
+
+def promote_legacy_br_to_coh3(doc: dict[str, Any], *, pid_by_steam: dict[str, int]) -> bool:
+    """Promove qualquer brasileiro de `legacy_br_players` que passou a ter conta CoH3 em `players`."""
+    legacy_map = doc.get("legacy_br_players")
+    if not isinstance(legacy_map, dict) or not pid_by_steam:
+        return False
+    changed = False
+    for sid in list(legacy_map.keys()):
+        coh3_pid = int(pid_by_steam.get(sid, 0) or 0)
+        if coh3_pid <= 0:
+            continue
+        lrec = legacy_map.pop(sid, None)
+        if not isinstance(lrec, dict):
+            continue
+        changed = True
+        target = (doc.get("players") or {}).get(str(coh3_pid))
+        for era in ("coh1", "coh2"):
+            _update_era_metadata(
+                target,
+                era=era,
+                profile_id=int(lrec.get(f"{era}_profile_id", 0) or 0),
+                country=str(lrec.get(f"{era}_country") or ""),
+                total_matches=int(lrec.get(f"{era}_total_matches", 0) or 0),
+                last_match_date=int(lrec.get(f"{era}_last_match_date", 0) or 0),
+            )
+        for item in lrec.get("aliases") or []:
+            if not isinstance(item, dict):
+                continue
+            al = str(item.get("alias") or "")
+            fs = int(item.get("first_seen", 0) or 0)
+            ls = int(item.get("last_seen", 0) or 0)
+            for src in item.get("sources") or ["relic_coh2_api"]:
+                record_player_alias(
+                    doc,
+                    profile_id=coh3_pid,
+                    alias=al,
+                    source=str(src),
+                    seen_ts=ls,
+                    first_seen_ts=fs,
+                    steam_id=sid,
+                    is_live_current=False,
+                )
+    return changed
+
+
+def detect_country_migrations(
+    doc: dict[str, Any],
+    *,
+    coh2_network_non_br: dict[str, dict[str, Any]] | None = None,
+    steam_presence_by_sid: dict[str, dict[str, Any]] | None = None,
+    now_ts: int | None = None,
+) -> tuple[bool, list[dict[str, Any]]]:
+    """
+    Detecta brasileiros que permaneceram com bandeira/rede brasileira ao longo da linha do tempo
+    (CoH1 / CoH2 / Steam) e aparecem com bandeira de outro país no CoH3 (ex.: `icewarp`: `br -> za`).
+    """
+    now = int(now_ts) if now_ts is not None else int(time.time())
+    players = doc.get("players") or {}
+    net_map = coh2_network_non_br or {}
+    pres_map = steam_presence_by_sid or {}
+    changed = False
+    migrations: list[dict[str, Any]] = []
+
+    for rec in players.values():
+        if not isinstance(rec, dict):
+            continue
+        pid = int(rec.get("profile_id", 0) or 0)
+        sid = str(rec.get("steam_id") or "").strip()
+        c3 = str(rec.get("coh3_country") or "").strip().lower()
+        c2 = str(rec.get("coh2_country") or "").strip().lower()
+        c1 = str(rec.get("coh1_country") or "").strip().lower()
+
+        if c3 and c3 != "br":
+            source_eras = []
+            if c1 == "br":
+                source_eras.append("coh1")
+            if c2 == "br":
+                source_eras.append("coh2")
+            net_row = net_map.get(sid) if sid else None
+            br_partners_cnt = len(net_row.get("br_partners") or ()) if isinstance(net_row, dict) else 0
+            pres = pres_map.get(sid) if sid else None
+            is_steam_br = bool(isinstance(pres, dict) and pres.get("is_steam_brazil"))
+            has_br_grp = bool(isinstance(pres, dict) and pres.get("has_brazil_steam_group"))
+            steam_loc = strip_unsafe_chars(pres.get("location") or "")[:60] if isinstance(pres, dict) else ""
+
+            evidence = ""
+            if source_eras:
+                evidence = "era_country_shift"
+            elif (br_partners_cnt >= 2 or rec.get("scope") in ("veterano", "manual_other_br")) and (is_steam_br or has_br_grp):
+                evidence = "coh2_network_steam_confirmed" if br_partners_cnt >= 2 else "steam_confirmed_expat_coh3"
+            elif rec.get("scope") in ("veterano", "manual_other_br") or is_steam_br:
+                evidence = "roster_confirmed_expat_coh3" if rec.get("scope") in ("veterano", "manual_other_br") else "steam_confirmed_expat_coh3"
+
+            if evidence:
+                prev_mig = rec.get("country_migration") if isinstance(rec.get("country_migration"), dict) else {}
+                new_mig: dict[str, Any] = {
+                    "from_country": "br",
+                    "current_country": c3,
+                    "evidence": evidence,
+                    "detected_at": int(prev_mig.get("detected_at", 0) or now),
+                }
+                if source_eras:
+                    new_mig["source_eras"] = source_eras
+                if br_partners_cnt > 0 or int(prev_mig.get("coh2_br_teammates", 0) or 0) > 0:
+                    new_mig["coh2_br_teammates"] = max(br_partners_cnt, int(prev_mig.get("coh2_br_teammates", 0) or 0))
+                final_loc = steam_loc or str(prev_mig.get("steam_location") or "")
+                if final_loc:
+                    new_mig["steam_location"] = final_loc
+                if rec.get("country_migration") != new_mig:
+                    rec["country_migration"] = new_mig
+                    changed = True
+
+        mig = rec.get("country_migration")
+        if isinstance(mig, dict) and mig.get("current_country") and str(mig.get("current_country")).lower() != "br":
+            migrations.append(
+                {
+                    "profile_id": pid,
+                    "steam_id": sid,
+                    "alias": str(rec.get("current_alias") or rec.get("canonical_alias") or f"Jogador {pid}"),
+                    "canonical_alias": str(rec.get("canonical_alias") or ""),
+                    "scope": str(rec.get("scope") or "outros_brasileiros"),
+                    "from_country": str(mig.get("from_country") or "br"),
+                    "current_country": str(mig.get("current_country") or ""),
+                    "evidence": str(mig.get("evidence") or ""),
+                    "source_eras": list(mig.get("source_eras") or []),
+                    "coh2_br_teammates": int(mig.get("coh2_br_teammates", 0) or 0),
+                    "steam_location": str(mig.get("steam_location") or ""),
+                    "coh2_profile_id": int(rec.get("coh2_profile_id", 0) or 0),
+                    "coh1_profile_id": int(rec.get("coh1_profile_id", 0) or 0),
+                    "coh3_total_matches": int(rec.get("coh3_total_matches", 0) or 0),
+                    "coh2_total_matches": int(rec.get("coh2_total_matches", 0) or 0),
+                }
+            )
+
+    migrations.sort(
+        key=lambda m: (
+            0 if m["scope"] in ("veterano", "manual_other_br") else 1,
+            -int(m["coh2_br_teammates"]),
+            -int(m["coh3_total_matches"]),
+            m["alias"].casefold(),
+        )
+    )
+    return changed, migrations
+
+
 def get_historical_aliases_for_pid(doc: dict[str, Any] | None, profile_id: int) -> list[str]:
     """Retorna lista cronológica de nicks históricos persistidos para `profile_id`."""
     if not isinstance(doc, dict):
@@ -855,39 +1193,52 @@ def select_stale_pids_for_source(
 def query_alias_history(doc: dict[str, Any], query: str) -> list[dict[str, Any]]:
     """
     Busca jogadores no histórico persistente por `profile_id`, `steam_id`, `canonical_alias`,
-    `current_alias`, `smurf_of` ou qualquer nick antigo registrado em `aliases` (CoH1/CoH2/CoH3/Steam/CoHDB).
+    `current_alias`, `smurf_of` ou qualquer nick antigo registrado em `aliases` (CoH1/CoH2/CoH3/Steam/CoHDB),
+    incluindo contas legadas de CoH1/CoH2 sem CoH3 (`legacy_br_players`).
     """
     q = strip_unsafe_chars(query).strip()
     if not q:
         return []
     q_cf = q.casefold()
     players = doc.get("players") or {}
+    legacy_players = doc.get("legacy_br_players") or {}
     if not isinstance(players, dict):
-        return []
+        players = {}
+    if not isinstance(legacy_players, dict):
+        legacy_players = {}
 
     if q.isdigit():
         exact = players.get(q)
         if isinstance(exact, dict):
             return [exact]
+        exact_leg = legacy_players.get(q)
+        if isinstance(exact_leg, dict):
+            return [exact_leg]
 
     clean_sid = q.replace("/steam/", "").strip()
-    matches: list[tuple[int, dict[str, Any]]] = []
-    for rec in players.values():
-        if not isinstance(rec, dict):
-            continue
-        if clean_sid and str(rec.get("steam_id") or "") == clean_sid:
-            matches.append((0, rec))
-            continue
-        can_cf = str(rec.get("canonical_alias") or "").casefold()
-        cur_cf = str(rec.get("current_alias") or "").casefold()
-        sm_cf = str(rec.get("smurf_of") or "").casefold()
-        alias_cfs = [str(a.get("alias") or "").casefold() for a in (rec.get("aliases") or []) if isinstance(a, dict)]
-        if q_cf == can_cf or q_cf == cur_cf or q_cf in alias_cfs:
-            matches.append((1, rec))
-        elif q_cf in can_cf or q_cf in cur_cf or (sm_cf and q_cf in sm_cf) or any(q_cf in a for a in alias_cfs):
-            matches.append((2, rec))
-    matches.sort(key=lambda item: (item[0], str(item[1].get("canonical_alias") or "").casefold()))
-    return [m[1] for m in matches]
+    matches: list[tuple[int, int, dict[str, Any]]] = []
+    for bucket_prio, bucket in ((0, players), (1, legacy_players)):
+        for rec in bucket.values():
+            if not isinstance(rec, dict):
+                continue
+            if clean_sid and str(rec.get("steam_id") or "") == clean_sid:
+                matches.append((0, bucket_prio, rec))
+                continue
+            if q.isdigit() and (
+                str(rec.get("coh2_profile_id") or "") == q or str(rec.get("coh1_profile_id") or "") == q
+            ):
+                matches.append((0, bucket_prio, rec))
+                continue
+            can_cf = str(rec.get("canonical_alias") or "").casefold()
+            cur_cf = str(rec.get("current_alias") or "").casefold()
+            sm_cf = str(rec.get("smurf_of") or "").casefold()
+            alias_cfs = [str(a.get("alias") or "").casefold() for a in (rec.get("aliases") or []) if isinstance(a, dict)]
+            if q_cf == can_cf or q_cf == cur_cf or q_cf in alias_cfs:
+                matches.append((1, bucket_prio, rec))
+            elif q_cf in can_cf or q_cf in cur_cf or (sm_cf and q_cf in sm_cf) or any(q_cf in a for a in alias_cfs):
+                matches.append((2, bucket_prio, rec))
+    matches.sort(key=lambda item: (item[0], item[1], str(item[2].get("canonical_alias") or "").casefold()))
+    return [m[2] for m in matches]
 
 
 def _fmt_ts_date(ts: int) -> str:
@@ -900,20 +1251,26 @@ def format_alias_history_entry(rec: dict[str, Any]) -> str:
     """Formata o histórico completo de um jogador para leitura humana (CoH3 + CoH2 + CoH1 + Steam + CoHDB)."""
     pid = int(rec.get("profile_id", 0) or 0)
     sid = str(rec.get("steam_id") or "N/D")
-    can = str(rec.get("canonical_alias") or f"Jogador {pid}")
+    can = str(rec.get("canonical_alias") or (f"Jogador {pid}" if pid > 0 else f"Steam {sid[-6:]}"))
     cur = str(rec.get("current_alias") or can)
     scope = str(rec.get("scope") or "outros_brasileiros")
     smurf_of = str(rec.get("smurf_of") or "")
     smurf_tag = f" | Smurf de: {smurf_of}" if smurf_of else ""
-    legacy_tags = []
+    mig = rec.get("country_migration")
+    mig_tag = ""
+    if isinstance(mig, dict) and mig.get("current_country"):
+        mig_tag = f" | migração: {mig.get('from_country', 'br')}->{mig['current_country']} ({mig.get('evidence', '')})"
+    id_tags = []
+    if pid > 0:
+        id_tags.append(f"pid={pid}")
     if int(rec.get("coh2_profile_id", 0) or 0) > 0:
-        legacy_tags.append(f"coh2_pid={int(rec['coh2_profile_id'])}")
+        id_tags.append(f"coh2_pid={int(rec['coh2_profile_id'])}")
     if int(rec.get("coh1_profile_id", 0) or 0) > 0:
-        legacy_tags.append(f"coh1_pid={int(rec['coh1_profile_id'])}")
-    legacy_str = (" | " + " ".join(legacy_tags)) if legacy_tags else ""
+        id_tags.append(f"coh1_pid={int(rec['coh1_profile_id'])}")
+    id_str = (" | " + " ".join(id_tags)) if id_tags else ""
     aliases = rec.get("aliases") or []
     lines = [
-        f"• {cur} (canônico: {can} | {scope}{smurf_tag} | pid={pid}{legacy_str} | Steam {sid}) — {len(aliases)} nick(s):"
+        f"• {cur} (canônico: {can} | {scope}{smurf_tag}{mig_tag}{id_str} | Steam {sid}) — {len(aliases)} nick(s):"
     ]
     for item in aliases:
         if not isinstance(item, dict):
@@ -940,6 +1297,7 @@ def format_alias_history_report(
 ) -> str:
     """Formata relatório resumido do histórico persistente de nicks."""
     players = doc.get("players") or {}
+    legacy_players = doc.get("legacy_br_players") or {}
     rows = [r for r in players.values() if isinstance(r, dict)]
     if only_changed:
         rows = [r for r in rows if len(r.get("aliases") or []) >= 2]
@@ -950,11 +1308,12 @@ def format_alias_history_report(
             str(r.get("canonical_alias") or "").casefold(),
         )
     )
+    mig_count = sum(1 for r in players.values() if isinstance(r, dict) and isinstance(r.get("country_migration"), dict))
     summary = doc.get("sources_summary") or _recompute_sources_summary(doc)
     lines = [
-        f"[HISTÓRICO PERSISTENTE DE NICKS] Total monitorado: {len(players)} | "
-        f"Com múltiplas identidades: {sum(1 for r in players.values() if isinstance(r, dict) and len(r.get('aliases') or []) >= 2)} | "
-        f"Fontes: {summary}"
+        f"[HISTÓRICO PERSISTENTE DE NICKS] CoH3 BR: {len(players)} | Legado CoH1/CoH2 sem CoH3: {len(legacy_players)} | "
+        f"Com múltiplas identidades (CoH3): {sum(1 for r in players.values() if isinstance(r, dict) and len(r.get('aliases') or []) >= 2)} | "
+        f"Migrações de país (BR->ext): {mig_count} | Fontes: {summary}"
     ]
     for rec in rows[: max(1, int(limit))]:
         lines.append(format_alias_history_entry(rec))
@@ -987,11 +1346,14 @@ def sync_persistent_alias_history(
     include_opendata_days: int = 0,
     include_opendata_leaderboards: bool = False,
     include_all_br_catalog: bool = False,
+    include_all_eras: bool = False,
     include_coh2_relic: bool = True,
     include_coh1_relic: bool = True,
     include_coh2stats_days: int = 0,
     include_coh1stats: bool = True,
     max_legacy_relic_profiles: int = 1200,
+    coh2_network_hops: int = 2,
+    max_expat_steam_verify: int = 250,
     cohdb_sample_replays: int = 3,
     extra_pids: list[int] | None = None,
     force_refresh: bool = False,
@@ -1005,8 +1367,10 @@ def sync_persistent_alias_history(
     3. Steam Key API (`ISteamUser/GetPlayerSummaries/v2` ou XML) + Steam `ajaxaliases`
     4. COH3 Stats Open Data (16 leaderboards globais com TODOS os BRs + dumps diários de partidas)
     5. CoHDB (`/players/<pid>/matches` + amostragem de replays históricos)
-    6. Relic API CoH2 (`coh2-api.reliclink.com`) + CoH2Stats Open Data (`storage.coh2stats.com/matches`)
-    7. Relic API CoH1 (`coh1-api.reliclink.com`) + CoH1Stats Public API (`api.coh1stats.com`)
+    6. Descoberta multi-era (`--all-eras`): TODOS os brasileiros de CoH1 (16 leaderboards globais),
+       CoH2 (20 leaderboards SA + CoH2Stats Open Data + expansão BFS de equipes pré-formadas `statGroups`
+       desde 2013) e grupos Steam BR — cruzando quem migrou para o CoH3 e detectando brasileiros que
+       mudaram de país/bandeira ao longo da linha do tempo (ex.: `icewarp`: `br -> za`).
     """
     from lobby_radar import load_community_cache
     from smurf_detector import CohDBBattlegroupClient, SmurfTelemetryCollector
@@ -1043,29 +1407,32 @@ def sync_persistent_alias_history(
 
     # 1b. Descoberta total de TODOS os brasileiros que possuem CoH3 (sem corte de 15d ou 90d!)
     all_br_discovered = 0
-    if (include_all_br_catalog or include_opendata_leaderboards) and hasattr(r_client, "discover_br_and_candidates_from_open_data"):
+    if (include_all_br_catalog or include_all_eras or include_opendata_leaderboards) and hasattr(
+        r_client, "discover_br_and_candidates_from_open_data"
+    ):
         lb_br, _, _ = r_client.discover_br_and_candidates_from_open_data(now_ts=now)
         all_br_discovered += len(lb_br or {})
         if ingest_coh3stats_opendata(doc, catalog_players=lb_br, now_ts=now):
             dirty = True
 
-    if include_all_br_catalog and hasattr(r_client, "discover_br_and_candidates_from_relic_sa"):
+    if (include_all_br_catalog or include_all_eras) and hasattr(r_client, "discover_br_and_candidates_from_relic_sa"):
         sa_br, _ = r_client.discover_br_and_candidates_from_relic_sa(max_pages_per_board=10)
         all_br_discovered += len(sa_br or {})
         if ingest_relic_stats(doc, sa_br, now_ts=now):
             dirty = True
 
-    if include_all_br_catalog and hasattr(p_client, "fetch_group_member_steam_ids") and hasattr(r_client, "fetch_profile_stats_by_steam_ids"):
-        group_sids: list[str] = []
+    steam_group_all_sids: list[str] = []
+    if (include_all_br_catalog or include_all_eras) and hasattr(p_client, "fetch_group_member_steam_ids"):
         seen_gs: set[str] = set()
-        existing_sids = set(_build_pid_by_steam_map(doc).keys())
         for grp in BRAZILIAN_COH_STEAM_GROUPS:
-            for sid in p_client.fetch_group_member_steam_ids(grp, max_pages=5, pace_delay_sec=0.20):
-                if sid not in seen_gs and sid not in existing_sids:
+            for sid in p_client.fetch_group_member_steam_ids(grp, max_pages=6, pace_delay_sec=0.16):
+                if sid not in seen_gs:
                     seen_gs.add(sid)
-                    group_sids.append(sid)
-        if group_sids:
-            grp_stats = r_client.fetch_profile_stats_by_steam_ids(group_sids[:1200], pace_delay_sec=0.16)
+                    steam_group_all_sids.append(sid)
+        existing_sids = set(_build_pid_by_steam_map(doc).keys())
+        new_group_sids = [s for s in steam_group_all_sids if s not in existing_sids]
+        if new_group_sids and hasattr(r_client, "fetch_profile_stats_by_steam_ids"):
+            grp_stats = r_client.fetch_profile_stats_by_steam_ids(new_group_sids[:2000], pace_delay_sec=0.14)
             br_grp_stats = {
                 pid: st
                 for pid, st in (grp_stats or {}).items()
@@ -1075,13 +1442,24 @@ def sync_persistent_alias_history(
             if ingest_relic_stats(doc, br_grp_stats, now_ts=now):
                 dirty = True
 
-    # 2. Relic API CoH3 (getPersonalStat em lote para todos os perfis em foco)
+    # 2. Relic API CoH3 (getPersonalStat em lote para todos os perfis em foco + sem `coh3_country` em modo all-eras)
     relic_fetched = 0
-    if include_relic and focus_pids and hasattr(r_client, "fetch_profile_stats_batch"):
-        relic_stats = r_client.fetch_profile_stats_batch(focus_pids, pace_delay_sec=0.12)
-        relic_fetched = len(relic_stats or {})
-        if ingest_relic_stats(doc, relic_stats, now_ts=now):
-            dirty = True
+    if include_relic and hasattr(r_client, "fetch_profile_stats_batch"):
+        relic_pids = list(focus_pids)
+        if include_all_eras:
+            missing_c3_pids = [
+                int(rec.get("profile_id", 0) or 0)
+                for rec in (doc.get("players") or {}).values()
+                if isinstance(rec, dict)
+                and int(rec.get("profile_id", 0) or 0) > 0
+                and not str(rec.get("coh3_country") or "").strip()
+            ]
+            relic_pids = list(dict.fromkeys(relic_pids + missing_c3_pids))
+        if relic_pids:
+            relic_stats = r_client.fetch_profile_stats_batch(relic_pids, pace_delay_sec=0.12)
+            relic_fetched = len(relic_stats or {})
+            if ingest_relic_stats(doc, relic_stats, now_ts=now):
+                dirty = True
 
     pid_by_steam = _build_pid_by_steam_map(doc)
     focus_sids = [
@@ -1092,6 +1470,7 @@ def sync_persistent_alias_history(
 
     # 3a. Steam Key API (ou fallback XML)
     steam_pres_fetched = 0
+    steam_presence_collected: dict[str, dict[str, Any]] = {}
     if include_steam_presence and focus_sids and hasattr(p_client, "fetch_batch_presence"):
         pres_map = p_client.fetch_batch_presence(
             focus_sids,
@@ -1099,6 +1478,8 @@ def sync_persistent_alias_history(
             pace_delay_sec=0.08,
             stop_on_rate_limit=True,
         )
+        if isinstance(pres_map, dict):
+            steam_presence_collected.update(pres_map)
         steam_pres_fetched = len(pres_map or {})
         if ingest_steam_presence(doc, pres_map, pid_by_steam=pid_by_steam, now_ts=now):
             dirty = True
@@ -1170,6 +1551,208 @@ def sync_persistent_alias_history(
             if ingest_cohdb_observations(doc, cohdb_obs, now_ts=now):
                 dirty = True
 
+    # 5b. Descoberta Multi-Era Completa (CoH1 + CoH2 inativos + rede CoH2 Arranged Teams + Brasileiros Emigrados -> CoH3)
+    coh1_lb_br_count = 0
+    coh2_discovered_br_count = 0
+    coh2_non_br_network: dict[str, dict[str, Any]] = {}
+    expats_discovered = 0
+    coh2stats_days_from_eras = 0
+    if include_all_eras:
+        legacy_br_coh1: dict[str, dict[str, Any]] = {}
+        legacy_br_coh2: dict[str, dict[str, Any]] = {}
+
+        # A. CoH1 — 16 leaderboards globais oficiais da Relic
+        if hasattr(r_client, "discover_br_from_coh1_leaderboards"):
+            c1_lb = r_client.discover_br_from_coh1_leaderboards(max_pages_per_board=12, pace_delay_sec=0.06)
+            legacy_br_coh1.update(c1_lb or {})
+            coh1_lb_br_count = len(legacy_br_coh1)
+
+        # B. CoH2 — 20 leaderboards SA da Relic
+        if hasattr(r_client, "discover_br_from_coh2_sa_leaderboards"):
+            c2_sa = r_client.discover_br_from_coh2_sa_leaderboards(max_pages_per_board=8, pace_delay_sec=0.06)
+            legacy_br_coh2.update(c2_sa or {})
+
+        # C. CoH2Stats Open Data Matches (todos os brasileiros + aliases)
+        if include_coh2stats_days > 0 and hasattr(r_client, "discover_br_and_aliases_from_coh2stats_matches"):
+            c2m_br, c2m_aliases, c2m_diag = r_client.discover_br_and_aliases_from_coh2stats_matches(
+                set(pid_by_steam.keys()),
+                days=min(60, max(1, int(include_coh2stats_days))),
+                now_ts=now,
+            )
+            coh2stats_days_from_eras = int(c2m_diag.get("days_ok", 0) or 0)
+            for sid, rec in (c2m_br or {}).items():
+                prev = legacy_br_coh2.get(sid)
+                if prev is None:
+                    legacy_br_coh2[sid] = dict(rec)
+                else:
+                    if int(rec.get("last_match_date", 0) or 0) >= int(prev.get("last_match_date", 0) or 0):
+                        prev["last_match_date"] = int(rec.get("last_match_date", 0) or 0)
+                        if rec.get("alias"):
+                            prev["alias"] = rec["alias"]
+                    prev["aliases"] = list(dict.fromkeys(list(prev.get("aliases") or []) + list(rec.get("aliases") or [])))
+            if c2m_aliases and ingest_coh2stats_match_aliases(doc, c2m_aliases, pid_by_steam=pid_by_steam, now_ts=now):
+                dirty = True
+
+        # D. Expansão BFS da rede de Arranged Teams no CoH2 (recupera inativos desde 2013 + emigrados como icewarp!)
+        if hasattr(r_client, "expand_coh2_br_network"):
+            seed_sids_all = list(
+                dict.fromkeys(
+                    list(pid_by_steam.keys())
+                    + list(legacy_br_coh2.keys())
+                    + list(legacy_br_coh1.keys())
+                    + steam_group_all_sids
+                )
+            )
+            c2_net_stats, c2_br_mates, coh2_non_br_network = r_client.expand_coh2_br_network(
+                seed_sids_all,
+                max_hops=max(1, min(3, int(coh2_network_hops))),
+                max_profiles_per_hop=max(500, int(max_legacy_relic_profiles)),
+                pace_delay_sec=0.10,
+            )
+            # Atualiza `coh2_country`, `coh2_profile_id`, `coh2_total_matches` de todos os já presentes em CoH3
+            if c2_net_stats and ingest_coh2_relic_stats(
+                doc,
+                c2_net_stats,
+                pid_by_steam=pid_by_steam,
+                checked_sids=list(c2_net_stats.keys()),
+                now_ts=now,
+            ):
+                dirty = True
+            for sid, row in (c2_net_stats or {}).items():
+                if str(row.get("country") or "").strip().lower() == "br":
+                    legacy_br_coh2[sid] = {**(legacy_br_coh2.get(sid) or {}), **row}
+            for sid, mate in (c2_br_mates or {}).items():
+                if sid not in legacy_br_coh2:
+                    legacy_br_coh2[sid] = dict(mate)
+        coh2_discovered_br_count = len(legacy_br_coh2)
+
+        # E. Cruza TODOS os SteamID64 brasileiros de CoH1/CoH2 ainda fora de `doc['players']` na Relic API CoH3!
+        #    Se tiverem conta CoH3 (mesmo com bandeira estrangeira atual!), entram em `doc['players']`!
+        candidate_coh3_from_legacy = [
+            sid
+            for sid in dict.fromkeys(list(legacy_br_coh2.keys()) + list(legacy_br_coh1.keys()))
+            if sid not in pid_by_steam and STEAM_ID64_VALID_RE.fullmatch(sid)
+        ]
+        if candidate_coh3_from_legacy and hasattr(r_client, "fetch_profile_stats_by_steam_ids"):
+            found_coh3 = r_client.fetch_profile_stats_by_steam_ids(
+                candidate_coh3_from_legacy[: max(1000, int(max_legacy_relic_profiles))],
+                pace_delay_sec=0.12,
+            )
+            if found_coh3:
+                all_br_discovered += len(found_coh3)
+                if ingest_relic_stats(doc, found_coh3, now_ts=now):
+                    dirty = True
+                pid_by_steam = _build_pid_by_steam_map(doc)
+
+        # F. Registra TODOS os brasileiros de CoH1 e CoH2 (mesclando em CoH3 ou salvando em `legacy_br_players`)
+        for sid, row in legacy_br_coh1.items():
+            if record_legacy_br_player(
+                doc,
+                steam_id=sid,
+                alias=str(row.get("alias") or ""),
+                source="relic_coh1_api",
+                era="coh1",
+                profile_id=int(row.get("profile_id", 0) or 0),
+                country=str(row.get("country") or "br"),
+                seen_ts=int(row.get("last_match_date", 0) or 0),
+                total_matches=int(row.get("total_matches", 0) or 0),
+                pid_by_steam=pid_by_steam,
+            ):
+                dirty = True
+        for sid, row in legacy_br_coh2.items():
+            if record_legacy_br_player(
+                doc,
+                steam_id=sid,
+                alias=str(row.get("alias") or ""),
+                source="relic_coh2_api",
+                era="coh2",
+                profile_id=int(row.get("profile_id", 0) or 0),
+                country=str(row.get("country") or "br"),
+                seen_ts=int(row.get("last_match_date", 0) or 0),
+                total_matches=int(row.get("total_matches", 0) or 0),
+                pid_by_steam=pid_by_steam,
+            ):
+                dirty = True
+            for al, ts in row.get("aliases") or []:
+                if record_legacy_br_player(
+                    doc,
+                    steam_id=sid,
+                    alias=str(al),
+                    source="coh2stats_opendata",
+                    era="coh2",
+                    profile_id=int(row.get("profile_id", 0) or 0),
+                    country="br",
+                    seen_ts=int(ts or 0),
+                    pid_by_steam=pid_by_steam,
+                ):
+                    dirty = True
+
+        # G. Detecção de Brasileiros Emigrados (ex.: `icewarp`): parceiros com >=2 amigos BR em Arranged Teams no CoH2
+        #    que possuem CoH3 + confirmação via Steam XML (`is_steam_brazil` ou `has_brazil_steam_group`)
+        expat_candidates = sorted(
+            (
+                row
+                for sid, row in coh2_non_br_network.items()
+                if sid not in pid_by_steam
+                and STEAM_ID64_VALID_RE.fullmatch(sid)
+                and len(row.get("br_partners") or ()) >= 2
+            ),
+            key=lambda r: (-len(r.get("br_partners") or ()), str(r.get("steam_id") or "")),
+        )
+        expat_cap = max(0, int(max_expat_steam_verify))
+        if expat_candidates and expat_cap > 0 and hasattr(r_client, "fetch_profile_stats_by_steam_ids"):
+            expat_sids_check = [str(r["steam_id"]) for r in expat_candidates[: max(expat_cap * 3, 300)]]
+            expat_coh3_stats = r_client.fetch_profile_stats_by_steam_ids(expat_sids_check, pace_delay_sec=0.12)
+            coh3_by_sid = {
+                str(st.get("steam_id") or "").strip(): (pid, st)
+                for pid, st in (expat_coh3_stats or {}).items()
+                if isinstance(st, dict) and STEAM_ID64_VALID_RE.fullmatch(str(st.get("steam_id") or "").strip())
+            }
+            verify_sids = [
+                str(r["steam_id"])
+                for r in expat_candidates
+                if str(r["steam_id"]) in coh3_by_sid
+            ][:expat_cap]
+            if verify_sids and hasattr(p_client, "fetch_batch_presence"):
+                from lobby_radar import _call_batch_presence
+
+                exp_pres = _call_batch_presence(
+                    p_client,
+                    verify_sids,
+                    max_workers=5,
+                    pace_delay_sec=0.06,
+                    stop_on_rate_limit=True,
+                    require_xml_details=True,
+                )
+                steam_presence_collected.update(exp_pres or {})
+                confirmed_coh3_batch: dict[int, dict[str, Any]] = {}
+                confirmed_coh2_sids: list[str] = []
+                for sid in verify_sids:
+                    pres = (exp_pres or {}).get(sid)
+                    if not isinstance(pres, dict) or not (pres.get("is_steam_brazil") or pres.get("has_brazil_steam_group")):
+                        continue
+                    pid, st = coh3_by_sid[sid]
+                    confirmed_coh3_batch[pid] = st
+                    confirmed_coh2_sids.append(sid)
+                    expats_discovered += 1
+                if confirmed_coh3_batch:
+                    if ingest_relic_stats(doc, confirmed_coh3_batch, now_ts=now):
+                        dirty = True
+                    pid_by_steam = _build_pid_by_steam_map(doc)
+                    if ingest_steam_presence(doc, exp_pres, pid_by_steam=pid_by_steam, now_ts=now):
+                        dirty = True
+                    if confirmed_coh2_sids and hasattr(r_client, "fetch_coh2_profile_stats_by_steam_ids"):
+                        exp_c2 = r_client.fetch_coh2_profile_stats_by_steam_ids(confirmed_coh2_sids, pace_delay_sec=0.12)
+                        if ingest_coh2_relic_stats(doc, exp_c2, pid_by_steam=pid_by_steam, checked_sids=confirmed_coh2_sids, now_ts=now):
+                            dirty = True
+                    if confirmed_coh2_sids and hasattr(r_client, "fetch_coh1_profile_stats_by_steam_ids"):
+                        exp_c1 = r_client.fetch_coh1_profile_stats_by_steam_ids(confirmed_coh2_sids, pace_delay_sec=0.12)
+                        if ingest_coh1_relic_stats(doc, exp_c1, pid_by_steam=pid_by_steam, checked_sids=confirmed_coh2_sids, now_ts=now):
+                            dirty = True
+
+        if promote_legacy_br_to_coh3(doc, pid_by_steam=pid_by_steam):
+            dirty = True
+
     # 6-9. Fontes históricas legadas (Relic CoH2, CoH2Stats Open Data, Relic CoH1, CoH1Stats Public API)
     legacy_res = enrich_legacy_coh_sources(
         doc,
@@ -1179,7 +1762,7 @@ def sync_persistent_alias_history(
         now_ts=now,
         include_coh2_relic=include_coh2_relic,
         include_coh1_relic=include_coh1_relic,
-        include_coh2stats_days=include_coh2stats_days,
+        include_coh2stats_days=0 if coh2stats_days_from_eras > 0 else include_coh2stats_days,
         include_coh1stats=include_coh1stats,
         max_legacy_relic_profiles=max_legacy_relic_profiles,
         force_refresh=force_refresh,
@@ -1187,23 +1770,39 @@ def sync_persistent_alias_history(
     if legacy_res.get("dirty"):
         dirty = True
 
+    # 10. Consolida detecção de brasileiros que mudaram de país/bandeira entre CoH1/CoH2/Steam -> CoH3
+    mig_changed, migrations = detect_country_migrations(
+        doc,
+        coh2_network_non_br=coh2_non_br_network,
+        steam_presence_by_sid=steam_presence_collected,
+        now_ts=now,
+    )
+    if mig_changed:
+        dirty = True
+
     if dirty and not dry_run:
         save_alias_history(history_path, doc, now_ts=now)
 
     return {
         "players_total": len(doc.get("players") or {}),
+        "legacy_br_total": len(doc.get("legacy_br_players") or {}),
         "players_with_multiple_aliases": sum(
             1 for r in (doc.get("players") or {}).values() if isinstance(r, dict) and len(r.get("aliases") or []) >= 2
         ),
+        "country_migrations_total": len(migrations),
+        "country_migrations": migrations,
         "dirty": dirty,
         "all_br_discovered": all_br_discovered,
+        "coh1_lb_br_discovered": coh1_lb_br_count,
+        "coh2_br_discovered": coh2_discovered_br_count,
+        "expats_discovered": expats_discovered,
         "relic_fetched": relic_fetched,
         "steam_presence_fetched": steam_pres_fetched,
         "steam_aliases_fetched": steam_aliases_fetched,
         "opendata_matches_days_ok": opendata_matches_days_ok,
         "cohdb_fetched": cohdb_fetched,
         "coh2_relic_fetched": int(legacy_res.get("coh2_relic_fetched", 0) or 0),
-        "coh2stats_days_ok": int(legacy_res.get("coh2stats_days_ok", 0) or 0),
+        "coh2stats_days_ok": coh2stats_days_from_eras or int(legacy_res.get("coh2stats_days_ok", 0) or 0),
         "coh1_relic_fetched": int(legacy_res.get("coh1_relic_fetched", 0) or 0),
         "coh1stats_fetched": int(legacy_res.get("coh1stats_fetched", 0) or 0),
         "sources_summary": _recompute_sources_summary(doc),
@@ -1273,7 +1872,7 @@ def enrich_legacy_coh_sources(
     if include_coh2stats_days > 0 and pid_by_steam and hasattr(relic_client, "fetch_coh2stats_match_aliases"):
         coh2_match_obs, coh2_diag = relic_client.fetch_coh2stats_match_aliases(
             set(pid_by_steam.keys()),
-            days=min(30, max(1, int(include_coh2stats_days))),
+            days=min(60, max(1, int(include_coh2stats_days))),
             now_ts=now_ts,
         )
         coh2stats_days_ok = int(coh2_diag.get("days_ok", 0) or 0)
@@ -1318,9 +1917,12 @@ def main() -> int:
     p_sync = sub.add_parser("sync", help="Sincroniza o histórico persistente cruzando todas as fontes CoH3/CoH2/CoH1/Steam/CoHDB")
     p_sync.add_argument("--cache", type=Path, default=BASE_DIR / "br_community.json", help="Caminho para br_community.json")
     p_sync.add_argument("--all-br", action="store_true", help="Descobre e inclui TODOS os jogadores BR com CoH3 (leaderboards globais + Relic SA + grupos Steam, sem corte 15d/90d)")
+    p_sync.add_argument("--all-eras", action="store_true", help="Varredura total multi-era: inclui TODOS os brasileiros de CoH1, CoH2 (inclusive inativos via statGroups desde 2013) e CoH3 + detecção de emigrados (BR->ext)")
+    p_sync.add_argument("--coh2-hops", type=int, default=2, help="Saltos BFS na rede de Arranged Teams CoH2 (1..3, padrão: 2)")
+    p_sync.add_argument("--max-expat-steam-verify", type=int, default=250, help="Máximo de parceiros estrangeiros de rede CoH2 BR verificados na Steam XML (padrão: 250)")
     p_sync.add_argument("--opendata-days", type=int, default=0, help="Dias de dumps COH3 Stats Open Data Matches (0..30)")
     p_sync.add_argument("--opendata-leaderboards", action="store_true", help="Inclui 16 dumps globais COH3 Stats Open Data Leaderboards")
-    p_sync.add_argument("--coh2-days", type=int, default=0, help="Dias de dumps CoH2Stats Open Data Matches (0..30)")
+    p_sync.add_argument("--coh2-days", type=int, default=0, help="Dias de dumps CoH2Stats Open Data Matches (0..60)")
     p_sync.add_argument("--max-legacy-relic", type=int, default=1200, help="Máximo de perfis consultados por rodada nas APIs Relic CoH2 e CoH1 (padrão: 1200)")
     p_sync.add_argument("--cohdb-replays", type=int, default=3, help="Replays amostrados por jogador no CoHDB (0..6)")
     p_sync.add_argument("--no-relic", action="store_true", help="Pula consulta à Relic API CoH3")
@@ -1338,6 +1940,7 @@ def main() -> int:
 
     p_rep = sub.add_parser("report", help="Exibe relatório de jogadores no histórico persistente")
     p_rep.add_argument("--all", action="store_true", help="Mostra todos os jogadores (não apenas quem tem >=2 nicks)")
+    p_rep.add_argument("--migrations", action="store_true", help="Lista apenas brasileiros detectados com mudança de país/bandeira (BR->ext)")
     p_rep.add_argument("--limit", type=int, default=50, help="Limite de jogadores exibidos")
 
     args = parser.parse_args()
@@ -1353,29 +1956,30 @@ def main() -> int:
                 include_opendata_days=max(0, min(30, int(args.opendata_days))),
                 include_opendata_leaderboards=bool(args.opendata_leaderboards),
                 include_all_br_catalog=bool(args.all_br),
+                include_all_eras=bool(args.all_eras),
                 include_coh2_relic=not bool(args.no_coh2_relic),
                 include_coh1_relic=not bool(args.no_coh1_relic),
-                include_coh2stats_days=max(0, min(30, int(args.coh2_days))),
+                include_coh2stats_days=max(0, min(60, int(args.coh2_days))),
                 include_coh1stats=not bool(args.no_coh1stats),
                 max_legacy_relic_profiles=max(0, int(args.max_legacy_relic)),
+                coh2_network_hops=max(1, min(3, int(args.coh2_hops))),
+                max_expat_steam_verify=max(0, int(args.max_expat_steam_verify)),
                 cohdb_sample_replays=max(0, min(6, int(args.cohdb_replays))),
                 force_refresh=bool(args.force_refresh),
                 dry_run=bool(args.dry_run),
             )
             logger.info(
-                "[ALIAS HISTORY SYNC] Jogadores: %d | Com >=2 nicks: %d | AllBR=%d RelicCoH3=%d SteamPres=%d SteamAliases=%d OpenDataCoH3=%dd CoHDB=%d RelicCoH2=%d CoH2Stats=%dd RelicCoH1=%d CoH1Stats=%d | Fontes: %s",
+                "[ALIAS HISTORY SYNC] CoH3 BR: %d | Legado CoH1/CoH2 sem CoH3: %d | >=2 nicks: %d | Migrações BR->ext: %d (novos=%d) | CoH1LB=%d CoH2BR=%d AllBR=%d OpenDataCoH3=%dd CoH2Stats=%dd | Fontes: %s",
                 res["players_total"],
+                res["legacy_br_total"],
                 res["players_with_multiple_aliases"],
+                res["country_migrations_total"],
+                res["expats_discovered"],
+                res["coh1_lb_br_discovered"],
+                res["coh2_br_discovered"],
                 res["all_br_discovered"],
-                res["relic_fetched"],
-                res["steam_presence_fetched"],
-                res["steam_aliases_fetched"],
                 res["opendata_matches_days_ok"],
-                res["cohdb_fetched"],
-                res["coh2_relic_fetched"],
                 res["coh2stats_days_ok"],
-                res["coh1_relic_fetched"],
-                res["coh1stats_fetched"],
                 res["sources_summary"],
             )
             return 0
@@ -1391,6 +1995,23 @@ def main() -> int:
             return 0
 
         if args.cmd == "report":
+            if bool(args.migrations):
+                _, migs = detect_country_migrations(doc)
+                print(f"[BRASILEIROS COM MUDANÇA DE PAÍS / BANDEIRA ({len(migs)})]")
+                for m in migs[: max(1, int(args.limit))]:
+                    extras = []
+                    if m.get("source_eras"):
+                        extras.append(f"eras_br={','.join(m['source_eras'])}")
+                    if m.get("coh2_br_teammates"):
+                        extras.append(f"parceiros_coh2_br={m['coh2_br_teammates']}")
+                    if m.get("steam_location"):
+                        extras.append(f"steam='{m['steam_location']}'")
+                    extra_s = (" | " + ", ".join(extras)) if extras else ""
+                    print(
+                        f"  • {m['alias']:<26} | {m['from_country']} -> {m['current_country']} | "
+                        f"pid={m['profile_id']} | Steam {m['steam_id']} | {m['evidence']}{extra_s}"
+                    )
+                return 0
             print(format_alias_history_report(doc, only_changed=not bool(args.all), limit=args.limit))
             return 0
     except Exception as exc:

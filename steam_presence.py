@@ -68,7 +68,21 @@ _RELIC_JSON_HEADERS: dict[str, str] = {
 }
 
 SOUTH_AMERICA_REGION_ID = 2074438
-BRAZILIAN_COH_STEAM_GROUPS: tuple[str, ...] = ("CoH2BR", "companybr")
+COH2_SA_REGION_ID = 4
+BRAZILIAN_COH_STEAM_GROUPS: tuple[str, ...] = (
+    "CoH2BR",
+    "companybr",
+    "cohbr",
+    "companyofheroesbrasil",
+    "cohbrasil",
+    "COH2Brasil",
+)
+COH2_RANKED_LEADERBOARD_IDS: tuple[int, ...] = (
+    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 51, 52, 53, 54,
+)
+COH1_RANKED_LEADERBOARD_IDS: tuple[int, ...] = (
+    4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+)
 
 RELIC_LEADERBOARD_MODES: dict[int, str] = {
     2130255: "1v1",  # american
@@ -1907,17 +1921,22 @@ def parse_steam_ajax_aliases_payload(
     return parsed_rows
 
 
-def extract_coh2_aliases_from_matches_payload(
+def extract_coh2_br_and_aliases_from_matches_payload(
     data: dict[str, Any],
-    target_steam_ids: set[str] | frozenset[str],
-) -> dict[str, list[tuple[str, int]]]:
+    target_steam_ids: set[str] | frozenset[str] | None = None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, list[tuple[str, int]]]]:
     """
-    Extrai `{steam_id: [(alias, completiontime), ...]}` de um dump diário `matches-{day}.json`
-    do CoH2Stats Open Data (`storage.coh2stats.com`) filtrando apenas `target_steam_ids`.
+    Extrai de um dump diário `matches-{day}.json` do CoH2Stats Open Data (`storage.coh2stats.com`):
+    1. `br_players`: TODOS os jogadores brasileiros (`country == 'br'`) observados no dump (com aliases e data).
+    2. `target_aliases`: `{steam_id: [(alias, completiontime), ...]}` para todos os `target_steam_ids`.
     """
-    if not isinstance(data, dict) or not target_steam_ids:
-        return {}
-    per_sid: dict[str, dict[str, tuple[str, int]]] = {}
+    if not isinstance(data, dict):
+        return {}, {}
+    targets = set(target_steam_ids or ())
+    br_players: dict[str, dict[str, Any]] = {}
+    br_alias_buckets: dict[str, dict[str, tuple[str, int]]] = {}
+    target_buckets: dict[str, dict[str, tuple[str, int]]] = {}
+
     for match in data.get("matches") or []:
         if not isinstance(match, dict):
             continue
@@ -1929,20 +1948,151 @@ def extract_coh2_aliases_from_matches_payload(
             if not isinstance(prof, dict):
                 continue
             sid = extract_steam_id_from_relic_name(prof.get("name"))
-            if not sid or sid not in target_steam_ids:
+            if not sid:
+                continue
+            ctry = str(prof.get("country") or "").strip().lower()
+            is_br = ctry == "br"
+            is_target = sid in targets
+            if not is_br and not is_target:
                 continue
             alias = strip_unsafe_chars(prof.get("alias") or "")[:48]
-            if not alias:
-                continue
-            cf = alias.casefold()
-            bucket = per_sid.setdefault(sid, {})
-            prev = bucket.get(cf)
-            if prev is None or ct > prev[1]:
-                bucket[cf] = (alias, ct)
-    return {
+            pid = int(rep.get("profile_id", 0) or prof.get("profile_id", 0) or 0)
+
+            if is_br:
+                rec = br_players.get(sid)
+                if rec is None:
+                    br_players[sid] = {
+                        "profile_id": pid,
+                        "steam_id": sid,
+                        "alias": alias,
+                        "country": "br",
+                        "region_id": int(prof.get("leaderboardregion_id", 0) or 0),
+                        "last_match_date": ct,
+                    }
+                else:
+                    if pid > 0 and int(rec.get("profile_id", 0) or 0) <= 0:
+                        rec["profile_id"] = pid
+                    if ct >= int(rec.get("last_match_date", 0) or 0):
+                        rec["last_match_date"] = ct
+                        if alias:
+                            rec["alias"] = alias
+                if alias:
+                    b = br_alias_buckets.setdefault(sid, {})
+                    cf = alias.casefold()
+                    prev = b.get(cf)
+                    if prev is None or ct > prev[1]:
+                        b[cf] = (alias, ct)
+
+            if is_target and alias:
+                tb = target_buckets.setdefault(sid, {})
+                cf = alias.casefold()
+                prev = tb.get(cf)
+                if prev is None or ct > prev[1]:
+                    tb[cf] = (alias, ct)
+
+    for sid, rec in br_players.items():
+        rec["aliases"] = sorted(
+            (br_alias_buckets.get(sid) or {}).values(),
+            key=lambda x: (x[1] if x[1] > 0 else 9_999_999_999, x[0].casefold()),
+        )
+    target_aliases = {
         sid: sorted(b.values(), key=lambda x: (x[1] if x[1] > 0 else 9_999_999_999, x[0].casefold()))
-        for sid, b in per_sid.items()
+        for sid, b in target_buckets.items()
     }
+    return br_players, target_aliases
+
+
+def extract_coh2_aliases_from_matches_payload(
+    data: dict[str, Any],
+    target_steam_ids: set[str] | frozenset[str],
+) -> dict[str, list[tuple[str, int]]]:
+    """
+    Extrai `{steam_id: [(alias, completiontime), ...]}` de um dump diário `matches-{day}.json`
+    do CoH2Stats Open Data (`storage.coh2stats.com`) filtrando apenas `target_steam_ids`.
+    """
+    if not isinstance(data, dict) or not target_steam_ids:
+        return {}
+    _, target_aliases = extract_coh2_br_and_aliases_from_matches_payload(data, target_steam_ids)
+    return target_aliases
+
+
+def extract_team_statgroup_network(
+    data: dict[str, Any],
+    br_teammates: dict[str, dict[str, Any]],
+    non_br_teammates: dict[str, dict[str, Any]],
+) -> None:
+    """
+    Extrai membros de `statGroups` de equipes pré-formadas (`len(members) >= 2`) de uma resposta
+    `getPersonalStat` (ex.: Relic CoH2), revelando:
+    1. Brasileiros históricos (`country == 'br'`) mesmo completamente inativos há anos;
+    2. Jogadores com bandeira estrangeira (`country != 'br'`) que formaram equipes recorrentes com
+       brasileiros (ex.: brasileiros que emigraram para outro país, como `icewarp`).
+    """
+    if not isinstance(data, dict):
+        return
+    for g in data.get("statGroups") or []:
+        if not isinstance(g, dict):
+            continue
+        members = g.get("members") or []
+        if len(members) < 2:
+            continue
+        parsed: list[dict[str, Any]] = []
+        for m in members:
+            if not isinstance(m, dict):
+                continue
+            sid = extract_steam_id_from_relic_name(m.get("name"))
+            if not sid:
+                continue
+            parsed.append(
+                {
+                    "profile_id": int(m.get("profile_id", 0) or 0),
+                    "steam_id": sid,
+                    "alias": strip_unsafe_chars(m.get("alias") or "")[:48],
+                    "country": str(m.get("country") or "").strip().lower(),
+                    "region_id": int(m.get("leaderboardregion_id", 0) or 0),
+                }
+            )
+        if len(parsed) < 2:
+            continue
+        br_in_group = [m for m in parsed if m["country"] == "br"]
+        if not br_in_group:
+            continue
+        for m in br_in_group:
+            sid = m["steam_id"]
+            prev = br_teammates.get(sid)
+            if prev is None:
+                br_teammates[sid] = dict(m)
+            else:
+                if m["alias"] and not prev.get("alias"):
+                    prev["alias"] = m["alias"]
+                if m["profile_id"] > 0 and int(prev.get("profile_id", 0) or 0) <= 0:
+                    prev["profile_id"] = m["profile_id"]
+
+        all_sids_in_group = {m["steam_id"] for m in parsed}
+        br_sids_in_group = {m["steam_id"] for m in br_in_group}
+        for m in parsed:
+            if m["country"] == "br":
+                continue
+            sid = m["steam_id"]
+            rec = non_br_teammates.get(sid)
+            if rec is None:
+                rec = {
+                    "profile_id": m["profile_id"],
+                    "steam_id": sid,
+                    "alias": m["alias"],
+                    "country": m["country"],
+                    "region_id": m["region_id"],
+                    "br_partners": set(),
+                    "all_partners": set(),
+                }
+                non_br_teammates[sid] = rec
+            else:
+                if m["alias"] and not rec.get("alias"):
+                    rec["alias"] = m["alias"]
+                if m["country"] and not rec.get("country"):
+                    rec["country"] = m["country"]
+            rec["br_partners"].update(br_sids_in_group - {sid})
+            rec["all_partners"].update(all_sids_in_group - {sid})
 
 
 def parse_coh1stats_player_payload(
@@ -2252,6 +2402,7 @@ class RelicActivityClient:
         allowed_hosts: frozenset[str],
         pace_delay_sec: float = 0.20,
         key_by_steam_id: bool = False,
+        team_network_out: tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]] | None = None,
     ) -> dict[Any, dict[str, Any]]:
         """
         Consulta genérica endurecida de `getPersonalStat?profile_names=["/steam/..."]` em lotes de 10
@@ -2281,6 +2432,8 @@ class RelicActivityClient:
                 with _get_relic_opener().open(req, timeout=12) as resp:
                     data = json.loads(read_bounded_http_body(resp, MAX_RELIC_RESPONSE_BYTES).decode("utf-8"))
                 self._parse_personal_stat_response(data, stats_by_pid)
+                if team_network_out is not None:
+                    extract_team_statgroup_network(data, team_network_out[0], team_network_out[1])
             except urllib.error.HTTPError as exc:
                 if exc.code in (429, 403):
                     logger.warning("Relic %s getPersonalStat(profile_names) atingiu HTTP %d; encerrando lote.", title, exc.code)
@@ -2322,6 +2475,7 @@ class RelicActivityClient:
         self,
         steam_ids: list[str],
         pace_delay_sec: float = 0.14,
+        team_network_out: tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]] | None = None,
     ) -> dict[str, dict[str, Any]]:
         """Consulta perfis históricos de CoH2 na API oficial da Relic (`coh2-api.reliclink.com`) por SteamID64."""
         return self._fetch_relic_personal_stat_by_steam_ids(
@@ -2331,6 +2485,7 @@ class RelicActivityClient:
             allowed_hosts=ALLOWED_RELIC_COH2_HOSTS,
             pace_delay_sec=pace_delay_sec,
             key_by_steam_id=True,
+            team_network_out=team_network_out,
         )
 
     def fetch_coh1_profile_stats_by_steam_ids(
@@ -2348,31 +2503,206 @@ class RelicActivityClient:
             key_by_steam_id=True,
         )
 
-    def fetch_coh2stats_match_aliases(
+    def expand_coh2_br_network(
         self,
-        target_steam_ids: set[str] | frozenset[str],
+        seed_steam_ids: list[str],
         *,
-        days: int = 7,
-        now_ts: int | None = None,
-    ) -> tuple[dict[str, list[tuple[str, int]]], dict[str, Any]]:
+        max_hops: int = 2,
+        max_profiles_per_hop: int = 2500,
+        pace_delay_sec: float = 0.12,
+    ) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
         """
-        Varre dumps diários abertos do CoH2Stats Open Data (`storage.coh2stats.com/matches/matches-{day}.json`)
-        para coletar nicks históricos usados no CoH2 pelos SteamID64 monitorados.
+        Expande em BFS (1..N saltos) os `statGroups` de equipes pré-formadas no CoH2 a partir de SteamID64
+        brasileiros conhecidos, recuperando:
+        1. `coh2_stats`: stats solo de todos os SteamID64 consultados no CoH2;
+        2. `br_teammates`: todos os parceiros `country == 'br'` (inclusive inativos desde 2013!);
+        3. `non_br_teammates`: parceiros `country != 'br'` com contagem de parceiros BR distintos (ex.: emigrados como `icewarp`).
+        """
+        coh2_stats: dict[str, dict[str, Any]] = {}
+        br_teammates: dict[str, dict[str, Any]] = {}
+        non_br_teammates: dict[str, dict[str, Any]] = {}
+        queried: set[str] = set()
+        frontier = list(
+            dict.fromkeys(
+                str(s).replace("/steam/", "").strip()
+                for s in (seed_steam_ids or ())
+                if STEAM_ID64_VALID_RE.fullmatch(str(s or "").replace("/steam/", "").strip())
+            )
+        )
+        hops = max(1, min(int(max_hops), 3))
+        cap = max(10, int(max_profiles_per_hop))
+        for _ in range(hops):
+            batch = [s for s in frontier if s not in queried][:cap]
+            if not batch:
+                break
+            queried.update(batch)
+            hop_stats = self.fetch_coh2_profile_stats_by_steam_ids(
+                batch,
+                pace_delay_sec=pace_delay_sec,
+                team_network_out=(br_teammates, non_br_teammates),
+            )
+            coh2_stats.update(hop_stats)
+            frontier = [sid for sid in br_teammates if sid not in queried]
+        return coh2_stats, br_teammates, non_br_teammates
+
+    def _discover_br_from_legacy_relic_leaderboards(
+        self,
+        *,
+        title: str,
+        base_url: str,
+        allowed_hosts: frozenset[str],
+        leaderboard_ids: tuple[int, ...],
+        region_id: int | None = None,
+        max_pages_per_board: int = 12,
+        pace_delay_sec: float = 0.10,
+    ) -> dict[str, dict[str, Any]]:
+        """Pagina leaderboards oficiais de CoH1 ou CoH2 na Relic API retornando `{steam_id: stats}` para `country == 'br'`."""
+        br_by_sid: dict[str, dict[str, Any]] = {}
+        page_size = 200
+        pages_cap = max(1, min(int(max_pages_per_board), 25))
+        pace = max(0.0, min(float(pace_delay_sec), 1.0))
+
+        for lb_id in leaderboard_ids:
+            for page in range(pages_cap):
+                start = page * page_size + 1
+                params: dict[str, Any] = {
+                    "title": title,
+                    "leaderboard_id": int(lb_id),
+                    "sortBy": 1,
+                    "start": start,
+                    "count": page_size,
+                }
+                if region_id is not None:
+                    params["leaderboardRegion_id"] = int(region_id)
+                url = f"{base_url}/getLeaderboard2?{urllib.parse.urlencode(params)}"
+                validate_https_endpoint(url, allowed_hosts, path_prefix="/community/leaderboard/")
+                if pace > 0.0 and (page > 0 or lb_id != leaderboard_ids[0]):
+                    time.sleep(pace)
+                try:
+                    req = urllib.request.Request(url, headers=_RELIC_JSON_HEADERS, method="GET")
+                    with _get_relic_opener().open(req, timeout=15) as resp:
+                        data = json.loads(read_bounded_http_body(resp, MAX_RELIC_RESPONSE_BYTES).decode("utf-8"))
+                except urllib.error.HTTPError as exc:
+                    if exc.code in (429, 403):
+                        logger.warning("Relic %s getLeaderboard2 atingiu HTTP %d; encerrando varredura.", title, exc.code)
+                        return br_by_sid
+                    break
+                except Exception as exc:
+                    logger.debug("Falha transitória em Relic %s getLeaderboard2 (lb=%d): %s", title, lb_id, redact_secrets(exc))
+                    break
+
+                stats_rows = data.get("leaderboardStats") or []
+                groups_by_id = {
+                    int(g["id"]): g
+                    for g in (data.get("statGroups") or [])
+                    if isinstance(g, dict) and "id" in g
+                }
+                for lstat in stats_rows:
+                    if not isinstance(lstat, dict):
+                        continue
+                    sg = groups_by_id.get(int(lstat.get("statgroup_id", 0) or 0))
+                    if not sg:
+                        continue
+                    wins = max(0, int(lstat.get("wins", 0) or 0))
+                    losses = max(0, int(lstat.get("losses", 0) or 0))
+                    lmd = int(lstat.get("lastmatchdate", 0) or 0)
+                    rating = int(float(lstat.get("rating", 0) or 0))
+                    for m in sg.get("members") or []:
+                        if not isinstance(m, dict):
+                            continue
+                        if str(m.get("country") or "").strip().lower() != "br":
+                            continue
+                        sid = extract_steam_id_from_relic_name(m.get("name"))
+                        if not sid:
+                            continue
+                        pid = int(m.get("profile_id", 0) or 0)
+                        al = strip_unsafe_chars(m.get("alias") or "")[:48]
+                        rec = br_by_sid.get(sid)
+                        if rec is None:
+                            br_by_sid[sid] = {
+                                "profile_id": pid,
+                                "steam_id": sid,
+                                "alias": al,
+                                "country": "br",
+                                "region_id": int(m.get("leaderboardregion_id", 0) or 0),
+                                "max_elo": rating if rating > 0 else 0,
+                                "last_match_date": lmd,
+                                "total_matches": wins + losses,
+                            }
+                        else:
+                            rec["total_matches"] = int(rec.get("total_matches", 0) or 0) + wins + losses
+                            if rating > int(rec.get("max_elo", 0) or 0):
+                                rec["max_elo"] = rating
+                            if lmd >= int(rec.get("last_match_date", 0) or 0):
+                                rec["last_match_date"] = lmd
+                                if al:
+                                    rec["alias"] = al
+                            if pid > 0 and int(rec.get("profile_id", 0) or 0) <= 0:
+                                rec["profile_id"] = pid
+
+                rank_total = int(data.get("rankTotal", 0) or 0)
+                if not stats_rows or len(stats_rows) < page_size or (rank_total > 0 and start + page_size > rank_total):
+                    break
+        return br_by_sid
+
+    def discover_br_from_coh1_leaderboards(
+        self,
+        *,
+        max_pages_per_board: int = 12,
+        pace_delay_sec: float = 0.08,
+    ) -> dict[str, dict[str, Any]]:
+        """Descobre TODOS os jogadores brasileiros (`country == 'br'`) nas 16 leaderboards oficiais do CoH1."""
+        return self._discover_br_from_legacy_relic_leaderboards(
+            title="coh1",
+            base_url=RELIC_COH1_BASE_URL,
+            allowed_hosts=ALLOWED_RELIC_COH1_HOSTS,
+            leaderboard_ids=COH1_RANKED_LEADERBOARD_IDS,
+            region_id=None,
+            max_pages_per_board=max_pages_per_board,
+            pace_delay_sec=pace_delay_sec,
+        )
+
+    def discover_br_from_coh2_sa_leaderboards(
+        self,
+        *,
+        max_pages_per_board: int = 8,
+        pace_delay_sec: float = 0.08,
+    ) -> dict[str, dict[str, Any]]:
+        """Descobre todos os jogadores brasileiros (`country == 'br'`) nas 20 leaderboards SA do CoH2."""
+        return self._discover_br_from_legacy_relic_leaderboards(
+            title="coh2",
+            base_url=RELIC_COH2_BASE_URL,
+            allowed_hosts=ALLOWED_RELIC_COH2_HOSTS,
+            leaderboard_ids=COH2_RANKED_LEADERBOARD_IDS,
+            region_id=COH2_SA_REGION_ID,
+            max_pages_per_board=max_pages_per_board,
+            pace_delay_sec=pace_delay_sec,
+        )
+
+    def discover_br_and_aliases_from_coh2stats_matches(
+        self,
+        target_steam_ids: set[str] | frozenset[str] | None = None,
+        *,
+        days: int = 30,
+        now_ts: int | None = None,
+    ) -> tuple[dict[str, dict[str, Any]], dict[str, list[tuple[str, int]]], dict[str, Any]]:
+        """
+        Varre dumps diários abertos do CoH2Stats Open Data (`storage.coh2stats.com/matches/matches-{day}.json`),
+        descobrindo TODOS os brasileiros (`country == 'br'`) no CoH2 e coletando aliases dos `target_steam_ids`.
         """
         clean_targets = {
             str(s).replace("/steam/", "").strip()
             for s in (target_steam_ids or ())
             if STEAM_ID64_VALID_RE.fullmatch(str(s or "").replace("/steam/", "").strip())
         }
-        if not clean_targets:
-            return {}, {"days_requested": 0, "days_ok": 0, "days_failed": 0, "players_matched": 0}
-
         now_dt = datetime.fromtimestamp(int(now_ts) if now_ts is not None else int(time.time()), tz=timezone.utc)
         base_day = datetime(now_dt.year, now_dt.month, now_dt.day, tzinfo=timezone.utc)
-        days_clamped = max(1, min(int(days), 30))
+        days_clamped = max(1, min(int(days), 60))
         start_offset = 1 if now_dt.hour >= 7 else 2
         target_days = [int((base_day - timedelta(days=start_offset + i)).timestamp()) for i in range(days_clamped)]
 
+        br_by_sid: dict[str, dict[str, Any]] = {}
+        br_aliases_acc: dict[str, dict[str, tuple[str, int]]] = {}
         out_by_sid: dict[str, list[tuple[str, int]]] = {}
         days_ok = 0
         days_failed = 0
@@ -2404,17 +2734,59 @@ class RelicActivityClient:
                 days_failed += 1
                 continue
             days_ok += 1
-            day_aliases = extract_coh2_aliases_from_matches_payload(data, clean_targets)
+            day_br, day_aliases = extract_coh2_br_and_aliases_from_matches_payload(data, clean_targets)
             del data
+            for sid, rec in day_br.items():
+                prev = br_by_sid.get(sid)
+                if prev is None:
+                    br_by_sid[sid] = {k: v for k, v in rec.items() if k != "aliases"}
+                else:
+                    if int(rec.get("profile_id", 0) or 0) > 0 and int(prev.get("profile_id", 0) or 0) <= 0:
+                        prev["profile_id"] = int(rec["profile_id"])
+                    if int(rec.get("last_match_date", 0) or 0) >= int(prev.get("last_match_date", 0) or 0):
+                        prev["last_match_date"] = int(rec.get("last_match_date", 0) or 0)
+                        if rec.get("alias"):
+                            prev["alias"] = rec["alias"]
+                b = br_aliases_acc.setdefault(sid, {})
+                for al, ts in rec.get("aliases") or []:
+                    cf = al.casefold()
+                    if cf not in b or ts > b[cf][1]:
+                        b[cf] = (al, ts)
             for sid, pairs in day_aliases.items():
                 out_by_sid.setdefault(sid, []).extend(pairs)
 
-        return out_by_sid, {
+        for sid, rec in br_by_sid.items():
+            rec["aliases"] = sorted(
+                (br_aliases_acc.get(sid) or {}).values(),
+                key=lambda x: (x[1] if x[1] > 0 else 9_999_999_999, x[0].casefold()),
+            )
+        return br_by_sid, out_by_sid, {
             "days_requested": days_clamped,
             "days_ok": days_ok,
             "days_failed": days_failed,
+            "br_discovered": len(br_by_sid),
             "players_matched": len(out_by_sid),
         }
+
+    def fetch_coh2stats_match_aliases(
+        self,
+        target_steam_ids: set[str] | frozenset[str],
+        *,
+        days: int = 7,
+        now_ts: int | None = None,
+    ) -> tuple[dict[str, list[tuple[str, int]]], dict[str, Any]]:
+        """
+        Varre dumps diários abertos do CoH2Stats Open Data (`storage.coh2stats.com/matches/matches-{day}.json`)
+        para coletar nicks históricos usados no CoH2 pelos SteamID64 monitorados.
+        """
+        if not target_steam_ids:
+            return {}, {"days_requested": 0, "days_ok": 0, "days_failed": 0, "players_matched": 0}
+        _, out_by_sid, diag = self.discover_br_and_aliases_from_coh2stats_matches(
+            target_steam_ids,
+            days=days,
+            now_ts=now_ts,
+        )
+        return out_by_sid, diag
 
     def fetch_coh1stats_player_aliases(
         self,
