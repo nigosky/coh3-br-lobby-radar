@@ -108,8 +108,8 @@ MAX_OTHER_BR_ACTIVE_WEB_API = 2500
 MAX_OTHER_BR_DORMANT_CACHE = 8000
 MAX_OTHER_BR_DORMANT_WATCH_WEB_API = 8000
 MAX_LEGACY_BR_WATCH_WEB_API = 4000
-SILENT_DORMANT_PER_CYCLE_WEB_API = 1200
-SILENT_LEGACY_PER_CYCLE_WEB_API = 800
+SILENT_DORMANT_PER_CYCLE_WEB_API = 300
+SILENT_LEGACY_PER_CYCLE_WEB_API = 200
 AVATAR_CACHE_TTL_SEC = 14 * 86400
 MAX_AVATAR_CACHE_ENTRIES = 600
 MAX_OTHER_BR_DORMANT_RELIC_RECHECK = 20
@@ -632,6 +632,10 @@ def _call_batch_presence(
     stop_on_rate_limit: bool = False,
     require_xml_details: bool = False,
     skip_xml_enrich_sids: set[str] | frozenset[str] | None = None,
+    enrich_free_online_xml: bool | None = None,
+    chunk_pace_sec: float | None = None,
+    max_429_retries: int | None = None,
+    allow_xml_fallback: bool | None = None,
 ) -> dict[str, dict[str, Any]]:
     fn = p_client.fetch_batch_presence
     try:
@@ -649,6 +653,14 @@ def _call_batch_presence(
         kwargs["require_xml_details"] = require_xml_details
     if "skip_xml_enrich_sids" in params and skip_xml_enrich_sids is not None:
         kwargs["skip_xml_enrich_sids"] = skip_xml_enrich_sids
+    if "enrich_free_online_xml" in params and enrich_free_online_xml is not None:
+        kwargs["enrich_free_online_xml"] = enrich_free_online_xml
+    if "chunk_pace_sec" in params and chunk_pace_sec is not None:
+        kwargs["chunk_pace_sec"] = chunk_pace_sec
+    if "max_429_retries" in params and max_429_retries is not None:
+        kwargs["max_429_retries"] = max_429_retries
+    if "allow_xml_fallback" in params and allow_xml_fallback is not None:
+        kwargs["allow_xml_fallback"] = allow_xml_fallback
     return fn(steam_ids, **kwargs)
 
 
@@ -947,19 +959,26 @@ def run_lobby_radar_sync(
     )
 
     vet_skip_xml_sids: set[str] = set(gd_cache.keys()) | set(ingame_vis_webapi.keys())
+    uses_web_api_curated = bool(getattr(p_client, "uses_web_api", False))
     vet_presence_map = _call_batch_presence(
         p_client,
         vet_steam_ids,
         max_workers=6,
         skip_xml_enrich_sids=vet_skip_xml_sids,
+        chunk_pace_sec=0.25,
+        max_429_retries=3,
     )
     mon_presence_map: dict[str, dict[str, Any]] = {}
     if mon_steam_ids:
+        if uses_web_api_curated:
+            time.sleep(0.25)
         mon_presence_map = _call_batch_presence(
             p_client,
             mon_steam_ids,
             max_workers=6,
             skip_xml_enrich_sids=vet_skip_xml_sids,
+            chunk_pace_sec=0.25,
+            max_429_retries=3,
         )
 
     def _apply_cached_steam_game_details(pres: dict[str, Any], is_hidden: bool) -> None:
@@ -1700,9 +1719,12 @@ def run_lobby_radar_sync(
         legacy_steam_ids = [pair[0] for pair in l_slice]
         legacy_watch = [pair[1] for pair in l_slice]
 
-    # 1º lote prioritário: Outros Brasileiros ATIVOS (<=15d) — isolado para garantir presença + avatares Steam 100% preservados
+    # 1º lote prioritário: Outros Brasileiros ATIVOS (<=15d) — isolado com pacing cortês, backoff de 429
+    # e sem fallback XML em massa quando a Steam Web API está configurada (evita tempestade 429 no steamcommunity).
     other_presence_map: dict[str, dict[str, Any]] = {}
     if other_steam_ids:
+        if uses_web_api:
+            time.sleep(0.35)
         other_presence_map = _call_batch_presence(
             p_client,
             other_steam_ids,
@@ -1710,22 +1732,54 @@ def run_lobby_radar_sync(
             pace_delay_sec=0.05,
             stop_on_rate_limit=True,
             skip_xml_enrich_sids=other_skip_xml_sids,
+            enrich_free_online_xml=False,
+            chunk_pace_sec=0.30,
+            max_429_retries=3,
+            allow_xml_fallback=not uses_web_api,
+        )
+        other_ok_n = sum(1 for pr in other_presence_map.values() if isinstance(pr, dict) and pr.get("ok"))
+        other_coh3_n = sum(1 for pr in other_presence_map.values() if isinstance(pr, dict) and pr.get("is_in_coh3"))
+        other_steam_n = sum(
+            1
+            for pr in other_presence_map.values()
+            if isinstance(pr, dict) and pr.get("is_online_steam") and not pr.get("is_in_coh3")
+        )
+        logger.info(
+            "[RADAR OUTROS BR STEAM] %d/%d perfis ok | %d no CoH3 | %d online na Steam (web_api=%s, rate_limited=%s).",
+            other_ok_n,
+            len(other_steam_ids),
+            other_coh3_n,
+            other_steam_n,
+            uses_web_api,
+            bool(getattr(p_client, "last_web_api_rate_limited", False)),
         )
 
     # 2º lote secundário: Vigília silenciosa rotativa (dormentes CoH3 + legados CoH1/CoH2) — nunca afeta os ativos acima
     silent_scan_ids = list(dict.fromkeys(dormant_steam_ids + legacy_steam_ids))
     if silent_scan_ids:
-        silent_presence_map = _call_batch_presence(
-            p_client,
-            silent_scan_ids,
-            max_workers=5,
-            pace_delay_sec=0.05,
-            stop_on_rate_limit=True,
-            skip_xml_enrich_sids=set(silent_scan_ids),
-        )
-        for s_sid, s_pres in silent_presence_map.items():
-            if s_sid not in other_presence_map:
-                other_presence_map[s_sid] = s_pres
+        if getattr(p_client, "last_web_api_rate_limited", False):
+            logger.warning(
+                "[RADAR VIGILIA SILENCIOSA] Pulando %d perfis dormentes/legados neste ciclo devido a HTTP 429 recente na Steam Web API.",
+                len(silent_scan_ids),
+            )
+        else:
+            if uses_web_api:
+                time.sleep(0.35)
+            silent_presence_map = _call_batch_presence(
+                p_client,
+                silent_scan_ids,
+                max_workers=5,
+                pace_delay_sec=0.05,
+                stop_on_rate_limit=True,
+                skip_xml_enrich_sids=set(silent_scan_ids),
+                enrich_free_online_xml=False,
+                chunk_pace_sec=0.35,
+                max_429_retries=0,
+                allow_xml_fallback=False,
+            )
+            for s_sid, s_pres in silent_presence_map.items():
+                if s_sid not in other_presence_map:
+                    other_presence_map[s_sid] = s_pres
 
     # Reativação instantânea: se algum inativo (CoH3 dormente) abriu CoH3 agora na Steam, volta imediatamente ao lobby!
     selected_other_pids: set[int] = {int(r["profile_id"]) for r in selected_others if int(r.get("profile_id", 0) or 0) > 0}

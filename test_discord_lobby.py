@@ -516,7 +516,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             )
             self.assertTrue(summary["panel_updated"])
             self.assertEqual(summary["alerts_pruned"], 1)
-            self.assertEqual(summary["monitorados_total"], 169)
+            self.assertEqual(summary["monitorados_total"], 175)
             self.assertEqual(summary["other_br_catalog_total"], 3)
             self.assertEqual(summary["other_br_in_coh3"], 1)
             self.assertEqual(summary["other_br_online_steam"], 1)
@@ -2588,6 +2588,149 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(mim.width, 1100)
             hdr_px = mim.getpixel((550, 10))
             self.assertEqual(hdr_px[:3], (18, 26, 46))
+
+    def test_outros_br_web_api_disables_xml_fallback_and_skips_silent_watch_on_429(self) -> None:
+        from unittest import mock
+        import lobby_radar as lr
+
+        class _WebApiRateLimitedPresenceClient:
+            uses_web_api = True
+
+            def __init__(self) -> None:
+                self.last_web_api_rate_limited = False
+                self.calls: list[dict[str, Any]] = []
+
+            def fetch_batch_presence(
+                self,
+                steam_ids: list[str],
+                max_workers: int = 6,
+                pace_delay_sec: float = 0.0,
+                stop_on_rate_limit: bool = False,
+                skip_xml_enrich_sids: set[str] | frozenset[str] | None = None,
+                enrich_free_online_xml: bool = True,
+                chunk_pace_sec: float = 0.25,
+                max_429_retries: int = 2,
+                allow_xml_fallback: bool = True,
+            ) -> dict[str, dict[str, Any]]:
+                self.calls.append(
+                    {
+                        "steam_ids": list(steam_ids),
+                        "enrich_free_online_xml": enrich_free_online_xml,
+                        "chunk_pace_sec": chunk_pace_sec,
+                        "max_429_retries": max_429_retries,
+                        "allow_xml_fallback": allow_xml_fallback,
+                    }
+                )
+                out: dict[str, dict[str, Any]] = {}
+                for sid in steam_ids:
+                    if sid == "76561198911111111":
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "source": "web_api",
+                            "privacy_state": "public",
+                            "online_state": "in-game",
+                            "is_in_coh3": True,
+                            "is_online_steam": True,
+                            "other_game": "",
+                            "avatar_url": "",
+                        }
+                    elif sid == "76561198922222222":
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "source": "web_api",
+                            "privacy_state": "public",
+                            "online_state": "online",
+                            "is_in_coh3": False,
+                            "is_online_steam": True,
+                            "other_game": "",
+                            "avatar_url": "",
+                        }
+                    else:
+                        out[sid] = {
+                            "steam_id": sid,
+                            "ok": True,
+                            "source": "web_api",
+                            "privacy_state": "public",
+                            "online_state": "offline",
+                            "is_in_coh3": False,
+                            "is_online_steam": False,
+                            "other_game": "",
+                            "avatar_url": "",
+                        }
+                # Simula 429 parcial no lote de Outros Brasileiros ativos (3º chamado após Veteranos e Monitorados)
+                if "76561198911111111" in steam_ids:
+                    self.last_web_api_rate_limited = True
+                return out
+
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            state_path = td_path / "state.json"
+            comm_path = td_path / "br_community.json"
+            hist_path = td_path / "alias_history.json"
+            now_ts = 1_800_000_000
+            comm_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 6,
+                        "updated_at": now_ts,
+                        "source": "test",
+                        "players": {
+                            "900001": {
+                                "profile_id": 900001,
+                                "steam_id": "76561198911111111",
+                                "alias": "BrasileiroNoCoH3",
+                                "max_elo": 1250,
+                                "last_match_date": now_ts - 3600,
+                            },
+                            "900002": {
+                                "profile_id": 900002,
+                                "steam_id": "76561198922222222",
+                                "alias": "BrasileiroSteam",
+                                "max_elo": 1210,
+                                "last_match_date": now_ts - 7200,
+                            },
+                        },
+                        "dormant_players": {
+                            "900099": {
+                                "profile_id": 900099,
+                                "steam_id": "76561198999999999",
+                                "alias": "DormenteBR",
+                                "max_elo": 1150,
+                                "last_match_date": now_ts - 60 * 86400,
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            fake_presence = _WebApiRateLimitedPresenceClient()
+            fake_discord = _FakeDiscordClient()
+            with mock.patch.object(lr.time, "sleep"):
+                summary = run_lobby_radar_sync(
+                    webhook_url=FAKE_WEBHOOK,
+                    state_path=state_path,
+                    community_cache_path=comm_path,
+                    alias_history_path=hist_path,
+                    now_ts=now_ts,
+                    force=True,
+                    discord_client=fake_discord,
+                    presence_client=fake_presence,
+                    relic_client=_FakeRelicClient(),
+                )
+
+            # Outros BR ativos devem exibir CoH3 + Steam reais, sem fallback XML e pulando vigília silenciosa após 429!
+            self.assertEqual(summary["other_br_in_coh3"], 1)
+            self.assertEqual(summary["other_br_online_steam"], 1)
+            self.assertEqual(len(fake_presence.calls), 3)  # Veteranos, Monitorados, Outros BR (vigília silenciosa pulada!)
+            other_call = fake_presence.calls[2]
+            self.assertIn("76561198911111111", other_call["steam_ids"])
+            self.assertFalse(other_call["enrich_free_online_xml"])
+            self.assertFalse(other_call["allow_xml_fallback"])
+            self.assertEqual(other_call["chunk_pace_sec"], 0.30)
+            self.assertEqual(other_call["max_429_retries"], 3)
+            self.assertTrue(all("76561198999999999" not in c["steam_ids"] for c in fake_presence.calls))
 
 
 if __name__ == "__main__":

@@ -1408,6 +1408,110 @@ class TestSteamFriendsGraphClient(unittest.TestCase):
         self.assertEqual(ap._validate_avatar_url("https://evil.example/a.jpg"), "")
         self.assertEqual(ap._validate_avatar_url(cached_url + "?q=1"), "")
 
+    def test_fetch_batch_presence_no_xml_fallback_and_429_retry_behavior(self) -> None:
+        import json
+        import urllib.error
+        from unittest import mock
+
+        import steam_presence as sp
+
+        sids = ["76561198000001001", "76561198000001002"]
+        fake_key = "A1B2C3D4E5F60718293A4B5C6D7E8F90"
+        client = sp.SteamPresenceClient(api_key=fake_key)
+
+        class _Always429Opener:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def open(self, req: Any, timeout: float = 12.0) -> Any:
+                self.calls += 1
+                raise urllib.error.HTTPError(req.full_url, 429, "Too Many Requests", {}, None)
+
+        opener_429 = _Always429Opener()
+        with (
+            mock.patch.object(sp, "_get_relic_opener", return_value=opener_429),
+            mock.patch.object(client, "fetch_one_presence") as xml_mock,
+            mock.patch.object(sp.time, "sleep"),
+        ):
+            res = client.fetch_batch_presence(
+                sids,
+                enrich_free_online_xml=False,
+                chunk_pace_sec=0.30,
+                max_429_retries=0,
+                allow_xml_fallback=False,
+            )
+
+        # Sem retries (max_429_retries=0): exatamente 1 tentativa, sem fallback XML e flag rate-limited ligada
+        self.assertEqual(res, {})
+        self.assertEqual(opener_429.calls, 1)
+        self.assertTrue(client.last_web_api_rate_limited)
+        xml_mock.assert_not_called()
+
+        # Quando o 429 é transitório e max_429_retries >= 1, recupera na tentativa seguinte e limpa a flag
+        class _FakeResp:
+            def __init__(self, payload: dict[str, Any]) -> None:
+                self._raw = json.dumps(payload).encode("utf-8")
+                self.headers = {}
+
+            def read(self, n: int = -1) -> bytes:
+                if n < 0:
+                    data, self._raw = self._raw, b""
+                    return data
+                chunk, self._raw = self._raw[:n], self._raw[n:]
+                return chunk
+
+            def __enter__(self) -> "_FakeResp":
+                return self
+
+            def __exit__(self, *args: Any) -> bool:
+                return False
+
+        class _RetryThenOkOpener:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def open(self, req: Any, timeout: float = 12.0) -> _FakeResp:
+                self.calls += 1
+                if self.calls == 1:
+                    raise urllib.error.HTTPError(req.full_url, 429, "Too Many Requests", {"Retry-After": "2"}, None)
+                return _FakeResp(
+                    {
+                        "response": {
+                            "players": [
+                                {
+                                    "steamid": sids[0],
+                                    "communityvisibilitystate": 3,
+                                    "personastate": 1,
+                                    "gameid": "1677280",
+                                    "gameextrainfo": "Company of Heroes 3",
+                                    "personaname": "JogadorBR",
+                                }
+                            ]
+                        }
+                    }
+                )
+
+        opener_retry = _RetryThenOkOpener()
+        with (
+            mock.patch.object(sp, "_get_relic_opener", return_value=opener_retry),
+            mock.patch.object(client, "fetch_one_presence") as xml_mock2,
+            mock.patch.object(sp.time, "sleep") as sleep_mock,
+        ):
+            res2 = client.fetch_batch_presence(
+                sids,
+                enrich_free_online_xml=False,
+                chunk_pace_sec=0.30,
+                max_429_retries=2,
+                allow_xml_fallback=False,
+            )
+
+        self.assertEqual(opener_retry.calls, 2)
+        self.assertFalse(client.last_web_api_rate_limited)
+        self.assertTrue(res2[sids[0]]["is_in_coh3"])
+        self.assertTrue(res2[sids[0]]["is_online_steam"])
+        xml_mock2.assert_not_called()
+        sleep_mock.assert_any_call(2.0)
+
 
 if __name__ == "__main__":
     unittest.main()
