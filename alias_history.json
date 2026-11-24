@@ -63305,7 +63305,7 @@
         {
           "alias": "ALKI",
           "first_seen": 1795457573,
-          "last_seen": 1795457573,
+          "last_seen": 1795545686,
           "sources": [
             "relic_coh1_api",
             "steam_web_api"
@@ -104713,8 +104713,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1767220765,
       "coh3_total_matches": 2,
-      "current_alias": "falcon0102",
-      "last_checked_at": 1795542292,
+      "current_alias": "Falcon0102",
+      "last_checked_at": 1795545686,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1249671,
@@ -119234,7 +119234,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1779644857,
       "coh3_total_matches": 1,
-      "current_alias": "RAFHA",
+      "current_alias": "Rafha",
       "last_checked_at": 1795545386,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -132987,7 +132987,7 @@
       "coh3_last_match_date": 1794613740,
       "coh3_total_matches": 3,
       "current_alias": "corolla XEI 2008 prata",
-      "last_checked_at": 1795545386,
+      "last_checked_at": 1795545686,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1441520,
@@ -140586,7 +140586,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795545386,
+      "last_checked_at": 1795545686,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -212286,7 +212286,7 @@
       "coh3_last_match_date": 1794526879,
       "coh3_total_matches": 4,
       "current_alias": "Qi 124",
-      "last_checked_at": 1795545386,
+      "last_checked_at": 1795545686,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -221575,7 +221575,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1781845321,
       "coh3_total_matches": 9,
-      "current_alias": "Kbessa",
+      "current_alias": "kbessa",
       "last_checked_at": 1795545386,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -227475,7 +227475,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1776803620,
       "coh3_total_matches": 60,
-      "current_alias": "LampiaoX_X",
+      "current_alias": "Lampiaox_x",
       "last_checked_at": 1795545386,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
@@ -234002,5 +234002,5 @@
     "steam_web_api": 7388,
     "steam_xml": 6734
   },
-  "updated_at": 1795545386
+  "updated_at": 1795545686
 }
