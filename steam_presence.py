@@ -73,6 +73,7 @@ COH2_SA_REGION_ID = 4
 BRAZILIAN_COH_STEAM_GROUPS: tuple[str, ...] = (
     "companybr",              # Company of Heroes - Brasil
     "CoH2BR",                 # Company of Heroes 2 Brasil
+    "battlecentral",          # BFCentral / BattleCentral Brasil
     "cohbr",                  # Company of Heroes Brasil
     "COH2-BR",                # Company of Heroes 2 - Brasil
     "cohcentral",             # CoHCentral Brasil
@@ -130,7 +131,7 @@ COH1STATS_PLAYER_PATH_RE = re.compile(r"^/api/player/7656119\d{10}$")
 
 _STEAM_BRAZIL_LOC_RE = re.compile(r"(?i)\b(?:brazil|brasil)\b")
 _STEAM_BRAZIL_GROUP_RE = re.compile(
-    r"(?i)\b(?:brazil|brasil|brasileir[oa]s?|coh2br|companybr|cohbr|cohcentral|feb_?coh|brcoh2?|companyofheroesativos|gamersclub)\b"
+    r"(?i)\b(?:brazil|brasil|brasileir[oa]s?|coh2br|companybr|cohbr|battlecentral|bfcentral|cohcentral|feb_?coh|brcoh2?|companyofheroesativos|gamersclub)\b"
 )
 _EXPLICIT_BR_TAG_RE = re.compile(
     r"(?i)(?:[\[\(\{]\s*(?:br|cohbr|br\s*[-/]\s*[a-z]{2}|cohbr\s*[-/]\s*[a-z]{2}|feb)\s*[\]\)\}]"
