@@ -20,6 +20,10 @@ from alias_history import (
     MAX_ALIASES_PER_PLAYER,
     format_alias_history_entry,
     format_alias_history_report,
+    ingest_coh1_relic_stats,
+    ingest_coh1stats_aliases,
+    ingest_coh2_relic_stats,
+    ingest_coh2stats_match_aliases,
     ingest_coh3stats_opendata,
     ingest_cohdb_observations,
     ingest_local_database,
@@ -32,8 +36,24 @@ from alias_history import (
     save_alias_history,
     sync_persistent_alias_history,
 )
-from smurf_detector import CohDBBattlegroupClient, SmurfTelemetryCollector, detect_nick_changes
-from steam_presence import parse_steam_ajax_aliases_payload
+from smurf_detector import (
+    CohDBBattlegroupClient,
+    SmurfTelemetryCollector,
+    detect_nick_changes,
+    detect_top50_br_smurfs,
+    format_smurf_report_text,
+    score_smurf_pair,
+)
+from steam_presence import (
+    ALLOWED_COH1STATS_HOSTS,
+    ALLOWED_COH2STATS_HOSTS,
+    COH1STATS_PLAYER_PATH_RE,
+    COH2STATS_MATCHES_PATH_RE,
+    extract_coh2_aliases_from_matches_payload,
+    parse_coh1stats_player_payload,
+    parse_steam_ajax_aliases_payload,
+    validate_https_endpoint,
+)
 
 
 class TestPersistentAliasHistory(unittest.TestCase):
@@ -96,7 +116,12 @@ class TestPersistentAliasHistory(unittest.TestCase):
                     "steam_id": sid,
                     "original_alias": "Charles Bronson (Smurf: Chacineiro)",
                     "smurf_of": "Chacineiro",
-                    "known_aliases": ["TearsInTheRain", "Charles Bronson (Smurf: Chacineiro)", "Fulano (Principal)"],
+                    "known_aliases": [
+                        "TearsInTheRain",
+                        "Charles Bronson (Smurf: Chacineiro)",
+                        "Charles Bronson (Chacineiro)",
+                        "Fulano (Principal)",
+                    ],
                 }
             ],
             manual_other_rows=[],
@@ -146,8 +171,8 @@ class TestPersistentAliasHistory(unittest.TestCase):
         self.assertEqual(rec["canonical_alias"], "Charles Bronson")
         self.assertEqual(rec["current_alias"], "Charles Bronson")
         names = [a["alias"] for a in rec["aliases"]]
-        # Nenhum rótulo sintético "(Smurf: ...)" ou "(Principal)" pode contaminar a lista
-        self.assertTrue(all("(Smurf:" not in n and "(Principal)" not in n for n in names))
+        # Nenhum rótulo sintético "(Smurf: ...)", "(Principal)" ou "(<smurf_of>)" pode contaminar a lista
+        self.assertTrue(all("(Smurf:" not in n and "(Principal)" not in n and "(Chacineiro)" not in n for n in names))
         # Ordem cronológica dos com data, seguida por known_aliases sem data
         self.assertEqual(
             names[:4],
@@ -190,14 +215,243 @@ class TestPersistentAliasHistory(unittest.TestCase):
             )
         self.assertLessEqual(len(doc["players"][str(pid)]["aliases"]), MAX_ALIASES_PER_PLAYER)
 
+    def test_coh2_and_coh1_parsers_ingestors_and_security_guards(self) -> None:
+        sid = "76561198014756129"
+        other_sid = "76561198000000001"
+        pid = 232030
+
+        # CoH2Stats Open Data matches parser
+        coh2_payload = {
+            "matches": [
+                {
+                    "completiontime": 1_710_000_000,
+                    "matchhistoryreportresults": [
+                        {"profile": {"name": f"/steam/{sid}", "alias": "GabeCoH2"}},
+                        {"profile": {"name": f"/steam/{other_sid}", "alias": "IgnoredPlayer"}},
+                    ],
+                },
+                {
+                    "completiontime": 1_720_000_000,
+                    "matchhistoryreportresults": [
+                        {"profile": {"name": f"/steam/{sid}", "alias": "GabeCoH2New"}},
+                    ],
+                },
+            ]
+        }
+        parsed_c2 = extract_coh2_aliases_from_matches_payload(coh2_payload, {sid})
+        self.assertEqual(list(parsed_c2.keys()), [sid])
+        self.assertEqual(parsed_c2[sid], [("GabeCoH2", 1_710_000_000), ("GabeCoH2New", 1_720_000_000)])
+
+        # CoH1Stats public API parser
+        coh1_payload = {
+            "steamId": sid,
+            "alias": "Gabe444",
+            "leaderboardStats": [{"lastMatchDate": 1_550_000_000}, {"lastMatchDate": 1_580_000_000}],
+            "matchHistory": [
+                {
+                    "completiontime": 1_540_000_000,
+                    "players": [
+                        {"steamId": sid, "alias": "GabeOldCoH1"},
+                        {"steamId": other_sid, "alias": "SomeoneElse"},
+                    ],
+                }
+            ],
+        }
+        parsed_c1 = parse_coh1stats_player_payload(coh1_payload, steam_id=sid)
+        self.assertEqual(parsed_c1, [("GabeOldCoH1", 1_540_000_000), ("Gabe444", 1_580_000_000)])
+
+        # Ingestão das 4 fontes legadas (Relic CoH2, CoH2Stats, Relic CoH1, CoH1Stats)
+        doc = load_alias_history(Path("/nonexistent/alias_history.json"))
+        record_player_alias(doc, profile_id=pid, alias="Gabe", source="local_db", steam_id=sid, canonical_alias="Gabe")
+        pid_map = {sid: pid}
+        self.assertTrue(
+            ingest_coh2_relic_stats(
+                doc,
+                {sid: {"profile_id": 40386, "steam_id": sid, "alias": "GabeRelicCoH2", "last_match_date": 1_650_000_000}},
+                pid_by_steam=pid_map,
+                checked_sids=[sid],
+                now_ts=1_800_000_000,
+            )
+        )
+        self.assertTrue(ingest_coh2stats_match_aliases(doc, parsed_c2, pid_by_steam=pid_map, now_ts=1_800_000_000))
+        self.assertTrue(
+            ingest_coh1_relic_stats(
+                doc,
+                {sid: {"profile_id": 2022369, "steam_id": sid, "alias": "Gabe444", "last_match_date": 1_580_000_000}},
+                pid_by_steam=pid_map,
+                checked_sids=[sid],
+                now_ts=1_800_000_000,
+            )
+        )
+        self.assertTrue(ingest_coh1stats_aliases(doc, {sid: parsed_c1}, pid_by_steam=pid_map, checked_sids=[sid], now_ts=1_800_000_000))
+
+        rec = doc["players"][str(pid)]
+        self.assertEqual(rec["coh2_profile_id"], 40386)
+        self.assertEqual(rec["coh1_profile_id"], 2022369)
+        formatted = format_alias_history_entry(rec)
+        self.assertIn("coh2_pid=40386", formatted)
+        self.assertIn("coh1_pid=2022369", formatted)
+        self.assertEqual(len(query_alias_history(doc, "Gabe444")), 1)
+        self.assertEqual(len(query_alias_history(doc, "GabeCoH2New")), 1)
+
+        # Validação SSRF / path traversal nas allowlists CoH2Stats e CoH1Stats
+        validate_https_endpoint(
+            "https://storage.coh2stats.com/matches/matches-1774051200.json",
+            ALLOWED_COH2STATS_HOSTS,
+            path_prefix="/matches/",
+            path_regex=COH2STATS_MATCHES_PATH_RE,
+            allow_query=False,
+        )
+        validate_https_endpoint(
+            f"https://api.coh1stats.com/api/player/{sid}",
+            ALLOWED_COH1STATS_HOSTS,
+            path_prefix="/api/player/",
+            path_regex=COH1STATS_PLAYER_PATH_RE,
+            allow_query=False,
+        )
+        with self.assertRaises(ValueError):
+            validate_https_endpoint(
+                f"https://api.coh1stats.com/api/player/{sid}?foo=bar",
+                ALLOWED_COH1STATS_HOSTS,
+                path_prefix="/api/player/",
+                path_regex=COH1STATS_PLAYER_PATH_RE,
+                allow_query=False,
+            )
+        with self.assertRaises(ValueError):
+            validate_https_endpoint(
+                "https://evil.example.com/matches/matches-1774051200.json",
+                ALLOWED_COH2STATS_HOSTS,
+                path_prefix="/matches/",
+                path_regex=COH2STATS_MATCHES_PATH_RE,
+                allow_query=False,
+            )
+
+    def test_smurf_detector_uses_coh1_coh2_alias_history_and_all_br_catalog(self) -> None:
+        # Conta principal com nick atual genérico "Gabe", mas nick histórico CoH1 "Gabe444" -> smurf "gabe444arg"
+        main_pid = 232030
+        main_sid = "76561198014756129"
+        smurf_pid = 1399999
+        smurf_sid = "76561199999999999"
+        hist_br_pid = 888888
+        hist_br_sid = "76561198888888888"
+
+        doc = load_alias_history(Path("/nonexistent/alias_history.json"))
+        record_player_alias(doc, profile_id=main_pid, alias="Gabe", source="relic_api", steam_id=main_sid, canonical_alias="Gabe")
+        record_player_alias(doc, profile_id=main_pid, alias="Gabe444", source="relic_coh1_api", steam_id=main_sid, seen_ts=1_580_000_000)
+        record_player_alias(doc, profile_id=hist_br_pid, alias="BrAntigo", source="coh3stats_opendata", steam_id=hist_br_sid, canonical_alias="BrAntigo")
+
+        main_row = {"profile_id": main_pid, "steam_id": main_sid, "alias": "Gabe", "max_elo": 1820, "total_matches": 1400, "country": "br"}
+        cand_row = {"profile_id": smurf_pid, "steam_id": smurf_sid, "alias": "gabe444arg", "max_elo": 1650, "total_matches": 45, "country": "br"}
+
+        scored_without_hist = score_smurf_pair(cand_row, main_row, None, None)
+        scored_with_hist = score_smurf_pair(
+            cand_row,
+            main_row,
+            None,
+            None,
+            alias_history_by_pid={main_pid: {"Gabe", "Gabe444"}},
+        )
+        self.assertGreater(
+            scored_with_hist["identity_anchor_signals"],
+            scored_without_hist["identity_anchor_signals"],
+        )
+        self.assertGreater(scored_with_hist["probability_pct"], scored_without_hist["probability_pct"])
+        self.assertIn("gabe444", " ".join(scored_with_hist["evidence"]).lower())
+
+        # detect_top50_br_smurfs mescla contas do alias_history_doc no catálogo BR completo e detecta mudança de nick `br_catalog`
+        tel = SmurfTelemetryCollector()
+        tel._get(hist_br_pid).record_alias("BrAntigo", 1_790_000_000)
+        tel._get(hist_br_pid).record_alias("BrRenomeado", 1_799_000_000)
+        rep = detect_top50_br_smurfs(
+            all_br_players={main_pid: main_row},
+            telemetry=tel,
+            roster_rows=[],
+            alias_history_doc=doc,
+            live_stats_by_pid={hist_br_pid: {"profile_id": hist_br_pid, "steam_id": hist_br_sid, "alias": "BrRenomeado"}},
+        )
+        br_cat_changes = [c for c in rep["nick_changes"] if c["profile_id"] == hist_br_pid]
+        self.assertEqual(len(br_cat_changes), 1)
+        self.assertEqual(br_cat_changes[0]["scope"], "br_catalog")
+        self.assertEqual(br_cat_changes[0]["display_alias"], "BrRenomeado (BrAntigo)")
+
+        # format_smurf_report_text limita exibição br_catalog a 20 itens sem cortar prioridade
+        many_changes = [
+            {
+                "profile_id": 700000 + i,
+                "steam_id": "",
+                "account_type": "principal",
+                "scope": "br_catalog",
+                "relic_br_rank": 0,
+                "previous_nick": f"Old{i}",
+                "new_nick": f"New{i}",
+                "display_alias": f"New{i} (Old{i})",
+                "source": "relic_live",
+            }
+            for i in range(25)
+        ]
+        txt = format_smurf_report_text({"nick_changes": many_changes, "suspects": []})
+        self.assertIn("e mais 5 mudança(s) de nick no catálogo completo", txt)
+
     def test_save_load_anti_symlink_and_sync_orchestrator(self) -> None:
         class _FakeRelic:
+            def discover_br_and_candidates_from_open_data(self, now_ts=None):
+                return (
+                    {
+                        991111: {
+                            "profile_id": 991111,
+                            "steam_id": "76561198000991111",
+                            "alias": "BrasileiroInativo2023",
+                            "country": "br",
+                            "max_elo": 1350,
+                            "last_match_date": 1_690_000_000,
+                            "total_matches": 80,
+                        }
+                    },
+                    {},
+                    {"files_ok": 16},
+                )
+
+            def discover_br_and_candidates_from_relic_sa(self, max_pages_per_board=10):
+                return {}, {}
+
             def fetch_profile_stats_batch(self, pids, pace_delay_sec=0.12):
                 return {
                     79327: {"profile_id": 79327, "steam_id": "76561197963172584", "alias": "Chacineiro", "last_match_date": 1_800_000_000}
                 }
 
+            def fetch_coh2_profile_stats_by_steam_ids(self, sids, pace_delay_sec=0.14):
+                return {
+                    "76561197963172584": {
+                        "profile_id": 40386,
+                        "steam_id": "76561197963172584",
+                        "alias": "Kam aka Chacineiro",
+                        "last_match_date": 1_640_000_000,
+                    }
+                }
+
+            def fetch_coh1_profile_stats_by_steam_ids(self, sids, pace_delay_sec=0.14):
+                return {
+                    "76561197963172584": {
+                        "profile_id": 112233,
+                        "steam_id": "76561197963172584",
+                        "alias": "KamCoH1",
+                        "last_match_date": 1_450_000_000,
+                    }
+                }
+
+            def fetch_coh2stats_match_aliases(self, target_sids, days=7, now_ts=None):
+                return (
+                    {"76561197963172584": [("ChacineiroCoH2Match", 1_710_000_000)]},
+                    {"days_ok": days},
+                )
+
+            def fetch_coh1stats_player_aliases(self, sids, pace_delay_sec=0.16):
+                return {"76561197963172584": [("KamCoH1Stats", 1_460_000_000)]}
+
         class _FakeSteam:
+            def fetch_group_member_steam_ids(self, slug, max_pages=5, pace_delay_sec=0.20):
+                return []
+
             def fetch_batch_presence(self, sids, **kwargs):
                 return {
                     "76561197963172584": {"ok": True, "steam_alias": "Chacineiro", "source": "web_api"}
@@ -224,22 +478,35 @@ class TestPersistentAliasHistory(unittest.TestCase):
                 relic_client=_FakeRelic(),
                 presence_client=_FakeSteam(),
                 cohdb_client=_FakeCohDB(),
+                include_all_br_catalog=True,
+                include_coh2stats_days=2,
                 now_ts=1_800_000_000,
             )
             self.assertTrue(hp.is_file())
             self.assertGreater(res["players_total"], 0)
-            self.assertIn("relic_api", res["sources_summary"])
-            self.assertIn("steam_web_api", res["sources_summary"])
-            self.assertIn("steam_aliases", res["sources_summary"])
-            self.assertIn("cohdb", res["sources_summary"])
-            self.assertIn("local_db", res["sources_summary"])
+            # Jogador BR inativo de 2023 do leaderboard aberto entra no catálogo sem corte 15d/90d
+            loaded = load_alias_history(hp)
+            self.assertIn("991111", loaded["players"])
+            for src in (
+                "relic_api",
+                "steam_web_api",
+                "steam_aliases",
+                "cohdb",
+                "local_db",
+                "coh3stats_opendata",
+                "relic_coh2_api",
+                "coh2stats_opendata",
+                "relic_coh1_api",
+                "coh1stats_api",
+            ):
+                self.assertIn(src, res["sources_summary"])
 
             # Symlink não pode ser lido por load_alias_history (CWE-59)
             link_p = Path(td) / "evil_link.json"
             os.symlink(hp, link_p)
             self.assertEqual(load_alias_history(link_p)["players"], {})
 
-            # Segunda rodada dentro do TTL 24h pula Steam ajaxaliases e CoHDB
+            # Segunda rodada dentro dos TTLs (24h Steam/CoHDB e 7d CoH2/CoH1) não refaz consultas
             res2 = sync_persistent_alias_history(
                 history_path=hp,
                 community_cache_path=cp,
@@ -250,6 +517,9 @@ class TestPersistentAliasHistory(unittest.TestCase):
             )
             self.assertEqual(res2["steam_aliases_fetched"], 0)
             self.assertEqual(res2["cohdb_fetched"], 0)
+            self.assertEqual(res2["coh2_relic_fetched"], 0)
+            self.assertEqual(res2["coh1_relic_fetched"], 0)
+            self.assertEqual(res2["coh1stats_fetched"], 0)
 
             # save_alias_history bloqueia escrita em symlink
             with self.assertRaises(RuntimeError):
