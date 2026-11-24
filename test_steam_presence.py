@@ -1106,5 +1106,121 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         self.assertEqual(oth_online[3]["prominence_tier"], "low")
 
 
+class TestSteamFriendsGraphClient(unittest.TestCase):
+    def test_parse_steam_web_api_friends_payload_and_html(self) -> None:
+        from steam_presence import parse_steam_friends_html, parse_steam_web_api_friends_payload
+
+        self_sid = "76561197963172584"
+        f1 = "76561198037383807"
+        f2 = "76561199239019193"
+
+        api_payload = {
+            "friendslist": {
+                "friends": [
+                    {"steamid": self_sid, "relationship": "friend"},
+                    {"steamid": f1, "relationship": "friend"},
+                    {"steamid": "invalid_id", "relationship": "friend"},
+                    {"steamid": f2, "relationship": "friend"},
+                    {"steamid": f1, "relationship": "friend"},
+                ]
+            }
+        }
+        self.assertEqual(parse_steam_web_api_friends_payload(api_payload, exclude_steam_id=self_sid), [f1, f2])
+        self.assertEqual(parse_steam_web_api_friends_payload({}), [])
+
+        raw_html = (
+            f'<div class="selectable" data-steamid="{self_sid}"></div>'
+            f'<div class="selectable" data-steamid="{f1}"></div>'
+            f'<div class="selectable" data-steamid="{f2}"></div>'
+            f'<div class="selectable" data-steamid="{f1}"></div>'
+        )
+        self.assertEqual(parse_steam_friends_html(raw_html, exclude_steam_id=self_sid), [f1, f2])
+        self.assertEqual(parse_steam_friends_html(""), [])
+
+    def test_fetch_friend_steam_ids_uses_header_and_handles_401_private_and_429_circuit_breaker(self) -> None:
+        import io
+        import json
+        import urllib.error
+        from unittest import mock
+
+        seed1 = "76561197963172584"
+        seed2 = "76561198034510845"
+        seed3 = "76561198024839791"
+        friend1 = "76561198037383807"
+        fake_key = "0123456789ABCDEF0123456789ABCDEF"
+        client = SteamPresenceClient(api_key=fake_key)
+
+        captured_reqs: list[tuple[str, str | None]] = []
+
+        class _FakeResp:
+            def __init__(self, body: bytes) -> None:
+                self._buf = io.BytesIO(body)
+                self.headers: dict[str, str] = {}
+
+            def read(self, n: int = -1) -> bytes:
+                return self._buf.read(n)
+
+            def __enter__(self) -> "_FakeResp":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+        class _FakeOpener:
+            def open(self, req: object, timeout: int = 10) -> _FakeResp:
+                url = getattr(req, "full_url", "")
+                hdr_key = req.get_header("X-webapi-key")  # type: ignore[attr-defined]
+                captured_reqs.append((url, hdr_key))
+                if seed1 in url:
+                    return _FakeResp(
+                        json.dumps({"friendslist": {"friends": [{"steamid": friend1}]}}).encode("utf-8")
+                    )
+                if seed2 in url:
+                    raise urllib.error.HTTPError(url, 401, "Unauthorized", {}, None)  # type: ignore[arg-type]
+                raise urllib.error.HTTPError(url, 429, "Too Many Requests", {}, None)  # type: ignore[arg-type]
+
+        with mock.patch("steam_presence._get_relic_opener", return_value=_FakeOpener()):
+            self.assertEqual(client.fetch_friend_steam_ids(seed1), [friend1])
+            # Chave JAMAIS aparece na URL — apenas no header x-webapi-key!
+            self.assertEqual(captured_reqs[0][1], fake_key)
+            self.assertNotIn(fake_key, captured_reqs[0][0])
+            self.assertNotIn("key=", captured_reqs[0][0])
+
+            # HTTP 401 = lista privada (retorna [] sem erro)
+            self.assertEqual(client.fetch_friend_steam_ids(seed2), [])
+            # HTTP 429 = rate limit (retorna None)
+            self.assertIsNone(client.fetch_friend_steam_ids(seed3))
+
+        # Testa circuit-breaker no lote (fallback sequencial sem chave)
+        fallback_client = SteamPresenceClient(api_key="")
+        calls: list[str] = []
+
+        def _fake_fetch(sid: str) -> list[str] | None:
+            calls.append(sid)
+            if sid == seed1:
+                return [friend1]
+            if sid == seed2:
+                return []  # privada não dispara circuit-breaker
+            return None  # rate-limit 429
+
+        sids_batch = [
+            seed1,
+            seed2,
+            seed3,
+            "76561198000000011",
+            "76561198000000012",
+            "76561198000000013",
+        ]
+        with mock.patch.object(fallback_client, "fetch_friend_steam_ids", side_effect=_fake_fetch):
+            res = fallback_client.fetch_batch_friend_steam_ids(
+                sids_batch,
+                pace_delay_sec=0.0,
+                rate_limit_threshold=2,
+            )
+        self.assertEqual(res, {seed1: [friend1], seed2: []})
+        # Deve parar imediatamente após 2 falhas consecutivas (seed3 e ...011), sem chamar ...012 nem ...013!
+        self.assertEqual(calls, [seed1, seed2, seed3, "76561198000000011"])
+
+
 if __name__ == "__main__":
     unittest.main()

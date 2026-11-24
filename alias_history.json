@@ -31162,6 +31162,32 @@
       "smurf_of": "",
       "steam_id": "76561198026250715"
     },
+    "1020858": {
+      "aliases": [
+        {
+          "alias": "cybear",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "cybear",
+      "coh1_profile_id": 1427451,
+      "coh3_country": "br",
+      "current_alias": "cybear",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1020858,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198046206747"
+    },
     "1021415": {
       "aliases": [
         {
@@ -31730,6 +31756,54 @@
       "smurf_of": "",
       "steam_id": "76561199017512501"
     },
+    "1022767": {
+      "aliases": [
+        {
+          "alias": "Ahchoo",
+          "first_seen": 1537388644,
+          "last_seen": 1537388644,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        },
+        {
+          "alias": "Mac",
+          "first_seen": 1622860076,
+          "last_seen": 1622860076,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Mat",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Mat",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1537388644,
+      "coh1_profile_id": 193915,
+      "coh1_total_matches": 22,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1622860076,
+      "coh2_profile_id": 578186,
+      "coh2_total_matches": 41,
+      "coh3_country": "br",
+      "current_alias": "Mat",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1022767,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198024498636"
+    },
     "1022913": {
       "aliases": [
         {
@@ -31989,6 +32063,33 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198122242920"
+    },
+    "1030925": {
+      "aliases": [
+        {
+          "alias": "Dr. TAG, NEUROCIRURGIÃO",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Dr. TAG, NEUROCIRURGIÃO",
+      "coh2_profile_id": 216802,
+      "coh2_total_matches": 2,
+      "coh3_country": "br",
+      "current_alias": "Dr. TAG, NEUROCIRURGIÃO",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1030925,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198018079914"
     },
     "1031213": {
       "aliases": [
@@ -32672,6 +32773,35 @@
       "steam_br_group": true,
       "steam_id": "76561198063771471"
     },
+    "104529": {
+      "aliases": [
+        {
+          "alias": "Golira",
+          "first_seen": 1794165900,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Golira",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1794165900,
+      "coh2_profile_id": 639050,
+      "coh2_total_matches": 1468,
+      "coh3_country": "br",
+      "current_alias": "Golira",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 104529,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198090333199"
+    },
     "1045386": {
       "aliases": [
         {
@@ -32797,6 +32927,64 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198272418002"
+    },
+    "1051592": {
+      "aliases": [
+        {
+          "alias": "Teixeira",
+          "first_seen": 1675388527,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Teixeira",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1675388527,
+      "coh2_profile_id": 27792,
+      "coh2_total_matches": 2782,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1743818823,
+      "coh3_total_matches": 48,
+      "current_alias": "Teixeira",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1051592,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198017275114"
+    },
+    "1053674": {
+      "aliases": [
+        {
+          "alias": "GustavoKjaer",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "GustavoKjaer",
+      "coh2_country": "br",
+      "coh2_profile_id": 5070906,
+      "coh3_country": "br",
+      "current_alias": "GustavoKjaer",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1053674,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197987285020"
     },
     "105384": {
       "aliases": [
@@ -32944,6 +33132,32 @@
       "smurf_of": "",
       "steam_id": "76561198447048580"
     },
+    "1056541": {
+      "aliases": [
+        {
+          "alias": "YOUMORREU",
+          "first_seen": 1753644313,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "YOUMORREU",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1753644313,
+      "coh3_total_matches": 807,
+      "current_alias": "YOUMORREU",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1056541,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198064149997"
+    },
     "1056763": {
       "aliases": [
         {
@@ -33074,6 +33288,47 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198253846746"
+    },
+    "1057248": {
+      "aliases": [
+        {
+          "alias": "[BRD]cachaceirox",
+          "first_seen": 1585941507,
+          "last_seen": 1585941507,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        },
+        {
+          "alias": "Druidanauta",
+          "first_seen": 1748861947,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Druidanauta",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1585941507,
+      "coh1_profile_id": 320149,
+      "coh1_total_matches": 10,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1748861947,
+      "coh2_profile_id": 66793,
+      "coh2_total_matches": 128,
+      "coh3_country": "br",
+      "current_alias": "Druidanauta",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1057248,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198011994459"
     },
     "1057422": {
       "aliases": [
@@ -33322,6 +33577,42 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198068074686"
+    },
+    "1061454": {
+      "aliases": [
+        {
+          "alias": "dmcruz1",
+          "first_seen": 1644024498,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "dmcruz1",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1644024498,
+      "coh1_profile_id": 1891978,
+      "coh1_total_matches": 1,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1741044804,
+      "coh2_profile_id": 5933678,
+      "coh2_total_matches": 32,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1741635804,
+      "coh3_total_matches": 1,
+      "current_alias": "dmcruz1",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1061454,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561199227180628"
     },
     "1061486": {
       "aliases": [
@@ -33893,6 +34184,32 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198098113405"
+    },
+    "1075661": {
+      "aliases": [
+        {
+          "alias": "Accorsi",
+          "first_seen": 1741542578,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Accorsi",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1741542578,
+      "coh3_total_matches": 1,
+      "current_alias": "Accorsi",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1075661,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198017964693"
     },
     "1075776": {
       "aliases": [
@@ -34499,6 +34816,53 @@
       "smurf_of": "",
       "steam_id": "76561198108568598"
     },
+    "1088497": {
+      "aliases": [
+        {
+          "alias": "Mentor Diver ⚔",
+          "first_seen": 1736898214,
+          "last_seen": 1736898214,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Imperiestro",
+          "first_seen": 1741826185,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        },
+        {
+          "alias": "Prof Pawlick",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Imperiestro",
+      "coh1_profile_id": 828039,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1736898214,
+      "coh2_profile_id": 576719,
+      "coh2_total_matches": 1226,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1741826185,
+      "coh3_total_matches": 1,
+      "current_alias": "Imperiestro",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1088497,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197991014140"
+    },
     "109098": {
       "aliases": [
         {
@@ -34605,6 +34969,40 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198127601021"
+    },
+    "1092342": {
+      "aliases": [
+        {
+          "alias": "Moheekan",
+          "first_seen": 1627002020,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Moheekan",
+      "coh1_profile_id": 1157725,
+      "coh1_total_matches": 5,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1627002020,
+      "coh2_profile_id": 1781919,
+      "coh2_total_matches": 1858,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1746475385,
+      "coh3_total_matches": 1,
+      "current_alias": "Moheekan",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1092342,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197963280377"
     },
     "1092921": {
       "aliases": [
@@ -34971,6 +35369,30 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198031903639"
+    },
+    "1102576": {
+      "aliases": [
+        {
+          "alias": "F U D I D O",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "F U D I D O",
+      "coh3_country": "br",
+      "current_alias": "F U D I D O",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1102576,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198314051516"
     },
     "110281": {
       "aliases": [
@@ -35968,6 +36390,35 @@
       "smurf_of": "",
       "steam_id": "76561198089018812"
     },
+    "1119784": {
+      "aliases": [
+        {
+          "alias": "Tracker",
+          "first_seen": 1779312367,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Tracker",
+      "coh2_profile_id": 799735,
+      "coh2_total_matches": 6,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1779312367,
+      "coh3_total_matches": 306,
+      "current_alias": "Tracker",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1119784,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198000067932"
+    },
     "1120137": {
       "aliases": [
         {
@@ -36573,6 +37024,35 @@
       "smurf_of": "",
       "steam_id": "76561199056086587"
     },
+    "1137283": {
+      "aliases": [
+        {
+          "alias": "Raptor",
+          "first_seen": 1418688805,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Raptor",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1418688805,
+      "coh2_profile_id": 91553,
+      "coh2_total_matches": 1,
+      "coh3_country": "br",
+      "current_alias": "Raptor",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1137283,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197977287835"
+    },
     "11376": {
       "aliases": [
         {
@@ -36634,6 +37114,37 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198865852245"
+    },
+    "1138": {
+      "aliases": [
+        {
+          "alias": "RageOctopus",
+          "first_seen": 1739066262,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "RageOctopus",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1739066262,
+      "coh2_profile_id": 3908246,
+      "coh2_total_matches": 591,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1782075168,
+      "coh3_total_matches": 173,
+      "current_alias": "RageOctopus",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1138,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198059237433"
     },
     "1138427": {
       "aliases": [
@@ -37508,6 +38019,32 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198989179530"
+    },
+    "1157338": {
+      "aliases": [
+        {
+          "alias": "Amo meu Chevette",
+          "first_seen": 1780453154,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Amo meu Chevette",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1780453154,
+      "coh3_total_matches": 390,
+      "current_alias": "Amo meu Chevette",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1157338,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198264967553"
     },
     "1157401": {
       "aliases": [
@@ -38448,6 +38985,40 @@
       "smurf_of": "",
       "steam_id": "76561198065725979"
     },
+    "1181019": {
+      "aliases": [
+        {
+          "alias": "Verus",
+          "first_seen": 1784483954,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Verus",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1793560058,
+      "coh1_profile_id": 2140041,
+      "coh1_total_matches": 12,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1784483954,
+      "coh2_profile_id": 3255834,
+      "coh2_total_matches": 425,
+      "coh3_country": "br",
+      "current_alias": "Verus",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1181019,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198129857498"
+    },
     "1181845": {
       "aliases": [
         {
@@ -39147,6 +39718,37 @@
       "steam_br_group": true,
       "steam_id": "76561198066614513"
     },
+    "1200171": {
+      "aliases": [
+        {
+          "alias": "senavlat",
+          "first_seen": 1760394214,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "senavlat",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1760394214,
+      "coh2_profile_id": 5470764,
+      "coh2_total_matches": 305,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1790648834,
+      "coh3_total_matches": 112,
+      "current_alias": "senavlat",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1200171,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198263385674"
+    },
     "1200197": {
       "aliases": [
         {
@@ -39188,6 +39790,42 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198132799158"
+    },
+    "1200241": {
+      "aliases": [
+        {
+          "alias": "LordBilly",
+          "first_seen": 1702280255,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "LordBilly",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1702283862,
+      "coh1_profile_id": 354449,
+      "coh1_total_matches": 1053,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1702280255,
+      "coh2_profile_id": 6491515,
+      "coh2_total_matches": 4,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1785906310,
+      "coh3_total_matches": 282,
+      "current_alias": "LordBilly",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1200241,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198117943847"
     },
     "1201885": {
       "aliases": [
@@ -40013,6 +40651,37 @@
       "smurf_of": "",
       "steam_id": "76561199105792679"
     },
+    "1216485": {
+      "aliases": [
+        {
+          "alias": ".ph.",
+          "first_seen": 1763868052,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": ".ph.",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1763868052,
+      "coh2_profile_id": 454568,
+      "coh2_total_matches": 665,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1777578098,
+      "coh3_total_matches": 83,
+      "current_alias": ".ph.",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1216485,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197984119308"
+    },
     "1216706": {
       "aliases": [
         {
@@ -40174,6 +40843,32 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561199039874097"
+    },
+    "1220321": {
+      "aliases": [
+        {
+          "alias": "rafaelcavelino",
+          "first_seen": 1792450914,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "rafaelcavelino",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1792450914,
+      "coh3_total_matches": 296,
+      "current_alias": "rafaelcavelino",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1220321,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561199583346421"
     },
     "1220976": {
       "aliases": [
@@ -41625,6 +42320,35 @@
       "smurf_of": "",
       "steam_id": "76561197997802778"
     },
+    "1245891": {
+      "aliases": [
+        {
+          "alias": "Igor Ferreira",
+          "first_seen": 1767752985,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Igor Ferreira",
+      "coh2_country": "br",
+      "coh2_profile_id": 3732213,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1767752985,
+      "coh3_total_matches": 11,
+      "current_alias": "Igor Ferreira",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1245891,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198064862851"
+    },
     "1245902": {
       "aliases": [
         {
@@ -42575,6 +43299,44 @@
       "steam_br_group": true,
       "steam_id": "76561198010730372"
     },
+    "1259156": {
+      "aliases": [
+        {
+          "alias": "Bom Dia Bom Dia",
+          "first_seen": 1649572492,
+          "last_seen": 1649572492,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Jogando e relaxando",
+          "first_seen": 1790782028,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Jogando e relaxando",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1649572492,
+      "coh2_profile_id": 4643378,
+      "coh2_total_matches": 30,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1790782028,
+      "coh3_total_matches": 480,
+      "current_alias": "Jogando e relaxando",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1259156,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198076616432"
+    },
     "1260150": {
       "aliases": [
         {
@@ -42634,6 +43396,42 @@
       "smurf_of": "",
       "steam_id": "76561198760966441"
     },
+    "1260652": {
+      "aliases": [
+        {
+          "alias": "ZuckDOG",
+          "first_seen": 1735489213,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "ZuckDOG",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1768349476,
+      "coh1_profile_id": 89940,
+      "coh1_total_matches": 1207,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1735489213,
+      "coh2_profile_id": 3076914,
+      "coh2_total_matches": 2,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1790451127,
+      "coh3_total_matches": 392,
+      "current_alias": "ZuckDOG",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1260652,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198054760218"
+    },
     "126239": {
       "aliases": [
         {
@@ -42685,6 +43483,37 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198012935280"
+    },
+    "126281": {
+      "aliases": [
+        {
+          "alias": "Flirtz",
+          "first_seen": 1677017969,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Flirtz",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1677017969,
+      "coh2_profile_id": 899038,
+      "coh2_total_matches": 78,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1744836170,
+      "coh3_total_matches": 148,
+      "current_alias": "Flirtz",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 126281,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197988393996"
     },
     "1263123": {
       "aliases": [
@@ -42825,6 +43654,47 @@
       "steam_br_group": true,
       "steam_id": "76561198026809854"
     },
+    "1264212": {
+      "aliases": [
+        {
+          "alias": "Detetive Miller",
+          "first_seen": 1778724980,
+          "last_seen": 1779002870,
+          "sources": [
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Aranha Maluco",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Aranha Maluco",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1778724980,
+      "coh1_profile_id": 185615,
+      "coh1_total_matches": 63,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1779002870,
+      "coh2_profile_id": 2076927,
+      "coh2_total_matches": 389,
+      "coh3_country": "br",
+      "current_alias": "Aranha Maluco",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1264212,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198066722616"
+    },
     "1264329": {
       "aliases": [
         {
@@ -42854,6 +43724,35 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198363068580"
+    },
+    "1264983": {
+      "aliases": [
+        {
+          "alias": "Ferzan",
+          "first_seen": 1544406456,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Ferzan",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1544406456,
+      "coh2_profile_id": 2150450,
+      "coh2_total_matches": 11,
+      "coh3_country": "br",
+      "current_alias": "Ferzan",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1264983,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198063916545"
     },
     "1265028": {
       "aliases": [
@@ -42890,6 +43789,35 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198089555033"
+    },
+    "126620": {
+      "aliases": [
+        {
+          "alias": "Marcc",
+          "first_seen": 1775275346,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Marcc",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1775275346,
+      "coh2_profile_id": 2027393,
+      "coh2_total_matches": 109,
+      "coh3_country": "br",
+      "current_alias": "Marcc",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 126620,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198191811526"
     },
     "1266522": {
       "aliases": [
@@ -43140,6 +44068,32 @@
       "steam_br_group": true,
       "steam_id": "76561198006515049"
     },
+    "1271193": {
+      "aliases": [
+        {
+          "alias": "Pedro Magnata",
+          "first_seen": 1770158039,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Pedro Magnata",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1770158039,
+      "coh3_total_matches": 4,
+      "current_alias": "Pedro Magnata",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1271193,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561199328605706"
+    },
     "1272393": {
       "aliases": [
         {
@@ -43231,6 +44185,40 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198275024539"
+    },
+    "1274986": {
+      "aliases": [
+        {
+          "alias": ")=KOKÓ=(",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        },
+        {
+          "alias": "Lucas Henrique",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": ")=KOKÓ=(",
+      "coh2_country": "br",
+      "coh2_profile_id": 2676025,
+      "coh3_country": "br",
+      "current_alias": ")=KOKÓ=(",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1274986,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198054411189"
     },
     "1276975": {
       "aliases": [
@@ -43433,6 +44421,32 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198117204290"
+    },
+    "1279123": {
+      "aliases": [
+        {
+          "alias": "『V』Shogun 火",
+          "first_seen": 1790130788,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "『V』Shogun 火",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1790130788,
+      "coh3_total_matches": 59,
+      "current_alias": "『V』Shogun 火",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1279123,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198823229426"
     },
     "1279300": {
       "aliases": [
@@ -43897,6 +44911,47 @@
       "smurf_of": "",
       "steam_id": "76561198803826426"
     },
+    "1285850": {
+      "aliases": [
+        {
+          "alias": "Pebalier",
+          "first_seen": 1671730842,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Lawrence, o Rei dos Blonk",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Pebalier",
+      "coh1_profile_id": 1095597,
+      "coh1_total_matches": 5,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1671730842,
+      "coh2_profile_id": 964500,
+      "coh2_total_matches": 709,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1772322453,
+      "coh3_total_matches": 18,
+      "current_alias": "Pebalier",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1285850,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198013445797"
+    },
     "1285871": {
       "aliases": [
         {
@@ -43929,6 +44984,32 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561199057516321"
+    },
+    "1285934": {
+      "aliases": [
+        {
+          "alias": "TiuSandae",
+          "first_seen": 1773540163,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "TiuSandae",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1773540163,
+      "coh3_total_matches": 39,
+      "current_alias": "TiuSandae",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1285934,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198733527719"
     },
     "1286348": {
       "aliases": [
@@ -43989,6 +45070,44 @@
       "smurf_of": "",
       "steam_id": "76561198194727733"
     },
+    "1286523": {
+      "aliases": [
+        {
+          "alias": "Gugouf",
+          "first_seen": 1652641262,
+          "last_seen": 1652641262,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Megumula",
+          "first_seen": 1774836951,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Megumula",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1652641262,
+      "coh2_profile_id": 6028624,
+      "coh2_total_matches": 1,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1774836951,
+      "coh3_total_matches": 21,
+      "current_alias": "Megumula",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1286523,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198417833011"
+    },
     "1286585": {
       "aliases": [
         {
@@ -44030,6 +45149,30 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198077348115"
+    },
+    "1287496": {
+      "aliases": [
+        {
+          "alias": "Bruno Texano",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Bruno Texano",
+      "coh3_country": "br",
+      "current_alias": "Bruno Texano",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1287496,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198804596402"
     },
     "128789": {
       "aliases": [
@@ -45444,6 +46587,38 @@
       "smurf_of": "",
       "steam_id": "76561198074507537"
     },
+    "130876": {
+      "aliases": [
+        {
+          "alias": "Hansyro",
+          "first_seen": 1756086325,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Hansyro",
+      "coh1_country": "br",
+      "coh1_profile_id": 1600736,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1756086325,
+      "coh2_profile_id": 2464178,
+      "coh2_total_matches": 343,
+      "coh3_country": "br",
+      "current_alias": "Hansyro",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 130876,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198157488084"
+    },
     "1309878": {
       "aliases": [
         {
@@ -45478,6 +46653,40 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561197996335973"
+    },
+    "1310331": {
+      "aliases": [
+        {
+          "alias": "Bartolski",
+          "first_seen": 1696522832,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Bartolski",
+      "coh1_profile_id": 943389,
+      "coh1_total_matches": 4,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1696522832,
+      "coh2_profile_id": 951520,
+      "coh2_total_matches": 649,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1778863874,
+      "coh3_total_matches": 3,
+      "current_alias": "Bartolski",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1310331,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198024408697"
     },
     "1311509": {
       "aliases": [
@@ -45584,6 +46793,45 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198134422476"
+    },
+    "1315120": {
+      "aliases": [
+        {
+          "alias": "$atoshi Nakamoto",
+          "first_seen": 1761608275,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Haylander",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "$atoshi Nakamoto",
+      "coh1_profile_id": 943390,
+      "coh1_total_matches": 7,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1761608275,
+      "coh2_profile_id": 2033099,
+      "coh2_total_matches": 324,
+      "coh3_country": "br",
+      "current_alias": "$atoshi Nakamoto",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1315120,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198176503063"
     },
     "1315213": {
       "aliases": [
@@ -47524,6 +48772,37 @@
       "steam_br_group": true,
       "steam_id": "76561198203377428"
     },
+    "1361626": {
+      "aliases": [
+        {
+          "alias": "Giota",
+          "first_seen": 1722740687,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Giota",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1722740687,
+      "coh2_profile_id": 2698100,
+      "coh2_total_matches": 193,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1787523290,
+      "coh3_total_matches": 9,
+      "current_alias": "Giota",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1361626,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198155881999"
+    },
     "136310": {
       "aliases": [
         {
@@ -48312,6 +49591,42 @@
       "steam_br_group": true,
       "steam_id": "76561198049483968"
     },
+    "1380462": {
+      "aliases": [
+        {
+          "alias": "Serenity",
+          "first_seen": 1737780721,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Serenity",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1737780721,
+      "coh1_profile_id": 1853458,
+      "coh1_total_matches": 7,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1738386535,
+      "coh2_profile_id": 5805269,
+      "coh2_total_matches": 6,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1795205561,
+      "coh3_total_matches": 19,
+      "current_alias": "Serenity",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1380462,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198135374896"
+    },
     "1381510": {
       "aliases": [
         {
@@ -48946,6 +50261,35 @@
       "smurf_of": "",
       "steam_id": "76561198086937702"
     },
+    "139934": {
+      "aliases": [
+        {
+          "alias": "borges94",
+          "first_seen": 1685238990,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "borges94",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1685238990,
+      "coh2_profile_id": 981902,
+      "coh2_total_matches": 108,
+      "coh3_country": "br",
+      "current_alias": "borges94",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 139934,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197992331804"
+    },
     "1400289": {
       "aliases": [
         {
@@ -49425,6 +50769,42 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561199876453511"
+    },
+    "1410464": {
+      "aliases": [
+        {
+          "alias": "=*V*= YagoGlatz",
+          "first_seen": 1654735644,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "=*V*= YagoGlatz",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1654735644,
+      "coh1_profile_id": 1867798,
+      "coh1_total_matches": 1,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1787501702,
+      "coh2_profile_id": 3272212,
+      "coh2_total_matches": 71,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1790813192,
+      "coh3_total_matches": 4,
+      "current_alias": "=*V*= YagoGlatz",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1410464,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198097009016"
     },
     "1411117": {
       "aliases": [
@@ -50118,6 +51498,37 @@
       "smurf_of": "",
       "steam_id": "76561198845717498"
     },
+    "1425": {
+      "aliases": [
+        {
+          "alias": "Farrapo",
+          "first_seen": 1635533087,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Farrapo",
+      "coh2_country": "ar",
+      "coh2_last_match_date": 1635533087,
+      "coh2_profile_id": 1227,
+      "coh2_total_matches": 668,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1734241365,
+      "coh3_total_matches": 81,
+      "current_alias": "Farrapo",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1425,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197997369960"
+    },
     "1425403": {
       "aliases": [
         {
@@ -50154,6 +51565,37 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198205033345"
+    },
+    "142572": {
+      "aliases": [
+        {
+          "alias": "LudoRJ",
+          "first_seen": 1698189172,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "LudoRJ",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1698189172,
+      "coh2_profile_id": 308339,
+      "coh2_total_matches": 133,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1791499689,
+      "coh3_total_matches": 1580,
+      "current_alias": "LudoRJ",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 142572,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198067392182"
     },
     "1426084": {
       "aliases": [
@@ -50668,6 +52110,41 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561199642487162"
+    },
+    "1430174": {
+      "aliases": [
+        {
+          "alias": "Sr. Gorax",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        },
+        {
+          "alias": "GoraxSHOOOW",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Sr. Gorax",
+      "coh2_country": "br",
+      "coh2_profile_id": 331851,
+      "coh2_total_matches": 77,
+      "coh3_country": "br",
+      "current_alias": "Sr. Gorax",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1430174,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197992393126"
     },
     "1430247": {
       "aliases": [
@@ -51906,6 +53383,37 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198866620979"
+    },
+    "143775": {
+      "aliases": [
+        {
+          "alias": "ApocalipseBR",
+          "first_seen": 1674788722,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "ApocalipseBR",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1674788722,
+      "coh2_profile_id": 5141295,
+      "coh2_total_matches": 34,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1785718367,
+      "coh3_total_matches": 195,
+      "current_alias": "ApocalipseBR",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 143775,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198053431812"
     },
     "1438656": {
       "aliases": [
@@ -53718,6 +55226,44 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198076161082"
+    },
+    "1448499": {
+      "aliases": [
+        {
+          "alias": "Sirius",
+          "first_seen": 1630031242,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "<<William>>",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Sirius",
+      "coh1_profile_id": 1142444,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1630031242,
+      "coh2_profile_id": 2708484,
+      "coh2_total_matches": 6,
+      "coh3_country": "br",
+      "current_alias": "Sirius",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1448499,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198165796544"
     },
     "1448872": {
       "aliases": [
@@ -56746,6 +58292,42 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198060570905"
+    },
+    "1466310": {
+      "aliases": [
+        {
+          "alias": "Caaioo",
+          "first_seen": 1772846399,
+          "last_seen": 1772846399,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Nea",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Nea",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1772846399,
+      "coh2_profile_id": 1527355,
+      "coh2_total_matches": 272,
+      "coh3_country": "br",
+      "current_alias": "Nea",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 1466310,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198000345646"
     },
     "1466323": {
       "aliases": [
@@ -60175,6 +61757,44 @@
       "steam_br_group": true,
       "steam_id": "76561198262856736"
     },
+    "149916": {
+      "aliases": [
+        {
+          "alias": "Conker",
+          "first_seen": 1714252155,
+          "last_seen": 1714252155,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "✠ Waffen-Conker",
+          "first_seen": 1788103420,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "✠ Waffen-Conker",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1714252155,
+      "coh2_profile_id": 29065,
+      "coh2_total_matches": 419,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1788103420,
+      "coh3_total_matches": 170,
+      "current_alias": "✠ Waffen-Conker",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 149916,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198089061534"
+    },
     "150557": {
       "aliases": [
         {
@@ -60811,6 +62431,49 @@
       "smurf_of": "",
       "steam_id": "76561197994330219"
     },
+    "163166": {
+      "aliases": [
+        {
+          "alias": "barazal",
+          "first_seen": 1647825873,
+          "last_seen": 1769132332,
+          "sources": [
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "The Threat is Real",
+          "first_seen": 1780014879,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "The Threat is Real",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1647825873,
+      "coh1_profile_id": 532234,
+      "coh1_total_matches": 16,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1769132332,
+      "coh2_profile_id": 1595703,
+      "coh2_total_matches": 193,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1780014879,
+      "coh3_total_matches": 280,
+      "current_alias": "The Threat is Real",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 163166,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197992195230"
+    },
     "164152": {
       "aliases": [
         {
@@ -61238,6 +62901,38 @@
       "smurf_of": "",
       "steam_id": "76561198066101827"
     },
+    "17210": {
+      "aliases": [
+        {
+          "alias": "redpower96",
+          "first_seen": 1762244049,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "redpower96",
+      "coh1_profile_id": 1119738,
+      "coh1_total_matches": 1,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1762244049,
+      "coh2_profile_id": 1848034,
+      "coh2_total_matches": 552,
+      "coh3_country": "br",
+      "current_alias": "redpower96",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 17210,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198150336762"
+    },
     "172356": {
       "aliases": [
         {
@@ -61269,6 +62964,42 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198046181818"
+    },
+    "17240": {
+      "aliases": [
+        {
+          "alias": "Sanamento Basico",
+          "first_seen": 1658326843,
+          "last_seen": 1658326843,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Saneamento Básico",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Saneamento Básico",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1658326843,
+      "coh2_profile_id": 665632,
+      "coh2_total_matches": 159,
+      "coh3_country": "br",
+      "current_alias": "Saneamento Básico",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 17240,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197966399827"
     },
     "17360": {
       "aliases": [
@@ -61511,6 +63242,34 @@
       "steam_br_group": true,
       "steam_id": "76561198027581283"
     },
+    "18191": {
+      "aliases": [
+        {
+          "alias": "Vian",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Vian",
+      "coh2_country": "br",
+      "coh2_profile_id": 52340,
+      "coh2_total_matches": 62,
+      "coh3_country": "br",
+      "current_alias": "Vian",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 18191,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197965964190"
+    },
     "183505": {
       "aliases": [
         {
@@ -61678,6 +63437,38 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198060406418"
+    },
+    "188942": {
+      "aliases": [
+        {
+          "alias": "SgtoPereira>>>",
+          "first_seen": 1656079527,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "SgtoPereira>>>",
+      "coh1_country": "br",
+      "coh1_profile_id": 652321,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1656079527,
+      "coh2_profile_id": 5106,
+      "coh2_total_matches": 8,
+      "coh3_country": "br",
+      "current_alias": "SgtoPereira>>>",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 188942,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197984114584"
     },
     "190280": {
       "aliases": [
@@ -62287,6 +64078,47 @@
       "steam_br_group": true,
       "steam_id": "76561198079279403"
     },
+    "20491": {
+      "aliases": [
+        {
+          "alias": "Captan_Igor",
+          "first_seen": 1788747896,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "BruxoSagaz",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Captan_Igor",
+      "coh1_country": "br",
+      "coh1_profile_id": 2111279,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1791038577,
+      "coh2_profile_id": 5680612,
+      "coh2_total_matches": 942,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1788747896,
+      "coh3_total_matches": 136,
+      "current_alias": "Captan_Igor",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 20491,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198893359627"
+    },
     "20523": {
       "aliases": [
         {
@@ -62593,6 +64425,52 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198079430365"
+    },
+    "208760": {
+      "aliases": [
+        {
+          "alias": "YouTube/MikeFox88",
+          "first_seen": 1506038062,
+          "last_seen": 1506038062,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "MikeFox88",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        },
+        {
+          "alias": "[MILSIM]Col.BlackHawk",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "MikeFox88",
+      "coh1_profile_id": 576955,
+      "coh1_total_matches": 11,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1506038062,
+      "coh2_profile_id": 1365146,
+      "coh2_total_matches": 15,
+      "coh3_country": "br",
+      "current_alias": "MikeFox88",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 208760,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198011165445"
     },
     "209606": {
       "aliases": [
@@ -63085,6 +64963,35 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198003743715"
+    },
+    "217715": {
+      "aliases": [
+        {
+          "alias": "The Prussian",
+          "first_seen": 1485218861,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "The Prussian",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1485218861,
+      "coh2_profile_id": 688822,
+      "coh2_total_matches": 28,
+      "coh3_country": "br",
+      "current_alias": "The Prussian",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 217715,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197990681048"
     },
     "217817": {
       "aliases": [
@@ -64405,6 +66312,40 @@
       "smurf_of": "",
       "steam_id": "76561198068603394"
     },
+    "25650": {
+      "aliases": [
+        {
+          "alias": "Impaler",
+          "first_seen": 1604958301,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Impaler",
+      "coh1_profile_id": 37344,
+      "coh1_total_matches": 30,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1604958301,
+      "coh2_profile_id": 13262,
+      "coh2_total_matches": 3167,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1727647287,
+      "coh3_total_matches": 47,
+      "current_alias": "Impaler",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 25650,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197961476331"
+    },
     "25808": {
       "aliases": [
         {
@@ -65103,6 +67044,40 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198202237409"
+    },
+    "276806": {
+      "aliases": [
+        {
+          "alias": "RPS",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        },
+        {
+          "alias": "RodrigoSantana",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "RPS",
+      "coh2_country": "br",
+      "coh2_profile_id": 1915330,
+      "coh3_country": "br",
+      "current_alias": "RPS",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 276806,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198020840240"
     },
     "277823": {
       "aliases": [
@@ -66299,6 +68274,37 @@
       "smurf_of": "",
       "steam_id": "76561198369987179"
     },
+    "30325": {
+      "aliases": [
+        {
+          "alias": "Malucoblz",
+          "first_seen": 1667016208,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Malucoblz",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1667016208,
+      "coh2_profile_id": 1750140,
+      "coh2_total_matches": 1088,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1778718282,
+      "coh3_total_matches": 21,
+      "current_alias": "Malucoblz",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 30325,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198090203475"
+    },
     "30371": {
       "aliases": [
         {
@@ -66382,6 +68388,37 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198103686875"
+    },
+    "30395": {
+      "aliases": [
+        {
+          "alias": "WarDog",
+          "first_seen": 1756089360,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "WarDog",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1756089360,
+      "coh2_profile_id": 1762409,
+      "coh2_total_matches": 5009,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1778718282,
+      "coh3_total_matches": 135,
+      "current_alias": "WarDog",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 30395,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198173848299"
     },
     "304013": {
       "aliases": [
@@ -68662,6 +70699,37 @@
       "smurf_of": "",
       "steam_id": "76561199380939978"
     },
+    "358905": {
+      "aliases": [
+        {
+          "alias": "TioSergio",
+          "first_seen": 1678133012,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "TioSergio",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1708143331,
+      "coh2_profile_id": 4329985,
+      "coh2_total_matches": 82,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1678133012,
+      "coh3_total_matches": 7,
+      "current_alias": "TioSergio",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 358905,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198995886057"
+    },
     "35899": {
       "aliases": [
         {
@@ -69425,6 +71493,54 @@
       "smurf_of": "",
       "steam_id": "76561197982976352"
     },
+    "38411": {
+      "aliases": [
+        {
+          "alias": "twitch.tv/kurt74",
+          "first_seen": 1672001822,
+          "last_seen": 1672001822,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "☠ 🅺 🆄 🆁 🆃 ☠",
+          "first_seen": 1774783873,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        },
+        {
+          "alias": "[-Br.C-] k.U.r.T.?",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "☠ 🅺 🆄 🆁 🆃 ☠",
+      "coh1_profile_id": 432576,
+      "coh1_total_matches": 6,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1672001822,
+      "coh2_profile_id": 222,
+      "coh2_total_matches": 215,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1774783873,
+      "coh3_total_matches": 47,
+      "current_alias": "☠ 🅺 🆄 🆁 🆃 ☠",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 38411,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197961757329"
+    },
     "3888": {
       "aliases": [
         {
@@ -69675,6 +71791,37 @@
       "smurf_of": "",
       "steam_id": "76561198059398286"
     },
+    "390116": {
+      "aliases": [
+        {
+          "alias": "rodfileto",
+          "first_seen": 1678143624,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "rodfileto",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1678143624,
+      "coh2_profile_id": 1905501,
+      "coh2_total_matches": 6925,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1722629284,
+      "coh3_total_matches": 248,
+      "current_alias": "rodfileto",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 390116,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198207733113"
+    },
     "390399": {
       "aliases": [
         {
@@ -69834,6 +71981,49 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198017981943"
+    },
+    "396624": {
+      "aliases": [
+        {
+          "alias": "afiller2",
+          "first_seen": 1514349571,
+          "last_seen": 1514349571,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "mosquito5641",
+          "first_seen": 1767559779,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "mosquito5641",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1772375359,
+      "coh1_profile_id": 714565,
+      "coh1_total_matches": 571,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1514349571,
+      "coh2_profile_id": 1903140,
+      "coh2_total_matches": 58,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1767559779,
+      "coh3_total_matches": 448,
+      "current_alias": "mosquito5641",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 396624,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198164623991"
     },
     "396850": {
       "aliases": [
@@ -70682,6 +72872,49 @@
       "smurf_of": "",
       "steam_id": "76561198008039971"
     },
+    "428673": {
+      "aliases": [
+        {
+          "alias": "albino.costa",
+          "first_seen": 1573429788,
+          "last_seen": 1573429788,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        },
+        {
+          "alias": "Bino",
+          "first_seen": 1679759812,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Bino",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1573429788,
+      "coh1_profile_id": 1418101,
+      "coh1_total_matches": 1098,
+      "coh2_country": "ar",
+      "coh2_last_match_date": 1679759812,
+      "coh2_profile_id": 227,
+      "coh2_total_matches": 2576,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1775772429,
+      "coh3_total_matches": 1086,
+      "current_alias": "Bino",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 428673,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198021183030"
+    },
     "430930": {
       "aliases": [
         {
@@ -70835,6 +73068,35 @@
       "scope": "veterano",
       "smurf_of": "",
       "steam_id": "76561198000099422"
+    },
+    "435570": {
+      "aliases": [
+        {
+          "alias": "Russo",
+          "first_seen": 1644760564,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Russo",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1644760564,
+      "coh2_profile_id": 934570,
+      "coh2_total_matches": 23,
+      "coh3_country": "br",
+      "current_alias": "Russo",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 435570,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198055014172"
     },
     "435922": {
       "aliases": [
@@ -71274,6 +73536,32 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561197987972857"
+    },
+    "456318": {
+      "aliases": [
+        {
+          "alias": "felipemoritz",
+          "first_seen": 1746657638,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "felipemoritz",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1746657638,
+      "coh3_total_matches": 16,
+      "current_alias": "felipemoritz",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 456318,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198075169083"
     },
     "461458": {
       "aliases": [
@@ -71769,6 +74057,32 @@
       "steam_br_group": true,
       "steam_id": "76561198030455292"
     },
+    "501160": {
+      "aliases": [
+        {
+          "alias": "IMPLACÁVEL",
+          "first_seen": 1789582746,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "IMPLACÁVEL",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1789582746,
+      "coh3_total_matches": 5185,
+      "current_alias": "IMPLACÁVEL",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 501160,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198020914276"
+    },
     "502544": {
       "aliases": [
         {
@@ -72241,6 +74555,80 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198015376532"
+    },
+    "541235": {
+      "aliases": [
+        {
+          "alias": "Caramelo Xitado",
+          "first_seen": 1743987299,
+          "last_seen": 1743987299,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "-ATK-r3dGB",
+          "first_seen": 1750955881,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "-ATK-r3dGB",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1743987299,
+      "coh2_profile_id": 5319862,
+      "coh2_total_matches": 30,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1750955881,
+      "coh3_total_matches": 21,
+      "current_alias": "-ATK-r3dGB",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 541235,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198450415238"
+    },
+    "542496": {
+      "aliases": [
+        {
+          "alias": "CoachBR",
+          "first_seen": 1715994334,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "CoachBR",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1715994334,
+      "coh1_profile_id": 335827,
+      "coh1_total_matches": 70,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1743987299,
+      "coh2_profile_id": 1321291,
+      "coh2_total_matches": 130,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1749007811,
+      "coh3_total_matches": 95,
+      "current_alias": "CoachBR",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 542496,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198007507123"
     },
     "5434": {
       "aliases": [
@@ -73025,6 +75413,40 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198010731760"
+    },
+    "574730": {
+      "aliases": [
+        {
+          "alias": "Homem_do_saco -",
+          "first_seen": 1535336855,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Homem_do_saco -",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1535336855,
+      "coh1_profile_id": 903916,
+      "coh1_total_matches": 30,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1708896677,
+      "coh2_profile_id": 3207893,
+      "coh2_total_matches": 247,
+      "coh3_country": "br",
+      "current_alias": "Homem_do_saco -",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 574730,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198036357122"
     },
     "575320": {
       "aliases": [
@@ -74017,6 +76439,49 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198187422289"
+    },
+    "638599": {
+      "aliases": [
+        {
+          "alias": "Guii",
+          "first_seen": 1699074126,
+          "last_seen": 1699074126,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        },
+        {
+          "alias": "꧁༒悪魔༒꧂",
+          "first_seen": 1766120393,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "꧁༒悪魔༒꧂",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1699074126,
+      "coh1_profile_id": 1616481,
+      "coh1_total_matches": 32,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1792121776,
+      "coh2_profile_id": 4256501,
+      "coh2_total_matches": 4,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1766120393,
+      "coh3_total_matches": 52,
+      "current_alias": "꧁༒悪魔༒꧂",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 638599,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198983595941"
     },
     "639157": {
       "aliases": [
@@ -75952,6 +78417,37 @@
       "smurf_of": "",
       "steam_id": "76561198353482620"
     },
+    "675266": {
+      "aliases": [
+        {
+          "alias": "Kyo",
+          "first_seen": 1707874049,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Kyo",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1707874049,
+      "coh2_profile_id": 379099,
+      "coh2_total_matches": 969,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1775433427,
+      "coh3_total_matches": 454,
+      "current_alias": "Kyo",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 675266,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198044227104"
+    },
     "677039": {
       "aliases": [
         {
@@ -76324,6 +78820,34 @@
       "smurf_of": "",
       "steam_id": "76561197992042808"
     },
+    "694187": {
+      "aliases": [
+        {
+          "alias": "Canista",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Canista",
+      "coh2_country": "br",
+      "coh2_profile_id": 347881,
+      "coh2_total_matches": 248,
+      "coh3_country": "br",
+      "current_alias": "Canista",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 694187,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197964774777"
+    },
     "69491": {
       "aliases": [
         {
@@ -76395,6 +78919,32 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198036116780"
+    },
+    "702745": {
+      "aliases": [
+        {
+          "alias": "KSxWOS",
+          "first_seen": 1782174123,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "KSxWOS",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1782174123,
+      "coh3_total_matches": 1207,
+      "current_alias": "KSxWOS",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 702745,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561199239019193"
     },
     "702916": {
       "aliases": [
@@ -77543,6 +80093,44 @@
       "steam_br_group": true,
       "steam_id": "76561197981667292"
     },
+    "738405": {
+      "aliases": [
+        {
+          "alias": "Galanga",
+          "first_seen": 1578859845,
+          "last_seen": 1578859845,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "criptojudeu",
+          "first_seen": 1780272793,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "criptojudeu",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1578859845,
+      "coh2_profile_id": 253843,
+      "coh2_total_matches": 194,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1780272793,
+      "coh3_total_matches": 294,
+      "current_alias": "criptojudeu",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 738405,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197962783113"
+    },
     "738616": {
       "aliases": [
         {
@@ -78592,6 +81180,37 @@
       "steam_br_group": true,
       "steam_id": "76561198009015531"
     },
+    "741155": {
+      "aliases": [
+        {
+          "alias": "Tio Martinhoo ℌ𝔬𝔗",
+          "first_seen": 1648924596,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Tio Martinhoo ℌ𝔬𝔗",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1648924596,
+      "coh2_profile_id": 2588751,
+      "coh2_total_matches": 647,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1782496971,
+      "coh3_total_matches": 2,
+      "current_alias": "Tio Martinhoo ℌ𝔬𝔗",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 741155,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198358853014"
+    },
     "741277": {
       "aliases": [
         {
@@ -79306,6 +81925,40 @@
       "smurf_of": "",
       "steam_id": "76561198169931641"
     },
+    "745134": {
+      "aliases": [
+        {
+          "alias": "Dreiq",
+          "first_seen": 1681794784,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Dreiq",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1765068532,
+      "coh1_profile_id": 790171,
+      "coh1_total_matches": 61,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1681794784,
+      "coh2_profile_id": 1031767,
+      "coh2_total_matches": 10357,
+      "coh3_country": "br",
+      "current_alias": "Dreiq",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 745134,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197990942183"
+    },
     "747107": {
       "aliases": [
         {
@@ -79629,6 +82282,40 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198064601739"
+    },
+    "756115": {
+      "aliases": [
+        {
+          "alias": "Xamp'Z",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        },
+        {
+          "alias": "Power Ranger Preto",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Xamp'Z",
+      "coh2_country": "br",
+      "coh2_profile_id": 3334405,
+      "coh3_country": "br",
+      "current_alias": "Xamp'Z",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 756115,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197984171213"
     },
     "756737": {
       "aliases": [
@@ -80055,6 +82742,37 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198260873423"
+    },
+    "764309": {
+      "aliases": [
+        {
+          "alias": "Jean Lipes",
+          "first_seen": 1752904435,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Jean Lipes",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1752904435,
+      "coh2_profile_id": 1729180,
+      "coh2_total_matches": 31,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1753158409,
+      "coh3_total_matches": 21,
+      "current_alias": "Jean Lipes",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 764309,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198144623339"
     },
     "764340": {
       "aliases": [
@@ -80787,6 +83505,35 @@
       "smurf_of": "",
       "steam_id": "76561198005735605"
     },
+    "769242": {
+      "aliases": [
+        {
+          "alias": "Rafael.br",
+          "first_seen": 1737911896,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Rafael.br",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1737911896,
+      "coh2_profile_id": 3323396,
+      "coh2_total_matches": 258,
+      "coh3_country": "br",
+      "current_alias": "Rafael.br",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 769242,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198371791947"
+    },
     "769672": {
       "aliases": [
         {
@@ -81025,6 +83772,35 @@
       "steam_br_group": true,
       "steam_id": "76561198030045139"
     },
+    "776306": {
+      "aliases": [
+        {
+          "alias": "Peko",
+          "first_seen": 1611510078,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Peko",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1611510078,
+      "coh2_profile_id": 3921997,
+      "coh2_total_matches": 10,
+      "coh3_country": "br",
+      "current_alias": "Peko",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 776306,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197995332655"
+    },
     "776458": {
       "aliases": [
         {
@@ -81058,6 +83834,42 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198045897075"
+    },
+    "779839": {
+      "aliases": [
+        {
+          "alias": "Bruno_Xineque",
+          "first_seen": 1715551478,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Bruno_Xineque",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1785331724,
+      "coh1_profile_id": 383098,
+      "coh1_total_matches": 63,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1790122025,
+      "coh2_profile_id": 154173,
+      "coh2_total_matches": 590,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1715551478,
+      "coh3_total_matches": 1,
+      "current_alias": "Bruno_Xineque",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 779839,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198080057544"
     },
     "77985": {
       "aliases": [
@@ -82112,6 +84924,44 @@
       "smurf_of": "",
       "steam_id": "76561198021575454"
     },
+    "788520": {
+      "aliases": [
+        {
+          "alias": "Wolff",
+          "first_seen": 1592440911,
+          "last_seen": 1592440911,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "W0lff",
+          "first_seen": 1741470973,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "W0lff",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1592440911,
+      "coh2_profile_id": 3158862,
+      "coh2_total_matches": 1,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1741470973,
+      "coh3_total_matches": 20,
+      "current_alias": "W0lff",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 788520,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198185924717"
+    },
     "78880": {
       "aliases": [
         {
@@ -82156,6 +85006,52 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198152337868"
+    },
+    "788833": {
+      "aliases": [
+        {
+          "alias": "Shield of Democracy",
+          "first_seen": 1779426591,
+          "last_seen": 1779426591,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Cabeca de Pintinho",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        },
+        {
+          "alias": "KickAssBRAZIL",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Cabeca de Pintinho",
+      "coh1_profile_id": 140805,
+      "coh1_total_matches": 9,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1779426591,
+      "coh2_profile_id": 356074,
+      "coh2_total_matches": 44,
+      "coh3_country": "br",
+      "current_alias": "Cabeca de Pintinho",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 788833,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198056151089"
     },
     "78894": {
       "aliases": [
@@ -82648,6 +85544,45 @@
       "steam_br_group": true,
       "steam_id": "76561198015334007"
     },
+    "798920": {
+      "aliases": [
+        {
+          "alias": "VDelara",
+          "first_seen": 1633167014,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Delara",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "VDelara",
+      "coh1_profile_id": 379064,
+      "coh1_total_matches": 1,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1633167014,
+      "coh2_profile_id": 258168,
+      "coh2_total_matches": 4,
+      "coh3_country": "br",
+      "current_alias": "VDelara",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 798920,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198045232715"
+    },
     "799797": {
       "aliases": [
         {
@@ -82978,6 +85913,37 @@
       "smurf_of": "",
       "steam_id": "76561198339350720"
     },
+    "803384": {
+      "aliases": [
+        {
+          "alias": "DeMarco",
+          "first_seen": 1700416014,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "DeMarco",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1700416014,
+      "coh2_profile_id": 277104,
+      "coh2_total_matches": 194,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1769049835,
+      "coh3_total_matches": 489,
+      "current_alias": "DeMarco",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 803384,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197960926415"
+    },
     "803570": {
       "aliases": [
         {
@@ -83055,6 +86021,40 @@
       "smurf_of": "",
       "steam_id": "76561198283318478"
     },
+    "804834": {
+      "aliases": [
+        {
+          "alias": "LucasBr",
+          "first_seen": 1581041659,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "LucasBr",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1581041659,
+      "coh1_profile_id": 744028,
+      "coh1_total_matches": 70,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1780697407,
+      "coh2_profile_id": 1880660,
+      "coh2_total_matches": 113,
+      "coh3_country": "br",
+      "current_alias": "LucasBr",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 804834,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198175200427"
+    },
     "804965": {
       "aliases": [
         {
@@ -83130,6 +86130,34 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561197997300024"
+    },
+    "809816": {
+      "aliases": [
+        {
+          "alias": "Rex Tenebris II",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Rex Tenebris II",
+      "coh2_country": "br",
+      "coh2_profile_id": 939959,
+      "coh2_total_matches": 1,
+      "coh3_country": "br",
+      "current_alias": "Rex Tenebris II",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 809816,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198062086863"
     },
     "810113": {
       "aliases": [
@@ -83985,6 +87013,37 @@
       "smurf_of": "",
       "steam_id": "76561198064709981"
     },
+    "833038": {
+      "aliases": [
+        {
+          "alias": "Im Trainee",
+          "first_seen": 1593349181,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Im Trainee",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1593349181,
+      "coh2_profile_id": 2913046,
+      "coh2_total_matches": 20,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1738024536,
+      "coh3_total_matches": 48,
+      "current_alias": "Im Trainee",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 833038,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198351693927"
+    },
     "83351": {
       "aliases": [
         {
@@ -84224,6 +87283,40 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198241580136"
+    },
+    "840646": {
+      "aliases": [
+        {
+          "alias": "jkloi",
+          "first_seen": 1743729409,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "jkloi",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1743729409,
+      "coh1_profile_id": 843250,
+      "coh1_total_matches": 42,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1793154692,
+      "coh2_profile_id": 1985430,
+      "coh2_total_matches": 1436,
+      "coh3_country": "br",
+      "current_alias": "jkloi",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 840646,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198159480177"
     },
     "840769": {
       "aliases": [
@@ -84693,6 +87786,32 @@
       "smurf_of": "",
       "steam_id": "76561198045947515"
     },
+    "844448": {
+      "aliases": [
+        {
+          "alias": "SpiritWeaver",
+          "first_seen": 1739719094,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "SpiritWeaver",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1739719094,
+      "coh3_total_matches": 53,
+      "current_alias": "SpiritWeaver",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 844448,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198054654655"
+    },
     "844464": {
       "aliases": [
         {
@@ -84757,6 +87876,41 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198035434936"
+    },
+    "845653": {
+      "aliases": [
+        {
+          "alias": "Rakuin no Kenshi",
+          "first_seen": 1749293516,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Rakuin no Kenshi",
+      "coh1_country": "br",
+      "coh1_profile_id": 1155271,
+      "coh1_total_matches": 1,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1751139156,
+      "coh2_profile_id": 6280991,
+      "coh2_total_matches": 3,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1749293516,
+      "coh3_total_matches": 11,
+      "current_alias": "Rakuin no Kenshi",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 845653,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198315562054"
     },
     "845669": {
       "aliases": [
@@ -85189,6 +88343,37 @@
       "smurf_of": "",
       "steam_id": "76561198316147108"
     },
+    "852136": {
+      "aliases": [
+        {
+          "alias": "Alvarez",
+          "first_seen": 1665542148,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Alvarez",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1665542148,
+      "coh2_profile_id": 1471148,
+      "coh2_total_matches": 214,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1768605340,
+      "coh3_total_matches": 3,
+      "current_alias": "Alvarez",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 852136,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198048646598"
+    },
     "852315": {
       "aliases": [
         {
@@ -85601,6 +88786,37 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198143133643"
+    },
+    "864699": {
+      "aliases": [
+        {
+          "alias": "Mael Radec",
+          "first_seen": 1737505733,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Mael Radec",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1737505733,
+      "coh2_profile_id": 2684527,
+      "coh2_total_matches": 2002,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1781042158,
+      "coh3_total_matches": 1945,
+      "current_alias": "Mael Radec",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 864699,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198037383807"
     },
     "865138": {
       "aliases": [
@@ -86098,6 +89314,32 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198092565055"
+    },
+    "890387": {
+      "aliases": [
+        {
+          "alias": "Iѳɑɳɳɛร ɑѵgѵรtѵร",
+          "first_seen": 1757041371,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Iѳɑɳɳɛร ɑѵgѵรtѵร",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1757041371,
+      "coh3_total_matches": 7,
+      "current_alias": "Iѳɑɳɳɛร ɑѵgѵรtѵร",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 890387,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198045049535"
     },
     "890394": {
       "aliases": [
@@ -86930,6 +90172,42 @@
       "smurf_of": "",
       "steam_id": "76561198159685594"
     },
+    "900267": {
+      "aliases": [
+        {
+          "alias": "Costa",
+          "first_seen": 1714316363,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Costa",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1714592586,
+      "coh1_profile_id": 2078440,
+      "coh1_total_matches": 5,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1714316363,
+      "coh2_profile_id": 5935967,
+      "coh2_total_matches": 7,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1761578642,
+      "coh3_total_matches": 91,
+      "current_alias": "Costa",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 900267,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198136952429"
+    },
     "900280": {
       "aliases": [
         {
@@ -87106,6 +90384,45 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198988058062"
+    },
+    "900566": {
+      "aliases": [
+        {
+          "alias": "Tche-L0k0",
+          "first_seen": 1497152590,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Tche-L0k0 †..PäNëLä..†",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Tche-L0k0",
+      "coh1_profile_id": 576427,
+      "coh1_total_matches": 1,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1497152590,
+      "coh2_profile_id": 20223,
+      "coh2_total_matches": 3,
+      "coh3_country": "br",
+      "current_alias": "Tche-L0k0",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 900566,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197983585461"
     },
     "900594": {
       "aliases": [
@@ -87535,6 +90852,37 @@
       "smurf_of": "",
       "steam_id": "76561198063301951"
     },
+    "905348": {
+      "aliases": [
+        {
+          "alias": "XiXi De RaTo",
+          "first_seen": 1613432256,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "XiXi De RaTo",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1613432256,
+      "coh2_profile_id": 1485788,
+      "coh2_total_matches": 579,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1727542196,
+      "coh3_total_matches": 2,
+      "current_alias": "XiXi De RaTo",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 905348,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197963971727"
+    },
     "906896": {
       "aliases": [
         {
@@ -87935,6 +91283,32 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198030248125"
+    },
+    "916512": {
+      "aliases": [
+        {
+          "alias": "Waffen-PoHren",
+          "first_seen": 1788059599,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Waffen-PoHren",
+      "coh3_country": "br",
+      "coh3_last_match_date": 1788059599,
+      "coh3_total_matches": 667,
+      "current_alias": "Waffen-PoHren",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 916512,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561199017390529"
     },
     "917917": {
       "aliases": [
@@ -88360,6 +91734,37 @@
       "smurf_of": "",
       "steam_id": "76561199088275351"
     },
+    "927916": {
+      "aliases": [
+        {
+          "alias": "♠ Five",
+          "first_seen": 1670203172,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "♠ Five",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1670203172,
+      "coh2_profile_id": 5884127,
+      "coh2_total_matches": 6,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1731265712,
+      "coh3_total_matches": 6,
+      "current_alias": "♠ Five",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 927916,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197988552375"
+    },
     "928301": {
       "aliases": [
         {
@@ -88737,6 +92142,36 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198319774976"
+    },
+    "932324": {
+      "aliases": [
+        {
+          "alias": "homemdelrei",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "homemdelrei",
+      "coh1_profile_id": 153803,
+      "coh1_total_matches": 4,
+      "coh2_country": "br",
+      "coh2_profile_id": 1180742,
+      "coh3_country": "br",
+      "current_alias": "homemdelrei",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 932324,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198052458711"
     },
     "933014": {
       "aliases": [
@@ -89194,6 +92629,46 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561197985558826"
+    },
+    "942848": {
+      "aliases": [
+        {
+          "alias": "Cabo Malagueta",
+          "first_seen": 1780110280,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Fred Rey",
+          "first_seen": 0,
+          "last_seen": 0,
+          "sources": [
+            "relic_coh1_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Cabo Malagueta",
+      "coh1_country": "br",
+      "coh1_profile_id": 540524,
+      "coh1_total_matches": 1,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1780110280,
+      "coh2_profile_id": 401347,
+      "coh2_total_matches": 27,
+      "coh3_country": "br",
+      "current_alias": "Cabo Malagueta",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 942848,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198074449903"
     },
     "942911": {
       "aliases": [
@@ -90578,6 +94053,42 @@
       "smurf_of": "",
       "steam_id": "76561198109632039"
     },
+    "959933": {
+      "aliases": [
+        {
+          "alias": "FER",
+          "first_seen": 1659395328,
+          "last_seen": 1659395328,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "THE BEST F3R",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "THE BEST F3R",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1659395328,
+      "coh2_profile_id": 3840363,
+      "coh2_total_matches": 12,
+      "coh3_country": "br",
+      "current_alias": "THE BEST F3R",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 959933,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198928036849"
+    },
     "9600": {
       "aliases": [
         {
@@ -90622,6 +94133,40 @@
       "scope": "outros_brasileiros",
       "smurf_of": "",
       "steam_id": "76561198066240084"
+    },
+    "960095": {
+      "aliases": [
+        {
+          "alias": "HeadShot",
+          "first_seen": 1734045772,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "HeadShot",
+      "coh1_profile_id": 275109,
+      "coh1_total_matches": 49,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1734045772,
+      "coh2_profile_id": 1539570,
+      "coh2_total_matches": 96,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1766797815,
+      "coh3_total_matches": 5,
+      "current_alias": "HeadShot",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 960095,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198001105478"
     },
     "96038": {
       "aliases": [
@@ -91028,6 +94573,44 @@
       "smurf_of": "",
       "steam_id": "76561198193044549"
     },
+    "964144": {
+      "aliases": [
+        {
+          "alias": "DianaCS",
+          "first_seen": 1699959300,
+          "last_seen": 1699959300,
+          "sources": [
+            "relic_coh2_api"
+          ]
+        },
+        {
+          "alias": "Allies Are Op",
+          "first_seen": 1790243196,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Allies Are Op",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1699959300,
+      "coh2_profile_id": 3055754,
+      "coh2_total_matches": 35,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1790243196,
+      "coh3_total_matches": 384,
+      "current_alias": "Allies Are Op",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 964144,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198795906303"
+    },
     "964593": {
       "aliases": [
         {
@@ -91352,6 +94935,30 @@
       "smurf_of": "",
       "steam_id": "76561198529397080"
     },
+    "970042": {
+      "aliases": [
+        {
+          "alias": "Tatu-Insano",
+          "first_seen": 1795487634,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Tatu-Insano",
+      "coh3_country": "br",
+      "current_alias": "Tatu-Insano",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 970042,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198154698918"
+    },
     "970468": {
       "aliases": [
         {
@@ -91433,6 +95040,37 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198090637184"
+    },
+    "970976": {
+      "aliases": [
+        {
+          "alias": "SlugxTBR",
+          "first_seen": 1605392205,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "SlugxTBR",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1605392205,
+      "coh2_profile_id": 603894,
+      "coh2_total_matches": 1285,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1743270220,
+      "coh3_total_matches": 300,
+      "current_alias": "SlugxTBR",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 970976,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198000567856"
     },
     "972551": {
       "aliases": [
@@ -91751,6 +95389,40 @@
       "smurf_of": "",
       "steam_id": "76561198009892017"
     },
+    "977589": {
+      "aliases": [
+        {
+          "alias": "Gazu",
+          "first_seen": 1623366449,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh1_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Gazu",
+      "coh1_country": "br",
+      "coh1_last_match_date": 1623366449,
+      "coh1_profile_id": 665070,
+      "coh1_total_matches": 84,
+      "coh2_country": "br",
+      "coh2_last_match_date": 1735517474,
+      "coh2_profile_id": 2246117,
+      "coh2_total_matches": 129,
+      "coh3_country": "br",
+      "current_alias": "Gazu",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 977589,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198173918058"
+    },
     "979716": {
       "aliases": [
         {
@@ -91956,6 +95628,35 @@
       "steam_br_group": true,
       "steam_id": "76561198054309925"
     },
+    "981868": {
+      "aliases": [
+        {
+          "alias": "Lubbitz",
+          "first_seen": 1716179280,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Lubbitz",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1716179280,
+      "coh2_profile_id": 6585231,
+      "coh2_total_matches": 14,
+      "coh3_country": "br",
+      "current_alias": "Lubbitz",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 981868,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198286180379"
+    },
     "98399": {
       "aliases": [
         {
@@ -91993,6 +95694,37 @@
       "smurf_of": "",
       "steam_br_group": true,
       "steam_id": "76561198039906945"
+    },
+    "984809": {
+      "aliases": [
+        {
+          "alias": "FOREVER TRUMP - BOLSONARO HERO",
+          "first_seen": 1736610042,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "FOREVER TRUMP - BOLSONARO HERO",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1776805499,
+      "coh2_profile_id": 2305280,
+      "coh2_total_matches": 11155,
+      "coh3_country": "br",
+      "coh3_last_match_date": 1736610042,
+      "coh3_total_matches": 1,
+      "current_alias": "FOREVER TRUMP - BOLSONARO HERO",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 984809,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198315159567"
     },
     "985599": {
       "aliases": [
@@ -92662,6 +96394,35 @@
       "smurf_of": "",
       "steam_id": "76561198037990328"
     },
+    "995056": {
+      "aliases": [
+        {
+          "alias": "Regueira",
+          "first_seen": 1791810458,
+          "last_seen": 1795487634,
+          "sources": [
+            "relic_api",
+            "relic_coh2_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Regueira",
+      "coh2_country": "br",
+      "coh2_last_match_date": 1791810458,
+      "coh2_profile_id": 2467511,
+      "coh2_total_matches": 2744,
+      "coh3_country": "br",
+      "current_alias": "Regueira",
+      "last_checked_at": 1795487634,
+      "last_coh1_relic_at": 1795487634,
+      "last_coh2_relic_at": 1795487634,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 995056,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561198025801219"
+    },
     "996815": {
       "aliases": [
         {
@@ -93065,12 +96826,12 @@
     "coh3stats_opendata": 1082,
     "cohdb": 58,
     "local_db": 1680,
-    "relic_api": 1679,
-    "relic_coh1_api": 879,
-    "relic_coh2_api": 2455,
+    "relic_api": 1793,
+    "relic_coh1_api": 921,
+    "relic_coh2_api": 2552,
     "steam_aliases": 48,
     "steam_web_api": 3053,
     "steam_xml": 64
   },
-  "updated_at": 1795487629
+  "updated_at": 1795487634
 }

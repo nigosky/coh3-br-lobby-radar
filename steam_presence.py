@@ -67,6 +67,7 @@ RELIC_BASE_URL = "https://coh3-api.reliclink.com/community/leaderboard"
 RELIC_COH2_BASE_URL = "https://coh2-api.reliclink.com/community/leaderboard"
 RELIC_COH1_BASE_URL = "https://coh1-api.reliclink.com/community/leaderboard"
 STEAM_API_SUMMARIES_URL = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
+STEAM_API_FRIEND_LIST_URL = "https://api.steampowered.com/ISteamUser/GetFriendList/v1/"
 COH3STATS_LEADERBOARDS_BASE = "https://storage.coh3stats.com/leaderboards"
 COH3STATS_MATCHES_BASE = "https://storage.coh3stats.com/matches"
 COH2STATS_MATCHES_BASE = "https://storage.coh2stats.com/matches"
@@ -127,7 +128,10 @@ OPENDATA_FACTIONS: tuple[str, ...] = ("american", "british", "german", "dak")
 STEAM_ID64_VALID_RE = re.compile(r"^7656119\d{10}$")
 STEAM_API_KEY_VALID_RE = re.compile(r"^[A-Za-z0-9]{16,64}$")
 STEAM_API_SUMMARIES_PATH_RE = re.compile(r"^/ISteamUser/GetPlayerSummaries/v0*2/?$")
+STEAM_API_FRIEND_LIST_PATH_RE = re.compile(r"^/ISteamUser/GetFriendList/v0*1/?$")
 STEAM_PROFILE_XML_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/?$")
+STEAM_PROFILE_FRIENDS_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/friends/?$")
+STEAM_FRIENDS_REDIRECT_PATH_RE = re.compile(r"^/(?:profiles/7656119\d{10}|id/[A-Za-z0-9_-]{1,64})/friends/?$")
 STEAM_AJAX_ALIASES_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/ajaxaliases/?$")
 STEAM_GROUP_MEMBERS_PATH_RE = re.compile(r"^/groups/[A-Za-z0-9_-]{2,64}/memberslistxml/?$")
 STEAM_REDIRECT_PATH_RE = re.compile(r"^/(?:profiles/7656119\d{10}|id/[A-Za-z0-9_-]{1,64})/?$")
@@ -151,6 +155,7 @@ _EXPLICIT_BR_TAG_RE = re.compile(
 MAX_STEAM_PRESENCE_XML_BYTES = 131_072  # 128 KB (cobre <groups> completos com folga segura)
 MAX_STEAM_ALIASES_BYTES = 65_536        # 64 KB (endpoint público ajaxaliases ~ 2 KB)
 MAX_STEAM_API_RESPONSE_BYTES = 524_288  # 512 KB (100 perfis GetPlayerSummaries ~ 40 KB)
+MAX_STEAM_FRIEND_LIST_BYTES = 1 * 1024 * 1024  # 1 MB (lista de amigos Steam API ou HTML público)
 MAX_STEAM_GROUP_XML_BYTES = 2 * 1024 * 1024  # 2 MB
 MAX_COH1STATS_RESPONSE_BYTES = 262_144  # 256 KB (payload /api/player/<SteamID64> do coh1stats.com)
 MAX_RELIC_RESPONSE_BYTES = 8 * 1024 * 1024  # 8 MB (cobre históricos Relic > 2 MB de jogadores ativos com proteção anti-Gzip-bomb)
@@ -671,6 +676,24 @@ class _SteamPresenceRedirectHandler(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
+class _SteamFriendsRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Permite até 3 redirecionamentos exclusivamente dentro de https://steamcommunity.com/(id|profiles)/.../friends/."""
+
+    max_redirections = 3
+
+    def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
+        try:
+            validate_https_endpoint(
+                newurl,
+                ALLOWED_STEAM_COMMUNITY_HOSTS,
+                path_regex=STEAM_FRIENDS_REDIRECT_PATH_RE,
+                allow_query=False,
+            )
+        except ValueError as exc:
+            raise urllib.error.HTTPError(req.full_url, code, f"Redirect Steam friends bloqueado: {exc}", headers, fp) from None
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def _get_steam_opener() -> urllib.request.OpenerDirector:
     opener = getattr(_THREAD_LOCAL, "steam_opener", None)
     if opener is None:
@@ -680,6 +703,18 @@ def _get_steam_opener() -> urllib.request.OpenerDirector:
             _SteamPresenceRedirectHandler(),
         )
         _THREAD_LOCAL.steam_opener = opener
+    return opener
+
+
+def _get_steam_friends_opener() -> urllib.request.OpenerDirector:
+    opener = getattr(_THREAD_LOCAL, "steam_friends_opener", None)
+    if opener is None:
+        opener = urllib.request.build_opener(
+            HttpsOnlySchemeHandler(),
+            urllib.request.HTTPSHandler(context=create_hardened_ssl_context()),
+            _SteamFriendsRedirectHandler(),
+        )
+        _THREAD_LOCAL.steam_friends_opener = opener
     return opener
 
 
@@ -708,6 +743,55 @@ def has_explicit_br_alias_tag(alias: str | None) -> bool:
     """Detecta tags inequivocamente brasileiras em aliases (`[BR]`, `(BR)`, `_BR`, `COHBR`, `Brasil`, `[FEB]`)."""
     clean = strip_unsafe_chars(alias or "")
     return bool(clean and _EXPLICIT_BR_TAG_RE.search(clean))
+
+
+_STEAM_FRIEND_DATA_SID_RE = re.compile(r'data-steamid="(7656119\d{10})"')
+
+
+def parse_steam_web_api_friends_payload(
+    payload: Any,
+    *,
+    exclude_steam_id: str = "",
+) -> list[str]:
+    """Extrai e valida SteamID64 únicos de `ISteamUser/GetFriendList/v1/` (limite seguro 2500 amigos)."""
+    if not isinstance(payload, dict):
+        return []
+    fl = payload.get("friendslist")
+    friends = fl.get("friends") if isinstance(fl, dict) else None
+    if not isinstance(friends, list):
+        return []
+    excl = str(exclude_steam_id or "").replace("/steam/", "").strip()
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in friends[:2500]:
+        if not isinstance(item, dict):
+            continue
+        sid = str(item.get("steamid") or "").strip()
+        if sid and sid != excl and STEAM_ID64_VALID_RE.fullmatch(sid) and sid not in seen:
+            seen.add(sid)
+            out.append(sid)
+    return out
+
+
+def parse_steam_friends_html(
+    raw_html: str,
+    *,
+    exclude_steam_id: str = "",
+) -> list[str]:
+    """Extrai e valida SteamID64 únicos do HTML público `steamcommunity.com/profiles/<sid>/friends/`."""
+    if not raw_html or len(raw_html) > MAX_STEAM_FRIEND_LIST_BYTES:
+        return []
+    excl = str(exclude_steam_id or "").replace("/steam/", "").strip()
+    out: list[str] = []
+    seen: set[str] = set()
+    for m in _STEAM_FRIEND_DATA_SID_RE.finditer(raw_html):
+        sid = m.group(1)
+        if sid != excl and sid not in seen:
+            seen.add(sid)
+            out.append(sid)
+            if len(out) >= 2500:
+                break
+    return out
 
 
 def parse_steam_group_members_xml(xml_text: str) -> tuple[list[str], int, int]:
@@ -1851,6 +1935,173 @@ class SteamPresenceClient:
                 break
 
         return all_sids
+
+    def fetch_friend_steam_ids(self, steam_id: str) -> list[str] | None:
+        """
+        Coleta os SteamID64 públicos da lista de amigos de uma conta Steam:
+        - Com `STEAM_WEB_API_KEY`: usa a API oficial `ISteamUser/GetFriendList/v1/` enviando a chave
+          exclusivamente no header HTTP `x-webapi-key` (nunca na URL/logs). HTTP 401 = lista privada -> `[]`.
+        - Sem chave: fallback cortês para `https://steamcommunity.com/profiles/<SteamID64>/friends/`
+          com allowlist estrita e limite de 1 MB.
+        Retorna `list[str]` (vazio se privada/sem amigos) ou `None` em rate-limit (429) / acesso negado (403) / erro.
+        """
+        sid = str(steam_id or "").replace("/steam/", "").strip()
+        if not STEAM_ID64_VALID_RE.fullmatch(sid):
+            return []
+
+        if self._api_key:
+            qs = urllib.parse.urlencode({"steamid": sid, "relationship": "friend", "format": "json"})
+            url = f"{STEAM_API_FRIEND_LIST_URL}?{qs}"
+            validate_https_endpoint(
+                url,
+                ALLOWED_STEAM_API_HOSTS,
+                path_prefix="/ISteamUser/GetFriendList/",
+                path_regex=STEAM_API_FRIEND_LIST_PATH_RE,
+            )
+            headers = {
+                "User-Agent": "CoH3-BR-Lobby-Radar/1.3",
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip",
+                "x-webapi-key": self._api_key,
+            }
+            for attempt in range(2):
+                req = urllib.request.Request(url, headers=headers, method="GET")
+                try:
+                    with _get_relic_opener().open(req, timeout=10) as resp:
+                        raw = read_bounded_http_body(resp, MAX_STEAM_FRIEND_LIST_BYTES)
+                    payload = json.loads(raw.decode("utf-8", errors="ignore"))
+                    return parse_steam_web_api_friends_payload(payload, exclude_steam_id=sid)
+                except urllib.error.HTTPError as exc:
+                    if exc.code in (401, 404):
+                        # Documentado pela Valve: HTTP 401 indica lista de amigos privada.
+                        return []
+                    if exc.code in (403, 429):
+                        return None
+                    if attempt == 0:
+                        time.sleep(0.35)
+                    else:
+                        logger.debug("Steam GetFriendList retornou HTTP %d (%s).", exc.code, sid)
+                        return None
+                except Exception as exc:
+                    if attempt == 0:
+                        time.sleep(0.35)
+                    else:
+                        logger.debug("Falha transitória em Steam GetFriendList (%s): %s", sid, redact_secrets(exc))
+                        return None
+            return None
+
+        url = f"https://steamcommunity.com/profiles/{sid}/friends/"
+        validate_https_endpoint(
+            url,
+            ALLOWED_STEAM_COMMUNITY_HOSTS,
+            path_prefix="/profiles/",
+            path_regex=STEAM_PROFILE_FRIENDS_PATH_RE,
+            allow_query=False,
+        )
+        headers = {
+            "User-Agent": "CoH3-BR-Lobby-Radar/1.3",
+            "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1",
+            "Accept-Encoding": "gzip",
+        }
+        req = urllib.request.Request(url, headers=headers, method="GET")
+        try:
+            with _get_steam_friends_opener().open(req, timeout=10) as resp:
+                raw = read_bounded_http_body(resp, MAX_STEAM_FRIEND_LIST_BYTES)
+            return parse_steam_friends_html(raw.decode("utf-8", errors="ignore"), exclude_steam_id=sid)
+        except urllib.error.HTTPError as exc:
+            if exc.code in (429, 403):
+                return None
+            if exc.code in (401, 404):
+                return []
+            logger.debug("Steam /friends/ retornou HTTP %d (%s).", exc.code, sid)
+            return None
+        except Exception as exc:
+            logger.debug("Falha ao consultar Steam /friends/ (%s): %s", sid, redact_secrets(exc))
+            return None
+
+    def fetch_batch_friend_steam_ids(
+        self,
+        steam_ids: list[str],
+        *,
+        pace_delay_sec: float | None = None,
+        max_workers: int | None = None,
+        rate_limit_threshold: int = 3,
+    ) -> dict[str, list[str]]:
+        """
+        Consulta em lote listas públicas de amigos Steam com circuit-breaker anti-429.
+        No fallback HTML público sem chave, força execução sequencial (`workers=1`) e pacing cortês.
+        """
+        valid_sids = list(
+            dict.fromkeys(
+                str(s).replace("/steam/", "").strip()
+                for s in steam_ids
+                if STEAM_ID64_VALID_RE.fullmatch(str(s or "").replace("/steam/", "").strip())
+            )
+        )
+        if not valid_sids:
+            return {}
+
+        rl_limit = max(1, int(rate_limit_threshold))
+        if self.uses_web_api:
+            workers = max(1, min(int(max_workers if max_workers is not None else 4), len(valid_sids), 6))
+            default_pace = 0.08
+        else:
+            workers = 1
+            default_pace = 0.9
+        pace = max(0.0, min(float(default_pace if pace_delay_sec is None else pace_delay_sec), 3.0))
+
+        out: dict[str, list[str]] = {}
+        stop_event = threading.Event()
+        rl_lock = threading.Lock()
+        consecutive_failures = 0
+
+        if workers == 1:
+            for idx, sid in enumerate(valid_sids):
+                if idx > 0 and pace > 0.0:
+                    time.sleep(pace)
+                friends = self.fetch_friend_steam_ids(sid)
+                if friends is None:
+                    consecutive_failures += 1
+                    if consecutive_failures >= rl_limit:
+                        logger.warning(
+                            "Circuit-breaker Steam FriendList ativado após %d falhas/429 consecutivas; encerrando lote.",
+                            consecutive_failures,
+                        )
+                        break
+                    continue
+                consecutive_failures = 0
+                out[sid] = friends
+            return out
+
+        def _worker(sid: str) -> tuple[str, list[str] | None]:
+            nonlocal consecutive_failures
+            if stop_event.is_set():
+                return sid, None
+            if pace > 0.0:
+                time.sleep(pace)
+                if stop_event.is_set():
+                    return sid, None
+            friends = self.fetch_friend_steam_ids(sid)
+            with rl_lock:
+                if friends is None:
+                    consecutive_failures += 1
+                    if consecutive_failures >= rl_limit:
+                        stop_event.set()
+                else:
+                    consecutive_failures = 0
+            return sid, friends
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+            for sid, friends in pool.map(_worker, valid_sids):
+                if friends is not None:
+                    out[sid] = friends
+
+        if stop_event.is_set():
+            logger.warning(
+                "Circuit-breaker Steam FriendList ativado após %d falhas/429 consecutivas; encerrando lote.",
+                rl_limit,
+            )
+        return out
 
     def fetch_steam_alias_history(
         self,

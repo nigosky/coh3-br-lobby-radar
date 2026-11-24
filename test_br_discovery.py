@@ -794,6 +794,157 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
             _candidate_verify_priority(arg_high, now=now),
         )
 
+    def test_stage4d_steam_friends_graph_discovers_active_dormant_br_and_verified_expat_only(self) -> None:
+        now = 1_800_000_000
+        vet_sid = "76561197963172584"  # Chacineiro (Veterano)
+        sid_active_br = "76561198900930001"
+        sid_dormant_br = "76561198900930002"
+        sid_expat_us_br = "76561198900930003"
+        sid_arg_reject = "76561198900930004"
+
+        class _FakeRelicFriends:
+            def discover_br_and_candidates_from_open_data(
+                self, now_ts: int | None = None
+            ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[str, Any]]:
+                return {}, {}, {"chosen_day": now, "files_ok": 16, "files_failed": [], "total_bytes": 1000}
+
+            def discover_br_and_candidates_from_open_data_matches(
+                self, **kwargs: Any
+            ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]], dict[str, Any]]:
+                return {}, {}, {"days_requested": 1, "days_ok": 1, "days_failed": 0, "matches_scanned": 0}
+
+            def discover_br_and_candidates_from_relic_sa(
+                self, **kwargs: Any
+            ) -> tuple[dict[int, dict[str, Any]], dict[int, dict[str, Any]]]:
+                return {}, {}
+
+            def fetch_profile_stats_by_steam_ids(
+                self, steam_ids: list[str], pace_delay_sec: float = 0.16
+            ) -> dict[int, dict[str, Any]]:
+                out: dict[int, dict[str, Any]] = {}
+                if sid_active_br in steam_ids:
+                    out[930001] = {
+                        "profile_id": 930001,
+                        "steam_id": sid_active_br,
+                        "alias": "AmigoAtivoBR",
+                        "country": "br",
+                        "max_elo": 1440,
+                        "last_match_date": now - 2 * 86400,
+                        "total_matches": 620,
+                    }
+                if sid_dormant_br in steam_ids:
+                    out[930002] = {
+                        "profile_id": 930002,
+                        "steam_id": sid_dormant_br,
+                        "alias": "AmigoVeteranoInativo",
+                        "country": "br",
+                        "max_elo": 1310,
+                        "last_match_date": now - 90 * 86400,
+                        "total_matches": 1400,
+                    }
+                if sid_expat_us_br in steam_ids:
+                    out[930003] = {
+                        "profile_id": 930003,
+                        "steam_id": sid_expat_us_br,
+                        "alias": "AmigoExpatEUA",
+                        "country": "us",
+                        "max_elo": 1380,
+                        "last_match_date": now - 3 * 86400,
+                        "total_matches": 250,
+                    }
+                if sid_arg_reject in steam_ids:
+                    out[930004] = {
+                        "profile_id": 930004,
+                        "steam_id": sid_arg_reject,
+                        "alias": "AmigoArgentino",
+                        "country": "ar",
+                        "max_elo": 1600,
+                        "last_match_date": now - 1 * 86400,
+                        "total_matches": 500,
+                    }
+                return out
+
+            def fetch_profile_stats_batch(
+                self, profile_ids: list[int], pace_delay_sec: float = 0.22
+            ) -> dict[int, dict[str, Any]]:
+                return {}
+
+        class _FakeSteamFriends:
+            uses_web_api = True
+
+            def fetch_batch_friend_steam_ids(self, steam_ids: list[str]) -> dict[str, list[str]]:
+                if vet_sid in steam_ids:
+                    return {vet_sid: [sid_active_br, sid_dormant_br, sid_expat_us_br, sid_arg_reject]}
+                return {}
+
+            def fetch_batch_presence(
+                self,
+                steam_ids: list[str],
+                max_workers: int = 4,
+                pace_delay_sec: float = 0.08,
+                stop_on_rate_limit: bool = True,
+                require_xml_details: bool = True,
+            ) -> dict[str, dict[str, Any]]:
+                res: dict[str, dict[str, Any]] = {}
+                for sid in steam_ids:
+                    if sid == sid_expat_us_br:
+                        res[sid] = {
+                            "ok": True,
+                            "steam_id": sid,
+                            "location": "Curitiba, Parana, Brazil",
+                            "is_steam_brazil": True,
+                            "has_brazil_steam_group": False,
+                        }
+                    elif sid == sid_arg_reject:
+                        res[sid] = {
+                            "ok": True,
+                            "steam_id": sid,
+                            "location": "Rosario, Argentina",
+                            "is_steam_brazil": False,
+                            "has_brazil_steam_group": True,
+                        }
+                return res
+
+        with tempfile.TemporaryDirectory() as td:
+            comm_path = Path(td) / "br_community.json"
+            state_path = Path(td) / "state.json"
+            hist_path = Path(td) / "alias_history.json"
+            summary = run_deep_br_discovery(
+                community_cache_path=comm_path,
+                state_path=state_path,
+                alias_history_path=hist_path,
+                relic_client=_FakeRelicFriends(),  # type: ignore[arg-type]
+                presence_client=_FakeSteamFriends(),  # type: ignore[arg-type]
+                match_days=1,
+                max_steam_verify=0,
+                max_friend_seeds=50,
+                steam_groups=(),
+                now_ts=now,
+                smurf_check=False,
+                enable_external_alias_enrichment=False,
+            )
+            self.assertEqual(summary["steam_friends_confirmed"], 3)
+
+            saved = json.loads(comm_path.read_text(encoding="utf-8"))
+            players = saved["players"]
+            dormant = saved["dormant_players"]
+
+            # Ativo BR e emigrado confirmado via Steam <location> entram em players
+            self.assertIn("930001", players)
+            self.assertEqual(players["930001"]["br_source"], "steam_friends_br")
+            self.assertIn("930003", players)
+            self.assertEqual(players["930003"]["br_source"], "steam_friends_loc")
+            self.assertEqual(players["930003"]["flag_country"], "us")
+
+            # Inativo >15d entra em vigília silenciosa permanente (`dormant_players`), nunca na lista ativa
+            self.assertNotIn("930002", players)
+            self.assertIn("930002", dormant)
+            self.assertEqual(dormant["930002"]["br_source"], "steam_friends_br")
+
+            # Argentino rejeitado mesmo sendo amigo de Veterano e estando em grupo BR!
+            self.assertNotIn("930004", players)
+            self.assertNotIn("930004", dormant)
+
 
 if __name__ == "__main__":
     unittest.main()

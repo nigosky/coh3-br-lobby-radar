@@ -92,6 +92,7 @@ configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("coh3_br.lobby.discovery")
 
 DEFAULT_MAX_STEAM_VERIFY = 750
+DEFAULT_MAX_FRIEND_SEEDS = 350
 DEFAULT_RELIC_SA_PAGES = 14
 
 _HISPANIC_SA_COUNTRIES: frozenset[str] = frozenset({"ar", "cl", "pe", "uy", "py", "co", "ve", "ec", "bo"})
@@ -178,6 +179,7 @@ def run_deep_br_discovery(
     cohdb_client: Any = None,
     match_days: int = DEFAULT_MATCH_DAYS,
     max_steam_verify: int = DEFAULT_MAX_STEAM_VERIFY,
+    max_friend_seeds: int = DEFAULT_MAX_FRIEND_SEEDS,
     relic_sa_pages: int = DEFAULT_RELIC_SA_PAGES,
     steam_groups: tuple[str, ...] = BRAZILIAN_COH_STEAM_GROUPS,
     dry_run: bool = False,
@@ -541,6 +543,203 @@ def run_deep_br_discovery(
             sum(1 for x in manual_resolved.values() if int(x.get("last_match_date", 0) or 0) >= active_cutoff),
         )
 
+    # 4d. Steam Community — Grafo de Amigos dos Veteranos e Outros Brasileiros (GetFriendList/v1 + fallback /friends/)
+    steam_friends_confirmed = 0
+    steam_friends_active = 0
+    steam_friends_expat_verified = 0
+    if (
+        max_friend_seeds > 0
+        and hasattr(p_client, "fetch_batch_friend_steam_ids")
+        and hasattr(r_client, "fetch_profile_stats_by_steam_ids")
+    ):
+        has_web_api_friends = bool(getattr(p_client, "uses_web_api", False) or getattr(p_client, "has_web_api", False))
+        effective_seed_cap = max(0, int(max_friend_seeds)) if has_web_api_friends else min(max(0, int(max_friend_seeds)), 45)
+        _, manual_sids = extract_roster_id_sets(MANUAL_OTHER_BR_PLAYERS)
+
+        seed_sids: list[str] = []
+        seen_seed_sids: set[str] = set()
+        seed_is_vet: dict[str, bool] = {}
+
+        for row in vet_roster:
+            sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+            if sid and STEAM_ID64_VALID_RE.fullmatch(sid) and sid not in seen_seed_sids:
+                seen_seed_sids.add(sid)
+                seed_sids.append(sid)
+                seed_is_vet[sid] = True
+
+        for row in MANUAL_OTHER_BR_PLAYERS:
+            sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+            if sid and STEAM_ID64_VALID_RE.fullmatch(sid) and sid not in seen_seed_sids:
+                seen_seed_sids.add(sid)
+                seed_sids.append(sid)
+                seed_is_vet[sid] = False
+
+        ranked_br_seeds = sorted(
+            br_pool.values(),
+            key=lambda r: (
+                0 if int(r.get("last_match_date", 0) or 0) >= active_cutoff else 1,
+                -int(r.get("max_elo", 0) or 0),
+                -int(r.get("total_matches", 0) or 0),
+                -int(r.get("last_match_date", 0) or 0),
+                int(r.get("profile_id", 0) or 0),
+            ),
+        )
+        for row in ranked_br_seeds:
+            if len(seed_sids) >= effective_seed_cap:
+                break
+            sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+            if sid and STEAM_ID64_VALID_RE.fullmatch(sid) and sid not in seen_seed_sids:
+                seen_seed_sids.add(sid)
+                seed_sids.append(sid)
+                seed_is_vet[sid] = False
+
+        seed_sids = seed_sids[:effective_seed_cap]
+        try:
+            friends_by_seed = p_client.fetch_batch_friend_steam_ids(seed_sids)
+        except Exception as exc:
+            logger.warning("[STAGE 4d] Falha ao consultar grafo de amigos Steam: %s", redact_secrets(exc))
+            friends_by_seed = {}
+
+        known_sids_all = set(vet_sids) | set(manual_sids) | {
+            str(v.get("steam_id") or "").strip() for v in br_pool.values() if v.get("steam_id")
+        }
+        friend_links: dict[str, list[int]] = {}  # sid -> [vet_friends, other_br_friends]
+        public_lists_ok = 0
+        for seed_sid, flist in (friends_by_seed or {}).items():
+            if not isinstance(flist, list):
+                continue
+            if flist:
+                public_lists_ok += 1
+            is_v = bool(seed_is_vet.get(seed_sid, False))
+            for fsid in flist:
+                if not fsid or fsid in known_sids_all or not STEAM_ID64_VALID_RE.fullmatch(fsid):
+                    continue
+                cnts = friend_links.get(fsid)
+                if cnts is None:
+                    cnts = [0, 0]
+                    friend_links[fsid] = cnts
+                if is_v:
+                    cnts[0] += 1
+                else:
+                    cnts[1] += 1
+
+        if friend_links:
+            ranked_friends = sorted(
+                friend_links.items(),
+                key=lambda kv: (-(kv[1][0] * 3 + kv[1][1]), -kv[1][0], -kv[1][1], kv[0]),
+            )
+            query_cap = 6000 if has_web_api_friends else 2500
+            friend_query_sids = [sid for sid, _ in ranked_friends[:query_cap]]
+            try:
+                friend_stats = r_client.fetch_profile_stats_by_steam_ids(friend_query_sids, pace_delay_sec=0.16)
+            except Exception as exc:
+                logger.warning("[STAGE 4d] Falha ao cruzar amigos na Relic API: %s", redact_secrets(exc))
+                friend_stats = {}
+
+            if isinstance(friend_stats, dict) and friend_stats:
+                relic_stats_collected.update(friend_stats)
+
+            verify_foreign_friends: list[tuple[dict[str, Any], int, int]] = []
+            for pid, st in (friend_stats or {}).items():
+                if pid in vet_pids or pid in br_pool:
+                    continue
+                sid = str(st.get("steam_id") or "").replace("/steam/", "").strip()
+                if not sid or sid in vet_sids or not STEAM_ID64_VALID_RE.fullmatch(sid):
+                    continue
+                lmd = int(st.get("last_match_date", 0) or 0)
+                ctry = str(st.get("country") or "").strip().lower()
+                vcnt, ocnt = friend_links.get(sid, [0, 0])
+                if ctry == "br":
+                    _merge_discovered_br_player(
+                        br_pool,
+                        profile_id=pid,
+                        steam_id=sid,
+                        alias=str(st.get("alias") or ""),
+                        max_elo=int(st.get("max_elo", 0) or 0),
+                        last_match_date=lmd,
+                        total_matches=int(st.get("total_matches", 0) or 0),
+                        country="br",
+                        region_id=int(st.get("region_id", 0) or 0),
+                        br_source="steam_friends_br",
+                        accumulate_matches=False,
+                    )
+                    steam_friends_confirmed += 1
+                    if lmd >= active_cutoff:
+                        steam_friends_active += 1
+                elif vcnt >= 1 or ocnt >= 2:
+                    verify_foreign_friends.append((st, vcnt, ocnt))
+
+            if verify_foreign_friends and hasattr(p_client, "fetch_batch_presence"):
+                from lobby_radar import _call_batch_presence
+                verify_foreign_friends.sort(
+                    key=lambda t: (
+                        -(t[1] * 3 + t[2]),
+                        -int(t[0].get("last_match_date", 0) or 0),
+                        -int(t[0].get("max_elo", 0) or 0),
+                    )
+                )
+                expat_cap = 200 if has_web_api_friends else 40
+                ff_slice = verify_foreign_friends[:expat_cap]
+                ff_sids = [str(t[0]["steam_id"]) for t in ff_slice if t[0].get("steam_id")]
+                ff_pres = _call_batch_presence(
+                    p_client,
+                    ff_sids,
+                    max_workers=4,
+                    pace_delay_sec=0.08,
+                    stop_on_rate_limit=True,
+                    require_xml_details=True,
+                )
+                if isinstance(ff_pres, dict):
+                    steam_pres_map.update(ff_pres)
+                for st, _, _ in ff_slice:
+                    sid = str(st.get("steam_id") or "").strip()
+                    pres = (ff_pres or {}).get(sid)
+                    if not isinstance(pres, dict):
+                        continue
+                    ctry = str(st.get("country") or "").strip().lower()
+                    loc = str(pres.get("location") or "").strip()
+                    is_br_loc = bool(pres.get("is_steam_brazil")) or is_brazil_steam_location(loc)
+                    is_br_grp = (
+                        bool(pres.get("has_brazil_steam_group"))
+                        and ctry not in _HISPANIC_SA_COUNTRIES
+                        and (not loc or is_brazil_steam_location(loc))
+                    )
+                    if is_br_loc or is_br_grp:
+                        lmd = int(st.get("last_match_date", 0) or 0)
+                        _merge_discovered_br_player(
+                            br_pool,
+                            profile_id=int(st["profile_id"]),
+                            steam_id=sid,
+                            alias=str(st.get("alias") or ""),
+                            max_elo=int(st.get("max_elo", 0) or 0),
+                            last_match_date=lmd,
+                            total_matches=int(st.get("total_matches", 0) or 0),
+                            country=ctry,
+                            region_id=int(st.get("region_id", 0) or 0),
+                            br_source="steam_friends_loc",
+                            flag_country=ctry if ctry and ctry != "br" else "",
+                            accumulate_matches=False,
+                        )
+                        steam_friends_confirmed += 1
+                        steam_friends_expat_verified += 1
+                        if lmd >= active_cutoff:
+                            steam_friends_active += 1
+
+            if steam_friends_confirmed:
+                sources_used.append("steam_friends")
+            logger.info(
+                "[STAGE 4d — GRAFO DE AMIGOS STEAM] %d/%d listas públicas -> %d amigos inéditos (%d consultados na Relic) -> +%d BRs confirmados (ativos <=%dd: %d, dormentes: %d, emigrados/sem bandeira via Steam: %d).",
+                public_lists_ok,
+                len(seed_sids),
+                len(friend_links),
+                len(friend_query_sids),
+                steam_friends_confirmed,
+                OTHER_BR_ACTIVE_COH3_DAYS,
+                steam_friends_active,
+                steam_friends_confirmed - steam_friends_active,
+                steam_friends_expat_verified,
+            )
+
     # 5. Filtra apenas ativos no CoH3 (<= 15d) e enriquece TODOS com ELO máximo real / total_matches na Relic API
     active_br_pids = [
         pid
@@ -812,7 +1011,9 @@ def run_deep_br_discovery(
         )
         if do_ext and focus_hist_pids:
             # Steam Key API em lote (quando STEAM_WEB_API_KEY estiver ativa) para o elenco + Top 50 BR
-            if getattr(p_client, "has_web_api", False) and hasattr(p_client, "fetch_web_api_presence_batch"):
+            if (getattr(p_client, "uses_web_api", False) or getattr(p_client, "has_web_api", False)) and hasattr(
+                p_client, "fetch_web_api_presence_batch"
+            ):
                 focus_sids_all = [
                     str((alias_history_doc.get("players") or {}).get(str(pid), {}).get("steam_id") or "").strip()
                     for pid in focus_hist_pids
@@ -1072,6 +1273,7 @@ def run_deep_br_discovery(
         "matches_diag": matches_diag,
         "sa_br_count": sa_br_count,
         "steam_group_confirmed": steam_group_confirmed,
+        "steam_friends_confirmed": steam_friends_confirmed,
         "steam_verified_count": steam_verified_count,
         "top_new_players": newly_added_rows[:30],
         "arranged_teams_audit": arranged_audit,
@@ -1087,6 +1289,7 @@ def main() -> int:
     parser.add_argument("--state", type=Path, default=DEFAULT_STATE_PATH, help="Caminho para state.json")
     parser.add_argument("--match-days", type=int, default=DEFAULT_MATCH_DAYS, help="Dias de dumps Open Data Matches (1..30)")
     parser.add_argument("--max-steam-verify", type=int, default=DEFAULT_MAX_STEAM_VERIFY, help="Máximo de perfis verificados no XML Steam")
+    parser.add_argument("--max-friend-seeds", type=int, default=DEFAULT_MAX_FRIEND_SEEDS, help="Máximo de contas BR consultadas no grafo de amigos Steam")
     parser.add_argument("--relic-sa-pages", type=int, default=DEFAULT_RELIC_SA_PAGES, help="Páginas por leaderboard SA na Relic (1..15)")
     parser.add_argument("--no-smurf-check", action="store_true", help="Desativa a verificação forense de Smurfs do Top 50 BR")
     parser.add_argument("--smurf-top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado para smurfs (padrão: 50)")
@@ -1101,6 +1304,7 @@ def main() -> int:
             state_path=args.state,
             match_days=args.match_days,
             max_steam_verify=args.max_steam_verify,
+            max_friend_seeds=max(0, int(args.max_friend_seeds)),
             relic_sa_pages=args.relic_sa_pages,
             dry_run=bool(args.dry_run),
             smurf_check=not bool(args.no_smurf_check),
