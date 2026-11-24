@@ -368,7 +368,15 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
         "original_alias": "Alekel",
         "country": "br",
         "pin_alias": True,
-        "known_aliases": ["Minhoca de ferro!", "Minhoca de ferro", "Alekel"],
+        "known_aliases": [
+            "Minhoca de ferro!",
+            "Minhoca de ferro",
+            "Akael",
+            "Don Comerabo!",
+            "No mercy",
+            "Spectro",
+            "Alekel",
+        ],
     },
     {
         "profile_id": 1297853,
@@ -376,7 +384,14 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
         "original_alias": "Shadow (Smurf: Alekel)",
         "smurf_of": "Alekel",
         "country": "br",
-        "known_aliases": ["Shadow", "Zé da manga", "Alekel (Smurf: Shadow)", "Shadow (Smurf: Alekel)"],
+        "known_aliases": [
+            "Shadow",
+            "Shadowk",
+            "Zé da manga",
+            "Alekelgames",
+            "Alekel (Smurf: Shadow)",
+            "Shadow (Smurf: Alekel)",
+        ],
     },
     {
         "profile_id": 844225,
@@ -4335,10 +4350,14 @@ def detect_suspected_foreign_br_flag(
     coh2_country: str = "",
     coh2_matches: int = 0,
     br_source: str = "",
+    verified_foreign_status: str = "",
 ) -> tuple[bool, str]:
     """
     Sinaliza contas com `flag_country == "br"` em Outros Brasileiros que apresentam fortes indícios
-    de serem jogadores de outra nacionalidade usando loja/flag BR na Steam (ex.: Nocturne, 北方军港, GDI).
+    de serem jogadores estrangeiros usando VPN/loja BR na Steam (ex.: Nocturne, 北方军港, GDI).
+    Respeita vereditos da rotina periódica multi-dia (`suspected_foreign_br.json`):
+      - `confirmed_br` -> limpa imediatamente qualquer suspeita;
+      - `suspected_foreign_vpn` / `confirmed_foreign_vpn` -> mantém sinalização VPN ativa.
     Nunca sinaliza Veteranos, `MANUAL_OTHER_BR_PLAYERS`, emigrados já com bandeira estrangeira ou contas
     com prova explícita de vínculo brasileiro (localização Steam Brasil, grupo BR, review PT-BR ou tag `[BR]`).
     """
@@ -4350,6 +4369,12 @@ def detect_suspected_foreign_br_flag(
             return False, ""
         if get_manual_other_br_override(pid) is not None:
             return False, ""
+
+    vstat = str(verified_foreign_status or "").strip().lower()
+    if vstat == "confirmed_br":
+        return False, ""
+    if vstat in ("suspected_foreign_vpn", "confirmed_foreign_vpn"):
+        return True, f"verified:{vstat}"
 
     src_low = str(br_source or "").strip().lower()
     if src_low in ("steam_group_br", "steam_ptbr_review", "manual_other_br"):
@@ -4428,6 +4453,7 @@ def _build_category_lists(
     known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
     known_ingame_visible_webapi_sids: set[str] | frozenset[str] | None = None,
     alias_history_by_pid: dict[str, Any] | dict[int, Any] | None = None,
+    verified_foreign_status_by_pid: dict[int, dict[str, Any]] | dict[str, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], int]:
     canonical_entries: dict[int, dict[str, Any]] = {}
     secondary_rows: list[dict[str, Any]] = []
@@ -4626,6 +4652,11 @@ def _build_category_lists(
                 for a in (hrec.get("aliases") or [])
                 if (a.get("alias") if isinstance(a, dict) else a)
             ]
+            vrec: dict[str, Any] = {}
+            if isinstance(verified_foreign_status_by_pid, dict):
+                raw_vrec = verified_foreign_status_by_pid.get(pid) or verified_foreign_status_by_pid.get(str(pid))
+                if isinstance(raw_vrec, dict):
+                    vrec = raw_vrec
             suspected_foreign, suspected_foreign_reason = detect_suspected_foreign_br_flag(
                 profile_id=pid,
                 flag_country=meta["flag_country"],
@@ -4636,6 +4667,7 @@ def _build_category_lists(
                 coh2_country=str(hrec.get("coh2_country") or ""),
                 coh2_matches=int(hrec.get("coh2_total_matches", 0) or 0),
                 br_source=str(meta.get("br_source") or ""),
+                verified_foreign_status=str(vrec.get("status") or ""),
             )
         else:
             # Veteranos SEMPRE aparecem com destaque total, independente de ELO ou atividade
@@ -4648,7 +4680,9 @@ def _build_category_lists(
             "previous_alias": meta["alias"],
             "current_alias": current_live_alias,
             "nick_changed": bool(nick_changed),
+            "smurf_of": str(meta.get("smurf_of") or ""),
             "flag_country": meta["flag_country"],
+            "is_expat": bool(meta["flag_country"] and meta["flag_country"] != "br"),
             "suspected_foreign_flag": bool(suspected_foreign),
             "suspected_foreign_reason": suspected_foreign_reason,
             "avatar_url": avatar_url,
@@ -4788,6 +4822,7 @@ def build_lobby_radar_snapshot(
     known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
     known_ingame_visible_webapi_sids: set[str] | frozenset[str] | None = None,
     alias_history_by_pid: dict[str, Any] | dict[int, Any] | None = None,
+    verified_foreign_status_by_pid: dict[int, dict[str, Any]] | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Consolida as duas categorias do Radar de Lobby:
@@ -4852,6 +4887,7 @@ def build_lobby_radar_snapshot(
         known_ingame_visible_sids=known_ingame_visible_sids,
         known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
         alias_history_by_pid=alias_history_by_pid,
+        verified_foreign_status_by_pid=verified_foreign_status_by_pid,
     )
 
     xml_ok_accounts = sum(1 for v in merged_other_pres.values() if v.get("ok"))
@@ -4894,6 +4930,7 @@ def _category_digest(bucket: dict[str, Any]) -> tuple[Any, Any, Any]:
             bool(p.get("is_busy")),
             str(p.get("alias") or ""),
             str(p.get("current_alias") or ""),
+            str(p.get("smurf_of") or ""),
             str(p.get("flag_country") or "br"),
             bool(p.get("suspected_foreign_flag")),
         )
@@ -4908,6 +4945,7 @@ def _category_digest(bucket: dict[str, Any]) -> tuple[Any, Any, Any]:
             bool(p.get("is_busy")),
             str(p.get("alias") or ""),
             str(p.get("current_alias") or ""),
+            str(p.get("smurf_of") or ""),
             str(p.get("flag_country") or "br"),
             bool(p.get("suspected_foreign_flag")),
         )
@@ -4918,6 +4956,7 @@ def _category_digest(bucket: dict[str, Any]) -> tuple[Any, Any, Any]:
             p["profile_id"],
             str(p.get("alias") or ""),
             str(p.get("current_alias") or ""),
+            str(p.get("smurf_of") or ""),
             str(p.get("flag_country") or "br"),
             bool(p.get("suspected_foreign_flag")),
         )

@@ -1,0 +1,111 @@
+name: CoH3 Brasil — Verificação Periódica de Estrangeiros (VPN / Bandeira BR)
+
+on:
+  schedule:
+    # A cada 3 dias às 08:15 UTC (05:15 BRT), logo após a varredura profunda diária
+    - cron: "15 8 */3 * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Forçar reavaliação imediata mesmo antes da janela de 3 dias?"
+        required: false
+        default: false
+        type: boolean
+      max_candidates:
+        description: "Máximo de candidatos avaliados (1 a 150)"
+        required: false
+        default: "60"
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: coh3-br-foreign-verifier
+  cancel-in-progress: false
+
+jobs:
+  verify-foreign-br:
+    if: github.repository == 'nigosky/coh3-br-lobby-radar' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout seguro (SHA imutavel)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Garantir dependencias Python oficiais (apt assinado GPG, zero pip)
+        run: |
+          set -euo pipefail
+          NEED_PKGS=()
+          if ! python3 -c "from PIL import Image, ImageDraw, ImageFont" >/dev/null 2>&1; then
+            NEED_PKGS+=("python3-pil")
+          fi
+          if [ ! -d "/usr/share/fonts/truetype/dejavu" ]; then
+            NEED_PKGS+=("fonts-dejavu-core" "fonts-liberation")
+          fi
+          if [ "${#NEED_PKGS[@]}" -gt 0 ]; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends "${NEED_PKGS[@]}"
+          fi
+
+      - name: Validar suite de testes e integridade do roster
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -euo pipefail
+          python3 manage_roster.py validate
+          python3 -m unittest discover -s . -p "test_*.py"
+
+      - name: Executar verificacao multi-dia de nacionalidade (Steam + Relic + CoH2)
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+          INPUT_FORCE: ${{ (github.event_name == 'workflow_dispatch' && inputs.force) || false }}
+          INPUT_MAX_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.max_candidates || '60' }}
+        run: |
+          set -euo pipefail
+          MAX_CANDS=60
+          if [[ "${INPUT_MAX_CANDIDATES:-}" =~ ^[0-9]+$ ]] && [ "${INPUT_MAX_CANDIDATES}" -ge 1 ] && [ "${INPUT_MAX_CANDIDATES}" -le 150 ]; then
+            MAX_CANDS="${INPUT_MAX_CANDIDATES}"
+          fi
+          ARGS=(--max-candidates "${MAX_CANDS}")
+          if [ "${INPUT_FORCE}" = "true" ]; then
+            ARGS+=(--force)
+          fi
+          python3 foreign_br_verifier.py "${ARGS[@]}"
+
+      - name: Auditoria anti-vazamento e persistencia (suspected_foreign_br.json)
+        run: |
+          set -euo pipefail
+          SECRET_PATTERN="(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+|STEAM_WEB_API_KEY=[A-Za-z0-9]{16,}|x-webapi-key[:=][[:space:]]*[A-Za-z0-9]{16,}|[?&]key=[A-Za-z0-9]{16,}|TRACKER_DISPATCH_TOKEN=[A-Za-z0-9_.-]{16,}|Authorization:[[:space:]]*(Bearer|Basic|Token)[[:space:]]+[A-Za-z0-9._-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+          if git ls-files -z | xargs -0 grep -InEi "${SECRET_PATTERN}" 2>/dev/null; then
+            echo "::error::Bloqueio de seguranca acionado: padrao de segredo detectado em arquivo rastreado!"
+            exit 1
+          fi
+
+          if [ -f suspected_foreign_br.json ]; then
+            git add -- suspected_foreign_br.json
+          fi
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteracao em suspected_foreign_br.json neste ciclo."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(foreign-verifier): atualizar verificacao periodica de estrangeiros VPN [skip ci]"
+
+          for attempt in 1 2 3 4; do
+            git pull --rebase -X theirs origin main || {
+              git rebase --abort 2>/dev/null || true
+            }
+            if git push origin "HEAD:main"; then
+              echo "suspected_foreign_br.json publicado com sucesso em main."
+              break
+            fi
+            sleep 3
+          done

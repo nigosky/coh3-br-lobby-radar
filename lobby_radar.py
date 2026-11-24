@@ -68,6 +68,11 @@ from steam_presence import (
     resolve_nick_change_display,
     steam_presence_hides_coh3_game,
 )
+from foreign_br_verifier import (
+    SUSPECTED_FOREIGN_BR_PATH,
+    get_verified_foreign_status_map,
+    load_suspected_foreign_br_registry,
+)
 
 configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("coh3_br.lobby.main")
@@ -82,7 +87,7 @@ DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
 # 4m30s garante que o ciclo de 5 min (300s) nunca pule a atualização por 1-2s de jitter do relógio
 PANEL_HEARTBEAT_REFRESH_SEC = 270
-PANEL_LAYOUT_VERSION = 11
+PANEL_LAYOUT_VERSION = 12
 COMMUNITY_SCHEMA_VERSION = 3
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
@@ -1887,6 +1892,11 @@ def run_lobby_radar_sync(
         community_cache["dormant_players"] = dormant_players
         save_community_cache(comm_path, community_cache)
 
+    foreign_reg_path = comm_path.parent / SUSPECTED_FOREIGN_BR_PATH.name
+    verified_foreign_status_map = get_verified_foreign_status_map(
+        load_suspected_foreign_br_registry(foreign_reg_path)
+    )
+
     snapshot = build_lobby_radar_snapshot(
         custom_players=vet_roster,
         presence_by_steam=vet_presence_map,
@@ -1903,6 +1913,7 @@ def run_lobby_radar_sync(
         known_ingame_visible_sids=known_ingame_visible_sids,
         known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
         alias_history_by_pid=hist_players_map,
+        verified_foreign_status_by_pid=verified_foreign_status_map,
     )
     vet_bucket = snapshot["veteranos"]
     oth_bucket = snapshot["outros_brasileiros"]

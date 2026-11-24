@@ -163,25 +163,55 @@ def _append_vertical_section(
     return remaining_chars
 
 
-def _format_player_flag_badge(player: dict[str, Any]) -> str:
-    """Retorna emoji de bandeira (ex.: ' 🇺🇸', ' 🇨🇦') apenas para brasileiros residentes no exterior (flag_country != 'br')."""
+EXPAT_COUNTRY_LABELS_PT: dict[str, str] = {
+    "us": "BR nos EUA",
+    "ca": "BR no Canadá",
+    "za": "BR na África do Sul",
+    "au": "BR na Austrália",
+    "jp": "BR no Japão",
+    "ar": "BR na Argentina",
+    "py": "BR no Paraguai",
+    "th": "BR na Tailândia",
+    "ee": "BR na Estônia",
+    "sa": "BR na Arábia Saudita",
+    "pt": "BR em Portugal",
+    "de": "BR na Alemanha",
+    "gb": "BR no Reino Unido",
+    "es": "BR na Espanha",
+    "fr": "BR na França",
+    "it": "BR na Itália",
+    "ie": "BR na Irlanda",
+    "nl": "BR na Holanda",
+    "nz": "BR na Nova Zelândia",
+    "cl": "BR no Chile",
+    "uy": "BR no Uruguai",
+}
+
+
+def _format_player_flag_badge(player: dict[str, Any], *, compact: bool = False) -> str:
+    """Retorna bandeira + texto explicativo (ex.: ' 🇨🇦 *(BR no Canadá)*') para brasileiros emigrados."""
     code = str(player.get("flag_country") or "").strip().lower()
     if code in ("usa", "eua"):
         code = "us"
     elif code == "can":
         code = "ca"
+    elif code == "uk":
+        code = "gb"
     if not code or code == "br" or len(code) != 2 or not code.isascii() or not code.isalpha():
         return ""
     # Converte código ISO-2 ASCII em regional indicator symbols (ex.: 'ca' -> '🇨🇦')
     flag_emoji = "".join(chr(0x1F1E6 + (ord(ch) - ord("a"))) for ch in code)
-    return f" {flag_emoji}"
+    if compact:
+        return f" {flag_emoji} (BR ext.)"
+    label = EXPAT_COUNTRY_LABELS_PT.get(code, f"BR no exterior ({code.upper()})")
+    return f" {flag_emoji} *({label})*"
 
 
 def _format_suspected_foreign_badge(player: dict[str, Any], *, is_veteranos: bool = False, compact: bool = False) -> str:
-    """Sinaliza discretamente contas com flag BR e fortes indícios de outra nacionalidade (ex.: Nocturne)."""
+    """Sinaliza contas com flag BR e fortes indícios de serem estrangeiros usando VPN (ex.: Nocturne)."""
     if is_veteranos or not bool(player.get("suspected_foreign_flag")):
         return ""
-    return " 🌐" if compact else " 🌐 *(possível outra nacionalidade)*"
+    return " 🌐 (VPN?)" if compact else " 🌐 *(possível estrangeiro usando VPN)*"
 
 
 def _resolve_discord_display_alias(player: dict[str, Any], *, max_len: int = 48) -> str:
@@ -402,7 +432,7 @@ def _format_category_vertical_description(
         low_lines: list[str] = []
         for pl, detail in low_entries[:low_cap]:
             link_txt = _format_discord_player_link(pl, bold=False, max_len=44)
-            flag_tag = _format_player_flag_badge(pl)
+            flag_tag = _format_player_flag_badge(pl, compact=True)
             foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=False, compact=True)
             elo_val = int(pl.get("max_elo", 0) or 0)
             meta_parts: list[str] = []
