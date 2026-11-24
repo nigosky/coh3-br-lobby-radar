@@ -50,7 +50,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
     def test_canonical_players_roster_integrity_and_parity(self) -> None:
         doc = manage_roster.load_roster_doc(PLAYERS_ROSTER_PATH)
         tot_v, uniq_v, tot_o = manage_roster.validate_roster_doc(doc)
-        self.assertEqual(tot_v, 46)
+        self.assertEqual(tot_v, 49)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
         self.assertGreaterEqual(tot_o, 34)
 
@@ -76,7 +76,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertTrue(all(not r.get("merged_into_profile_id") for r in CORE_BR_ROSTER))
         self.assertTrue(all(not r.get("merged_into_steam_id") for r in CORE_BR_ROSTER))
 
-        # Contas principais preservadas + 7 smurfs em Veteranos (com smurf_of e sem pin_alias)
+        # Contas principais preservadas + 10 smurfs em Veteranos (com smurf_of e sem pin_alias)
         self.assertEqual(vet_by_pid[79327]["original_alias"], "Chacineiro")
         self.assertEqual(vet_by_pid[55693]["original_alias"], "Alface aka BinhoBiceps")
         self.assertIn("BinhoBiceps", vet_by_pid[55693].get("known_aliases") or [])
@@ -90,6 +90,9 @@ class TestSharedPlayersRoster(unittest.TestCase):
             1423426: ("76561199482388323", "geladeira velha (Smurf: arc)", "arc"),
             1487738: ("76561198602236177", "Državljan H (Smurf: arc)", "arc"),
             1482961: ("76561199886227102", "Vog (Smurf: arc)", "arc"),
+            917917: ("76561198287157768", "arc (Smurf: arc)", "arc"),
+            1160699: ("76561199814547622", "Bubebolos (Smurf: arc)", "arc"),
+            918241: ("76561199794093952", "Faint (Smurf: arc)", "arc"),
             1390350: ("76561198089278659", "TearsInTheRain (Smurf: Chacineiro)", "Chacineiro"),
             1076221: ("76561198815935562", "Lucielle (Smurf: Colossus)", "Colossus"),
         }
