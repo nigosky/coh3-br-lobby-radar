@@ -32456,7 +32456,7 @@
       "coh3_last_match_date": 1741450872,
       "coh3_total_matches": 6,
       "current_alias": "SKEL",
-      "last_checked_at": 1795489497,
+      "last_checked_at": 1795489797,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -86566,7 +86566,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795489497,
+      "last_checked_at": 1795489797,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -89629,7 +89629,7 @@
       "coh3_last_match_date": 1795467214,
       "coh3_total_matches": 6176,
       "current_alias": "COHBRAMACHINE",
-      "last_checked_at": 1795489617,
+      "last_checked_at": 1795489797,
       "last_coh1_relic_at": 1795487784,
       "last_coh1stats_at": 1795487784,
       "last_coh2_relic_at": 1795487784,
@@ -92120,6 +92120,59 @@
       "smurf_of": "",
       "steam_id": "76561199060773915"
     },
+    "207207": {
+      "aliases": [
+        {
+          "alias": "Bouncer",
+          "first_seen": 1789836932,
+          "last_seen": 1795487784,
+          "sources": [
+            "local_db",
+            "relic_api",
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Bouncer",
+      "coh3_country": "us",
+      "coh3_last_match_date": 1789836932,
+      "coh3_total_matches": 1100,
+      "current_alias": "Bouncer",
+      "last_checked_at": 1795488529,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 207207,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197997288184"
+    },
+    "207211": {
+      "aliases": [
+        {
+          "alias": "Up the Irons!!",
+          "first_seen": 1677190287,
+          "last_seen": 1795488529,
+          "sources": [
+            "coh2stats_opendata",
+            "local_db",
+            "relic_api",
+            "steam_web_api"
+          ]
+        }
+      ],
+      "canonical_alias": "Up The Irons!!",
+      "coh3_country": "pt",
+      "coh3_last_match_date": 1677190287,
+      "coh3_total_matches": 1,
+      "current_alias": "Up the Irons!!",
+      "last_checked_at": 1795489797,
+      "last_cohdb_at": 0,
+      "last_steam_aliases_at": 0,
+      "profile_id": 207211,
+      "scope": "outros_brasileiros",
+      "smurf_of": "",
+      "steam_id": "76561197990410228"
+    },
     "207342": {
       "aliases": [
         {
@@ -94340,7 +94393,7 @@
       "coh3_last_match_date": 1778035588,
       "coh3_total_matches": 62,
       "current_alias": "Nargoth de Bebbanburg",
-      "last_checked_at": 1795489617,
+      "last_checked_at": 1795489797,
       "last_coh1_relic_at": 1795480318,
       "last_coh1stats_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
@@ -96671,7 +96724,7 @@
       "coh3_last_match_date": 1727647287,
       "coh3_total_matches": 19,
       "current_alias": "EDDYMORT",
-      "last_checked_at": 1795489497,
+      "last_checked_at": 1795489797,
       "last_coh1_relic_at": 1795487784,
       "last_coh2_relic_at": 1795487784,
       "last_cohdb_at": 0,
@@ -108318,7 +108371,7 @@
       "coh3_last_match_date": 1795370890,
       "coh3_total_matches": 11874,
       "current_alias": "Minhoca de ferro!",
-      "last_checked_at": 1795489617,
+      "last_checked_at": 1795489797,
       "last_coh1_relic_at": 1795487784,
       "last_coh1stats_at": 1795487784,
       "last_coh2_relic_at": 1795487784,
@@ -108626,7 +108679,7 @@
       "coh2_total_matches": 86,
       "coh3_country": "br",
       "current_alias": "mw",
-      "last_checked_at": 1795489497,
+      "last_checked_at": 1795489797,
       "last_coh1_relic_at": 1795487784,
       "last_coh2_relic_at": 1795487784,
       "last_cohdb_at": 0,
@@ -110017,7 +110070,7 @@
       "coh3_last_match_date": 1738169284,
       "coh3_total_matches": 208,
       "current_alias": "! HOX",
-      "last_checked_at": 1795489497,
+      "last_checked_at": 1795489797,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 571634,
@@ -144547,7 +144600,7 @@
       "coh3_last_match_date": 1776803619,
       "coh3_total_matches": 60,
       "current_alias": "LampiaoX_X",
-      "last_checked_at": 1795489497,
+      "last_checked_at": 1795489797,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -149567,5 +149620,5 @@
     "steam_web_api": 3290,
     "steam_xml": 67
   },
-  "updated_at": 1795489617
+  "updated_at": 1795489797
 }
