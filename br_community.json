@@ -38991,6 +38991,7 @@
     },
     "1151980": {
       "alias": "JÄGER_Drewes",
+      "avatar_url": "https://avatars.steamstatic.com/bce637b89fc77761cde16241db54ac5597ba4eb5_medium.jpg",
       "br_source": "alias_history",
       "last_match_date": 1794759750,
       "last_seen_online_ts": 1795541898,
@@ -40628,7 +40629,7 @@
       "br_source": "open_data_matches",
       "last_match_date": 1794867525,
       "last_seen_ingame_webapi_ts": 1795482456,
-      "last_seen_online_ts": 1795489497,
+      "last_seen_online_ts": 1795541992,
       "max_elo": 1031,
       "profile_id": 1322297,
       "steam_id": "76561198119817594",
@@ -47730,6 +47731,7 @@
     },
     "900546": {
       "alias": "Mongelli",
+      "avatar_url": "https://avatars.steamstatic.com/3f49b44c1f31ec91ba35f40a89e38e00543e5277_medium.jpg",
       "br_source": "alias_history",
       "last_match_date": 1794520107,
       "last_seen_online_ts": 1795541898,
