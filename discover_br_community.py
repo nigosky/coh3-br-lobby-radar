@@ -42,6 +42,7 @@ from alias_history import (
     ingest_steam_presence,
     load_alias_history,
     promote_legacy_br_to_coh3,
+    record_legacy_br_player,
     save_alias_history,
     select_stale_pids_for_source,
 )
@@ -77,7 +78,6 @@ from steam_presence import (
     BRAZILIAN_COH_STEAM_GROUPS,
     MANUAL_OTHER_BR_PLAYERS,
     OTHER_BR_ACTIVE_COH3_DAYS,
-    OTHER_BR_DORMANT_RETENTION_DAYS,
     SOUTH_AMERICA_REGION_ID,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
@@ -195,7 +195,7 @@ def run_deep_br_discovery(
     """
     now = int(now_ts) if now_ts is not None else int(time.time())
     active_cutoff = now - OTHER_BR_ACTIVE_MATCH_WINDOW_SEC
-    dormant_cutoff = now - OTHER_BR_DORMANT_RETENTION_SEC
+    dormant_cutoff = (now - OTHER_BR_DORMANT_RETENTION_SEC) if OTHER_BR_DORMANT_RETENTION_SEC > 0 else 0
 
     r_client = relic_client if relic_client is not None else RelicActivityClient()
     p_client = presence_client if presence_client is not None else SteamPresenceClient()
@@ -248,6 +248,27 @@ def run_deep_br_discovery(
                 last_match_date=int(row.get("last_match_date", 0) or 0),
                 total_matches=int(row.get("total_matches", 0) or 0),
                 br_source=str(row.get("br_source") or ""),
+                flag_country=str(row.get("flag_country") or ""),
+            )
+
+    # Semeia também todos os brasileiros de CoH3 já catalogados no histórico multi-era (`alias_history.json`)
+    for raw_pid, hrec in (alias_history_doc.get("players") or {}).items():
+        if not isinstance(hrec, dict):
+            continue
+        pid = int(hrec.get("profile_id", 0) or (int(raw_pid) if str(raw_pid).isdigit() else 0))
+        sid = str(hrec.get("steam_id") or "").replace("/steam/", "").strip()
+        if pid > 0 and STEAM_ID64_VALID_RE.fullmatch(sid) and pid not in vet_pids and sid not in vet_sids and pid not in br_pool:
+            _merge_discovered_br_player(
+                br_pool,
+                profile_id=pid,
+                steam_id=sid,
+                alias=str(hrec.get("canonical_alias") or hrec.get("current_alias") or ""),
+                current_alias=str(hrec.get("current_alias") or ""),
+                last_match_date=int(hrec.get("coh3_last_match_date", 0) or 0),
+                total_matches=int(hrec.get("coh3_total_matches", 0) or 0),
+                country=str(hrec.get("coh3_country") or ""),
+                br_source="alias_history",
+                flag_country=str(hrec.get("coh3_country") or "") if str(hrec.get("coh3_country") or "").lower() not in ("", "br") else "",
             )
 
     sources_used: list[str] = []
@@ -343,31 +364,39 @@ def run_deep_br_discovery(
         except Exception as exc:
             logger.warning("[STAGE 3] Falha em Relic SA Leaderboards: %s", redact_secrets(exc))
 
-    # 4a. Steam Community — Grupos públicos brasileiros de CoH (convergência Steam -> Relic CoH3)
+    # 4a. Steam Community — Grupos públicos brasileiros de CoH (convergência Steam -> Relic CoH3 + legados sem CoH3)
     steam_group_confirmed = 0
+    steam_group_all_member_sids: list[str] = []
+    steam_group_non_coh3_sids: list[str] = []
     if steam_groups and hasattr(p_client, "fetch_group_member_steam_ids") and hasattr(r_client, "fetch_profile_stats_by_steam_ids"):
         known_sids = set(vet_sids) | {str(v.get("steam_id") or "") for v in br_pool.values()}
         group_sids: list[str] = []
         seen_gsids: set[str] = set()
         for slug in steam_groups:
             try:
-                members = p_client.fetch_group_member_steam_ids(slug, max_pages=5)
+                members = p_client.fetch_group_member_steam_ids(slug, max_pages=6)
                 logger.info("[STAGE 4a — GRUPO STEAM %s] %d membros coletados.", slug, len(members))
                 for sid in members:
-                    if sid not in seen_gsids and sid not in known_sids:
+                    if sid not in seen_gsids and STEAM_ID64_VALID_RE.fullmatch(sid):
                         seen_gsids.add(sid)
-                        group_sids.append(sid)
+                        steam_group_all_member_sids.append(sid)
+                        if sid not in known_sids:
+                            group_sids.append(sid)
             except Exception as exc:
                 logger.warning("[STAGE 4a] Falha ao ler grupo Steam %s: %s", slug, redact_secrets(exc))
 
         if group_sids:
-            group_stats = r_client.fetch_profile_stats_by_steam_ids(group_sids[:1200], pace_delay_sec=0.22)
+            group_query_slice = group_sids[:4000]
+            group_stats = r_client.fetch_profile_stats_by_steam_ids(group_query_slice, pace_delay_sec=0.18)
+            found_coh3_sids: set[str] = set()
             verify_foreign_group: list[dict[str, Any]] = []
             for pid, st in group_stats.items():
+                sid = str(st.get("steam_id") or "").replace("/steam/", "").strip()
+                if sid:
+                    found_coh3_sids.add(sid)
                 if pid in vet_pids or pid in br_pool:
                     continue
                 lmd = int(st.get("last_match_date", 0) or 0)
-                sid = str(st.get("steam_id") or "")
                 if not sid or sid in vet_sids:
                     continue
                 ctry = str(st.get("country") or "").strip().lower()
@@ -386,13 +415,19 @@ def run_deep_br_discovery(
                     )
                     if lmd >= active_cutoff:
                         steam_group_confirmed += 1
-                elif lmd >= active_cutoff:
+                else:
                     verify_foreign_group.append(st)
 
-            # Para membros de grupo BR cuja Relic mostra outro país, confirma via `<location>` da Steam
+            for sid in group_query_slice:
+                if sid not in found_coh3_sids and sid not in vet_sids:
+                    steam_group_non_coh3_sids.append(sid)
+
+            # Para membros de grupo BR cuja Relic mostra outro país, confirma via `<location>` da Steam (ativos e inativos!)
             if verify_foreign_group and hasattr(p_client, "fetch_batch_presence"):
                 from lobby_radar import _call_batch_presence
-                fg_sids = [str(x["steam_id"]) for x in verify_foreign_group if x.get("steam_id")]
+                verify_foreign_group.sort(key=lambda x: -int(x.get("last_match_date", 0) or 0))
+                fg_slice = verify_foreign_group[:250]
+                fg_sids = [str(x["steam_id"]) for x in fg_slice if x.get("steam_id")]
                 fg_pres = _call_batch_presence(
                     p_client,
                     fg_sids,
@@ -401,7 +436,7 @@ def run_deep_br_discovery(
                     stop_on_rate_limit=True,
                     require_xml_details=True,
                 )
-                for st in verify_foreign_group:
+                for st in fg_slice:
                     pres = fg_pres.get(str(st.get("steam_id") or ""))
                     if pres and pres.get("is_steam_brazil"):
                         _merge_discovered_br_player(
@@ -415,15 +450,18 @@ def run_deep_br_discovery(
                             country=str(st.get("country") or ""),
                             region_id=int(st.get("region_id", 0) or 0),
                             br_source="steam_location",
+                            flag_country=str(st.get("country") or ""),
                         )
-                        steam_group_confirmed += 1
-            if steam_group_confirmed:
+                        if int(st.get("last_match_date", 0) or 0) >= active_cutoff:
+                            steam_group_confirmed += 1
+            if steam_group_confirmed or steam_group_non_coh3_sids:
                 sources_used.append("steam_groups")
             logger.info(
-                "[STAGE 4a — CONVERGÊNCIA GRUPOS STEAM] %d novos SteamIDs consultados -> %d jogadores ativos no CoH3 (<=%dd) confirmados BR.",
-                min(len(group_sids), 1200),
+                "[STAGE 4a — CONVERGÊNCIA GRUPOS STEAM] %d novos SteamIDs consultados -> %d ativos CoH3 (<=%dd) | %d sem CoH3 para vigília legada.",
+                len(group_query_slice),
                 steam_group_confirmed,
                 OTHER_BR_ACTIVE_COH3_DAYS,
+                len(steam_group_non_coh3_sids),
             )
 
     # 4b. Steam Community — Verificação de `<location>Brazil</location>` e `<groups>` BR para candidatos ativos não-`br`
@@ -593,7 +631,8 @@ def run_deep_br_discovery(
         if pid not in vet_pids
         and str(pid) not in final_players
         and str(item.get("steam_id") or "") not in vet_sids
-        and dormant_cutoff <= int(item.get("last_match_date", 0) or 0) < active_cutoff
+        and int(item.get("last_match_date", 0) or 0) < active_cutoff
+        and (dormant_cutoff <= 0 or int(item.get("last_match_date", 0) or 0) >= dormant_cutoff)
     ]
     final_dormant: dict[str, dict[str, Any]] = {}
     _populate_bucket(final_dormant, dormant_br_pids, dormant_cutoff)
@@ -839,6 +878,19 @@ def run_deep_br_discovery(
 
         if promote_legacy_br_to_coh3(alias_history_doc, pid_by_steam=pid_by_steam):
             hist_dirty = True
+        for gsid in steam_group_all_member_sids:
+            if gsid in pid_by_steam or gsid in steam_group_non_coh3_sids:
+                if record_legacy_br_player(
+                    alias_history_doc,
+                    steam_id=gsid,
+                    alias="",
+                    source="steam_group_br",
+                    era="steam_group",
+                    country="br",
+                    seen_ts=now,
+                    pid_by_steam=pid_by_steam,
+                ):
+                    hist_dirty = True
         mig_changed, _ = detect_country_migrations(
             alias_history_doc,
             steam_presence_by_sid=steam_pres_map,
@@ -850,8 +902,9 @@ def run_deep_br_discovery(
         if hist_dirty and not dry_run:
             save_alias_history(hist_path, alias_history_doc, now_ts=now)
         logger.info(
-            "[STAGE 8 — HISTÓRICO PERSISTENTE DE NICKS] Jogadores: %d | Com >=2 nicks: %d | Fontes: %s",
+            "[STAGE 8 — HISTÓRICO PERSISTENTE DE NICKS] Jogadores CoH3: %d | Legados CoH1/CoH2/Grupos: %d | Com >=2 nicks: %d | Fontes: %s",
             len(alias_history_doc.get("players") or {}),
+            len(alias_history_doc.get("legacy_br_players") or {}),
             sum(
                 1
                 for r in (alias_history_doc.get("players") or {}).values()
@@ -863,14 +916,13 @@ def run_deep_br_discovery(
         logger.warning("[STAGE 8 — HISTÓRICO DE NICKS] Falha não fatal ao consolidar alias_history.json: %s", redact_secrets(exc))
 
     logger.info(
-        "[RESUMO CONVERGÊNCIA BR] Ativos <=%dd: %d (%d ELO>=1300) -> %d (%d ELO>=1300) | Novos ativos: +%d | Vigília 16-%dd: %d | Por fonte: %s",
+        "[RESUMO CONVERGÊNCIA BR] Ativos <=%dd: %d (%d ELO>=1300) -> %d (%d ELO>=1300) | Novos ativos: +%d | Vigília silenciosa permanente: %d | Por fonte: %s",
         OTHER_BR_ACTIVE_COH3_DAYS,
         len(before_pids),
         before_high_elo,
         len(after_pids),
         after_high_elo,
         len(newly_added_pids),
-        OTHER_BR_DORMANT_RETENTION_DAYS,
         len(final_dormant),
         dict(by_source),
     )

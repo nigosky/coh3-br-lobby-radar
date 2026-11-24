@@ -927,10 +927,16 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         )
 
     def test_other_br_15_day_active_window_and_instant_return_in_coh3(self) -> None:
-        from steam_presence import OTHER_BR_ACTIVE_COH3_DAYS, OTHER_BR_DORMANT_RETENTION_DAYS
+        from steam_presence import (
+            BRAZILIAN_COH_STEAM_GROUPS,
+            OTHER_BR_ACTIVE_COH3_DAYS,
+            OTHER_BR_DORMANT_RETENTION_DAYS,
+        )
 
         self.assertEqual(OTHER_BR_ACTIVE_COH3_DAYS, 15)
-        self.assertEqual(OTHER_BR_DORMANT_RETENTION_DAYS, 90)
+        self.assertEqual(OTHER_BR_DORMANT_RETENTION_DAYS, 0)
+        for expected_grp in ("companybr", "CoH2BR", "cohbr", "COH2-BR", "cohcentral", "br_febcoh", "BR-CoH2"):
+            self.assertIn(expected_grp, BRAZILIAN_COH_STEAM_GROUPS)
 
         now = 1_800_000_000
         vet_roster = [{"profile_id": 79327, "steam_id": SAMPLE_SID, "original_alias": "Chacineiro"}]
