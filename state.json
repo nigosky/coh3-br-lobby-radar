@@ -1,5 +1,875 @@
 {
   "active_alerts": [],
+  "avatar_url_cache": {
+    "76561197961608539": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/a69554183e1b03df99c5b990a9e7f9d1ccca63ab_medium.jpg"
+    },
+    "76561197963172584": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/f3e3499461c9308bf7c836e0d3577a09361d2ae4_medium.jpg"
+    },
+    "76561197963741792": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/c72fa4397903d7086b30e2dade2d7976c58bc571_medium.jpg"
+    },
+    "76561197966038733": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/ff8e45c2f1800961e9957edd0ea5329dffd6d6b8_medium.jpg"
+    },
+    "76561197967668319": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b1e3a96a361308841c5ee8146e9bf4e1fe610ebb_medium.jpg"
+    },
+    "76561197974495191": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/9a7fc526b9c4cb3cc94170f5e2422619902d88ec_medium.jpg"
+    },
+    "76561197974916464": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/87ec6cfd73d43480014725f69c00ea4d384f783d_medium.jpg"
+    },
+    "76561197975133878": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/6e67587b38453ba7c4cac8305ba068391716e7da_medium.jpg"
+    },
+    "76561197979883434": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/e1d39014026270fa3945bbd686f866fb0bb32b85_medium.jpg"
+    },
+    "76561197981615184": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/476c14052e4ba360d9f2edd50d70547db6110ea0_medium.jpg"
+    },
+    "76561197982280686": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/46a5c3dad59548147669719d10cc5b09802dd5aa_medium.jpg"
+    },
+    "76561197982976352": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/70041a77bb6646a37c1f6083ab5265bbb507f54e_medium.jpg"
+    },
+    "76561197984468206": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b6d8f399f41176c25ca00d1a033a78cee65d52d9_medium.jpg"
+    },
+    "76561197985268629": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/77abd416933d5c27c027c774403adce4eb711b4d_medium.jpg"
+    },
+    "76561197986271242": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/23be46d56008d4a88751328f672b42a39ca47dc9_medium.jpg"
+    },
+    "76561197986521921": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/95d8f1c00bbdc43e289e494f3dad027a6f930ac4_medium.jpg"
+    },
+    "76561197990778045": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/37df779e928b33a40e64a387d7f7c8a8b2899d54_medium.jpg"
+    },
+    "76561197990946349": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/a51e2c011b28b07b6de591ff08808d29960b1eb6_medium.jpg"
+    },
+    "76561197993922195": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/7d16151e86c9b4ec0f3713be5e3becfcd1ff7b73_medium.jpg"
+    },
+    "76561197994129168": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/a846d28ea8d7ea694ca2e00fa58a40640444d98c_medium.jpg"
+    },
+    "76561197994245218": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/c48c735ba951612d4a146878dcd39c771942eed4_medium.jpg"
+    },
+    "76561197995712470": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/9ffee916d1e1fc125454dac69abae66b3fbe7aa8_medium.jpg"
+    },
+    "76561197996817129": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/9f37aeb8a2786c3c91ece677fad39430d29cc96c_medium.jpg"
+    },
+    "76561197997896382": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/1ad57de319d43d01c2d33f2fa9ab30cd1e54e95b_medium.jpg"
+    },
+    "76561197998487466": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/63f74461c07710a9b00526847c0d261e639ff50a_medium.jpg"
+    },
+    "76561198000067932": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/4c555ad0eef2cb39c499d44245dc5e8a836f15ef_medium.jpg"
+    },
+    "76561198000099422": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/c8fe4f9050f4e64f9df2032467365e0a5675b2e7_medium.jpg"
+    },
+    "76561198000943380": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/e7f2908bd922f0d0ae828914027972fd527627ab_medium.jpg"
+    },
+    "76561198001254162": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/47a7b337e7d3407a4e0df2ed03cb8da53a26e6f5_medium.jpg"
+    },
+    "76561198001604015": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/9c0782bf8f4544a2f63d5471204c8c90143c4e05_medium.jpg"
+    },
+    "76561198002516537": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/4d2555285813cad6c8184a7c1d36edf716946a18_medium.jpg"
+    },
+    "76561198002634846": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/ca7b0ad1a9ff0572becc22d2677474c3d494c73f_medium.jpg"
+    },
+    "76561198003329628": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg"
+    },
+    "76561198005412401": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b5f56c3ce6e3791d03cc9f379146eb124f0b590e_medium.jpg"
+    },
+    "76561198008329858": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/5bc6e224903ad2c78b8cfae51959d347dfb87a10_medium.jpg"
+    },
+    "76561198009000654": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/6d80675efea7eeb463ee51af7bac1c7dd67860bc_medium.jpg"
+    },
+    "76561198009056438": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/5076cb4b31180b9fb9b6520693e7906f4c89b8ba_medium.jpg"
+    },
+    "76561198010387961": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/9ad1ab18493e531ac6f430fd661b8b7dded1b53d_medium.jpg"
+    },
+    "76561198013484803": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/a7c742760fd51f91580311c21a36670f8bdcc3f6_medium.jpg"
+    },
+    "76561198013738008": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/23dd20f82ab785f5bb7fbe7a58d51df15b0a2b56_medium.jpg"
+    },
+    "76561198013841424": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/00ba3b0839835e54943d05d7d49d1b6febc9221e_medium.jpg"
+    },
+    "76561198014985380": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/0e39bba17a0f085f971262336a524ca6062f8f29_medium.jpg"
+    },
+    "76561198015179885": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/a3bcf46de6799ff843237785f2115eee3c61292b_medium.jpg"
+    },
+    "76561198016825303": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/97d9fecc9062a4bfddd17a619410da752b176476_medium.jpg"
+    },
+    "76561198017121369": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b39a41d9e1e1192c6e1ed1fdc753ae01e43c61f8_medium.jpg"
+    },
+    "76561198017254697": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/cc3a7d1d699b4de301137d29eed8637dbc415edb_medium.jpg"
+    },
+    "76561198018536980": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/0cc2846c768e413762fca067fe9f7678cecfbc43_medium.jpg"
+    },
+    "76561198019263316": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/482654256fdca7393d141fcb4331e5bf0264f620_medium.jpg"
+    },
+    "76561198020133377": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/e4663e578d1bef5e6e1eb5100e0f0dd05386f57f_medium.jpg"
+    },
+    "76561198020353566": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/08392cac8aa629da1a2ba3e97090ffff54bd41a6_medium.jpg"
+    },
+    "76561198021071716": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/08fa5829cd640dafed8d94de1e117e321eeaba39_medium.jpg"
+    },
+    "76561198022258604": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fe4eb46b718e783a057c642e42b226fd689b3195_medium.jpg"
+    },
+    "76561198022850599": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b8e819862747ac9acf76321b24b9f399bbc8369e_medium.jpg"
+    },
+    "76561198024118058": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/7454e54ad1949a1729081d40dc0830ee0fbb1d8e_medium.jpg"
+    },
+    "76561198024371602": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/d4371bdba4c8c3484bc5b88edc6ee3c15d2bc250_medium.jpg"
+    },
+    "76561198024839791": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/22b233ca9c59480534fe0097ac99bb1f6819bd69_medium.jpg"
+    },
+    "76561198025162176": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/3db8945d6b4514ec25e7166041ac3f96d0dc2521_medium.jpg"
+    },
+    "76561198026394732": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/3d85fbcc02b785dc5dbfdc112e35baa74303dd39_medium.jpg"
+    },
+    "76561198027958034": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg"
+    },
+    "76561198028166152": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/162d11320f3270e6f524dbbd0b20c9e9215a6ae1_medium.jpg"
+    },
+    "76561198028378060": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/a5e233fa476b721b8c8c1b6380a84bd9ff671d2e_medium.jpg"
+    },
+    "76561198028624206": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/11fcc77cff65f8a3e99eaf6cea390f14daae2f29_medium.jpg"
+    },
+    "76561198028644178": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/1978bd8cebb482123a426ed986886e69cdb49570_medium.jpg"
+    },
+    "76561198029749621": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/091de4f320b4ef1bec6dc64b105417a0a9a4ed27_medium.jpg"
+    },
+    "76561198031004739": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/57acc47c7e59abb0e77fb488b2b67c9ad6f61915_medium.jpg"
+    },
+    "76561198033317439": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/81f1f2038d4089da4bc0ddf26b4e43eb66fef405_medium.jpg"
+    },
+    "76561198034277846": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/5716849dbb6b74e787cd4c7a36d6988e6c59e5ee_medium.jpg"
+    },
+    "76561198034510845": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/e988e45ce60989d2ad1926dd4cce4c8bb68e37d2_medium.jpg"
+    },
+    "76561198037383807": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/1b9e62d54ce731648f6be0b4b5e6640df77e7c5d_medium.jpg"
+    },
+    "76561198037528747": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/d01417064269c1dc44a080a963311b5b8ba4e2f4_medium.jpg"
+    },
+    "76561198039466768": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/82594539300876c3956c9e7eeeb7ccb6c8d1e12f_medium.jpg"
+    },
+    "76561198043710924": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/9b75cb8641bec11676f66f3d8eb4995ddec08908_medium.jpg"
+    },
+    "76561198044964084": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/79724b9af59417a3e79fa11eb6ec859355e63780_medium.jpg"
+    },
+    "76561198045288427": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/d3eb39d70f297a4191bea908797cd7972a77ad86_medium.jpg"
+    },
+    "76561198047826077": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/58dc5efcd8a69f427ce34f631d3495ce1e46a476_medium.jpg"
+    },
+    "76561198048254869": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/599ea269de83bfcb6a3660e0dbabcff47870dfd5_medium.jpg"
+    },
+    "76561198048274930": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/a05e0b0a559efa1f8bd0b14eeb9724de864045a4_medium.jpg"
+    },
+    "76561198049023794": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/2c0c2c37301b1fc68b1b698c66d13050365bc065_medium.jpg"
+    },
+    "76561198053226112": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/2349c8efb705301af951bd072cd988b90a1d8cde_medium.jpg"
+    },
+    "76561198053754717": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/d6eb67b8cfdf9d73966e8f4ec53d732d019eae03_medium.jpg"
+    },
+    "76561198054318813": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/95d8f1c00bbdc43e289e494f3dad027a6f930ac4_medium.jpg"
+    },
+    "76561198058548575": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b68db6c8ac1e7bfe5f81ac89c58cb9b42c3a6f0c_medium.jpg"
+    },
+    "76561198060258379": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/ba850da7964e749cf40fd2ac4045b4f8a19749fd_medium.jpg"
+    },
+    "76561198060873557": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fa68c2af41370262ac95f9e3c4c457ba25456d61_medium.jpg"
+    },
+    "76561198061075119": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/f5b3a8e44dfb95fb2e8dd9f664b0a5dd26621461_medium.jpg"
+    },
+    "76561198061434984": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/181cad086dc145a52952d32e70e37209205d3eb3_medium.jpg"
+    },
+    "76561198062002353": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/7605a52ccd4d4e93055b020aefb1590baf0e1d96_medium.jpg"
+    },
+    "76561198062871244": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/116cfb4b9918ad87d594452f2d25139c5cc8da47_medium.jpg"
+    },
+    "76561198063124280": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b23819ebdee5cc33ea296933e57a94ca464aade9_medium.jpg"
+    },
+    "76561198064299508": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/df5b7da857462f46f0d48946e4b641dde9bae5e3_medium.jpg"
+    },
+    "76561198066101827": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/d191f0b47b61024aba95dc49397e414bde775065_medium.jpg"
+    },
+    "76561198066255117": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/67463418d258f1af5fe5fee6e26327771e6a5b12_medium.jpg"
+    },
+    "76561198066317871": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/3b35271912306811511ba248cbf0720a99d06464_medium.jpg"
+    },
+    "76561198066944603": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/90c9f7f6c5f20b2943b15af0f982acaadf2a45c4_medium.jpg"
+    },
+    "76561198067634756": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/48b37916ffd1644cc51320167b5235ffbbc13b4b_medium.jpg"
+    },
+    "76561198067968388": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/5b20c9834dbf5ca5b2725ef81347f722497577dd_medium.jpg"
+    },
+    "76561198070545853": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/a2c26b8c2e7b613cfd4578ac120dad8ada8ab4e6_medium.jpg"
+    },
+    "76561198072467801": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/dac08a9e1f82ebbf1e3aa343c8409e1f29621fed_medium.jpg"
+    },
+    "76561198074392592": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/da5b3edfaed1975f0fe647f51ccc0575d4da1e24_medium.jpg"
+    },
+    "76561198076576055": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/95d8f1c00bbdc43e289e494f3dad027a6f930ac4_medium.jpg"
+    },
+    "76561198076583881": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/c8e296263042d6fcc9b82efd9819fec8a85e545d_medium.jpg"
+    },
+    "76561198078150897": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/3874978b9391219e66fd487532c843ec89a8ceab_medium.jpg"
+    },
+    "76561198079508454": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/0cd02de01a7f4b6c99ef3f39fda0b070f746b005_medium.jpg"
+    },
+    "76561198080023560": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/3f72fc0903ec4882fc9e5be4e2ec782cab4b4f7f_medium.jpg"
+    },
+    "76561198082125321": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/17936f236890d07fc994393b2081858eef6f4e0a_medium.jpg"
+    },
+    "76561198083043687": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/5654716a5c053d664fef935c17ad2edcf64c5676_medium.jpg"
+    },
+    "76561198086650941": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/a58be5faf2615d86984c1c3b73ba6e56e175483c_medium.jpg"
+    },
+    "76561198089205644": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/25bff3dbcc08dc1efdcfdef528352bfc9b9c2b8a_medium.jpg"
+    },
+    "76561198089278659": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/f2725e1ebbc0701b637dcd4269b0d45549307d69_medium.jpg"
+    },
+    "76561198089948995": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/868e06163de477f27cf3c9723085838bcbf1d98f_medium.jpg"
+    },
+    "76561198091708083": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/ab36e634e84525e54ee16d78f0c7e77134f2bcce_medium.jpg"
+    },
+    "76561198092092480": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fb293bbac4dfbbd98a85fa04dbbd98ad8395d394_medium.jpg"
+    },
+    "76561198092618442": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/8dfe278c7493b6984540e57ecd57b791df13841e_medium.jpg"
+    },
+    "76561198093892211": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/35088b5897ae9fc7d9eacab6304e4f7d164ee2c2_medium.jpg"
+    },
+    "76561198097076285": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/dc06e2e720688de2d47b26c6bd316ea2fb0aea95_medium.jpg"
+    },
+    "76561198098458214": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/f3d05db4d8557efbcdbfb337f4176abe9fcb5c1b_medium.jpg"
+    },
+    "76561198099054871": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/e091c86461412e75e93456978ceef8b38a3b9a27_medium.jpg"
+    },
+    "76561198105073246": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/49b8fc0f64109308009c25636336670ba7d6066e_medium.jpg"
+    },
+    "76561198108513961": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/59317edf57eb21a4c13d0f8345e3318f07c46e8e_medium.jpg"
+    },
+    "76561198108568598": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg"
+    },
+    "76561198108658944": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/355af3da952a00933a0122fc822d2b91cb430a40_medium.jpg"
+    },
+    "76561198111168811": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/da85b742c34feaecc851fc3bc03ea37faf5678f9_medium.jpg"
+    },
+    "76561198115923932": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/2a0703862fcfefd3929d3235dec0f79fad6b1add_medium.jpg"
+    },
+    "76561198117168962": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/59e2d689bbbf6c648af5d04b07776a227999c112_medium.jpg"
+    },
+    "76561198117204290": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/91c1b1f3731e19edb367dca5c6601da5a1f71bc6_medium.jpg"
+    },
+    "76561198119663404": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/8b595fb9cfa3bdce3727c3bc4b067551a97c2a99_medium.jpg"
+    },
+    "76561198121484554": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/7903d3b15b855476182df5c5494371b033af3efb_medium.jpg"
+    },
+    "76561198121504561": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/71d4b0ff97097811dae0aabbf0fe0af89621c98f_medium.jpg"
+    },
+    "76561198122862152": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/262f75bad213d8721480d992d539a9593895f956_medium.jpg"
+    },
+    "76561198123446420": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/52b7070044ca15b6f6d47f653fa1c3933a544280_medium.jpg"
+    },
+    "76561198124850127": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/19b0eb02d1c9c1ddefb465f58857d35d6f5b82e0_medium.jpg"
+    },
+    "76561198125923649": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/6a16306d3619626f3e3945d7feda46c828b7426a_medium.jpg"
+    },
+    "76561198129851471": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/64455b3f80e6419b182bf68c483de214f5f56d75_medium.jpg"
+    },
+    "76561198131209135": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/1b50947a4322f278d4bd21d7087a2ca03d50c057_medium.jpg"
+    },
+    "76561198132222485": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/8ebf1e5ea9a6dcb931472cfd6955d72c8380c010_medium.jpg"
+    },
+    "76561198133760614": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/805a8d2d62f1393a1e451e531e6fe2b79f96b667_medium.jpg"
+    },
+    "76561198135142137": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/91e10f8c93e31110e1ec8853a461325015ab366e_medium.jpg"
+    },
+    "76561198135260753": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/8df051aa1e3ee396944b59039a2764f6c41bffbf_medium.jpg"
+    },
+    "76561198135522044": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/f8a2b9978a53f76141edd9a506d50d9b2d2779c0_medium.jpg"
+    },
+    "76561198140782132": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/01c77ef1ac932ae7e54c06c750e4181d1e5d0004_medium.jpg"
+    },
+    "76561198142536814": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/7c457fa02115e4997b919ac3e4c02838d3d96a20_medium.jpg"
+    },
+    "76561198144606355": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/6127fc363ac06bbf0e4dcbbc29af199287e2bba1_medium.jpg"
+    },
+    "76561198144804075": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/2b54fc853281c8285bda4ca712650e11cd097ce2_medium.jpg"
+    },
+    "76561198148238879": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/79d3fe5839617eb83a9661071ed021dd56ac8a5b_medium.jpg"
+    },
+    "76561198149193970": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/5b73f2a2d1d2da4a9fa5cb6cb066ef3de6f415e7_medium.jpg"
+    },
+    "76561198149823284": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b6d8f399f41176c25ca00d1a033a78cee65d52d9_medium.jpg"
+    },
+    "76561198150674760": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/865c8d4d1249d1574e3eced5874344874335829f_medium.jpg"
+    },
+    "76561198154353245": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/6629110d91341b17b5c5748f9f66548492e6dd0b_medium.jpg"
+    },
+    "76561198155662761": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/1e4d89e03c2504ed655ce87c604e2bc6b6946595_medium.jpg"
+    },
+    "76561198155881999": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/50d417c0cab0a969919bd1ed9b1c2ff63c5b5d62_medium.jpg"
+    },
+    "76561198159203637": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/945fac9305712998824aecb26fcb133a8fd38377_medium.jpg"
+    },
+    "76561198162353268": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/5ed2f961287f6b8e5e1c1df68fd185a635301292_medium.jpg"
+    },
+    "76561198163017219": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/71eecd622899ccafbcc644e2b12578551c9799de_medium.jpg"
+    },
+    "76561198166203065": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/0e0c86e7c7af4e73960fa9a8f37f2ec43b34023b_medium.jpg"
+    },
+    "76561198183965757": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/7c54d0697de04a93bbb73ca24dcdc02e395290cb_medium.jpg"
+    },
+    "76561198188738303": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/2d76e6ba0e4514b7064fd214958bc9f764a197b4_medium.jpg"
+    },
+    "76561198193551428": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b222d9693ef8b8548a244dc9dc37b3ce5bec9a22_medium.jpg"
+    },
+    "76561198205052385": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/9e22be7b11d181ad1564070aace46501f62cb84f_medium.jpg"
+    },
+    "76561198207565088": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/723fb31c359e50164857bd4f09962ba6b3b072aa_medium.jpg"
+    },
+    "76561198209825195": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/c28b3372a678c8870671365799a6601fc4d13fa1_medium.jpg"
+    },
+    "76561198216174113": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/70f629b244488714797d30420b20052b05fa7e53_medium.jpg"
+    },
+    "76561198217753836": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/37a11b846c879313432c6e088cf46d2adcdbebd8_medium.jpg"
+    },
+    "76561198257105445": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/a8091fa7e1c73cf1289ef49f74e105e0c0f5562f_medium.jpg"
+    },
+    "76561198258429491": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/3863c9eb0c5902a3d80c4cf920696504d259638d_medium.jpg"
+    },
+    "76561198259733766": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/308d511450a31009beb61bf43988dc50be8ca959_medium.jpg"
+    },
+    "76561198260873423": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/3adbaaeed5ed622f3b5e5b6d0687e3850fb195eb_medium.jpg"
+    },
+    "76561198264285149": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/acf67207768cdc5be5f09aca6a9f7830bf27d6f7_medium.jpg"
+    },
+    "76561198269605156": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/6196657fdd0de48f00331d29b727ab4b27e4ee06_medium.jpg"
+    },
+    "76561198272707523": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/bb0117957bf07aa68ca03f6b1e0c908a754ca870_medium.jpg"
+    },
+    "76561198274006807": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/ea3c5bf58dfdf528aefaeedd150fcfc2b21300bd_medium.jpg"
+    },
+    "76561198284234077": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b181c0f624a20f3eaa6a93170b9f796daaf6a3dd_medium.jpg"
+    },
+    "76561198287157768": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/9db4379c2531f5accd95570c7ac358f7169393dc_medium.jpg"
+    },
+    "76561198326055603": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/d9bf461262ae560ebfcc89afc5382cf9e102ce41_medium.jpg"
+    },
+    "76561198340401196": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/2b043dbf5e6e43ff1bd79e839cede3a132cf6ca4_medium.jpg"
+    },
+    "76561198353482620": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/e2c33ef8393135000463507e735f2b0173cfd2e4_medium.jpg"
+    },
+    "76561198355821508": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fb298111494207f93f8277506a063e2ef9fec134_medium.jpg"
+    },
+    "76561198372477752": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/0ea192d857fac53d8b8348ab2a7224996c9b56d4_medium.jpg"
+    },
+    "76561198372757032": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/42396b9dec3353018e53ec84fd16b02a10d7a166_medium.jpg"
+    },
+    "76561198388487203": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/cf0f950800e6a51f35c99d9a0eb03e0085a4201a_medium.jpg"
+    },
+    "76561198412321280": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/999f4edde822542587a0b4ab881516c415dc6084_medium.jpg"
+    },
+    "76561198417833011": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/d23866b0351f291063000d4c29563492b16d1a7f_medium.jpg"
+    },
+    "76561198431410480": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b93f04b9194fba8980a2dc74947d47d0087ba113_medium.jpg"
+    },
+    "76561198602236177": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/8d645273276c3a2cc6dff43f32849b5ccb4c7eed_medium.jpg"
+    },
+    "76561198698969876": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/034df176e1446e09e0deb759198248fbca2bad69_medium.jpg"
+    },
+    "76561198708550887": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/94135a112e1a5a839975840993895b7bacc4958c_medium.jpg"
+    },
+    "76561198721980631": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/42edf22af1bb7f9a7445be95bd1e4bd1bf63b44c_medium.jpg"
+    },
+    "76561198722284920": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/d6e9882381d174dabe60be3b78bbf02006bc50dd_medium.jpg"
+    },
+    "76561198723667226": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/589324d5ba6c3308f8dc867f04c5f93a3b7a4abc_medium.jpg"
+    },
+    "76561198815935562": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/7e64e4a94789309cc57c75fc7ff1d518eea0bd48_medium.jpg"
+    },
+    "76561198818470958": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/dbbfe497f1d1a98515d5c1cb84f512dd24a24e6c_medium.jpg"
+    },
+    "76561198831175531": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/bd93af7d64285e47823b85638e7d13de39b1f81f_medium.jpg"
+    },
+    "76561198854785478": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/e4b42f0671f0bdbb8b81dc151a05a9a7a5106933_medium.jpg"
+    },
+    "76561198868863447": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/40bf29a0a7d3e4a36e64456677985317e46ff3de_medium.jpg"
+    },
+    "76561198873253024": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/0cd9d74555db5c9f8555d8974589d3d14c3eecf5_medium.jpg"
+    },
+    "76561198874288631": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b2edbc430cffa963966ebafc9e7844414a9c51c1_medium.jpg"
+    },
+    "76561198874381986": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/23a3d28913cacdf7d6eac0766d635bf7a275c966_medium.jpg"
+    },
+    "76561198874552921": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/8426573fd000c5543f30e1a50232a5cbcd3e2cff_medium.jpg"
+    },
+    "76561198893359627": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fe962656be8c3923fcf37ff3e56386c508ab9417_medium.jpg"
+    },
+    "76561198937445340": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/43c795272206e72fe78474a5b2583f6ecde715f4_medium.jpg"
+    },
+    "76561199017071156": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/ce36cb3bc6b68a0c6f633318defe5f6bb13fe561_medium.jpg"
+    },
+    "76561199046113981": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/3d333bac75c9eb2047c897aee8d786e4d456a3c1_medium.jpg"
+    },
+    "76561199055548856": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/f365ebe494289def4b90b3cc6e6ca0f1aac88a48_medium.jpg"
+    },
+    "76561199105792679": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/b7fbf78e6d2abb73de19ff818cf221d1264cca7f_medium.jpg"
+    },
+    "76561199112478566": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/3d333bac75c9eb2047c897aee8d786e4d456a3c1_medium.jpg"
+    },
+    "76561199219878733": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/ccb827571b2faf4832c68b93b311a904281892b8_medium.jpg"
+    },
+    "76561199366015251": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/374fa6ac6e4f624e63d9981f2e1d75cfd759e6c0_medium.jpg"
+    },
+    "76561199482388323": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/5fbb6ef1f638855810a9af6cde9bbce974880a36_medium.jpg"
+    },
+    "76561199498421192": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/557ee799d1e4ba61a8b77129fd138d9cad12b978_medium.jpg"
+    },
+    "76561199528441090": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/8a7df9e32f8a0c9e383209c12f571f520071c411_medium.jpg"
+    },
+    "76561199538846112": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg"
+    },
+    "76561199641123845": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg"
+    },
+    "76561199667577805": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/15e4e449867eb0d66c169af87938f4e04b2de5be_medium.jpg"
+    },
+    "76561199696199477": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg"
+    },
+    "76561199791811246": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/6dff56464e6371f29e2cee2c4ad5188e6a524a4d_medium.jpg"
+    },
+    "76561199794093952": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/7facb709ff0119c0e72f938cd22ac3c367af7029_medium.jpg"
+    },
+    "76561199814547622": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/04a516819b8d79175dbdd68f1725b9414aa463b7_medium.jpg"
+    },
+    "76561199886227102": {
+      "ts": 1795533254,
+      "url": "https://avatars.steamstatic.com/f4d7059625b129086db32aa5edfc0fb2a50069d5_medium.jpg"
+    }
+  },
   "elo_cache": {
     "1005730": 1560,
     "1010793": 1042,
@@ -17,6 +887,7 @@
     "110593": 1000,
     "11112": 1082,
     "1114404": 1506,
+    "1115599": 1053,
     "11180": 1400,
     "111954": 1050,
     "1119784": 1150,
@@ -48,6 +919,7 @@
     "1297821": 1775,
     "1297853": 1427,
     "1304336": 1060,
+    "1315226": 959,
     "1318162": 1808,
     "1330031": 1255,
     "1332786": 1080,
@@ -95,6 +967,7 @@
     "24660": 1005,
     "24963": 1000,
     "2583": 1459,
+    "26172": 1019,
     "26237": 1047,
     "263517": 1121,
     "26736": 1000,
@@ -158,6 +1031,7 @@
     "661598": 1000,
     "664781": 1094,
     "667564": 1296,
+    "673604": 1130,
     "674379": 1166,
     "677441": 1000,
     "6880": 1401,
@@ -201,6 +1075,7 @@
     "890394": 1423,
     "892947": 1306,
     "893019": 1054,
+    "893043": 1078,
     "893197": 1000,
     "900358": 1475,
     "902305": 1000,
@@ -210,6 +1085,7 @@
     "91827": 1075,
     "940355": 996,
     "941524": 1452,
+    "942935": 1130,
     "944488": 1240,
     "946312": 1369,
     "946322": 1308,
@@ -227,13 +1103,13 @@
     "99722": 1000,
     "999940": 1155
   },
-  "elo_cache_ts": 1795532953,
+  "elo_cache_ts": 1795533254,
   "last_alert_coh3_pids": [],
   "last_alert_ts": 1795529821,
-  "last_digest": "(([(79327, True, False, False, False, 'Chacineiro', '', '', 'br', False)], [(639157, '', False, False, False, 'Itaperuna', '', '', 'br', False), (26910, '', False, False, False, 'nigo_BR ᵀᴹ', '', '', 'br', False), (153969, '', False, False, False, 'Cunha', '', '', 'br', False), (559962, '', False, False, False, 'Gabe', '', '', 'br', False), (975688, '', False, False, False, 'Kefbr', '', '', 'br', False), (84821, '', False, False, False, 'TJBR', '', '', 'br', False), (58737, 'TBH: Task Bar Hero', True, False, False, 'INFIEL', '', '', 'br', False), (1226910, '', True, False, False, 'Lupus Alba', '', '', 'br', False)], [(1022333, 'gaules', '', '', 'br', False)]), ([(84816, True, False, False, False, 'ChadVader', '', '', 'br', False)], [(16867, '', False, False, False, 'Golden Cobra', '', '', 'br', False), (649535, '', False, False, False, 'pensss', '', '', 'br', False), (2583, '', False, False, False, 'Manupktd', '', '', 'br', False), (970468, '', False, False, False, 'Московский метро', '', '', 'br', False), (8764, '', False, False, False, 'Maverick', '', '', 'br', False), (122829, '', False, False, False, 'Guardiola de Peruca', '', '', 'br', False), (893019, '', False, False, False, 'Chuck Norris', '', '', 'br', False), (135141, '', False, False, False, '[PWA]-ForceMaster', '', '', 'br', False), (3917, '', False, False, False, '[IRON] ManchaNegra', '', '', 'br', False), (940355, '', False, False, False, 'SacanaLord', '', '', 'br', False), (9799, 'God of War', False, False, False, '✠ Führercoach ®', '', '', 'br', False), (59671, 'Marvel Rivals', False, False, False, 'Gurenn', '', '', 'br', False), (1046646, 'ROB RUN', False, False, False, 'Viktor Maia', '', '', 'br', False), (991551, 'Transport Fever 3', True, False, False, 'Caveira-.', '', '', 'br', False), (1123905, 'Cyberpunk 2077', True, False, False, 'Wintermute', '', '', 'br', False), (890394, '', True, False, False, 'TheKat', '', '', 'br', False), (409715, '', True, False, False, 'Rapo', '', '', 'br', False), (674379, '', True, False, False, 'Galva', '', '', 'br', False), (167270, '', True, False, False, 'CPU - Wrong one to garden with', '', '', 'br', False), (1043198, '', True, False, False, 'Immortalxw', '', '', 'br', False), (19747, '', True, True, False, 'twitch.tv/luck22ai', '', '', 'br', False), (3414, '', True, True, False, '[SE:VH] Queiroz', '', '', 'br', False), (173761, '', True, True, False, 'EUSOU', '', '', 'br', False), (96129, '', True, True, False, 'Gerhard', '', '', 'br', False)], [(509690, 'Alekel', '', '', 'br', False)]), ([], [], [(3984, '北方军港 (克鲁杰7分钟800人力就1v2)', '北方军港', '', 'br', True), (1297870, 'AVESTRUZ TE SEDUZ', '', '', 'br', False), (17906, 'Leo', '', '', 'br', False), (1369003, 'KyronCrane', '', '', 'br', False), (999940, 'Warmech11', '', '', 'py', False), (508115, 'Geladeira eletrolux', '', '', 'br', False), (1411117, 'Riddler', '', '', 'br', False), (1436158, 'luannmarcel', '', '', 'br', False), (1456842, '[BGD] Panella', '', '', 'br', False), (1026189, 'TimesN', '', '', 'br', False), (1285745, 'maathmunix', '', '', 'br', False), (1381510, 'CadRenan', '', '', 'br', False)]))",
-  "last_steam_fast_sig": "(\"([('76561197963172584', False, False, False, 'Chacineiro')], [('76561197963741792', '', False, False, False, 'nigo_BR ᵀᴹ'), ('76561197979883434', '', False, False, False, 'Itaperuna'), ('76561197993922195', 'TBH: Task Bar Hero', True, False, False, 'INFIEL'), ('76561197994245218', '', False, False, False, 'Kefbr'), ('76561198005412401', '', False, False, False, 'Cunha'), ('76561198062871244', '', False, False, False, 'É o Gabe'), ('76561198076576055', '', False, False, False, 'TJBR'), ('76561198140782132', '', True, False, False, 'Lupus Alba')])\", \"([], [('76561197967668319', '', False, False, False, '[IRON] ManchaNegra'), ('76561197974916464', '', False, False, False, 'pensss'), ('76561198016825303', '', True, True, False, 'Gerhard'), ('76561198017121369', '', True, False, False, 'Immortalxw'), ('76561198018536980', '', False, False, False, 'SacanaLord'), ('76561198020133377', 'Cyberpunk 2077', True, False, False, 'Wintermute'), ('76561198039466768', '', False, False, False, '[PWA]-ForceMaster'), ('76561198049023794', '', True, False, False, 'TheKat'), ('76561198058548575', '', True, True, False, 'twitch.tv/luck22ai'), ('76561198061075119', '', False, False, False, 'Guardiola de Peruca'), ('76561198067968388', 'Transport Fever 3', True, False, False, 'Caveira-.'), ('76561198083043687', '', True, False, False, 'Rapo'), ('76561198097076285', 'God of War', False, False, False, '✠ Führercoach ®'), ('76561198111168811', '', True, True, False, '[SE:VH] Queiroz'), ('76561198142536814', '', False, False, False, 'Manupktd'), ('76561198149193970', '', True, False, False, 'CPU - Wrong one to garden with'), ('76561198155662761', '', False, False, False, 'Maverick'), ('76561198159203637', '', False, False, False, 'ChadVader'), ('76561198193551428', '', False, False, False, 'Chuck Norris'), ('76561198257105445', 'Marvel Rivals', False, False, False, 'Gurenn'), ('76561198353482620', '', True, False, False, 'Galva'), ('76561198868863447', 'ROB RUN', False, False, False, 'Viktor Maia'), ('76561198873253024', '', True, True, False, 'EUSOU'), ('76561198874381986', '', False, False, False, 'COHBRAMACHINE'), ('76561198937445340', '', False, False, False, 'Московский метро')])\")",
+  "last_digest": "(([(79327, True, False, False, False, 'Chacineiro', '', '', 'br', False)], [(639157, '', False, False, False, 'Itaperuna', '', '', 'br', False), (26910, '', False, False, False, 'nigo_BR ᵀᴹ', '', '', 'br', False), (153969, '', False, False, False, 'Cunha', '', '', 'br', False), (559962, '', False, False, False, 'Gabe', '', '', 'br', False), (975688, '', False, False, False, 'Kefbr', '', '', 'br', False), (84821, '', False, False, False, 'TJBR', '', '', 'br', False), (58737, 'TBH: Task Bar Hero', True, False, False, 'INFIEL', '', '', 'br', False), (1226910, '', True, False, False, 'Lupus Alba', '', '', 'br', False)], [(55693, 'Alface aka BinhoBiceps', '', '', 'br', False)]), ([(84816, True, False, False, False, 'ChadVader', '', '', 'br', False)], [(16867, '', False, False, False, 'Golden Cobra', '', '', 'br', False), (2583, '', False, False, False, 'Manupktd', '', '', 'br', False), (409715, '', False, False, False, 'Rapo', '', '', 'br', False), (991551, '', False, False, False, 'Caveira-.', '', '', 'br', False), (970468, '', False, False, False, 'Московский метро', '', '', 'br', False), (122829, '', False, False, False, 'Guardiola de Peruca', '', '', 'br', False), (893019, '', False, False, False, 'Chuck Norris', '', '', 'br', False), (135141, '', False, False, False, '[PWA]-ForceMaster', '', '', 'br', False), (3917, '', False, False, False, '[IRON] ManchaNegra', '', '', 'br', False), (940355, '', False, False, False, 'SacanaLord', '', '', 'br', False), (9799, 'God of War', False, False, False, '✠ Führercoach ®', '', '', 'br', False), (59671, 'Marvel Rivals', False, False, False, 'Gurenn', '', '', 'br', False), (1046646, 'ROB RUN', False, False, False, 'Viktor Maia', '', '', 'br', False), (1123905, 'Cyberpunk 2077', True, False, False, 'Wintermute', '', '', 'br', False), (649535, '', True, False, False, 'pensss', '', '', 'br', False), (890394, '', True, False, False, 'TheKat', '', '', 'br', False), (674379, '', True, False, False, 'Galva', '', '', 'br', False), (8764, '', True, False, False, 'Maverick', '', '', 'br', False), (167270, '', True, False, False, 'CPU - Wrong one to garden with', '', '', 'br', False), (893043, '', True, False, False, 'Rodrigo Ragagnin', '', '', 'br', False), (1043198, '', True, False, False, 'Immortalxw', '', '', 'br', False), (19747, '', True, True, False, 'twitch.tv/luck22ai', '', '', 'br', False), (3414, '', True, True, False, '[SE:VH] Queiroz', '', '', 'br', False), (173761, '', True, True, False, 'EUSOU', '', '', 'br', False), (96129, '', True, True, False, 'Gerhard', '', '', 'br', False)], [(509690, 'Alekel', '', '', 'br', False)]), ([(3984, False, False, False, False, '北方军港 (克鲁杰7分钟800人力就1v2)', '北方军港', '', 'br', True), (17906, False, False, False, False, 'Leo', '', '', 'br', False), (464954, False, False, False, False, 'ecL', '', '', 'br', False), (999940, True, False, False, False, 'Warmech11', '', '', 'py', False), (1436158, True, False, False, False, 'luannmarcel', '', '', 'br', False), (900421, True, False, False, False, 'tzimypepp', '', '', 'br', False), (28773, True, False, False, False, 'vhpbrasil', '', '', 'br', False)], [(1274951, '', False, False, False, 'Anglel', '', '', 'br', False), (1218872, '', False, False, False, 'gdgarte', '', '', 'br', False), (131786, '', False, False, False, 'LadyVolk', '', '', 'br', False), (952169, '', False, False, False, 'Brazilian deltarune enjoyer', '', '', 'br', False), (1209303, '', False, False, False, 'Fífinerr', '', '', 'br', False), (990226, '', False, False, False, 'Kenobi', '', '', 'br', False), (428227, '', False, False, False, 'COSMONAUTA', '', '', 'br', False), (1438656, '', False, False, False, 'guridocafe', '', '', 'br', False), (1213751, '', False, False, False, '4 Queijos (Zera)', '4 Queijos', '', 'br', False), (908063, '', False, False, False, 'DRAKORS', '', '', 'br', False), (976559, '', False, False, False, '[OMJ] Guiflick', '', '', 'br', False), (56354, '', False, False, False, 'Neves Brasil', '', '', 'br', False), (1436129, '', False, False, False, 'Caiofora', '', '', 'br', False), (1434263, '', False, False, False, 'xLoaded', '', '', 'br', False), (1138427, '', False, False, False, 'Stuffy', '', '', 'br', True), (1086495, 'Hearts of Iron IV', False, False, False, 'kamirk', '', '', 'br', False), (1305193, 'Dota 2', False, False, False, 'B.R.', '', '', 'br', False), (1456842, 'War Thunder', False, False, False, '[BGD] Panella', '', '', 'br', False), (1306623, 'Dota 2', False, False, False, 'Flash.Point -Mariatti- Panda', '', '', 'br', False), (965932, 'Total War: WARHAMMER III', True, False, False, 'Benja', '', '', 'br', False), (839, '', False, False, False, 'ligerinho(BR)', '', '', 'br', False), (1304125, '', False, False, False, 'LordBaconBR', '', '', 'br', False), (1180172, '', False, False, False, 'Micaelzudo', '', '', 'br', False), (268967, '', False, False, False, 'ronaldo.luis', '', '', 'br', False), (574243, '', False, False, False, 'Von Steinman', '', '', 'br', False), (737838, '', False, False, False, 'forsakkenSoul', '', '', 'br', False), (128365, '', False, False, False, 'Gui Eitz', '', '', 'br', False), (1096289, '', False, False, False, '[OMJ] Lore', '', '', 'br', False), (1242418, '', False, False, False, 'faveri.filho', '', '', 'br', False), (462832, '', False, False, False, 'Gatu (Primus Pilus)', 'Gatu', '', 'br', False), (1148751, '', False, False, False, 'matarasso', '', '', 'br', False), (413433, '', False, False, False, 'Horkar', '', '', 'br', False), (1373102, '', False, False, False, 'frodoeric', '', '', 'br', True), (840336, '', False, False, False, 'Crude', '', '', 'br', False), (303807, '', False, False, False, 'Pitrosplayer', '', '', 'br', False), (1476270, '', False, False, False, 'Titan1227', '', '', 'br', False), (1201885, '', False, False, False, 'Parafuso', '', '', 'br', False), (844292, '', False, False, False, 'Ziuder', '', '', 'br', False), (919478, '', False, False, False, 'lilinho', '', '', 'br', False), (109240, '', False, False, False, 'coelhofc81', '', '', 'br', False), (1484611, '', False, False, False, 'Yezzy', '', '', 'br', False), (1115257, '', False, False, False, 'Warhawk', '', '', 'br', False), (1427900, '', False, False, False, 'TheRealSparrowhawk', '', '', 'br', False), (1476126, '', False, False, False, 'Sm0BR', '', '', 'br', False), (1312267, '', False, False, False, '彡 Dolgs ♥ 彡', '', '', 'br', False), (34770, '', False, False, False, 'TheAllmeida', '', '', 'br', False), (1297778, '', False, False, False, 'O CEO Dinossauro', '', '', 'br', False), (1282670, '', False, False, False, '彡 vRunz✟彡', '', '', 'br', False), (1487818, '', False, False, False, 'jm!', '', '', 'br', False), (1433493, '', False, False, False, 'BRUTALMENTE ESBROGADO', '', '', 'br', False), (1485357, '', False, False, False, 'Blur', '', '', 'br', False), (1352185, '', False, False, False, 'Treeo72', '', '', 'br', False), (1253894, '', False, False, False, 'XarupS™', '', '', 'br', False), (1440353, '', False, False, False, 'Noite', '', '', 'br', False), (1380462, '', False, False, False, 'Serenity', '', '', 'br', False), (1467523, '', False, False, False, '『V』InfanteVini', '', '', 'br', False), (1428172, '', False, False, False, 'TNK | VIKING', '', '', 'br', False), (964076, '', False, False, False, 'ricardo_jrds', '', '', 'br', False), (1478243, '', False, False, False, 'dontrySHOT (HEADSHOT : MAGISK)', 'dontrySHOT', '', 'br', True), (1453550, '', False, False, False, 'Bad Skull', '', '', 'br', False), (1302538, '', False, False, False, 'Eddieeeeeeeeee', '', '', 'br', False), (1467296, '', False, False, False, 'GuiReis', '', '', 'br', False), (1257730, '', False, False, False, 'Ennkas', '', '', 'br', False), (742772, '', False, False, False, 'sebba_mnz', '', '', 'br', False), (1429654, '', False, False, False, 'General Vazan', '', '', 'br', False), (1463821, '', False, False, False, 'Matesy', '', '', 'br', False), (1454418, '', False, False, False, 'Caju', '', '', 'br', False), (1228317, '', False, False, False, 'Carlos.P', '', '', 'br', False), (1453619, '', False, False, False, 'jmfrost86', '', '', 'br', False), (1461583, '', False, False, False, 'DOM', '', '', 'br', False), (1440897, '', False, False, False, 'Tretinha', '', '', 'br', False), (1063948, '', False, False, False, 'Aelzerax', '', '', 'br', False), (1451470, '', False, False, False, 'RedTersao80220', '', '', 'br', False), (1441696, '', False, False, False, 'HenrikMaconha', '', '', 'br', False), (1439074, '', False, False, False, 'Griffox', '', '', 'br', False), (854918, '', False, False, False, '✞Sr-Biel✞', '', '', 'br', False), (1432395, '', False, False, False, 'Nekron', '', '', 'br', False), (1477842, '', False, False, False, 'KaH', '', '', 'br', False), (1475296, '', False, False, False, 'Уилла (wIIIa)', 'Уилла', '', 'br', False), (1029401, '', False, False, False, 'Tristeza marota', '', '', 'br', False), (1466369, '', False, False, False, 'brodi', '', '', 'br', False), (28119, '', False, False, False, 'Frizu Brastempo', '', '', 'br', False), (373952, 'Warhammer 40,000: Space Marine 2', False, False, False, 'TONELERO10', '', '', 'br', False), (1026189, 'Age of Empires IV: Anniversary Editi', False, False, False, 'TimesN', '', '', 'br', True), (1439348, 'Red Dead Redemption 2', False, False, False, 'ArtZão', '', '', 'br', False), (1485829, 'MIR4', False, False, False, 'NII', '', '', 'br', False), (568788, 'Mecharashi', False, False, False, 'Access', '', '', 'br', False), (1477361, 'just volleyball', False, False, False, 'Chromekey21', '', '', 'br', False), (795009, 'ROB RUN', False, False, False, 'Kotuka Theu Ku', '', '', 'br', False), (1400771, 'AION 2', False, False, False, 'Ivolin幽玄', '', '', 'br', False), (1453601, 'DSX', False, False, False, 'Kuroki Tomoko', '', '', 'br', False), (1448432, 'FINAL FANTASY XIV Online', False, False, False, 'Hayase Narukami', '', '', 'br', False), (1449348, 'EA SPORTS FC™ 26', False, False, False, 'BESON (ES BRIEB CSGOSKINS.GG)', 'BESON', '', 'br', False), (1066445, 'Crusader Kings III', True, False, False, 'Tenshi', '', '', 'br', False), (1035227, 'Crusader Kings III', True, False, False, 'raskolhnikov', '', '', 'br', False), (908059, 'ROB RUN', True, False, False, 'fernandoqc', '', '', 'br', False), (351821, '', True, False, False, 'aldivx', '', '', 'br', False), (1346169, '', True, False, False, 'TheMonkBR', '', '', 'br', False), (309253, '', True, False, False, '[OMJ] Odinpower', '', '', 'br', False), (1422841, '', True, False, False, 'josenetoferrer2020', '', '', 'br', False), (1464899, '', True, False, False, 'JäggerBR', '', '', 'br', False), (1429760, '', True, False, False, 'marcellusx11', '', '', 'br', False), (4005, '', True, True, False, 'JuniorLimaa', '', '', 'br', False), (421250, '', True, True, False, 'HellSeeksProtein', '', '', 'br', True), (110317, '', True, True, False, 'Bearzerk', '', '', 'br', False), (137848, '', True, True, False, 'Elvenking', '', '', 'br', False), (1475932, '', True, True, False, 'Ophill', '', '', 'br', False), (1326703, '', True, True, False, 'Darthnihilus', '', '', 'br', False), (1193765, '', True, True, False, 'Skarz', '', '', 'br', False), (1214004, '', True, False, False, 'Major Caveira', '', '', 'br', False), (128789, '', True, False, False, 'Rochdale', '', '', 'br', False), (2290, '', True, False, False, 'luissaster', '', '', 'br', False), (1203490, '', True, False, False, 'KANDEAS', '', '', 'br', False), (1219258, '', True, False, False, 'Gustavo', '', '', 'br', False), (1285745, '', True, False, False, 'maathmunix', '', '', 'br', False), (1092009, '', True, False, False, 'Cabal4LXK', '', '', 'br', False), (1060169, '', True, False, False, 'Eros', '', '', 'br', False), (1487795, '', True, False, False, 'L-Ricken', '', '', 'br', False), (1430759, '', True, False, False, 'Saulo', '', '', 'br', False), (958542, '', True, False, False, 'Aderbal', '', '', 'br', False), (1370049, '', True, False, False, 'guilhermecardenuto7', '', '', 'br', False), (900961, '', True, False, False, 'MEStre', '', '', 'br', False), (30838, '', True, False, False, 'donnie', '', '', 'br', False), (1079663, '', True, False, False, 'Melifero', '', '', 'br', False), (1466838, '', True, False, False, 'Byc', '', '', 'br', False), (1194198, '', True, False, False, 'rlud', '', '', 'br', False), (1035397, '', True, False, False, 'JADERJOGOS CSG SKINS', '', '', 'br', False), (1433218, '', True, False, False, 'zeruela4789', '', '', 'br', False), (1451709, '', True, False, False, 'QueiroZ', '', '', 'br', False), (853726, '', True, False, False, 'Herrmo', '', '', 'br', False), (86550, '', True, False, False, 'Qi 124 (Rato)', 'Qi 124', '', 'br', False), (1433346, '', True, False, False, 'ten_martins', '', '', 'br', False), (1450419, '', True, False, False, 'Urach-', '', '', 'br', False), (1452155, '', True, False, False, 'AbmoraM', '', '', 'br', False), (838710, '', True, False, False, 'FoxLindberg', '', '', 'br', False), (1243348, '', True, True, False, 'Desert Fox', '', '', 'br', False), (32956, '', True, True, False, 'AnonymousBR', '', '', 'br', False), (692092, '', True, True, False, 'HunT.Iller', '', '', 'br', False), (1020192, '', True, True, False, 'j0r3L', '', '', 'br', False), (1080320, '', True, True, False, '♱Lordpool.Bitcoin☦', '', '', 'br', False), (1445924, '', True, True, False, 'Wiz (Et Bilusca)', 'Wiz', '', 'br', False), (1440033, '', True, True, False, 'Conde Monocromático', '', '', 'br', False)], [(1297870, 'AVESTRUZ TE SEDUZ', '', '', 'br', False), (1369003, 'KyronCrane', '', '', 'br', False), (508115, 'Geladeira eletrolux', '', '', 'br', False), (1411117, 'Riddler', '', '', 'br', False), (1381510, 'CadRenan', '', '', 'br', False)]))",
+  "last_steam_fast_sig": "(\"([('76561197963172584', False, False, False, 'Chacineiro')], [('76561197963741792', '', False, False, False, 'nigo_BR ᵀᴹ'), ('76561197979883434', '', False, False, False, 'Itaperuna'), ('76561197993922195', 'TBH: Task Bar Hero', True, False, False, 'INFIEL'), ('76561197994245218', '', False, False, False, 'Kefbr'), ('76561198005412401', '', False, False, False, 'Cunha'), ('76561198062871244', '', False, False, False, 'É o Gabe'), ('76561198076576055', '', False, False, False, 'TJBR'), ('76561198140782132', '', True, False, False, 'Lupus Alba')])\", \"([], [('76561197967668319', '', False, False, False, '[IRON] ManchaNegra'), ('76561197974495191', '', True, False, False, 'Rodrigo Ragagnin'), ('76561197974916464', '', True, False, False, 'pensss'), ('76561198016825303', '', True, True, False, 'Gerhard'), ('76561198017121369', '', True, False, False, 'Immortalxw'), ('76561198018536980', '', False, False, False, 'SacanaLord'), ('76561198020133377', 'Cyberpunk 2077', True, False, False, 'Wintermute'), ('76561198039466768', '', False, False, False, '[PWA]-ForceMaster'), ('76561198049023794', '', True, False, False, 'TheKat'), ('76561198058548575', '', True, True, False, 'twitch.tv/luck22ai'), ('76561198061075119', '', False, False, False, 'Guardiola de Peruca'), ('76561198067968388', '', False, False, False, 'Caveira-.'), ('76561198083043687', '', False, False, False, 'Rapo'), ('76561198097076285', 'God of War', False, False, False, '✠ Führercoach ®'), ('76561198111168811', '', True, True, False, '[SE:VH] Queiroz'), ('76561198142536814', '', False, False, False, 'Manupktd'), ('76561198149193970', '', True, False, False, 'CPU - Wrong one to garden with'), ('76561198155662761', '', True, False, False, 'Maverick'), ('76561198159203637', '', False, False, False, 'ChadVader'), ('76561198193551428', '', False, False, False, 'Chuck Norris'), ('76561198257105445', 'Marvel Rivals', False, False, False, 'Gurenn'), ('76561198353482620', '', True, False, False, 'Galva'), ('76561198868863447', 'ROB RUN', False, False, False, 'Viktor Maia'), ('76561198873253024', '', True, True, False, 'EUSOU'), ('76561198874381986', '', False, False, False, 'COHBRAMACHINE'), ('76561198937445340', '', False, False, False, 'Московский метро')])\")",
   "last_steam_groups_scan_ts": 1795485156,
-  "last_sync_ts": 1795532953,
+  "last_sync_ts": 1795533254,
   "layout_version": 13,
   "manual_other_br_checked_pids": [
     11033,
@@ -259,16 +1135,18 @@
   ],
   "manual_other_br_checked_ts": 1795494978,
   "other_br_rotation_offset": 0,
-  "panel_links_message_id": "1574804258467872902",
-  "panel_message_id": "1574804250935165049",
+  "panel_links_message_id": "1574805646438563923",
+  "panel_message_id": "1574805638020735117",
   "panel_message_ids": [
-    "1574804250935165049",
-    "1574804253539565729",
-    "1574804256844943380",
-    "1574804258467872902"
+    "1574805638020735117",
+    "1574805640633647245",
+    "1574805642915618985",
+    "1574805646438563923"
   ],
-  "panel_monitorados_message_id": "1574804253539565729",
-  "panel_outros_message_id": "1574804256844943380",
+  "panel_monitorados_message_id": "1574805640633647245",
+  "panel_outros_message_id": "1574805642915618985",
+  "silent_dormant_offset": 1200,
+  "silent_legacy_offset": 800,
   "steam_gd_cache": {
     "76561197967668319": {
       "hidden": false,
