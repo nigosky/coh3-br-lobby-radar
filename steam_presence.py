@@ -4901,6 +4901,8 @@ def _build_category_lists(
                 status_note += " • Ocupado"
             elif is_away or is_snooze:
                 status_note += " • Ausente na Steam (zZz)"
+            if category == "outros_brasileiros" and suspected_foreign:
+                status_note += " • possível estrangeiro se passando por brasileiro (VPN)"
             player_card["status_kind"] = "in_coh3"
             player_card["status_note"] = status_note
             in_coh3_list.append(player_card)
@@ -4921,12 +4923,17 @@ def _build_category_lists(
                 status_note = "Online na Steam • livre para convite"
             if coh3_inactive_30d and coh3_inactive_days is not None:
                 status_note += f" • inativo no CoH3 há {coh3_inactive_days}d"
+            if category == "outros_brasileiros" and suspected_foreign:
+                status_note += " • possível estrangeiro se passando por brasileiro (VPN)"
             player_card["status_kind"] = "online_steam"
             player_card["status_note"] = status_note
             online_steam_list.append(player_card)
         elif last_ct > 0 and age_sec <= recent_cutoff_sec:
+            status_note = f"Concluiu {last_mode or 'partida'} há {max(1, age_min)} min (Steam privada/invisível)"
+            if category == "outros_brasileiros" and suspected_foreign:
+                status_note += " • possível estrangeiro se passando por brasileiro (VPN)"
             player_card["status_kind"] = "recent_relic"
-            player_card["status_note"] = f"Concluiu {last_mode or 'partida'} há {max(1, age_min)} min (Steam privada/invisível)"
+            player_card["status_note"] = status_note
             recent_relic_list.append(player_card)
 
     if category == "outros_brasileiros":

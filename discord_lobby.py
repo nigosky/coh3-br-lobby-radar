@@ -216,10 +216,14 @@ def _format_suspected_foreign_badge(
     is_monitorados: bool = False,
     compact: bool = False,
 ) -> str:
-    """Sinaliza contas com flag BR e fortes indícios de serem estrangeiros usando VPN (ex.: Nocturne)."""
+    """Sinaliza contas com flag BR e fortes indícios de serem estrangeiros se passando por brasileiros via VPN."""
     if is_veteranos or is_monitorados or not bool(player.get("suspected_foreign_flag")):
         return ""
-    return " 🌐 (VPN?)" if compact else " 🌐 *(possível estrangeiro usando VPN)*"
+    return (
+        " 🌐 (possível estrangeiro/VPN)"
+        if compact
+        else " 🌐 *(possível estrangeiro se passando por brasileiro — VPN)*"
+    )
 
 
 def _format_monitored_inactivity_tag(
