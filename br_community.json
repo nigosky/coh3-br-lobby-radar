@@ -40466,14 +40466,14 @@
     "1285745": {
       "alias": "maathmunix",
       "br_source": "relic_sa_lb",
-      "last_match_date": 1795453071,
+      "last_match_date": 1795501980,
       "last_seen_online_ts": 1795501874,
       "max_elo": 1000,
       "profile_id": 1285745,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795433540,
       "steam_id": "76561199014615184",
-      "total_matches": 48
+      "total_matches": 49
     },
     "1285769": {
       "alias": "Ouvido Albino",
@@ -42569,7 +42569,6 @@
     "1445924": {
       "alias": "Et Bilusca",
       "br_source": "open_data_matches",
-      "current_alias": "Wiz",
       "last_match_date": 1794579345,
       "last_seen_ingame_webapi_ts": 1795484556,
       "last_seen_online_ts": 1795501874,
@@ -48128,7 +48127,6 @@
     "86550": {
       "alias": "Rato",
       "br_source": "steam_sister_group_br",
-      "current_alias": "Qi 124",
       "last_match_date": 1794526879,
       "last_seen_ingame_ts": 1795499175,
       "last_seen_ingame_webapi_ts": 1795498808,
