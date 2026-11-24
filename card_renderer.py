@@ -25,6 +25,7 @@ from steam_presence import (
     OTHER_BR_ACTIVE_COH3_DAYS,
     extract_snapshot_category,
     format_coh3_recency_age,
+    get_unique_monitorados_count,
     get_unique_veteranos_count,
     resolve_prominence_tier,
 )
@@ -69,6 +70,7 @@ NEEDS_DEJAVU_RE = re.compile(r"[^\u0000-\u024f]")
 _NO_REDIRECT_OPENER = build_no_redirect_https_opener()
 _FONT_CACHE: dict[tuple[str, int], ImageFont.FreeTypeFont | ImageFont.ImageFont] = {}
 _VETERANOS_BADGE_CACHE: dict[int, Image.Image] = {}
+_MONITORADOS_BADGE_CACHE: dict[int, Image.Image] = {}
 _FLAG_BASE_CACHE: dict[str, Image.Image | None] = {}
 _FLAG_CACHE: dict[tuple[str, int, int], Image.Image] = {}
 
@@ -450,6 +452,55 @@ def get_veteranos_badge_icon(size: int = 20) -> Image.Image:
     return loaded
 
 
+def get_monitorados_badge_icon(size: int = 20) -> Image.Image:
+    """Desenha emblema vetorial safira (mira/radar tático) dedicado à categoria Players Monitorados."""
+    sz = max(12, min(int(size), 128))
+    cached = _MONITORADOS_BADGE_CACHE.get(sz)
+    if cached is not None:
+        return cached
+
+    ss = sz * 4
+    im = Image.new("RGBA", (ss, ss), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = ss // 2, ss // 2
+    outer_r = int(ss * 0.43)
+    inner_r = int(ss * 0.25)
+    core_r = max(2, int(ss * 0.09))
+    stroke_w = max(3, int(round(ss * 0.065)))
+    thin_w = max(2, int(round(ss * 0.045)))
+
+    # Halo escuro sutil + anel externo azul safira
+    d.ellipse(
+        (cx - outer_r, cy - outer_r, cx + outer_r, cy + outer_r),
+        fill=(20, 34, 64, 230),
+        outline=(59, 130, 246, 255),
+        width=stroke_w,
+    )
+    # Anel intermediário azul celeste
+    d.ellipse(
+        (cx - inner_r, cy - inner_r, cx + inner_r, cy + inner_r),
+        outline=(147, 197, 253, 235),
+        width=thin_w,
+    )
+    # Hastes cardeais da mira tática
+    gap_in = int(ss * 0.17)
+    ext_out = int(ss * 0.48)
+    cross_col = (191, 219, 254, 245)
+    d.line([(cx, cy - ext_out), (cx, cy - gap_in)], fill=cross_col, width=thin_w)
+    d.line([(cx, cy + gap_in), (cx, cy + ext_out)], fill=cross_col, width=thin_w)
+    d.line([(cx - ext_out, cy), (cx - gap_in, cy)], fill=cross_col, width=thin_w)
+    d.line([(cx + gap_in, cy), (cx + ext_out, cy)], fill=cross_col, width=thin_w)
+    # Ponto central luminoso
+    d.ellipse(
+        (cx - core_r, cy - core_r, cx + core_r, cy + core_r),
+        fill=(219, 234, 254, 255),
+    )
+
+    out = im.resize((sz, sz), Image.Resampling.LANCZOS)
+    _MONITORADOS_BADGE_CACHE[sz] = out
+    return out
+
+
 class SteamAvatarProvider:
     """Baixa avatares Steam validados por allowlist de CDN oficial (direto da URL extraída do XML público)."""
 
@@ -538,9 +589,10 @@ def _split_prominent_and_low(
     players: list[dict[str, Any]],
     *,
     is_veteranos: bool,
+    is_monitorados: bool = False,
     is_in_coh3: bool = False,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    if is_veteranos:
+    if is_veteranos or is_monitorados:
         return list(players), []
     prominent: list[dict[str, Any]] = []
     low: list[dict[str, Any]] = []
@@ -732,9 +784,10 @@ def _resolve_foreign_flag_badge(
     pl: dict[str, Any],
     *,
     is_veteranos: bool = False,
+    is_monitorados: bool = False,
 ) -> tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]] | None:
     """Retorna selo âmbar compacto `VPN?` quando a conta tem flag BR mas fortes indícios de estrangeiro usando VPN."""
-    if is_veteranos or not bool(pl.get("suspected_foreign_flag")):
+    if is_veteranos or is_monitorados or not bool(pl.get("suspected_foreign_flag")):
         return None
     return ("VPN?", (74, 34, 14, 255), (251, 146, 60, 240), (253, 186, 116, 255))
 
@@ -743,12 +796,15 @@ def _resolve_player_badges(
     pl: dict[str, Any],
     *,
     is_veteranos: bool = False,
+    is_monitorados: bool = False,
     include_presence: bool = True,
 ) -> list[tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]]]:
     badges: list[tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]]] = []
     if _is_smurf_entry(pl) and "(smurf:" not in str(pl.get("alias") or "").lower():
         badges.append(("SMURF", (16, 46, 68, 255), (56, 189, 248, 230), (186, 230, 253, 255)))
-    fb = _resolve_foreign_flag_badge(pl, is_veteranos=is_veteranos)
+    if bool(pl.get("priority_watch")):
+        badges.append(("VIGÍLIA", (24, 38, 82, 255), (129, 140, 248, 240), (199, 210, 254, 255)))
+    fb = _resolve_foreign_flag_badge(pl, is_veteranos=is_veteranos, is_monitorados=is_monitorados)
     if fb is not None:
         badges.append(fb)
     if include_presence:
@@ -862,6 +918,7 @@ def _measure_category_height(
     *,
     width: int,
     is_veteranos: bool,
+    is_monitorados: bool = False,
     show_empty_sections: bool,
     coh3_cap: int,
     online_cap: int,
@@ -891,7 +948,12 @@ def _measure_category_height(
     if in_coh3 or show_empty_sections:
         h += sec_hdr_h
         if in_coh3:
-            prom, low = _split_prominent_and_low(in_coh3, is_veteranos=is_veteranos, is_in_coh3=True)
+            prom, low = _split_prominent_and_low(
+                in_coh3,
+                is_veteranos=is_veteranos,
+                is_monitorados=is_monitorados,
+                is_in_coh3=True,
+            )
             vis = min(len(prom), coh3_cap)
             if vis > 0:
                 if vis >= coh3_2col_min:
@@ -916,7 +978,12 @@ def _measure_category_height(
     if online or show_empty_sections:
         h += sec_hdr_h
         if online:
-            prom, low = _split_prominent_and_low(online, is_veteranos=is_veteranos, is_in_coh3=False)
+            prom, low = _split_prominent_and_low(
+                online,
+                is_veteranos=is_veteranos,
+                is_monitorados=is_monitorados,
+                is_in_coh3=False,
+            )
             vis = min(len(prom), online_cap)
             if vis > 0:
                 grid_rows = (vis + 1) // 2
@@ -938,7 +1005,12 @@ def _measure_category_height(
 
     if recent:
         h += sec_hdr_h
-        prom, low = _split_prominent_and_low(recent, is_veteranos=is_veteranos, is_in_coh3=False)
+        prom, low = _split_prominent_and_low(
+            recent,
+            is_veteranos=is_veteranos,
+            is_monitorados=is_monitorados,
+            is_in_coh3=False,
+        )
         vis = min(len(prom), recent_cap)
         if vis > 0:
             if vis >= recent_2col_min:
@@ -972,6 +1044,7 @@ def _draw_category_block(
     bucket: dict[str, Any],
     avatar_provider: SteamAvatarProvider,
     is_veteranos: bool,
+    is_monitorados: bool = False,
     coh3_cap: int,
     online_cap: int,
     recent_cap: int,
@@ -996,13 +1069,17 @@ def _draw_category_block(
     recent = bucket["recent_relic"]
     active_days = int(bucket.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
     low_max_px = width - 54
+    is_curated = bool(is_veteranos or is_monitorados)
 
-    vet_sm = get_veteranos_badge_icon(size=23)
-    vet_xs = get_veteranos_badge_icon(size=20)
+    cat_sm = get_veteranos_badge_icon(size=23) if is_veteranos else (get_monitorados_badge_icon(size=22) if is_monitorados else None)
+    cat_xs = get_veteranos_badge_icon(size=20) if is_veteranos else (get_monitorados_badge_icon(size=19) if is_monitorados else None)
 
     if not is_veteranos and not in_coh3 and not online and not recent:
         draw.rectangle((rail_w, y, width, y + empty_row_h), fill=(18, 22, 28, 255))
-        e_txt = f"Nenhum outro brasileiro ativo no CoH3 (≤{active_days} dias) online ou jogando neste instante."
+        if is_monitorados:
+            e_txt = "Nenhum player monitorado online na Steam ou jogando CoH3 neste instante."
+        else:
+            e_txt = f"Nenhum outro brasileiro ativo no CoH3 (≤{active_days} dias) online ou jogando neste instante."
         e_fnt = pick_font(e_txt, size=18, bold=False)
         draw.text((30, y + 14), e_txt, font=e_fnt, fill=(148, 163, 184, 255))
         return y + empty_row_h
@@ -1016,7 +1093,7 @@ def _draw_category_block(
         s1_txt = f"JOGANDO COMPANY OF HEROES 3 AGORA ({len(in_coh3)})"
         s1_fnt = pick_font(s1_txt, size=19, bold=True, condensed=True)
         draw.text((52, y + 8), s1_txt, font=s1_fnt, fill=(134, 239, 172, 255))
-        if not is_veteranos and any(resolve_prominence_tier(p, is_veteranos=False, is_in_coh3=True) == "high" for p in in_coh3):
+        if not is_curated and any(resolve_prominence_tier(p, is_veteranos=False, is_in_coh3=True) == "high" for p in in_coh3):
             leg1_txt = "★ ELO alto + ativo"
             leg1_fnt = pick_font(leg1_txt, size=15, bold=True)
             l1w = text_width(draw, leg1_txt, leg1_fnt)
@@ -1030,7 +1107,12 @@ def _draw_category_block(
             draw.text((30, y + 14), e_txt, font=e_fnt, fill=(148, 163, 184, 255))
             y += empty_row_h
         else:
-            prom_coh3, low_coh3 = _split_prominent_and_low(in_coh3, is_veteranos=is_veteranos, is_in_coh3=True)
+            prom_coh3, low_coh3 = _split_prominent_and_low(
+                in_coh3,
+                is_veteranos=is_veteranos,
+                is_monitorados=is_monitorados,
+                is_in_coh3=True,
+            )
             vis_coh3 = prom_coh3[:coh3_cap]
             if vis_coh3:
                 if len(vis_coh3) >= coh3_2col_min:
@@ -1053,8 +1135,13 @@ def _draw_category_block(
                         if col_i == 0 and row_i > 0:
                             draw.line([(20, ry), (width - 18, ry)], fill=(28, 42, 34, 255), width=1)
 
-                        tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
-                        is_high = (not is_veteranos) and (tier == "high")
+                        tier = resolve_prominence_tier(
+                            pl,
+                            is_veteranos=is_veteranos,
+                            is_monitorados=is_monitorados,
+                            is_in_coh3=True,
+                        )
+                        is_high = (not is_curated) and (tier == "high")
                         if is_high:
                             draw.rectangle((cell_x0, ry + 2, cell_x1, ry + coh3_row_h - 2), fill=(23, 39, 29, 255))
                             draw.rectangle((cell_x0, ry + 3, cell_x0 + 3, ry + coh3_row_h - 3), fill=(250, 204, 21, 240))
@@ -1099,9 +1186,14 @@ def _draw_category_block(
                                 ew = int(text_width(draw, elo_tag, ef))
                                 draw.text((cx_limit - ew, ry + 9), elo_tag, font=ef, fill=(226, 232, 240, 255))
 
-                        row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=True)
+                        row_badges = _resolve_player_badges(
+                            pl,
+                            is_veteranos=is_veteranos,
+                            is_monitorados=is_monitorados,
+                            include_presence=True,
+                        )
                         pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=13) + 6 for b in row_badges)
-                        badge_pad = (26 if is_veteranos else 8) + pill_reserve
+                        badge_pad = (26 if cat_xs is not None else 8) + pill_reserve
                         disp_alias, a_fnt, a_dy = fit_alias_to_px(
                             draw,
                             str(pl.get("alias") or ""),
@@ -1116,8 +1208,8 @@ def _draw_category_block(
                         )
                         draw.text((name_x, ry + 6 + a_dy), disp_alias, font=a_fnt, fill=nm_col)
                         next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
-                        if is_veteranos:
-                            img.paste(vet_xs, (next_x, ry + 8), vet_xs)
+                        if cat_xs is not None:
+                            img.paste(cat_xs, (next_x, ry + 8), cat_xs)
                             next_x += 24
                         for badge in row_badges:
                             pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 7, badge=badge, font_size=13)
@@ -1136,8 +1228,13 @@ def _draw_category_block(
                     y += grid_h
                 else:
                     for idx, pl in enumerate(vis_coh3):
-                        tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
-                        is_high = (not is_veteranos) and (tier == "high")
+                        tier = resolve_prominence_tier(
+                            pl,
+                            is_veteranos=is_veteranos,
+                            is_monitorados=is_monitorados,
+                            is_in_coh3=True,
+                        )
+                        is_high = (not is_curated) and (tier == "high")
                         if is_high:
                             r_bg = (23, 38, 28, 255) if idx % 2 == 0 else (20, 34, 25, 255)
                             ring_c = (250, 204, 21, 255)
@@ -1192,11 +1289,16 @@ def _draw_category_block(
                             elo_x = int(note_x - 24 - ew)
                             draw.text((elo_x, y + 19), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
 
-                        row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=True)
+                        row_badges = _resolve_player_badges(
+                            pl,
+                            is_veteranos=is_veteranos,
+                            is_monitorados=is_monitorados,
+                            include_presence=True,
+                        )
                         pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=14) + 10 for b in row_badges)
-                        badge_pad = (34 if is_veteranos else 10) + pill_reserve
+                        badge_pad = (34 if cat_sm is not None else 10) + pill_reserve
                         max_alias_px = max(110, int(elo_x - alias_x - badge_pad))
-                        alias_sz = 23 if (is_veteranos or is_high) else 21
+                        alias_sz = 23 if (is_curated or is_high) else 21
                         alias_col = (
                             (186, 230, 253, 255)
                             if _is_smurf_entry(pl)
@@ -1211,8 +1313,8 @@ def _draw_category_block(
                         )
                         draw.text((alias_x, y + (15 if alias_sz >= 22 else 17) + a_dy), disp_alias, font=a_fnt, fill=alias_col)
                         next_x = int(alias_x + text_width(draw, disp_alias, a_fnt) + 8)
-                        if is_veteranos:
-                            img.paste(vet_sm, (next_x, y + 18), vet_sm)
+                        if cat_sm is not None:
+                            img.paste(cat_sm, (next_x, y + 18), cat_sm)
                             next_x += 29
                         for badge in row_badges:
                             pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=y + 18, badge=badge, font_size=14)
@@ -1258,7 +1360,7 @@ def _draw_category_block(
         s2_txt = f"ONLINE NA STEAM  •  DISPONÍVEIS PARA CHAMAR ({len(online)})"
         s2_fnt = pick_font(s2_txt, size=19, bold=True, condensed=True)
         draw.text((52, y + 8), s2_txt, font=s2_fnt, fill=(125, 211, 252, 255))
-        if not is_veteranos and any(resolve_prominence_tier(p, is_veteranos=False) == "high" for p in online):
+        if not is_curated and any(resolve_prominence_tier(p, is_veteranos=False) == "high" for p in online):
             leg_txt = "★ ELO alto + ativo no topo"
             leg_fnt = pick_font(leg_txt, size=15, bold=True)
             lw = text_width(draw, leg_txt, leg_fnt)
@@ -1272,7 +1374,12 @@ def _draw_category_block(
             draw.text((30, y + 14), e2_txt, font=e2_fnt, fill=(148, 163, 184, 255))
             y += empty_row_h
         else:
-            prom_online, low_online = _split_prominent_and_low(online, is_veteranos=is_veteranos, is_in_coh3=False)
+            prom_online, low_online = _split_prominent_and_low(
+                online,
+                is_veteranos=is_veteranos,
+                is_monitorados=is_monitorados,
+                is_in_coh3=False,
+            )
             vis_online = prom_online[:online_cap]
             if vis_online:
                 online_grid_rows = (len(vis_online) + 1) // 2
@@ -1295,8 +1402,13 @@ def _draw_category_block(
                     if col_i == 0 and row_i > 0:
                         draw.line([(20, ry), (width - 18, ry)], fill=(29, 35, 46, 255), width=1)
 
-                    tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
-                    is_high = (not is_veteranos) and (tier == "high")
+                    tier = resolve_prominence_tier(
+                        pl,
+                        is_veteranos=is_veteranos,
+                        is_monitorados=is_monitorados,
+                        is_in_coh3=False,
+                    )
+                    is_high = (not is_curated) and (tier == "high")
                     has_other = bool(pl.get("other_game"))
                     is_away = bool(pl.get("is_away") or pl.get("is_snooze"))
                     is_busy = bool(pl.get("is_busy"))
@@ -1319,6 +1431,8 @@ def _draw_category_block(
                             ring_c = (248, 113, 113, 240)
                         elif is_away:
                             ring_c = (96, 165, 250, 215)
+                        elif is_monitorados and bool(pl.get("priority_watch")):
+                            ring_c = (129, 140, 248, 255)
                         else:
                             ring_c = (56, 189, 248, 245)
 
@@ -1359,9 +1473,14 @@ def _draw_category_block(
                             elo_w = int(text_width(draw, elo_tag, ef))
                             draw.text((cx_limit - elo_w, ry + 9), elo_tag, font=ef, fill=(203, 213, 225, 255))
 
-                    row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=True)
+                    row_badges = _resolve_player_badges(
+                        pl,
+                        is_veteranos=is_veteranos,
+                        is_monitorados=is_monitorados,
+                        include_presence=True,
+                    )
                     pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=13) + 6 for b in row_badges)
-                    badge_pad = (26 if is_veteranos else 8) + pill_reserve
+                    badge_pad = (26 if cat_xs is not None else 8) + pill_reserve
                     max_nm_px = max(80, (cx_limit - elo_w - 10) - name_x - badge_pad)
                     disp_alias, a_fnt, a_dy = fit_alias_to_px(
                         draw,
@@ -1384,14 +1503,14 @@ def _draw_category_block(
                         nm_col = (186, 230, 253, 255)
                     draw.text((name_x, ry + 6 + a_dy), disp_alias, font=a_fnt, fill=nm_col)
                     next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
-                    if is_veteranos:
-                        img.paste(vet_xs, (next_x, ry + 8), vet_xs)
+                    if cat_xs is not None:
+                        img.paste(cat_xs, (next_x, ry + 8), cat_xs)
                         next_x += 24
                     for badge in row_badges:
                         pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 7, badge=badge, font_size=13)
                         next_x += pw + 6
 
-                    rec_tag = _format_coh3_recency_short(pl) if not is_veteranos else ""
+                    rec_tag = _format_coh3_recency_short(pl) if not is_curated else ""
                     if has_other:
                         sub_st = f"Em outro jogo: {pl['other_game']}"
                         sub_col = (148, 163, 184, 255)
@@ -1456,7 +1575,12 @@ def _draw_category_block(
         draw.text((52, y + 8), s3_txt, font=s3_fnt, fill=(253, 224, 71, 255))
         y += sec_hdr_h
 
-        prom_recent, low_recent = _split_prominent_and_low(recent, is_veteranos=is_veteranos, is_in_coh3=False)
+        prom_recent, low_recent = _split_prominent_and_low(
+            recent,
+            is_veteranos=is_veteranos,
+            is_monitorados=is_monitorados,
+            is_in_coh3=False,
+        )
         vis_recent = prom_recent[:recent_cap]
         if vis_recent:
             if len(vis_recent) >= recent_2col_min:
@@ -1478,8 +1602,13 @@ def _draw_category_block(
                     if col_i == 0 and row_i > 0:
                         draw.line([(20, ry), (width - 18, ry)], fill=(45, 38, 25, 255), width=1)
 
-                    tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
-                    is_high = (not is_veteranos) and (tier == "high")
+                    tier = resolve_prominence_tier(
+                        pl,
+                        is_veteranos=is_veteranos,
+                        is_monitorados=is_monitorados,
+                        is_in_coh3=False,
+                    )
+                    is_high = (not is_curated) and (tier == "high")
                     if is_high:
                         draw.rectangle((cell_x0, ry + 2, cell_x1, ry + recent_row_h - 2), fill=(31, 27, 19, 255))
                         draw.rectangle((cell_x0, ry + 3, cell_x0 + 3, ry + recent_row_h - 3), fill=(250, 204, 21, 240))
@@ -1521,9 +1650,14 @@ def _draw_category_block(
                             ew = int(text_width(draw, elo_tag, ef))
                             draw.text((cx_limit - ew, ry + 8), elo_tag, font=ef, fill=(226, 232, 240, 255))
 
-                    row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=False)
+                    row_badges = _resolve_player_badges(
+                        pl,
+                        is_veteranos=is_veteranos,
+                        is_monitorados=is_monitorados,
+                        include_presence=False,
+                    )
                     pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=12) + 6 for b in row_badges)
-                    badge_pad = (24 if is_veteranos else 8) + pill_reserve
+                    badge_pad = (24 if cat_xs is not None else 8) + pill_reserve
                     disp_alias, a_fnt, a_dy = fit_alias_to_px(
                         draw,
                         str(pl.get("alias") or ""),
@@ -1538,8 +1672,8 @@ def _draw_category_block(
                     )
                     draw.text((name_x, ry + 5 + a_dy), disp_alias, font=a_fnt, fill=rec_nm_col)
                     next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
-                    if is_veteranos:
-                        img.paste(vet_xs, (next_x, ry + 6), vet_xs)
+                    if cat_xs is not None:
+                        img.paste(cat_xs, (next_x, ry + 6), cat_xs)
                         next_x += 24
                     for badge in row_badges:
                         pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=ry + 6, badge=badge, font_size=12)
@@ -1550,8 +1684,13 @@ def _draw_category_block(
                 y += grid_h
             else:
                 for idx, pl in enumerate(vis_recent):
-                    tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=False)
-                    is_high = (not is_veteranos) and (tier == "high")
+                    tier = resolve_prominence_tier(
+                        pl,
+                        is_veteranos=is_veteranos,
+                        is_monitorados=is_monitorados,
+                        is_in_coh3=False,
+                    )
+                    is_high = (not is_curated) and (tier == "high")
                     r_bg = (30, 26, 19, 255) if is_high else ((26, 23, 18, 255) if idx % 2 == 0 else (22, 20, 16, 255))
                     draw.rectangle((rail_w, y, width, y + recent_row_h), fill=r_bg)
                     if is_high:
@@ -1600,9 +1739,14 @@ def _draw_category_block(
                             draw.text((elo_x, y + 17), elo_str, font=elo_fnt, fill=(226, 232, 240, 255))
                             right_limit_x = elo_x
 
-                    row_badges = _resolve_player_badges(pl, is_veteranos=is_veteranos, include_presence=False)
+                    row_badges = _resolve_player_badges(
+                        pl,
+                        is_veteranos=is_veteranos,
+                        is_monitorados=is_monitorados,
+                        include_presence=False,
+                    )
                     pill_reserve = sum(_measure_status_pill_width(draw, b[0], font_size=13) + 8 for b in row_badges)
-                    badge_pad = (34 if is_veteranos else 10) + pill_reserve
+                    badge_pad = (34 if cat_sm is not None else 10) + pill_reserve
                     disp_alias, a_fnt, a_dy = fit_alias_to_px(
                         draw,
                         str(pl.get("alias") or ""),
@@ -1617,8 +1761,8 @@ def _draw_category_block(
                     )
                     draw.text((alias_x, y + 15 + a_dy), disp_alias, font=a_fnt, fill=rec1_nm_col)
                     next_x = int(alias_x + text_width(draw, disp_alias, a_fnt) + 7)
-                    if is_veteranos:
-                        img.paste(vet_sm, (next_x, y + 16), vet_sm)
+                    if cat_sm is not None:
+                        img.paste(cat_sm, (next_x, y + 16), cat_sm)
                         next_x += 29
                     for badge in row_badges:
                         pw = _draw_presence_badge_pill(draw, x=next_x + 2, top_y=y + 16, badge=badge, font_size=13)
@@ -1663,21 +1807,28 @@ def _render_single_category_card_png(
     snapshot: dict[str, Any],
     avatar_provider: SteamAvatarProvider,
     *,
-    is_veteranos: bool,
+    is_veteranos: bool = False,
+    is_monitorados: bool = False,
 ) -> bytes:
     """
     Renderiza um card dedicado em proporção horizontal (1100px de largura, altura enxuta <= ~720px)
     para aproveitar 100% da largura máxima de exibição do Discord (~550×350px) sem encolhimento vertical.
     """
     width = 1100
-    bucket_key = "veteranos" if is_veteranos else "outros_brasileiros"
+    bucket_key = "veteranos" if is_veteranos else ("monitorados" if is_monitorados else "outros_brasileiros")
     bucket = extract_snapshot_category(snapshot, bucket_key)
     now_ts = int(snapshot.get("timestamp") or time.time())
 
     n_coh3 = len(bucket["in_coh3"])
     n_online = len(bucket["online_steam"])
     n_recent = len(bucket["recent_relic"])
-    total_cat = int(bucket.get("total_monitored") or (get_unique_veteranos_count() if is_veteranos else 0))
+    if is_veteranos:
+        default_total = get_unique_veteranos_count()
+    elif is_monitorados:
+        default_total = get_unique_monitorados_count()
+    else:
+        default_total = 0
+    total_cat = int(bucket.get("total_monitored") or default_total)
     active_days = int(bucket.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
 
     header_h = 80
@@ -1698,6 +1849,11 @@ def _render_single_category_card_png(
         coh3_cap, online_cap, recent_cap = 45, 45, 45
         show_empty = True
         online_low_max_lines = 2
+    elif is_monitorados:
+        # Players Monitorados: exibidos integralmente (sem corte de 15 dias nem faixa de baixa evidência)
+        coh3_cap, online_cap, recent_cap = 45, 45, 45
+        show_empty = False
+        online_low_max_lines = 2
     else:
         coh3_cap, online_cap, recent_cap = 10, 14, 6
         show_empty = False
@@ -1711,6 +1867,7 @@ def _render_single_category_card_png(
             bucket,
             width=width,
             is_veteranos=is_veteranos,
+            is_monitorados=is_monitorados,
             show_empty_sections=show_empty,
             coh3_cap=c_cap,
             online_cap=o_cap,
@@ -1734,7 +1891,7 @@ def _render_single_category_card_png(
 
     # Para Outros Brasileiros, mantém o card na proporção paisagem <= 700px (1100×700 -> largura máxima exata 550px no Discord!).
     # Todos os demais jogadores continuam 100% clicáveis na lista vertical de links abaixo.
-    if not is_veteranos and total_h > 700:
+    if not is_veteranos and not is_monitorados and total_h > 700:
         for cand_o_cap in (12, 10, 8, 6):
             if cand_o_cap >= online_cap:
                 continue
@@ -1765,12 +1922,26 @@ def _render_single_category_card_png(
     if n_coh3:
         rail_col = (34, 197, 94, 255)
     elif n_online:
-        rail_col = (56, 189, 248, 255) if is_veteranos else (45, 212, 191, 255)
+        if is_veteranos:
+            rail_col = (56, 189, 248, 255)
+        elif is_monitorados:
+            rail_col = (59, 130, 246, 255)
+        else:
+            rail_col = (45, 212, 191, 255)
+    elif is_monitorados and not n_recent:
+        rail_col = (59, 130, 246, 255)
     else:
         rail_col = (245, 184, 46, 255)
 
-    hdr_bg = (28, 25, 18, 255) if is_veteranos else (16, 30, 33, 255)
-    hdr_border = (234, 179, 8, 210) if is_veteranos else (45, 212, 191, 200)
+    if is_veteranos:
+        hdr_bg = (28, 25, 18, 255)
+        hdr_border = (234, 179, 8, 210)
+    elif is_monitorados:
+        hdr_bg = (18, 26, 46, 255)
+        hdr_border = (59, 130, 246, 215)
+    else:
+        hdr_bg = (16, 30, 33, 255)
+        hdr_border = (45, 212, 191, 200)
     draw.rectangle((0, 0, width, header_h), fill=hdr_bg)
     draw.line([(0, header_h - 1), (width, header_h - 1)], fill=hdr_border, width=2)
     draw.rectangle((0, 0, rail_w, total_h), fill=rail_col)
@@ -1780,6 +1951,16 @@ def _render_single_category_card_png(
         img.paste(hdr_icon, (26, 20), hdr_icon)
         title_txt = f"RADAR DE LOBBY  •  VETERANOS ({total_cat})" if total_cat > 0 else "RADAR DE LOBBY  •  VETERANOS"
         title_col = (253, 224, 71, 255)
+        title_x = 82
+    elif is_monitorados:
+        hdr_icon = get_monitorados_badge_icon(size=44)
+        img.paste(hdr_icon, (26, 18), hdr_icon)
+        title_txt = (
+            f"RADAR DE LOBBY  •  PLAYERS MONITORADOS ({total_cat})"
+            if total_cat > 0
+            else "RADAR DE LOBBY  •  PLAYERS MONITORADOS"
+        )
+        title_col = (147, 197, 253, 255)
         title_x = 82
     else:
         hdr_icon = get_br_flag(w=44, h=30)
@@ -1797,7 +1978,12 @@ def _render_single_category_card_png(
         pill_bg = (22, 163, 74, 255)
     elif n_online:
         pill_txt = f"ONLINE ({n_online})"
-        pill_bg = (2, 132, 199, 255) if is_veteranos else (13, 148, 136, 255)
+        if is_veteranos:
+            pill_bg = (2, 132, 199, 255)
+        elif is_monitorados:
+            pill_bg = (37, 99, 235, 255)
+        else:
+            pill_bg = (13, 148, 136, 255)
     else:
         pill_txt = "LOBBY CALMO"
         pill_bg = (75, 85, 99, 255)
@@ -1838,6 +2024,7 @@ def _render_single_category_card_png(
         bucket=bucket,
         avatar_provider=avatar_provider,
         is_veteranos=is_veteranos,
+        is_monitorados=is_monitorados,
         coh3_cap=coh3_cap,
         online_cap=online_cap,
         recent_cap=recent_cap,
@@ -1865,6 +2052,11 @@ def _render_single_category_card_png(
     expat_leg = "  •  BR EXT = brasileiro no exterior" if has_any_expat else ""
     if is_veteranos:
         foot_txt = f"Veteranos: todos os {total_cat} monitorados exibidos sem filtro{expat_leg}  •  Links Steam abaixo"
+    elif is_monitorados:
+        has_any_prio = any(bool(p.get("priority_watch")) for p in all_cat_players)
+        prio_leg = "  •  VIGÍLIA = conta prioritária" if has_any_prio else ""
+        expat_short = "  •  BR EXT = BR no exterior" if has_any_expat else ""
+        foot_txt = f"Players Monitorados: {total_cat} acompanhados sem corte de inatividade{expat_short}{prio_leg}  •  Links Steam abaixo"
     else:
         cat_count_lbl = f" ({total_cat})" if total_cat > 0 else ""
         has_any_foreign = any(bool(p.get("suspected_foreign_flag")) for p in all_cat_players)
@@ -1891,8 +2083,16 @@ def render_veteranos_card_png(
     snapshot: dict[str, Any],
     avatar_provider: SteamAvatarProvider,
 ) -> bytes:
-    """Renderiza o Card Gráfico Grande dedicado exclusivamente aos Veteranos (sempre exibido acima no Discord)."""
+    """Renderiza o Card Gráfico Grande dedicado exclusivamente aos Veteranos (sempre exibido no topo no Discord)."""
     return _render_single_category_card_png(snapshot, avatar_provider, is_veteranos=True)
+
+
+def render_monitorados_card_png(
+    snapshot: dict[str, Any],
+    avatar_provider: SteamAvatarProvider,
+) -> bytes:
+    """Renderiza o Card Gráfico Grande dedicado aos Players Monitorados (exibido no meio, entre Veteranos e Outros BR)."""
+    return _render_single_category_card_png(snapshot, avatar_provider, is_monitorados=True)
 
 
 def render_outros_br_card_png(
@@ -1900,15 +2100,16 @@ def render_outros_br_card_png(
     avatar_provider: SteamAvatarProvider,
 ) -> bytes:
     """Renderiza o Card Gráfico Grande dedicado exclusivamente a Outros Brasileiros (sempre exibido abaixo no Discord)."""
-    return _render_single_category_card_png(snapshot, avatar_provider, is_veteranos=False)
+    return _render_single_category_card_png(snapshot, avatar_provider, is_veteranos=False, is_monitorados=False)
 
 
 def render_lobby_radar_cards_png(
     snapshot: dict[str, Any],
     avatar_provider: SteamAvatarProvider,
-) -> tuple[bytes, bytes]:
-    """Renderiza o par de cards horizontais grandes: `(veteranos_png, outros_br_png)`."""
+) -> tuple[bytes, bytes, bytes]:
+    """Renderiza o trio de cards horizontais grandes: `(veteranos_png, monitorados_png, outros_br_png)`."""
     return (
         render_veteranos_card_png(snapshot, avatar_provider),
+        render_monitorados_card_png(snapshot, avatar_provider),
         render_outros_br_card_png(snapshot, avatar_provider),
     )

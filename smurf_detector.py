@@ -52,6 +52,7 @@ from steam_presence import (
     CORE_BR_ROSTER,
     EN_MONTH_NUM,
     MANUAL_OTHER_BR_PLAYERS,
+    MONITORED_BR_PLAYERS,
     STEAM_ID64_VALID_RE,
     RelicActivityClient,
     SteamPresenceClient,
@@ -3191,8 +3192,8 @@ def detect_nick_changes(
 ) -> list[dict[str, Any]]:
     """
     Rotina dedicada de detecção de mudança de nick / nome de usuário:
-    - Monitora todo o elenco cadastrado (`players_roster.json`: Veteranos + `manual_other_br`,
-      contas principais e smurfs) e também o Top 50 BR dinâmico da Relic API.
+    - Monitora todo o elenco cadastrado (`players_roster.json`: Veteranos + `monitorados`,
+      contas principais, smurfs e contas prioritárias `priority_watch` como `Sgt.Yoda`) e também o Top 50 BR dinâmico da Relic API.
     - Em caso de mudança de nick, mantém o novo nick e coloca entre parênteses a conta original:
       - Conta principal / normal: `<NovoNick> (<NomeOriginal>)`
       - Conta smurf (`smurf_of`): `<NovoNick> (Smurf: <NomeOriginal>)`
@@ -3208,10 +3209,10 @@ def detect_nick_changes(
             pid = int(row.get("profile_id", 0) or 0)
             if pid > 0:
                 roster_by_pid[pid] = ("veterano", row)
-        for row in MANUAL_OTHER_BR_PLAYERS:
+        for row in MONITORED_BR_PLAYERS:
             pid = int(row.get("profile_id", 0) or 0)
             if pid > 0 and pid not in roster_by_pid:
-                roster_by_pid[pid] = ("manual_other_br", row)
+                roster_by_pid[pid] = ("monitorado", row)
     else:
         for row in roster_rows:
             if not isinstance(row, dict):
@@ -3219,7 +3220,7 @@ def detect_nick_changes(
             pid = int(row.get("profile_id", 0) or 0)
             if pid > 0 and pid not in roster_by_pid:
                 scope = str(row.get("scope") or "").strip() or (
-                    "veterano" if pid in vet_pid_set else "manual_other_br"
+                    "veterano" if pid in vet_pid_set else "monitorado"
                 )
                 roster_by_pid[pid] = (scope, row)
 
@@ -3287,7 +3288,7 @@ def detect_nick_changes(
     changes: list[dict[str, Any]] = []
     handled_pids: set[int] = set()
 
-    # 1. Todo o elenco cadastrado (Veteranos + manual_other_br: contas principais e smurfs)
+    # 1. Todo o elenco cadastrado (Veteranos + Players Monitorados: contas principais, smurfs e vigília prioritária)
     for pid, (scope, rrow) in roster_by_pid.items():
         handled_pids.add(pid)
         br_row = all_br_players.get(pid) or {}
@@ -3331,6 +3332,7 @@ def detect_nick_changes(
                 "steam_id": sid,
                 "account_type": account_type,
                 "scope": scope,
+                "priority_watch": bool(rrow.get("priority_watch")),
                 "in_top50": pid in top50_by_pid,
                 "relic_br_rank": int(top_row.get("relic_br_rank", 0) or 0),
                 "max_elo": max(
@@ -3403,6 +3405,7 @@ def detect_nick_changes(
                 "steam_id": sid,
                 "account_type": "principal",
                 "scope": scope_lbl,
+                "priority_watch": False,
                 "in_top50": is_top50,
                 "relic_br_rank": int(top_row.get("relic_br_rank", 0) or 0),
                 "max_elo": max(
@@ -3421,7 +3424,8 @@ def detect_nick_changes(
 
     changes.sort(
         key=lambda c: (
-            0 if c["scope"] in ("veterano", "manual_other_br") else (1 if c["in_top50"] else 2),
+            0 if c.get("priority_watch") else 1,
+            0 if c["scope"] in ("veterano", "monitorado", "manual_other_br") else (1 if c["in_top50"] else 2),
             int(c["relic_br_rank"]) if int(c["relic_br_rank"]) > 0 else 9999,
             -int(c["max_elo"]),
             int(c["profile_id"]),
@@ -3606,9 +3610,38 @@ def detect_top50_br_smurfs(
                     "total_matches": max(0, int(base.get("total_matches", 0) or 0)),
                     "relic_br_rank": int(rank_by_pid.get(vpid, 0) or 0),
                     "country": str(base.get("country") or vrow.get("country") or "br").strip().lower() or "br",
+                    "priority_watch": bool(vrow.get("priority_watch")),
                 }
             )
             monitored_pids.add(vpid)
+
+    # Contas marcadas com `priority_watch: true` (ex.: Sgt.Yoda pid=164152) são SEMPRE monitoradas
+    # contra possíveis smurfs e trocas de nick, mesmo quando fora do Top 50 BR ou sem `--include-veteranos`
+    priority_source_rows = (
+        list(roster_rows)
+        if roster_rows is not None
+        else list(CORE_BR_ROSTER) + list(MONITORED_BR_PLAYERS)
+    )
+    for prow in priority_source_rows:
+        if not isinstance(prow, dict) or not bool(prow.get("priority_watch")) or is_known_smurf_roster_entry(prow):
+            continue
+        ppid = int(prow.get("profile_id", 0) or 0)
+        if ppid <= 0 or ppid in monitored_pids or ppid in known_smurfs:
+            continue
+        base = merged_all_br.get(ppid) or {}
+        monitored_mains.append(
+            {
+                "profile_id": ppid,
+                "steam_id": str(prow.get("steam_id") or base.get("steam_id") or "").replace("/steam/", "").strip(),
+                "alias": strip_unsafe_chars(prow.get("original_alias") or base.get("alias") or f"Player {ppid}")[:48],
+                "max_elo": int(base.get("max_elo", 0) or 0),
+                "total_matches": max(0, int(base.get("total_matches", 0) or 0)),
+                "relic_br_rank": int(rank_by_pid.get(ppid, 0) or 0),
+                "country": str(base.get("country") or prow.get("country") or "br").strip().lower() or "br",
+                "priority_watch": True,
+            }
+        )
+        monitored_pids.add(ppid)
 
     # Jogadores #51..#150 usados apenas como guarda para ignorar smurfs de quem está FORA do escopo monitorado
     outside_top50_mains: list[dict[str, Any]] = []
@@ -4215,10 +4248,11 @@ def format_smurf_report_text(report: dict[str, Any]) -> str:
         shown_changes = priority_changes + catalog_changes[:20]
         for item in shown_changes:
             acc_tag = "SMURF" if item.get("account_type") == "smurf" else "PRINCIPAL"
+            prio_tag = "PRIORIDADE | " if item.get("priority_watch") else ""
             rank_val = int(item.get("relic_br_rank", 0) or 0)
             rank_tag = f" | #{rank_val} BR" if rank_val > 0 else ""
             lines.append(
-                f"  • [{acc_tag} | {item.get('scope', 'roster')}{rank_tag}] {item['display_alias']} "
+                f"  • [{prio_tag}{acc_tag} | {item.get('scope', 'roster')}{rank_tag}] {item['display_alias']} "
                 f"(antes: {item['previous_nick']} -> agora: {item['new_nick']} | "
                 f"pid={item['profile_id']} | Steam {item.get('steam_id') or 'N/D'} | fonte={item.get('source') or 'relic'})"
             )

@@ -298,6 +298,23 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                 "online_steam": vet_online,
                 "recent_relic": vet_recent,
             },
+            "monitorados": {
+                "total_monitored": 39,
+                "checked_count": 39,
+                "in_coh3": [
+                    {
+                        "profile_id": 164152,
+                        "steam_id": "76561198029749621",
+                        "alias": "Sgt.Yoda",
+                        "max_elo": 1500,
+                        "priority_watch": True,
+                        "status_note": "Com Company of Heroes 3 aberto agora",
+                        "avatar_url": "",
+                    }
+                ],
+                "online_steam": [],
+                "recent_relic": [],
+            },
             "outros_brasileiros": {
                 "total_monitored": 310,
                 "checked_count": 150,
@@ -309,8 +326,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
 
     def test_large_card_renders_at_1100px_width_for_normal_and_max_capacity(self) -> None:
         snap = self._sample_snapshot()
-        vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
-        for card_bytes in (vet_png, oth_png):
+        vet_png, mon_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for card_bytes in (vet_png, mon_png, oth_png):
             self.assertTrue(card_bytes.startswith(b"\x89PNG\r\n\x1a\n"))
             with Image.open(io.BytesIO(card_bytes)) as cim:
                 self.assertEqual(cim.width, 1100)
@@ -322,10 +339,16 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         heavy = {
             "timestamp": 1_800_000_000,
             "veteranos": {
-                "total_monitored": 44,
+                "total_monitored": 45,
                 "in_coh3": [{"alias": f"VetC{i}", "max_elo": 1500, "status_note": "No CoH3"} for i in range(25)],
                 "online_steam": [{"alias": f"VetO{i}", "max_elo": 1400, "other_game": "", "is_away": False} for i in range(30)],
                 "recent_relic": [{"alias": f"VetR{i}", "max_elo": 1300, "status_note": "Há 10 min"} for i in range(15)],
+            },
+            "monitorados": {
+                "total_monitored": 39,
+                "in_coh3": [{"alias": f"MonC{i}", "max_elo": 1500, "status_note": "No CoH3"} for i in range(12)],
+                "online_steam": [{"alias": f"MonO{i}", "max_elo": 1400, "other_game": "", "is_away": False} for i in range(18)],
+                "recent_relic": [{"alias": f"MonR{i}", "max_elo": 1300, "status_note": "Há 10 min"} for i in range(6)],
             },
             "outros_brasileiros": {
                 "total_monitored": 600,
@@ -334,8 +357,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                 "recent_relic": [{"alias": f"OthR{i}", "max_elo": 1250, "status_note": "Há 12 min"} for i in range(15)],
             },
         }
-        heavy_vet, heavy_oth = render_lobby_radar_cards_png(heavy, SteamAvatarProvider(allow_network=False))
-        for hbytes in (heavy_vet, heavy_oth):
+        heavy_vet, heavy_mon, heavy_oth = render_lobby_radar_cards_png(heavy, SteamAvatarProvider(allow_network=False))
+        for hbytes in (heavy_vet, heavy_mon, heavy_oth):
             with Image.open(io.BytesIO(hbytes)) as him:
                 self.assertEqual(him.width, 1100)
                 self.assertLess(him.width * him.height, Image.MAX_IMAGE_PIXELS)
@@ -351,13 +374,15 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertEqual(img_payload["allowed_mentions"], {"parse": []})
 
         links_payload = build_lobby_radar_links_payload(snap)
-        self.assertEqual(len(links_payload["embeds"]), 2)
-        vet_emb, oth_emb = links_payload["embeds"]
+        self.assertEqual(len(links_payload["embeds"]), 3)
+        vet_emb, mon_emb, oth_emb = links_payload["embeds"]
 
-        # Veteranos SEMPRE acima (índice 0); Outros Brasileiros SEMPRE abaixo (índice 1)
+        # Veteranos SEMPRE no topo (índice 0); Players Monitorados NO MEIO (índice 1); Outros Brasileiros SEMPRE abaixo (índice 2)
         self.assertIn("VETERANOS", vet_emb["title"])
+        self.assertIn("PLAYERS MONITORADOS", mon_emb["title"])
         self.assertIn("OUTROS BRASILEIROS", oth_emb["title"])
         self.assertNotIn("image", vet_emb)
+        self.assertNotIn("image", mon_emb)
         self.assertNotIn("image", oth_emb)
 
         self.assertIn("https://steamcommunity.com/profiles/76561197963172584", vet_emb["description"])
@@ -365,6 +390,9 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertNotIn("  •  ", vet_emb["description"])
         self.assertIn("\n• [**Margheriti** ↗]", vet_emb["description"])
         self.assertIn("\n• [É o Gabe ↗]", vet_emb["description"])
+
+        self.assertIn("Sgt.Yoda", mon_emb["description"])
+        self.assertIn("👁️", mon_emb["description"])
 
         self.assertIn("BrasileiroNoCoH3", oth_emb["description"])
         self.assertIn("BrasileiroSteam", oth_emb["description"])
@@ -382,24 +410,36 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         client = _FakeDiscordClient()
         snap = self._sample_snapshot()
 
-        # Migração 1 -> 3 mensagens: Card Veteranos + Card Outros BR + Links Verticais, depois DELETE da antiga
-        created_trio = client.upsert_lobby_radar_messages(snap, existing_message_ids=["1572969322840719361"])
-        self.assertEqual(created_trio, ["1900000000000000001", "1900000000000000002", "1900000000000000003"])
-        self.assertEqual([c[0] for c in client.calls], ["POST", "POST", "POST", "DELETE"])
+        # Migração 1 -> 4 mensagens: Card Veteranos + Card Monitorados + Card Outros BR + Links Verticais, depois DELETE da antiga
+        created_quad = client.upsert_lobby_radar_messages(snap, existing_message_ids=["1572969322840719361"])
+        self.assertEqual(
+            created_quad,
+            ["1900000000000000001", "1900000000000000002", "1900000000000000003", "1900000000000000004"],
+        )
+        self.assertEqual([c[0] for c in client.calls], ["POST", "POST", "POST", "POST", "DELETE"])
         self.assertIsNotNone(client.calls[0][3])
         self.assertTrue(client.calls[0][3][0][0].startswith("lobby_radar_veteranos_"))
         self.assertEqual(client.calls[0][2]["embeds"], [])
         self.assertIsNotNone(client.calls[1][3])
-        self.assertTrue(client.calls[1][3][0][0].startswith("lobby_radar_outros_"))
+        self.assertTrue(client.calls[1][3][0][0].startswith("lobby_radar_monitorados_"))
         self.assertEqual(client.calls[1][2]["embeds"], [])
-        self.assertIsNone(client.calls[2][3])
-        self.assertEqual(len(client.calls[2][2]["embeds"]), 2)
-        self.assertTrue(client.calls[3][1].endswith("/messages/1572969322840719361"))
+        self.assertIsNotNone(client.calls[2][3])
+        self.assertTrue(client.calls[2][3][0][0].startswith("lobby_radar_outros_"))
+        self.assertEqual(client.calls[2][2]["embeds"], [])
+        self.assertIsNone(client.calls[3][3])
+        self.assertEqual(len(client.calls[3][2]["embeds"]), 3)
+        self.assertTrue(client.calls[4][1].endswith("/messages/1572969322840719361"))
 
         client.calls.clear()
-        next_trio = client.upsert_lobby_radar_messages(snap, existing_message_ids=created_trio)
-        self.assertEqual(next_trio, ["1900000000000000004", "1900000000000000005", "1900000000000000006"])
-        self.assertEqual([c[0] for c in client.calls], ["POST", "POST", "POST", "DELETE", "DELETE", "DELETE"])
+        next_quad = client.upsert_lobby_radar_messages(snap, existing_message_ids=created_quad)
+        self.assertEqual(
+            next_quad,
+            ["1900000000000000005", "1900000000000000006", "1900000000000000007", "1900000000000000008"],
+        )
+        self.assertEqual(
+            [c[0] for c in client.calls],
+            ["POST", "POST", "POST", "POST", "DELETE", "DELETE", "DELETE", "DELETE"],
+        )
 
     def test_upsert_rolls_back_partial_messages_if_second_or_third_post_fails(self) -> None:
         snap = self._sample_snapshot()
@@ -421,6 +461,17 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         deleted_urls = [c[1] for c in client3.calls if c[0] == "DELETE"]
         self.assertTrue(deleted_urls[0].endswith("/messages/1900000000000000002"))
         self.assertTrue(deleted_urls[1].endswith("/messages/1900000000000000001"))
+
+        # Falha no 4º POST (Links): apaga os 3 cards parciais e mantém a mensagem anterior intacta
+        client4 = _FakeDiscordClient()
+        client4.fail_on_post_number = 4
+        with self.assertRaises(RuntimeError):
+            client4.upsert_lobby_radar_messages(snap, existing_message_ids=["1572969322840719361"])
+        self.assertEqual([c[0] for c in client4.calls], ["POST", "POST", "POST", "POST", "DELETE", "DELETE", "DELETE"])
+        deleted4 = [c[1] for c in client4.calls if c[0] == "DELETE"]
+        self.assertTrue(deleted4[0].endswith("/messages/1900000000000000003"))
+        self.assertTrue(deleted4[1].endswith("/messages/1900000000000000002"))
+        self.assertTrue(deleted4[2].endswith("/messages/1900000000000000001"))
 
     def test_sync_discovers_other_br_detects_all_three_states_and_protects_panel(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -465,6 +516,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             )
             self.assertTrue(summary["panel_updated"])
             self.assertEqual(summary["alerts_pruned"], 1)
+            self.assertEqual(summary["monitorados_total"], 39)
             self.assertEqual(summary["other_br_catalog_total"], 3)
             self.assertEqual(summary["other_br_in_coh3"], 1)
             self.assertEqual(summary["other_br_online_steam"], 1)
@@ -473,10 +525,12 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             saved = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 saved["panel_message_ids"],
-                ["1900000000000000001", "1900000000000000002", "1900000000000000003"],
+                ["1900000000000000001", "1900000000000000002", "1900000000000000003", "1900000000000000004"],
             )
-            self.assertEqual(saved["panel_outros_message_id"], "1900000000000000002")
-            self.assertEqual(saved["panel_links_message_id"], "1900000000000000003")
+            self.assertEqual(saved["panel_message_id"], "1900000000000000001")
+            self.assertEqual(saved["panel_monitorados_message_id"], "1900000000000000002")
+            self.assertEqual(saved["panel_outros_message_id"], "1900000000000000003")
+            self.assertEqual(saved["panel_links_message_id"], "1900000000000000004")
             self.assertIn("veteranos_steam_privacy", saved)
             self.assertEqual(saved["veteranos_steam_privacy"]["79327"], "public")
             self.assertEqual(saved["veteranos_steam_privacy"]["58737"], "public")
@@ -578,7 +632,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         }
         payload = build_lobby_radar_links_payload(snap)
         vet_desc = payload["embeds"][0]["description"]
-        oth_desc = payload["embeds"][1]["description"]
+        oth_desc = payload["embeds"][2]["description"]
 
         # Todos os 25 Veteranos de ELO baixo aparecem sem corte nem subtexto discreto!
         for i in range(25):
@@ -602,8 +656,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         )
         self.assertLess(total_chars, 5900)
 
-        vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
-        for png in (vet_png, oth_png):
+        vet_png, mon_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for png in (vet_png, mon_png, oth_png):
             with Image.open(io.BytesIO(png)) as im:
                 self.assertEqual(im.width, 1100)
                 self.assertLess(im.width * im.height, Image.MAX_IMAGE_PIXELS)
@@ -736,11 +790,11 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             saved = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(saved["veteranos_steam_privacy"]["1022333"], "public_games_hidden")
 
-            # Verifica texto dos links enviados na 3ª mensagem POST
-            links_post = fake_discord.calls[2][2]
+            # Verifica texto dos links enviados na 4ª mensagem POST
+            links_post = fake_discord.calls[3][2]
             assert links_post is not None
             vet_desc = links_post["embeds"][0]["description"]
-            oth_desc = links_post["embeds"][1]["description"]
+            oth_desc = links_post["embeds"][2]["description"]
             self.assertIn("🎮 [**gaules** ↗]", vet_desc)
             self.assertIn("*(via Relic há 20m)*", vet_desc)
             self.assertIn("🎮 [**OutroJogosOcultos** ↗]", oth_desc)
@@ -1064,9 +1118,9 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             updated_comm = json.loads(comm_path.read_text(encoding="utf-8"))
             self.assertEqual(updated_comm["players"][str(pax_pid)]["last_match_date"], now - 10 * 60)
 
-            links_post = fake_discord.calls[2][2]
+            links_post = fake_discord.calls[3][2]
             assert links_post is not None
-            oth_desc = links_post["embeds"][1]["description"]
+            oth_desc = links_post["embeds"][2]["description"]
             self.assertIn("Pax Xavier youtube", oth_desc)
             self.assertIn("no CoH3", oth_desc)
 
@@ -1155,7 +1209,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
 
         # 4. Cards PNG renderizam bandeira dos EUA na linha 1-col de Lem22 (Veteranos) e Generick (Outros BR)
         av = SteamAvatarProvider()
-        vet_png, oth_png = render_lobby_radar_cards_png(snap, av)
+        vet_png, _, oth_png = render_lobby_radar_cards_png(snap, av)
         for png_bytes, label in ((vet_png, "Veteranos/Lem22"), (oth_png, "OutrosBR/Generick")):
             with Image.open(io.BytesIO(png_bytes)) as im:
                 # Região exata da bandeira na 1ª linha 1-col de in_coh3: header(84) + sec_hdr(40) + y_off(21) = y=145, x=82..108
@@ -1173,7 +1227,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         # 5. Links verticais no Discord exibem 🇺🇸 para Lem22 e Generick e nenhuma bandeira extra para BRs comuns
         links_payload = build_lobby_radar_links_payload(snap)
         vet_desc = links_payload["embeds"][0]["description"]
-        oth_desc = links_payload["embeds"][1]["description"]
+        oth_desc = links_payload["embeds"][2]["description"]
         self.assertIn("Lem22", vet_desc)
         self.assertIn("🇺🇸", vet_desc)
         self.assertNotIn("nigo_BR** ↗](https://steamcommunity.com/profiles/76561197963741792) 🇺🇸", vet_desc)
@@ -1307,8 +1361,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         }
         payload = build_lobby_radar_links_payload(snap)
         vet_desc = payload["embeds"][0]["description"]
-        oth_desc = payload["embeds"][1]["description"]
-        footer_txt = payload["embeds"][1]["footer"]["text"]
+        oth_desc = payload["embeds"][2]["description"]
+        footer_txt = payload["embeds"][2]["footer"]["text"]
 
         self.assertIn("[**Chacineiro2 \\(Chacineiro\\)** ↗]", vet_desc)
         self.assertNotIn("*(agora:", vet_desc)
@@ -1320,8 +1374,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertIn("*(💤 Ausente na Steam (zZz))*", oth_desc)
         self.assertNotIn("* = mudou de nick", footer_txt)
 
-        vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
-        for png_b in (vet_png, oth_png):
+        vet_png, mon_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for png_b in (vet_png, mon_png, oth_png):
             self.assertTrue(png_b.startswith(b"\x89PNG\r\n\x1a\n"))
             with Image.open(io.BytesIO(png_b)) as im:
                 self.assertEqual(im.width, 1100)
@@ -1774,9 +1828,10 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
 
             # Verifica texto explícito de 15 dias nos embeds do Discord e que nenhum inativo aparece no card
             links_posts = [p for m, _, p, f in fake_disc.calls if m == "POST" and not f and p and p.get("embeds")]
-            oth_embed = links_posts[-1]["embeds"][1]
+            oth_embed = links_posts[-1]["embeds"][2]
             self.assertIn("≤15 DIAS", oth_embed["title"])
-            self.assertIn("≤15 dias", oth_embed["footer"]["text"])
+            self.assertIn("≤15d", oth_embed["footer"]["text"])
+            self.assertIn("Monitorados:", oth_embed["footer"]["text"])
             self.assertIn("Ativo14d", oth_embed["description"])
             self.assertNotIn("Dormente20dSteam", oth_embed["description"])
             self.assertNotIn("Dormente25dRelic", oth_embed["description"])
@@ -2163,7 +2218,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         # 1. Links Steam no Discord preservam 100% dos nomes completos de Smurf (inclusive em baixa evidência)
         links_payload = build_lobby_radar_links_payload(snap)
         vet_desc = links_payload["embeds"][0]["description"]
-        oth_desc = links_payload["embeds"][1]["description"]
+        oth_desc = links_payload["embeds"][2]["description"]
         for row in vet_smurfs:
             self.assertIn(sanitize_discord_text(row["alias"], 48), vet_desc)
         for row in oth_smurfs_high + oth_smurfs_low:
@@ -2182,8 +2237,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(fitted, row["alias"], f"Nome de smurf não deveria ser cortado: {fitted!r}")
             self.assertIn(row["alias"], _format_low_player_token(row))
 
-        vet_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
-        for card_bytes in (vet_png, oth_png):
+        vet_png, mon_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for card_bytes in (vet_png, mon_png, oth_png):
             self.assertTrue(card_bytes.startswith(b"\x89PNG\r\n\x1a\n"))
             with Image.open(io.BytesIO(card_bytes)) as im:
                 self.assertEqual(im.width, 1100)
@@ -2215,12 +2270,12 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         }
         snap = {
             "timestamp": 1_800_000_000,
-            "veteranos": {"total_monitored": 43, "in_coh3": [player_star], "online_steam": [], "recent_relic": []},
+            "veteranos": {"total_monitored": 45, "in_coh3": [player_star], "online_steam": [], "recent_relic": []},
             "outros_brasileiros": {"total_monitored": 50, "in_coh3": [player_star], "online_steam": [], "recent_relic": []},
         }
         links = build_lobby_radar_links_payload(snap)
         self.assertIn("\\[CoBrA\\] Shadow\\*", links["embeds"][0]["description"])
-        self.assertIn("\\[CoBrA\\] Shadow\\*", links["embeds"][1]["description"])
+        self.assertIn("\\[CoBrA\\] Shadow\\*", links["embeds"][2]["description"])
         alert = build_lobby_alert_payload(snap)
         self.assertIn("\\[CoBrA\\] Shadow\\*", alert["content"])
 
@@ -2303,7 +2358,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertEqual(online_by_alias["Eduardo A."]["flag_country"], "sa")
 
         # Card PNG: 1ª linha 1-col de Outros BR (XAPA KENTE) exibe vermelho da bandeira do Canadá e ZERO verde da bandeira do Brasil!
-        _, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        _, _, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
         with Image.open(io.BytesIO(oth_png)) as im:
             crop_px = list(im.crop((82, 136, 108, 158)).getdata())
             self.assertTrue(any(r > 150 and g < 70 and b < 70 for r, g, b in crop_px), "Esperava vermelho da bandeira do Canadá em XAPA KENTE.")
@@ -2311,7 +2366,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
 
         # Links Discord exibem bandeira + texto explicativo de emigrado brasileiro!
         links_payload = build_lobby_radar_links_payload(snap)
-        oth_desc = links_payload["embeds"][1]["description"]
+        oth_desc = links_payload["embeds"][2]["description"]
         self.assertIn("🇨🇦 *(BR no Canadá)*", oth_desc)
         self.assertIn("🇿🇦 *(BR na África do Sul)*", oth_desc)
         self.assertIn("🇸🇦 *(BR na Arábia Saudita)*", oth_desc)
@@ -2384,7 +2439,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         for kwargs in (
             # Veterano nunca sinalizado
             {"profile_id": 79327, "flag_country": "br", "current_aliases": ["夕绫夕兮夕云"], "historical_aliases": ["夕绫", "夕兮"]},
-            # Emigrado confirmado (manual_other_br) nunca sinalizado
+            # Emigrado confirmado (monitorados) nunca sinalizado
             {"profile_id": 212034, "flag_country": "ca", "current_aliases": ["XAPA KENTE"]},
             # Brasileiro com localização Steam Brasil + nick em russo (Московский метро)
             {
@@ -2440,13 +2495,87 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertNotEqual(compute_lobby_state_digest(snap_flagged), compute_lobby_state_digest(snap_plain))
 
         links = build_lobby_radar_links_payload(snap_flagged)
-        oth_desc = links["embeds"][1]["description"]
+        oth_desc = links["embeds"][2]["description"]
         self.assertIn("Nocturne", oth_desc)
         self.assertIn("possível estrangeiro usando VPN", oth_desc)
         self.assertNotIn("Московский метро** ↗](https://steamcommunity.com/profiles/76561198000970468) 🌐", oth_desc)
 
-        _, oth_png = render_lobby_radar_cards_png(snap_flagged, SteamAvatarProvider(allow_network=False))
+        _, _, oth_png = render_lobby_radar_cards_png(snap_flagged, SteamAvatarProvider(allow_network=False))
         self.assertTrue(oth_png.startswith(b"\x89PNG\r\n\x1a\n"))
+
+    def test_players_monitorados_middle_category_full_visibility_no_15d_cutoff_and_sgt_yoda_vigilia(self) -> None:
+        from discord_lobby import build_lobby_alert_payload
+        from steam_presence import CORE_BR_ROSTER, MONITORED_BR_PLAYERS, build_lobby_radar_snapshot
+
+        now = 1_800_000_000
+        yoda_sid = "76561198029749621"     # Sgt.Yoda (priority_watch=True, inativo há >1000d -> DEVE aparecer!)
+        xapa_sid = "76561198207565088"     # XAPA KENTE (CA, BR EXT)
+        lucielle_sid = "76561198815935562" # Lucielle (Smurf: Colossus) movida p/ Monitorados
+        chac_sid = "76561197963172584"     # Chacineiro (Veterano)
+        outro_sid = "76561198988887777"    # Outro BR comum
+
+        pres = {
+            chac_sid: {"steam_id": chac_sid, "ok": True, "is_in_coh3": True, "is_online_steam": True, "steam_alias": "Chacineiro"},
+            yoda_sid: {"steam_id": yoda_sid, "ok": True, "is_in_coh3": False, "is_online_steam": True, "steam_alias": "YodaDisfarce"},
+            xapa_sid: {"steam_id": xapa_sid, "ok": True, "is_in_coh3": True, "is_online_steam": True, "steam_alias": "XAPA KENTE"},
+            lucielle_sid: {"steam_id": lucielle_sid, "ok": True, "is_in_coh3": False, "is_online_steam": True, "steam_alias": "Lucielle"},
+            outro_sid: {"steam_id": outro_sid, "ok": True, "is_in_coh3": True, "is_online_steam": True, "steam_alias": "ComunidadeBR"},
+        }
+        snap = build_lobby_radar_snapshot(
+            CORE_BR_ROSTER,
+            pres,
+            elo_by_pid={79327: 1680},
+            now_ts=now,
+            monitored_br_players=MONITORED_BR_PLAYERS,
+            monitored_presence_by_steam=pres,
+            monitored_elo_by_pid={164152: 1500, 212034: 1329, 1076221: 1545},
+            other_br_players=[
+                # Tentativa proposital de duplicação de Veterano e Monitorado em Outros BR -> filtrada!
+                {"profile_id": 79327, "steam_id": chac_sid, "alias": "Chacineiro", "max_elo": 1680, "last_match_date": now - 600},
+                {"profile_id": 212034, "steam_id": xapa_sid, "alias": "XAPA KENTE", "max_elo": 1329, "last_match_date": now - 600},
+                {"profile_id": 999777, "steam_id": outro_sid, "alias": "ComunidadeBR", "max_elo": 1410, "last_match_date": now - 600},
+            ],
+            other_presence_by_steam=pres,
+        )
+
+        # 1. Ordem e isolamento total entre as 3 categorias (ZERO sobreposição)
+        self.assertEqual([p["profile_id"] for p in snap["veteranos"]["in_coh3"]], [79327])
+        self.assertEqual([p["profile_id"] for p in snap["monitorados"]["in_coh3"]], [212034])
+        self.assertEqual([p["profile_id"] for p in snap["monitorados"]["online_steam"]], [164152, 1076221])
+        self.assertEqual([p["profile_id"] for p in snap["outros_brasileiros"]["in_coh3"]], [999777])
+
+        # Sgt.Yoda aparece em primeiro no online_steam (priority_watch=True), sem corte de 15d e com nick novo!
+        yoda_entry = snap["monitorados"]["online_steam"][0]
+        self.assertEqual(yoda_entry["alias"], "YodaDisfarce (Sgt.Yoda)")
+        self.assertTrue(yoda_entry["priority_watch"])
+        self.assertEqual(yoda_entry["prominence_tier"], "monitorado")
+
+        # 2. Links Discord têm exatamente 3 embeds na ordem: Veteranos -> Players Monitorados -> Outros Brasileiros
+        links = build_lobby_radar_links_payload(snap)
+        self.assertEqual(len(links["embeds"]), 3)
+        self.assertIn("VETERANOS", links["embeds"][0]["title"])
+        self.assertIn("PLAYERS MONITORADOS", links["embeds"][1]["title"])
+        self.assertIn("OUTROS BRASILEIROS", links["embeds"][2]["title"])
+        mon_desc = links["embeds"][1]["description"]
+        self.assertIn("XAPA KENTE", mon_desc)
+        self.assertIn("🇨🇦 *(BR no Canadá)*", mon_desc)
+        self.assertIn("👁️", mon_desc)
+        self.assertIn("YodaDisfarce \\(Sgt.Yoda\\)", mon_desc)
+        self.assertIn("Lucielle \\(Smurf: Colossus\\)", mon_desc)
+        self.assertNotIn("-# _Baixa evidência", mon_desc)
+
+        # 3. Alerta curto menciona Monitorado no CoH3!
+        alert = build_lobby_alert_payload(snap)
+        self.assertIn("Monitorado", alert["content"])
+
+        # 4. Card PNG dos Players Monitorados renderiza com cabeçalho Azul Safira (18, 26, 46) e 1100px de largura!
+        vet_png, mon_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for b in (vet_png, mon_png, oth_png):
+            self.assertTrue(b.startswith(b"\x89PNG\r\n\x1a\n"))
+        with Image.open(io.BytesIO(mon_png)) as mim:
+            self.assertEqual(mim.width, 1100)
+            hdr_px = mim.getpixel((550, 10))
+            self.assertEqual(hdr_px[:3], (18, 26, 46))
 
 
 if __name__ == "__main__":

@@ -115,8 +115,10 @@ def build_lobby_radar_image_payload(
     }
 
 
-COLOR_OTHER_BR_ONLINE = 0x14B8A6  # Verde-água Outros Brasileiros
-COLOR_OTHER_BR_IDLE = 0x64748B    # Ardósia neutro
+COLOR_MONITORADOS_ONLINE = 0x3B82F6  # Azul-Safira Players Monitorados
+COLOR_MONITORADOS_IDLE = 0x475569    # Ardósia-Azulado calmo
+COLOR_OTHER_BR_ONLINE = 0x14B8A6     # Verde-água Outros Brasileiros
+COLOR_OTHER_BR_IDLE = 0x64748B       # Ardósia neutro
 
 
 def _format_coh3_recency_tag(pl: dict[str, Any]) -> str:
@@ -207,9 +209,15 @@ def _format_player_flag_badge(player: dict[str, Any], *, compact: bool = False) 
     return f" {flag_emoji} *({label})*"
 
 
-def _format_suspected_foreign_badge(player: dict[str, Any], *, is_veteranos: bool = False, compact: bool = False) -> str:
+def _format_suspected_foreign_badge(
+    player: dict[str, Any],
+    *,
+    is_veteranos: bool = False,
+    is_monitorados: bool = False,
+    compact: bool = False,
+) -> str:
     """Sinaliza contas com flag BR e fortes indícios de serem estrangeiros usando VPN (ex.: Nocturne)."""
-    if is_veteranos or not bool(player.get("suspected_foreign_flag")):
+    if is_veteranos or is_monitorados or not bool(player.get("suspected_foreign_flag")):
         return ""
     return " 🌐 (VPN?)" if compact else " 🌐 *(possível estrangeiro usando VPN)*"
 
@@ -256,6 +264,7 @@ def _format_category_vertical_description(
     *,
     empty_message: str,
     is_veteranos: bool = True,
+    is_monitorados: bool = False,
     show_coh3_recency: bool = False,
     max_chars: int = 2650,
     coh3_cap: int = 45,
@@ -268,6 +277,7 @@ def _format_category_vertical_description(
     online_steam: list[dict[str, Any]] = list(bucket.get("online_steam") or [])
     recent_relic: list[dict[str, Any]] = list(bucket.get("recent_relic") or [])
 
+    full_visibility = bool(is_veteranos or is_monitorados)
     blocks: list[str] = []
     rem = max(400, int(max_chars))
     low_entries: list[tuple[dict[str, Any], str]] = []
@@ -275,7 +285,7 @@ def _format_category_vertical_description(
     if in_coh3:
         prom_coh3: list[dict[str, Any]] = []
         for pl in in_coh3:
-            if not is_veteranos and resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=True) == "low":
+            if not full_visibility and resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=True) == "low":
                 low_entries.append((pl, "no CoH3"))
             else:
                 prom_coh3.append(pl)
@@ -285,16 +295,17 @@ def _format_category_vertical_description(
             for pl in prom_coh3[:coh3_cap]:
                 link_txt = _format_discord_player_link(pl, bold=True, max_len=48)
                 flag_tag = _format_player_flag_badge(pl)
-                foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos)
+                foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos, is_monitorados=is_monitorados)
+                watch_tag = "👁️ " if (is_monitorados and pl.get("priority_watch")) else ""
                 age_m = pl.get("last_age_min")
-                tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True)
+                tier = resolve_prominence_tier(pl, is_veteranos=is_veteranos, is_in_coh3=True, is_monitorados=is_monitorados)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 status_extra = ""
                 if pl.get("is_busy"):
                     status_extra = " *(⛔ Ocupado)*"
                 elif pl.get("is_away") or pl.get("is_snooze"):
                     status_extra = " *(💤 Ausente na Steam (zZz))*"
-                if not is_veteranos:
+                if not full_visibility:
                     star = "⭐ " if tier == "high" else ""
                     elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
                     if age_m is not None and int(age_m) <= 15:
@@ -305,13 +316,14 @@ def _format_category_vertical_description(
                         rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
                     coh3_lines.append(f"• {star}🎮 {link_txt}{flag_tag}{foreign_tag}{elo_txt}{rec_tag}{status_extra}")
                 else:
+                    elo_txt = f" — {elo_val} ELO" if (is_monitorados and elo_val > 0) else ""
                     if age_m is not None and int(age_m) <= 15:
                         tag = f" *(saiu de partida há {max(1, int(age_m))}m)*"
                     elif pl.get("in_coh3_via_relic") and age_m is not None:
                         tag = f" *(via Relic há {max(1, int(age_m))}m)*"
                     else:
                         tag = ""
-                    coh3_lines.append(f"• 🎮 {link_txt}{flag_tag}{tag}{status_extra}")
+                    coh3_lines.append(f"• {watch_tag}🎮 {link_txt}{flag_tag}{elo_txt}{tag}{status_extra}")
             if len(prom_coh3) > coh3_cap:
                 coh3_lines.append(f"• _...e mais {len(prom_coh3) - coh3_cap} no CoH3_")
             rem = _append_vertical_section(
@@ -325,7 +337,7 @@ def _format_category_vertical_description(
     busy_online: list[dict[str, Any]] = []
     for p in online_steam:
         is_busy_entry = bool(p.get("other_game") or p.get("is_away") or p.get("is_snooze") or p.get("is_busy"))
-        if not is_veteranos and resolve_prominence_tier(p, is_veteranos=False, is_in_coh3=False) == "low":
+        if not full_visibility and resolve_prominence_tier(p, is_veteranos=False, is_in_coh3=False) == "low":
             if p.get("other_game"):
                 low_entries.append((p, sanitize_discord_text(p.get("other_game"), 20)))
             elif p.get("is_busy"):
@@ -344,9 +356,10 @@ def _format_category_vertical_description(
         on_lines: list[str] = []
         for pl in free_online[:free_cap]:
             flag_tag = _format_player_flag_badge(pl)
-            foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos)
+            foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos, is_monitorados=is_monitorados)
+            watch_tag = "👁️ " if (is_monitorados and pl.get("priority_watch")) else ""
             rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
-            if not is_veteranos:
+            if not full_visibility:
                 tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 if tier == "high":
@@ -359,7 +372,9 @@ def _format_category_vertical_description(
                     on_lines.append(f"• {link_txt}{flag_tag}{foreign_tag}{elo_txt}{rec_tag}")
             else:
                 link_txt = _format_discord_player_link(pl, bold=True, max_len=48)
-                on_lines.append(f"• {link_txt}{flag_tag}{rec_tag}")
+                elo_val = int(pl.get("max_elo", 0) or 0)
+                elo_txt = f" — {elo_val} ELO" if (is_monitorados and elo_val > 0) else ""
+                on_lines.append(f"• {watch_tag}{link_txt}{flag_tag}{elo_txt}{rec_tag}")
         if len(free_online) > free_cap:
             on_lines.append(f"• _...e mais {len(free_online) - free_cap} online livres_")
         rem = _append_vertical_section(
@@ -374,16 +389,19 @@ def _format_category_vertical_description(
         for pl in busy_online[:busy_cap]:
             link_txt = _format_discord_player_link(pl, bold=False, max_len=48)
             flag_tag = _format_player_flag_badge(pl)
-            foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos)
+            foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos, is_monitorados=is_monitorados)
+            watch_tag = "👁️ " if (is_monitorados and pl.get("priority_watch")) else ""
             og = _format_presence_status_label(pl)
-            if not is_veteranos:
+            if not full_visibility:
                 tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 star = "⭐ " if tier == "high" else ""
                 elo_txt = f" — **{elo_val} ELO**" if (tier == "high" and elo_val > 0) else (f" — {elo_val} ELO" if elo_val > 0 else "")
                 bz_lines.append(f"• {star}{link_txt}{flag_tag}{foreign_tag}{elo_txt} *({og})*")
             else:
-                bz_lines.append(f"• {link_txt}{flag_tag} *({og})*")
+                elo_val = int(pl.get("max_elo", 0) or 0)
+                elo_txt = f" — {elo_val} ELO" if (is_monitorados and elo_val > 0) else ""
+                bz_lines.append(f"• {watch_tag}{link_txt}{flag_tag}{elo_txt} *({og})*")
         if len(busy_online) > busy_cap:
             bz_lines.append(f"• _...e mais {len(busy_online) - busy_cap} em outro jogo / ausentes / ocupados_")
         rem = _append_vertical_section(
@@ -396,7 +414,7 @@ def _format_category_vertical_description(
     if recent_relic:
         prom_recent: list[dict[str, Any]] = []
         for pl in recent_relic:
-            if not is_veteranos and resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False) == "low":
+            if not full_visibility and resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False) == "low":
                 age_m = max(1, int(pl.get("last_age_min") or 1))
                 low_entries.append((pl, f"invisível há {age_m}m"))
             else:
@@ -406,9 +424,10 @@ def _format_category_vertical_description(
             rec_lines: list[str] = []
             for pl in prom_recent[:recent_cap]:
                 flag_tag = _format_player_flag_badge(pl)
-                foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos)
+                foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos, is_monitorados=is_monitorados)
+                watch_tag = "👁️ " if (is_monitorados and pl.get("priority_watch")) else ""
                 age_m = max(1, int(pl.get("last_age_min") or 1))
-                if not is_veteranos:
+                if not full_visibility:
                     tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
                     elo_val = int(pl.get("max_elo", 0) or 0)
                     star = "⭐ " if tier == "high" else ""
@@ -417,7 +436,9 @@ def _format_category_vertical_description(
                     rec_lines.append(f"• {star}{link_txt}{flag_tag}{foreign_tag}{elo_txt} *(há {age_m}m)*")
                 else:
                     link_txt = _format_discord_player_link(pl, bold=True, max_len=48)
-                    rec_lines.append(f"• {link_txt}{flag_tag} *(há {age_m}m)*")
+                    elo_val = int(pl.get("max_elo", 0) or 0)
+                    elo_txt = f" — {elo_val} ELO" if (is_monitorados and elo_val > 0) else ""
+                    rec_lines.append(f"• {watch_tag}{link_txt}{flag_tag}{elo_txt} *(há {age_m}m)*")
             if len(prom_recent) > recent_cap:
                 rec_lines.append(f"• _...e mais {len(prom_recent) - recent_cap} invisíveis ativos_")
             rem = _append_vertical_section(
@@ -428,7 +449,7 @@ def _format_category_vertical_description(
             )
 
     # Baixa evidência (somente para Outros Brasileiros): subtexto discreto (-#) ao final
-    if not is_veteranos and low_entries and rem >= 90:
+    if not full_visibility and low_entries and rem >= 90:
         low_lines: list[str] = []
         for pl, detail in low_entries[:low_cap]:
             link_txt = _format_discord_player_link(pl, bold=False, max_len=44)
@@ -464,42 +485,66 @@ def build_lobby_radar_links_payload(
     """
     Monta a mensagem dedicada exclusivamente às listas verticais com links diretos da Steam (sem imagem anexa):
     1. Embed superior (sempre acima): Categoria `Veteranos` — SEMPRE exibe todos, independente de ELO ou atividade.
-    2. Embed inferior (sempre abaixo): Categoria `Outros Brasileiros` (ativos <=15d) — destaque para ELO alto + ativos;
+    2. Embed intermediário (no meio): Categoria `Players Monitorados` — jogadores citados/movidos curados manualmente,
+       sem corte de 15 dias e sem ocultação por baixa evidência.
+    3. Embed inferior (sempre abaixo): Categoria `Outros Brasileiros` (ativos <=15d) — destaque para ELO alto + ativos;
        ELO baixo e pouca atividade em subtexto discreto ao final.
     """
     vet = extract_snapshot_category(snapshot, "veteranos")
+    mon = extract_snapshot_category(snapshot, "monitorados")
     oth = extract_snapshot_category(snapshot, "outros_brasileiros")
     oth_days = int(oth.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS)
 
+    # Orçamento estrito abaixo do limite global de 6.000 caracteres do Discord somando os 3 embeds
     vet_desc = _format_category_vertical_description(
         vet,
         empty_message="_Nenhum veterano monitorado com status público online ou partida recente neste instante._",
         is_veteranos=True,
+        is_monitorados=False,
         show_coh3_recency=False,
-        max_chars=3500,
+        max_chars=2200,
         coh3_cap=45,
         free_cap=45,
         busy_cap=45,
         recent_cap=45,
     )
-    oth_budget = min(3800, max(900, 5650 - len(vet_desc) - 280))
+    mon_budget = min(1900, max(650, 5350 - len(vet_desc) - 1250))
+    mon_desc = _format_category_vertical_description(
+        mon,
+        empty_message="_Nenhum player monitorado online ou jogando CoH3 neste instante._",
+        is_veteranos=False,
+        is_monitorados=True,
+        show_coh3_recency=False,
+        max_chars=mon_budget,
+        coh3_cap=40,
+        free_cap=40,
+        busy_cap=40,
+        recent_cap=40,
+    )
+    oth_budget = min(2600, max(650, 5400 - len(vet_desc) - len(mon_desc) - 360))
     oth_desc = _format_category_vertical_description(
         oth,
         empty_message=f"_Nenhum outro brasileiro ativo no CoH3 (≤{oth_days} dias) online ou jogando neste instante._",
         is_veteranos=False,
+        is_monitorados=False,
         show_coh3_recency=True,
         max_chars=oth_budget,
-        coh3_cap=14,
-        free_cap=16,
-        busy_cap=8,
-        recent_cap=8,
-        low_cap=14,
+        coh3_cap=12,
+        free_cap=14,
+        busy_cap=6,
+        recent_cap=6,
+        low_cap=10,
     )
 
     vet_color = (
         COLOR_LOBBY_GAME
         if vet["in_coh3"]
         else (COLOR_LOBBY_ONLINE if (vet["online_steam"] or vet["recent_relic"]) else COLOR_LOBBY_IDLE)
+    )
+    mon_color = (
+        COLOR_LOBBY_GAME
+        if mon["in_coh3"]
+        else (COLOR_MONITORADOS_ONLINE if (mon["online_steam"] or mon["recent_relic"]) else COLOR_MONITORADOS_IDLE)
     )
     oth_color = (
         COLOR_LOBBY_GAME
@@ -512,6 +557,11 @@ def build_lobby_radar_links_payload(
         "description": vet_desc,
         "color": vet_color,
     }
+    mon_embed = {
+        "title": "🎯 PLAYERS MONITORADOS — LINKS DA STEAM",
+        "description": mon_desc,
+        "color": mon_color,
+    }
     oth_embed = {
         "title": f"🇧🇷 OUTROS BRASILEIROS (ATIVOS COH3 ≤{oth_days} DIAS) — LINKS DA STEAM",
         "description": oth_desc,
@@ -519,7 +569,8 @@ def build_lobby_radar_links_payload(
         "footer": {
             "text": (
                 f"Veteranos: {len(vet['in_coh3'])} CoH3 / {len(vet['online_steam'])} Steam • "
-                f"Outros BR ativos ≤{oth_days} dias: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam (⭐ = ELO alto + ativo) • "
+                f"Monitorados: {len(mon['in_coh3'])} CoH3 / {len(mon['online_steam'])} Steam • "
+                f"Outros BR ≤{oth_days}d: {len(oth['in_coh3'])} CoH3 / {len(oth['online_steam'])} Steam • "
                 "Atualizado a cada 5 min"
             )
         },
@@ -531,7 +582,7 @@ def build_lobby_radar_links_payload(
         "avatar_url": BOT_AVATAR_URL,
         "allowed_mentions": SAFE_ALLOWED_MENTIONS,
         "content": "",
-        "embeds": [vet_embed, oth_embed],
+        "embeds": [vet_embed, mon_embed, oth_embed],
     }
 
 
@@ -542,6 +593,7 @@ def build_lobby_alert_payload(
 ) -> dict[str, Any]:
     """Monta aviso curto vivo de movimentação no CoH3 (atualizado em tempo real e limpo automaticamente)."""
     vet = extract_snapshot_category(snapshot, "veteranos")
+    mon = extract_snapshot_category(snapshot, "monitorados")
     oth = extract_snapshot_category(snapshot, "outros_brasileiros")
     in_coh3: list[dict[str, Any]] = vet["in_coh3"]
     online_steam: list[dict[str, Any]] = vet["online_steam"]
@@ -559,6 +611,8 @@ def build_lobby_alert_payload(
         if not p.get("other_game") and not p.get("is_away") and not p.get("is_snooze") and not p.get("is_busy")
     )
     online_tail = f"  •  🟢 **+{free_cnt} Veterano(s) livre(s) na Steam**" if free_cnt > 0 else ""
+    mon_coh3_cnt = len(mon["in_coh3"])
+    mon_tail = f"  •  🎯 **+{mon_coh3_cnt} Monitorado(s) no CoH3**" if mon_coh3_cnt > 0 else ""
     oth_coh3_cnt = len(oth["in_coh3"])
     oth_tail = f"  •  🇧🇷 **+{oth_coh3_cnt} Outro(s) BR no CoH3**" if oth_coh3_cnt > 0 else ""
 
@@ -568,7 +622,7 @@ def build_lobby_alert_payload(
     plural = "Veteranos" if len(in_coh3) != 1 else "Veterano"
     content = (
         f"🔥 **MOVIMENTO NO LOBBY AGORA!** — 🎮 **{len(in_coh3)} {plural} no CoH3:** "
-        f"{', '.join(linked_names)}{extra_coh3}{online_tail}{oth_tail}\n"
+        f"{', '.join(linked_names)}{extra_coh3}{online_tail}{mon_tail}{oth_tail}\n"
         f"-# _Atualizado às {brt_hm} BRT • Detalhes completos no card abaixo • Limpo automaticamente ao encerrar ou após {max(1, int(retention_hours))}h._"
     )
 
@@ -714,18 +768,20 @@ class DiscordLobbyWebhookClient:
         existing_message_ids: list[str] | tuple[str, ...] | None = None,
     ) -> list[str]:
         """
-        Publica o Painel Vivo em TRÊS mensagens separadas no Discord para máxima legibilidade das imagens:
-        1. Mensagem 1 (Card Grande Veteranos): PNG horizontal (1100px, sem embed) -> largura máxima (~550px) no Discord.
-        2. Mensagem 2 (Card Grande Outros Brasileiros): PNG horizontal (1100px, sem embed) -> largura máxima (~550px).
-        3. Mensagem 3 (Links Steam): embeds limpos em lista vertical (Veteranos acima, Outros Brasileiros abaixo).
-        Após confirmar todas as novas mensagens, apaga todas as mensagens anteriores do painel (migração 1/2 -> 3).
+        Publica o Painel Vivo em QUATRO mensagens separadas no Discord em ordem estrita:
+        1. Mensagem 1 (Card Grande Veteranos): PNG horizontal (1100px, sem embed) -> topo.
+        2. Mensagem 2 (Card Grande Players Monitorados): PNG horizontal (1100px, sem embed) -> meio.
+        3. Mensagem 3 (Card Grande Outros Brasileiros): PNG horizontal (1100px, sem embed) -> base.
+        4. Mensagem 4 (Links Steam): 3 embeds em lista vertical (Veteranos -> Players Monitorados -> Outros Brasileiros).
+        Após confirmar todas as novas mensagens, apaga todas as mensagens anteriores do painel (migração 1/2/3 -> 4).
         """
         if not self.is_configured:
             return []
 
         now_ts = int(snapshot.get("timestamp") or time.time())
-        vet_png, oth_png = render_lobby_radar_cards_png(snapshot, avatar_provider=self._avatar_provider)
+        vet_png, mon_png, oth_png = render_lobby_radar_cards_png(snapshot, avatar_provider=self._avatar_provider)
         vet_filename = f"lobby_radar_veteranos_{now_ts}.png"
+        mon_filename = f"lobby_radar_monitorados_{now_ts}.png"
         oth_filename = f"lobby_radar_outros_{now_ts}.png"
 
         wait_url = self._append_wait_param(self._webhook_url)
@@ -754,7 +810,20 @@ class DiscordLobbyWebhookClient:
                 return []
             created_ids.append(vet_msg_id)
 
-            # 2. Mensagem 2: Card Grande Outros Brasileiros (sempre abaixo de Veteranos)
+            # 2. Mensagem 2: Card Grande Players Monitorados (sempre no meio, entre Veteranos e Outros BR)
+            _, mon_data = self._request(
+                "POST",
+                wait_url,
+                image_payload,
+                files=[(mon_filename, mon_png, "image/png")],
+            )
+            mon_msg_id = self._extract_snowflake(mon_data)
+            if not mon_msg_id:
+                _rollback_partial()
+                return []
+            created_ids.append(mon_msg_id)
+
+            # 3. Mensagem 3: Card Grande Outros Brasileiros (sempre abaixo)
             _, oth_data = self._request(
                 "POST",
                 wait_url,
@@ -767,7 +836,7 @@ class DiscordLobbyWebhookClient:
                 return []
             created_ids.append(oth_msg_id)
 
-            # 3. Mensagem 3: Links Steam em lista vertical (sem imagem)
+            # 4. Mensagem 4: Links Steam em lista vertical (3 embeds, sem imagem)
             _, links_data = self._request("POST", wait_url, links_payload)
             links_msg_id = self._extract_snowflake(links_data)
             if not links_msg_id:
@@ -786,7 +855,7 @@ class DiscordLobbyWebhookClient:
 
         new_protected = frozenset(created_ids)
 
-        # 4. Só após confirmar todas as 3 novas mensagens, apaga todas as mensagens antigas do painel
+        # 5. Só após confirmar todas as 4 novas mensagens, apaga todas as mensagens antigas do painel
         seen_old: set[str] = set()
         for raw_old in (existing_message_ids or []):
             clean_old = str(raw_old or "").strip()
