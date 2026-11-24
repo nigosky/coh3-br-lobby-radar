@@ -68,6 +68,15 @@ def parse_profile_id_input(raw: str) -> int | None:
     return None
 
 
+def _normalize_section_name(section: str) -> str:
+    sec = str(section or "").strip().lower()
+    if sec == "veteranos":
+        return "veteranos"
+    if sec in ("monitorados", "manual_other_br"):
+        return "monitorados"
+    raise ValueError(f"Seção inválida: {section}")
+
+
 def load_roster_doc(roster_path: Path = PLAYERS_ROSTER_PATH) -> dict[str, Any]:
     try:
         parsed = read_bounded_json_file(roster_path, max_bytes=262_144)
@@ -76,15 +85,23 @@ def load_roster_doc(roster_path: Path = PLAYERS_ROSTER_PATH) -> dict[str, Any]:
     if not isinstance(parsed, dict) or not isinstance(parsed.get("veteranos"), list):
         raise ValueError("Estrutura inválida em players_roster.json (esperado objeto com lista 'veteranos').")
     parsed.setdefault("schema_version", 1)
-    parsed.setdefault("manual_other_br", [])
+    if "monitorados" not in parsed:
+        legacy = parsed.pop("manual_other_br", None)
+        parsed["monitorados"] = list(legacy) if isinstance(legacy, list) else []
+    elif isinstance(parsed.get("manual_other_br"), list):
+        legacy_extra = parsed.pop("manual_other_br")
+        seen = {int(r.get("profile_id", 0) or 0) for r in parsed["monitorados"] if isinstance(r, dict)}
+        for row in legacy_extra:
+            if isinstance(row, dict) and int(row.get("profile_id", 0) or 0) not in seen:
+                parsed["monitorados"].append(row)
     return parsed
 
 
 def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
     """
     Valida rigorosamente `players_roster.json` (incluindo unicidade de IDs, convenção de nomes,
-    consistência de `smurf_of` e ausência de rótulos legados `(Principal)`/`(Smurf 1)`).
-    Retorna `(total_veteranos_contas, unique_veteranos, total_manual_other_br)`.
+    consistência de `smurf_of`, `priority_watch` e ausência de rótulos legados `(Principal)`/`(Smurf 1)`).
+    Retorna `(total_veteranos_contas, unique_veteranos, total_monitorados)`.
     """
     if not isinstance(doc, dict):
         raise ValueError("Documento JSON raiz deve ser um objeto.")
@@ -92,11 +109,16 @@ def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
         raise ValueError("schema_version deve ser >= 1.")
 
     vets = doc.get("veteranos")
-    others = doc.get("manual_other_br")
+    if "monitorados" in doc:
+        mon_key = "monitorados"
+        others = doc.get("monitorados")
+    else:
+        mon_key = "manual_other_br"
+        others = doc.get("manual_other_br", [])
     if not isinstance(vets, list) or not vets:
         raise ValueError("Lista 'veteranos' deve ser não-vazia.")
     if not isinstance(others, list):
-        raise ValueError("Lista 'manual_other_br' deve ser uma lista.")
+        raise ValueError(f"Lista '{mon_key}' deve ser uma lista.")
 
     seen_pids: set[int] = set()
     seen_sids: set[str] = set()
@@ -119,6 +141,8 @@ def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
                 raise ValueError(f"{sec_name}[{idx}] ({pid}) original_alias vazio.")
             if not ctry:
                 raise ValueError(f"{sec_name}[{idx}] ({alias}) country inválido: {entry.get('country')!r}")
+            if "priority_watch" in entry and not isinstance(entry.get("priority_watch"), bool):
+                raise ValueError(f"{sec_name}[{idx}] ({alias}) priority_watch deve ser booleano.")
             if is_legacy_synthetic_alias_label(alias):
                 raise ValueError(
                     f"{sec_name}[{idx}] ({alias}) usa rótulo legado proibido; use '<NomeOriginal>' para principal "
@@ -159,7 +183,7 @@ def validate_roster_doc(doc: dict[str, Any]) -> tuple[int, int, int]:
     for target in merged_targets:
         if target not in vet_pids:
             raise ValueError(f"merged_into_profile_id={target} não existe na lista 'veteranos'.")
-    _validate_section("manual_other_br", others)
+    _validate_section(mon_key, others)
 
     unique_vets = sum(1 for v in vets if not int(v.get("merged_into_profile_id", 0) or 0))
     return len(vets), unique_vets, len(others)
@@ -219,10 +243,10 @@ def upsert_player_in_roster(
     in_ranking: bool = True,
     pin_alias: bool | None = None,
     smurf_of: str = "",
+    priority_watch: bool | None = None,
     relic_client: RelicActivityClient | None = None,
 ) -> dict[str, Any]:
-    if section not in ("veteranos", "manual_other_br"):
-        raise ValueError(f"Seção inválida: {section}")
+    norm_section = _normalize_section_name(section)
 
     doc = load_roster_doc(roster_path)
     resolved = resolve_player_via_relic(
@@ -234,8 +258,8 @@ def upsert_player_in_roster(
     pid = int(resolved["profile_id"])
     sid = str(resolved["steam_id"])
 
-    # Se promover de manual_other_br para veteranos (ou vice-versa), remove da outra seção sem duplicar
-    other_section = "manual_other_br" if section == "veteranos" else "veteranos"
+    # Se promover de monitorados para veteranos (ou vice-versa), remove da outra seção sem duplicar
+    other_section = "monitorados" if norm_section == "veteranos" else "veteranos"
     doc[other_section] = [
         row
         for row in doc[other_section]
@@ -256,39 +280,44 @@ def upsert_player_in_roster(
     }
     if clean_smurf_of:
         entry["smurf_of"] = clean_smurf_of
-    if section == "veteranos":
+    if norm_section == "veteranos":
         entry["in_ranking"] = bool(in_ranking)
     if pin_alias is not None and not clean_smurf_of:
         entry["pin_alias"] = bool(pin_alias)
+    if priority_watch is not None:
+        entry["priority_watch"] = bool(priority_watch)
 
     updated = False
-    for idx, row in enumerate(doc[section]):
+    for idx, row in enumerate(doc[norm_section]):
         if int(row.get("profile_id", 0) or 0) == pid or str(row.get("steam_id") or "").strip() == sid:
             merged = dict(row)
             merged.update(entry)
             if clean_smurf_of:
                 merged.pop("pin_alias", None)
-            doc[section][idx] = merged
+            if priority_watch is False:
+                merged.pop("priority_watch", None)
+            doc[norm_section][idx] = merged
             entry = merged
             updated = True
             break
     if not updated:
-        doc[section].append(entry)
+        if entry.get("priority_watch") is False:
+            entry.pop("priority_watch", None)
+        doc[norm_section].append(entry)
 
     save_roster_doc(doc, roster_path)
     return entry
 
 
 def remove_player_from_roster(roster_path: Path, *, section: str, target: str) -> bool:
-    if section not in ("veteranos", "manual_other_br"):
-        raise ValueError(f"Seção inválida: {section}")
+    norm_section = _normalize_section_name(section)
     sid = parse_steam_id_input(target)
     pid = parse_profile_id_input(target)
     if not sid and not pid:
         raise ValueError(f"Identificador inválido para remoção: '{strip_unsafe_chars(target)[:80]}'.")
 
     doc = load_roster_doc(roster_path)
-    before = list(doc[section])
+    before = list(doc[norm_section])
     after = [
         row
         for row in before
@@ -299,7 +328,7 @@ def remove_player_from_roster(roster_path: Path, *, section: str, target: str) -
     ]
     if len(after) == len(before):
         return False
-    doc[section] = after
+    doc[norm_section] = after
     save_roster_doc(doc, roster_path)
     return True
 
@@ -314,7 +343,7 @@ def set_player_country(roster_path: Path, *, target: str, country: str) -> dict[
         raise ValueError(f"Identificador inválido: '{strip_unsafe_chars(target)[:80]}'.")
 
     doc = load_roster_doc(roster_path)
-    for sec in ("veteranos", "manual_other_br"):
+    for sec in ("veteranos", "monitorados"):
         for row in doc[sec]:
             if (pid and int(row.get("profile_id", 0) or 0) == pid) or (sid and str(row.get("steam_id") or "").strip() == sid):
                 row["country"] = norm_ctry
@@ -335,19 +364,29 @@ def main(argv: list[str] | None = None) -> int:
     p_av.add_argument("--alias", default="", help="Apelido preferencial opcional")
     p_av.add_argument("--country", default="", help="Bandeira ISO-2 opcional (ex.: br, us)")
     p_av.add_argument("--smurf-of", default="", help="Nome da conta original se esta conta for Smurf")
+    p_av.add_argument("--priority-watch", action="store_true", help="Marca monitoramento prioritário de nicks e smurfs")
     p_av.add_argument("--exclude-from-ranking", action="store_true", help="Define in_ranking=false (fora do Ranking Unificado)")
 
     p_rv = sub.add_parser("remove-veterano", help="Remove Veterano dos 4 sistemas")
     p_rv.add_argument("target", help="SteamID64, profile_id ou link coh3stats.com")
 
-    p_ao = sub.add_parser("add-other-br", help="Adiciona brasileiro manual no exterior (apenas Radar Outros BR)")
-    p_ao.add_argument("target", help="SteamID64, profile_id ou link coh3stats.com")
-    p_ao.add_argument("--alias", default="", help="Apelido preferencial opcional")
-    p_ao.add_argument("--country", default="", help="Bandeira ISO-2 opcional (ex.: us, pt, ca)")
-    p_ao.add_argument("--smurf-of", default="", help="Nome da conta original se esta conta for Smurf")
+    for cmd_name, help_txt in (
+        ("add-monitorado", "Adiciona ou atualiza jogador na categoria intermediária 'Players Monitorados'"),
+        ("add-other-br", "Alias legado para add-monitorado (categoria 'Players Monitorados')"),
+    ):
+        p_am = sub.add_parser(cmd_name, help=help_txt)
+        p_am.add_argument("target", help="SteamID64, profile_id ou link coh3stats.com")
+        p_am.add_argument("--alias", default="", help="Apelido preferencial opcional")
+        p_am.add_argument("--country", default="", help="Bandeira ISO-2 opcional (ex.: us, pt, ca)")
+        p_am.add_argument("--smurf-of", default="", help="Nome da conta original se esta conta for Smurf")
+        p_am.add_argument("--priority-watch", action="store_true", help="Marca monitoramento prioritário de nicks e smurfs")
 
-    p_ro = sub.add_parser("remove-other-br", help="Remove brasileiro manual de Outros BR")
-    p_ro.add_argument("target", help="SteamID64, profile_id ou link coh3stats.com")
+    for cmd_name, help_txt in (
+        ("remove-monitorado", "Remove jogador da categoria 'Players Monitorados'"),
+        ("remove-other-br", "Alias legado para remove-monitorado"),
+    ):
+        p_rm = sub.add_parser(cmd_name, help=help_txt)
+        p_rm.add_argument("target", help="SteamID64, profile_id ou link coh3stats.com")
 
     p_sc = sub.add_parser("set-country", help="Atualiza a bandeira (country ISO-2) de um jogador cadastrado")
     p_sc.add_argument("target", help="SteamID64, profile_id ou link coh3stats.com")
@@ -357,12 +396,12 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.cmd == "validate":
             doc = load_roster_doc(args.roster)
-            tot_v, uniq_v, tot_o = validate_roster_doc(doc)
+            tot_v, uniq_v, tot_m = validate_roster_doc(doc)
             logger.info(
-                "[ROSTER COMPARTILHADO OK] Veteranos: %d jogadores únicos (%d contas Steam) | Outros BR manuais: %d.",
+                "[ROSTER COMPARTILHADO OK] Veteranos: %d jogadores únicos (%d contas Steam) | Players Monitorados: %d.",
                 uniq_v,
                 tot_v,
-                tot_o,
+                tot_m,
             )
             return 0
         if args.cmd == "add-veterano":
@@ -373,6 +412,7 @@ def main(argv: list[str] | None = None) -> int:
                 alias=args.alias,
                 country=args.country,
                 smurf_of=args.smurf_of,
+                priority_watch=True if args.priority_watch else None,
                 in_ranking=not args.exclude_from_ranking,
             )
             logger.info("Veterano salvo na base compartilhada: %s (pid=%d, country=%s, in_ranking=%s).", ent["original_alias"], ent["profile_id"], ent["country"], ent.get("in_ranking", True))
@@ -381,21 +421,22 @@ def main(argv: list[str] | None = None) -> int:
             ok = remove_player_from_roster(args.roster, section="veteranos", target=args.target)
             logger.info("Veterano removido da base compartilhada." if ok else "Veterano não encontrado na base.")
             return 0
-        if args.cmd == "add-other-br":
+        if args.cmd in ("add-monitorado", "add-other-br"):
             ent = upsert_player_in_roster(
                 args.roster,
-                section="manual_other_br",
+                section="monitorados",
                 target=args.target,
                 alias=args.alias,
                 country=args.country,
                 smurf_of=args.smurf_of,
+                priority_watch=True if args.priority_watch else None,
                 in_ranking=False,
             )
-            logger.info("Outro BR manual salvo na base compartilhada: %s (pid=%d, country=%s).", ent["original_alias"], ent["profile_id"], ent["country"])
+            logger.info("Player Monitorado salvo na base compartilhada: %s (pid=%d, country=%s).", ent["original_alias"], ent["profile_id"], ent["country"])
             return 0
-        if args.cmd == "remove-other-br":
-            ok = remove_player_from_roster(args.roster, section="manual_other_br", target=args.target)
-            logger.info("Outro BR manual removido." if ok else "Jogador não encontrado em manual_other_br.")
+        if args.cmd in ("remove-monitorado", "remove-other-br"):
+            ok = remove_player_from_roster(args.roster, section="monitorados", target=args.target)
+            logger.info("Player Monitorado removido." if ok else "Jogador não encontrado em monitorados.")
             return 0
         if args.cmd == "set-country":
             ent = set_player_country(args.roster, target=args.target, country=args.country)

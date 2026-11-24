@@ -1291,6 +1291,71 @@ class TestTop50SmurfDetector(unittest.TestCase):
         )
         self.assertFalse(clean["flagged"])
 
+    def test_priority_watch_sgt_yoda_always_monitored_and_prioritized_in_nick_changes(self) -> None:
+        from collections import Counter
+
+        # Sgt.Yoda (164152) está marcado com priority_watch=True e fora do Top 2 BR simulado,
+        # com include_veteranos=False -> ainda assim DEVE ser monitorado contra smurfs e priorizado em trocas de nick!
+        all_br = {
+            79327: {"profile_id": 79327, "steam_id": "76561197963172584", "alias": "Chacineiro", "country": "br", "max_elo": 1700, "total_matches": 1800},
+            559962: {"profile_id": 559962, "steam_id": "76561198014174868", "alias": "Gabe", "country": "br", "max_elo": 1650, "total_matches": 1500},
+            164152: {"profile_id": 164152, "steam_id": "76561198029749621", "alias": "seu pai", "country": "br", "max_elo": 1500, "total_matches": 638},
+            1999164: {"profile_id": 1999164, "steam_id": "76561199888164152", "alias": "YodaSmurfTeste", "country": "br", "max_elo": 1495, "total_matches": 32},
+        }
+        col = sd.SmurfTelemetryCollector()
+        # Telemetria forte de 1v1 + APM + horários + aliados compartilhados ligando 1999164 -> Sgt.Yoda (164152)
+        col.players[164152] = sd.PlayerMatchTelemetry(
+            profile_id=164152,
+            games=25,
+            wins=15,
+            mode_counts=Counter({"1v1": 25}),
+            mode_faction_counts=Counter({("1v1", 0): 12, ("1v1", 1): 13}),
+            mode_elo_max={"1v1": 1500},
+            hour_counts=Counter({22: 12, 23: 13}),
+            apm_values=[75.5] * 15,
+            ally_counts=Counter({79327: 5, 559962: 4}),
+            intervals=[(1_760_000_000 + i * 3600, 1_760_001_800 + i * 3600, i + 1) for i in range(10)],
+        )
+        col.players[1999164] = sd.PlayerMatchTelemetry(
+            profile_id=1999164,
+            games=20,
+            wins=13,
+            mode_counts=Counter({"1v1": 20}),
+            mode_faction_counts=Counter({("1v1", 0): 10, ("1v1", 1): 10}),
+            mode_elo_max={"1v1": 1495},
+            hour_counts=Counter({22: 10, 23: 10}),
+            apm_values=[76.0] * 15,
+            ally_counts=Counter({79327: 4, 559962: 3}),
+            intervals=[(1_760_200_000 + i * 3600, 1_760_201_800 + i * 3600, 100 + i) for i in range(10)],
+        )
+
+        report = sd.detect_top50_br_smurfs(
+            all_br_players=all_br,
+            telemetry=col,
+            live_stats_by_pid={
+                79327: {"profile_id": 79327, "alias": "ChacineiroNovo", "max_elo": 1700},
+                164152: {"profile_id": 164152, "alias": "YodaDisfarcado", "max_elo": 1500},
+            },
+            top_n=2,
+            min_probability_pct=45,
+            include_veteranos=False,
+        )
+        # 1. Sgt.Yoda aparece em prioridade máxima (índice 0) nas mudanças de nick, antes mesmo do #1 BR!
+        nicks = report["nick_changes"]
+        self.assertGreaterEqual(len(nicks), 2)
+        self.assertEqual(nicks[0]["profile_id"], 164152)
+        self.assertEqual(nicks[0]["scope"], "monitorado")
+        self.assertTrue(nicks[0]["priority_watch"])
+        self.assertEqual(nicks[0]["display_alias"], "YodaDisfarcado (Sgt.Yoda)")
+        txt = sd.format_smurf_report_text(report)
+        self.assertIn("[PRIORIDADE | PRINCIPAL | monitorado]", txt)
+        self.assertIn("YodaDisfarcado (Sgt.Yoda)", txt)
+
+        # 2. Suspeita de smurf ligada a Sgt.Yoda (164152) NÃO é ignorada mesmo estando fora do Top 2 BR!
+        suspect_by_cand = {s["candidate"]["profile_id"]: s for s in report["suspects"]}
+        self.assertIn(1999164, suspect_by_cand)
+        self.assertEqual(suspect_by_cand[1999164]["top_matches"][0]["main_profile_id"], 164152)
+
 
 if __name__ == "__main__":
     unittest.main()

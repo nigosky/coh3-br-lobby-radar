@@ -331,17 +331,10 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
         "smurf_of": "Chacineiro",
         "known_aliases": ["TearsInTheRain", "TearsInTheRain (Chacineiro)", "TearsInTheRain (Smurf: Chacineiro)"],
     },
-    {
-        "profile_id": 1076221,
-        "steam_id": "76561198815935562",
-        "original_alias": "Lucielle (Smurf: Colossus)",
-        "smurf_of": "Colossus",
-        "known_aliases": ["Lucielle", "Lucifer", "Lucielle (Colossus)", "Lucielle (Smurf: Colossus)"],
-    },
     {"profile_id": 1119784, "steam_id": "76561198000067932", "original_alias": "Tracker"},
 ]
 
-_FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
+_FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 33487, "steam_id": "76561197995712470", "original_alias": "Generick", "country": "us", "flag_country": "us"},
     {
         "profile_id": 16867,
@@ -433,11 +426,58 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
     {
         "profile_id": 164152,
         "steam_id": "76561198029749621",
-        "original_alias": "seu pai (Smurf: Sgt.Yoda)",
-        "smurf_of": "Sgt.Yoda",
+        "original_alias": "Sgt.Yoda",
         "country": "br",
-        "known_aliases": ["seu pai", "Sgt.Yoda", "seu pai (Sgt.Yoda)", "seu pai (Smurf: Sgt.Yoda)"],
+        "priority_watch": True,
+        "known_aliases": ["Sgt.Yoda", "seu pai", "fiadaputa"],
     },
+    {
+        "profile_id": 941524,
+        "steam_id": "76561198162353268",
+        "original_alias": "Colossus",
+        "country": "br",
+        "known_aliases": ["Colossus", "̶C̶o̶l̶o̶s̶s̶u̶s̶", "̶H̶e̶c̶t̶o̶r̶", "Hector"],
+    },
+    {
+        "profile_id": 1076221,
+        "steam_id": "76561198815935562",
+        "original_alias": "Lucielle (Smurf: Colossus)",
+        "smurf_of": "Colossus",
+        "country": "br",
+        "known_aliases": [
+            "Lucielle",
+            "Lucifer",
+            "Lan",
+            "Leonardo Martins Dantas Gomes",
+            "Lucielle (Colossus)",
+            "Lucielle (Smurf: Colossus)",
+        ],
+    },
+    {
+        "profile_id": 40833,
+        "steam_id": "76561198216174113",
+        "original_alias": "Tokai Teio",
+        "country": "br",
+        "known_aliases": [
+            "Tokai Teio",
+            "Tokai Teio!",
+            "Aston Machan",
+            "GOTE",
+            "GOTEツ",
+            "Cabra",
+            "ouh mai GOTE",
+            "miGOTE",
+            "T.M. Opera O",
+            "Oguri Cap",
+            "Assault Grenadier",
+            "Seiun Sky",
+            "Silence Suzuka",
+            "Nice Nature",
+            "Sakura Bakushin O",
+        ],
+    },
+    {"profile_id": 991551, "steam_id": "76561198067968388", "original_alias": "Caveira-.", "country": "br"},
+    {"profile_id": 667564, "steam_id": "76561198258429491", "original_alias": "Friedhelm Winter", "country": "br"},
     {"profile_id": 7448, "steam_id": "76561198002516537", "original_alias": "icewarp", "country": "za", "flag_country": "za"},
     {
         "profile_id": 91827,
@@ -486,6 +526,9 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 11033, "steam_id": "76561198009533220", "original_alias": "Coka", "country": "jp", "flag_country": "jp"},
     {"profile_id": 24963, "steam_id": "76561197987674520", "original_alias": "Eduardo A.", "country": "sa", "flag_country": "sa"},
 ]
+
+# Alias retrocompatível para o fallback da 3ª categoria (`monitorados`)
+_FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = _FALLBACK_MONITORED_BR_PLAYERS
 
 
 _SMURF_LABEL_RE = re.compile(r"^(.*?)\s*\(\s*smurf\s*:\s*([^)]+?)\s*\)\s*$", re.IGNORECASE)
@@ -558,6 +601,8 @@ def _normalize_shared_roster_entry(raw: Any, *, default_in_ranking: bool = True)
         entry["in_ranking"] = True
     if raw.get("pin_alias"):
         entry["pin_alias"] = True
+    if raw.get("priority_watch"):
+        entry["priority_watch"] = True
     smurf_owner = strip_unsafe_chars(raw.get("smurf_of") or "")[:40]
     if not smurf_owner:
         _, smurf_owner = extract_smurf_owner_and_nick(alias)
@@ -583,7 +628,8 @@ def load_shared_players_roster(
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """
     Carrega a base canônica compartilhada (`players_roster.json`) entre Radar, Scheduler, Tracker e Ranking.
-    Retorna `(veteranos, manual_other_br)`, fazendo fallback seguro em caso de ausência/erro de leitura.
+    Retorna `(veteranos, monitorados)`, lendo tanto `'monitorados'` quanto a chave legada `'manual_other_br'`,
+    fazendo fallback seguro em caso de ausência/erro de leitura.
     """
     try:
         parsed = read_bounded_json_file(roster_path, max_bytes=262_144)
@@ -595,19 +641,24 @@ def load_shared_players_roster(
                 if norm and norm["profile_id"] not in seen_pids:
                     seen_pids.add(norm["profile_id"])
                     vets.append(norm)
-            others: list[dict[str, Any]] = []
-            for row in (parsed.get("manual_other_br") or []):
+            monitored: list[dict[str, Any]] = []
+            raw_mon_rows: list[Any] = []
+            if isinstance(parsed.get("monitorados"), list):
+                raw_mon_rows.extend(parsed["monitorados"])
+            if isinstance(parsed.get("manual_other_br"), list):
+                raw_mon_rows.extend(parsed["manual_other_br"])
+            for row in raw_mon_rows:
                 norm = _normalize_shared_roster_entry(row, default_in_ranking=False)
                 if norm and norm["profile_id"] not in seen_pids:
                     seen_pids.add(norm["profile_id"])
-                    others.append(norm)
+                    monitored.append(norm)
             if vets:
-                return vets, others
+                return vets, monitored
     except FileNotFoundError:
         pass
     except Exception as exc:
         logger.warning("Falha ao carregar %s; usando fallback embutido: %s", roster_path.name, redact_secrets(exc))
-    return [dict(r) for r in _FALLBACK_CORE_BR_ROSTER], [dict(r) for r in _FALLBACK_MANUAL_OTHER_BR_PLAYERS]
+    return [dict(r) for r in _FALLBACK_CORE_BR_ROSTER], [dict(r) for r in _FALLBACK_MONITORED_BR_PLAYERS]
 
 
 def extract_roster_id_sets(roster: list[dict[str, Any]]) -> tuple[set[int], set[str]]:
@@ -641,43 +692,48 @@ def format_coh3_recency_age(pl: dict[str, Any]) -> str:
     return f"{d_int}d"
 
 
-# Elenco compartilhado carregado de `players_roster.json` (Veteranos + Brasileiros manuais no exterior)
+# Elenco compartilhado carregado de `players_roster.json`:
+# 1) Veteranos (topo) | 2) Players Monitorados (intermediária — mesmo objeto referenciado pelo alias legado MANUAL_OTHER_BR_PLAYERS)
 CORE_BR_ROSTER: list[dict[str, Any]] = []
-MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = []
+MONITORED_BR_PLAYERS: list[dict[str, Any]] = []
+MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = MONITORED_BR_PLAYERS
 
 
 def reload_shared_players_roster(roster_path: Path = PLAYERS_ROSTER_PATH) -> tuple[int, int]:
-    """Recarrega `CORE_BR_ROSTER` e `MANUAL_OTHER_BR_PLAYERS` in-place a partir de `players_roster.json`."""
-    vets, others = load_shared_players_roster(roster_path)
+    """Recarrega `CORE_BR_ROSTER` e `MONITORED_BR_PLAYERS` in-place a partir de `players_roster.json`."""
+    vets, monitored = load_shared_players_roster(roster_path)
     CORE_BR_ROSTER[:] = vets
-    MANUAL_OTHER_BR_PLAYERS[:] = others
-    return len(vets), len(others)
+    MONITORED_BR_PLAYERS[:] = monitored
+    return len(vets), len(monitored)
 
 
 reload_shared_players_roster()
 
 
 def get_configured_flag_country(profile_id: int) -> str:
-    """Retorna a bandeira explícita configurada em CORE_BR_ROSTER/MANUAL_OTHER_BR_PLAYERS (ex.: 'us' para Lem22 e Generick)."""
+    """Retorna a bandeira explícita configurada em CORE_BR_ROSTER/MONITORED_BR_PLAYERS (ex.: 'us' para Lem22 e Generick)."""
     pid = int(profile_id or 0)
     if pid <= 0:
         return ""
-    for roster in (CORE_BR_ROSTER, MANUAL_OTHER_BR_PLAYERS):
+    for roster in (CORE_BR_ROSTER, MONITORED_BR_PLAYERS):
         for row in roster:
             if int(row.get("profile_id", 0) or 0) == pid:
                 return normalize_flag_country(row.get("flag_country") or row.get("country"))
     return ""
 
 
-def get_manual_other_br_override(profile_id: int) -> dict[str, Any] | None:
-    """Retorna metadados manuais de `MANUAL_OTHER_BR_PLAYERS` (alias preferencial, known_aliases, pin_alias, flag_country)."""
+def get_monitored_br_override(profile_id: int) -> dict[str, Any] | None:
+    """Retorna metadados de `MONITORED_BR_PLAYERS` (alias preferencial, known_aliases, pin_alias, priority_watch, flag_country)."""
     pid = int(profile_id or 0)
     if pid <= 0:
         return None
-    for row in MANUAL_OTHER_BR_PLAYERS:
+    for row in MONITORED_BR_PLAYERS:
         if int(row.get("profile_id", 0) or 0) == pid:
             return row
     return None
+
+
+get_manual_other_br_override = get_monitored_br_override
 
 
 def resolve_nick_change_display(
@@ -4398,7 +4454,7 @@ def detect_suspected_foreign_br_flag(
         return True, f"verified:{vstat}"
 
     src_low = str(br_source or "").strip().lower()
-    if src_low in ("steam_group_br", "steam_ptbr_review", "manual_other_br"):
+    if src_low in ("steam_group_br", "steam_ptbr_review", "manual_other_br", "monitorados"):
         return False, ""
 
     pres_list = [p for p in (steam_presences or []) if isinstance(p, dict)]
@@ -4488,12 +4544,13 @@ def _build_category_lists(
             secondary_rows.append(row)
             continue
         sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
-        manual_ov = get_manual_other_br_override(pid) if category == "outros_brasileiros" else None
+        manual_ov = get_monitored_br_override(pid) if category in ("monitorados", "outros_brasileiros") else None
         raw_alias = str(row.get("alias") or row.get("original_alias") or f"Jogador {pid}")
         known_aliases: list[str] = [
             strip_unsafe_chars(k)[:48] for k in (row.get("known_aliases") or []) if strip_unsafe_chars(k)
         ]
         pin_alias = bool(row.get("pin_alias"))
+        priority_watch = bool(row.get("priority_watch"))
         smurf_of = strip_unsafe_chars(row.get("smurf_of") or "")[:40]
         if manual_ov:
             ov_alias = str(manual_ov.get("original_alias") or "").strip()
@@ -4504,10 +4561,16 @@ def _build_category_lists(
                 known_aliases.extend(k for k in ov_known if k not in known_aliases)
             if manual_ov.get("pin_alias"):
                 pin_alias = True
+            if manual_ov.get("priority_watch"):
+                priority_watch = True
             if manual_ov.get("smurf_of"):
                 smurf_of = strip_unsafe_chars(manual_ov.get("smurf_of") or "")[:40]
             if ov_alias and (
-                manual_ov.get("pin_alias") or smurf_of or ov_known or is_legacy_synthetic_alias_label(raw_alias)
+                category == "monitorados"
+                or manual_ov.get("pin_alias")
+                or smurf_of
+                or ov_known
+                or is_legacy_synthetic_alias_label(raw_alias)
             ):
                 raw_alias = ov_alias
         if not smurf_of:
@@ -4521,6 +4584,7 @@ def _build_category_lists(
             "current_alias": strip_unsafe_chars(row.get("current_alias") or "")[:48],
             "known_aliases": known_aliases,
             "pin_alias": pin_alias,
+            "priority_watch": priority_watch,
             "smurf_of": smurf_of,
             "flag_country": flag_ctry,
             "br_source": strip_unsafe_chars(row.get("br_source") or "")[:32],
@@ -4690,6 +4754,9 @@ def _build_category_lists(
                 br_source=str(meta.get("br_source") or ""),
                 verified_foreign_status=str(vrec.get("status") or ""),
             )
+        elif category == "monitorados":
+            # Players Monitorados SEMPRE aparecem com destaque total (sem corte 15d e sem baixa evidência)
+            prom_tier, prom_score = "monitorado", max_elo
         else:
             # Veteranos SEMPRE aparecem com destaque total, independente de ELO ou atividade
             prom_tier, prom_score = "veterano", max_elo
@@ -4702,6 +4769,7 @@ def _build_category_lists(
             "current_alias": current_live_alias,
             "nick_changed": bool(nick_changed),
             "smurf_of": str(meta.get("smurf_of") or ""),
+            "priority_watch": bool(meta.get("priority_watch")),
             "flag_country": meta["flag_country"],
             "is_expat": bool(meta["flag_country"] and meta["flag_country"] != "br"),
             "suspected_foreign_flag": bool(suspected_foreign),
@@ -4800,9 +4868,30 @@ def _build_category_lists(
             )
         )
     else:
-        in_coh3_list.sort(key=lambda x: (x["last_age_min"] if x["last_age_min"] is not None else 9999, -x["max_elo"], x["alias"].lower()))
-        online_steam_list.sort(key=lambda x: (_online_availability_rank(x), -x["max_elo"], x["alias"].lower()))
-        recent_relic_list.sort(key=lambda x: (x["last_age_min"] if x["last_age_min"] is not None else 9999, -x["max_elo"], x["alias"].lower()))
+        in_coh3_list.sort(
+            key=lambda x: (
+                0 if x.get("priority_watch") else 1,
+                x["last_age_min"] if x["last_age_min"] is not None else 9999,
+                -x["max_elo"],
+                x["alias"].lower(),
+            )
+        )
+        online_steam_list.sort(
+            key=lambda x: (
+                _online_availability_rank(x),
+                0 if x.get("priority_watch") else 1,
+                -x["max_elo"],
+                x["alias"].lower(),
+            )
+        )
+        recent_relic_list.sort(
+            key=lambda x: (
+                0 if x.get("priority_watch") else 1,
+                x["last_age_min"] if x["last_age_min"] is not None else 9999,
+                -x["max_elo"],
+                x["alias"].lower(),
+            )
+        )
 
     return in_coh3_list, online_steam_list, recent_relic_list, len(canonical_entries)
 
@@ -4834,6 +4923,10 @@ def build_lobby_radar_snapshot(
     elo_by_pid: dict[int, int] | None = None,
     now_ts: int | None = None,
     recent_relic_minutes: int = 35,
+    monitored_br_players: list[dict[str, Any]] | None = None,
+    monitored_presence_by_steam: dict[str, dict[str, Any]] | None = None,
+    monitored_latest_matches_by_pid: dict[int, dict[str, Any]] | None = None,
+    monitored_elo_by_pid: dict[int, int] | None = None,
     other_br_players: list[dict[str, Any]] | None = None,
     other_presence_by_steam: dict[str, dict[str, Any]] | None = None,
     other_latest_matches_by_pid: dict[int, dict[str, Any]] | None = None,
@@ -4846,9 +4939,11 @@ def build_lobby_radar_snapshot(
     verified_foreign_status_by_pid: dict[int, dict[str, Any]] | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
-    Consolida as duas categorias do Radar de Lobby:
+    Consolida as TRÊS categorias do Radar de Lobby em ordem fixa:
     1. `veteranos` (sempre acima): jogadores monitorados no tracker de partidas.
-    2. `outros_brasileiros` (sempre abaixo): demais brasileiros ATIVOS no CoH3 (partida nos últimos `other_br_active_days` dias, padrão 15d).
+    2. `monitorados` (categoria intermediária — `Players Monitorados`): jogadores citados/movidos curados manualmente,
+       sempre exibidos quando online/no CoH3/invisíveis, sem corte de 15 dias.
+    3. `outros_brasileiros` (sempre abaixo): demais brasileiros ATIVOS no CoH3 (partida nos últimos `other_br_active_days` dias, padrão 15d).
     """
     now = int(now_ts) if now_ts is not None else int(time.time())
     vet_roster = list(custom_players) if custom_players else list(CORE_BR_ROSTER)
@@ -4870,37 +4965,64 @@ def build_lobby_radar_snapshot(
         known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
     )
 
-    # Garante separação estrita: nenhum Veterano (nem conta secundária) pode aparecer em "Outros Brasileiros"
     vet_pids, vet_sids = extract_roster_id_sets(vet_roster)
-    filtered_others = [
+
+    # 2. Categoria intermediária: Players Monitorados (exclui qualquer Veterano)
+    filtered_monitored = [
         row
-        for row in (other_br_players or [])
+        for row in (monitored_br_players or [])
         if int(row.get("profile_id", 0) or 0) not in vet_pids
         and str(row.get("steam_id") or "").replace("/steam/", "").strip() not in vet_sids
     ]
-
-    merged_other_pres = dict(presence_by_steam)
+    merged_mon_pres = dict(presence_by_steam)
     if other_presence_by_steam:
-        merged_other_pres.update(other_presence_by_steam)
+        merged_mon_pres.update(other_presence_by_steam)
+    if monitored_presence_by_steam:
+        merged_mon_pres.update(monitored_presence_by_steam)
 
-    merged_other_matches = dict(latest_by_pid)
-    if other_latest_matches_by_pid:
-        for pid, m in other_latest_matches_by_pid.items():
-            prev = merged_other_matches.get(pid)
-            if prev is None or int(m.get("completion_time", 0)) > int(prev.get("completion_time", 0)):
-                merged_other_matches[pid] = m
+    merged_mon_matches = dict(latest_by_pid)
+    for src_m in (other_latest_matches_by_pid, monitored_latest_matches_by_pid):
+        if src_m:
+            for pid, m in src_m.items():
+                prev = merged_mon_matches.get(pid)
+                if prev is None or int(m.get("completion_time", 0)) > int(prev.get("completion_time", 0)):
+                    merged_mon_matches[pid] = m
 
-    merged_other_elos = dict(best_elo_map)
-    if other_elo_by_pid:
-        for pid, val in other_elo_by_pid.items():
-            if int(val or 0) > int(merged_other_elos.get(pid, 0) or 0):
-                merged_other_elos[pid] = int(val)
+    merged_mon_elos = dict(best_elo_map)
+    for src_e in (other_elo_by_pid, monitored_elo_by_pid):
+        if src_e:
+            for pid, val in src_e.items():
+                if int(val or 0) > int(merged_mon_elos.get(pid, 0) or 0):
+                    merged_mon_elos[pid] = int(val)
+
+    mon_in_coh3, mon_online, mon_recent, mon_total = _build_category_lists(
+        filtered_monitored,
+        merged_mon_pres,
+        merged_mon_matches,
+        merged_mon_elos,
+        now=now,
+        recent_cutoff_sec=recent_cutoff_sec,
+        category="monitorados",
+        known_ingame_visible_sids=known_ingame_visible_sids,
+        known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
+    )
+
+    # 3. Separação estrita: nenhum Veterano nem Player Monitorado pode duplicar em "Outros Brasileiros"
+    mon_pids, mon_sids = extract_roster_id_sets(filtered_monitored)
+    excluded_pids = vet_pids | mon_pids
+    excluded_sids = vet_sids | mon_sids
+    filtered_others = [
+        row
+        for row in (other_br_players or [])
+        if int(row.get("profile_id", 0) or 0) not in excluded_pids
+        and str(row.get("steam_id") or "").replace("/steam/", "").strip() not in excluded_sids
+    ]
 
     oth_in_coh3, oth_online, oth_recent, oth_checked = _build_category_lists(
         filtered_others,
-        merged_other_pres,
-        merged_other_matches,
-        merged_other_elos,
+        merged_mon_pres,
+        merged_mon_matches,
+        merged_mon_elos,
         now=now,
         recent_cutoff_sec=recent_cutoff_sec,
         category="outros_brasileiros",
@@ -4911,24 +5033,32 @@ def build_lobby_radar_snapshot(
         verified_foreign_status_by_pid=verified_foreign_status_by_pid,
     )
 
-    xml_ok_accounts = sum(1 for v in merged_other_pres.values() if v.get("ok"))
+    xml_ok_accounts = sum(1 for v in merged_mon_pres.values() if v.get("ok"))
     catalog_total = max(oth_checked, int(other_br_total_catalog or 0))
 
     return {
         "timestamp": now,
         "total_monitored_unique": vet_total,
         "xml_ok_accounts": xml_ok_accounts,
-        "xml_total_accounts": len(merged_other_pres),
+        "xml_total_accounts": len(merged_mon_pres),
         # Campos retrocompatíveis de topo apontam para os Veteranos
         "in_coh3": vet_in_coh3,
         "online_steam": vet_online,
         "recent_relic": vet_recent,
-        # Categorias explícitas (Veteranos sempre acima, Outros Brasileiros sempre abaixo)
+        # Três categorias explícitas: Veteranos (topo) -> Players Monitorados (meio) -> Outros Brasileiros (base)
         "veteranos": {
             "total_monitored": vet_total,
             "in_coh3": vet_in_coh3,
             "online_steam": vet_online,
             "recent_relic": vet_recent,
+        },
+        "monitorados": {
+            "total_monitored": mon_total,
+            "checked_count": mon_total,
+            "active_window_days": 0,
+            "in_coh3": mon_in_coh3,
+            "online_steam": mon_online,
+            "recent_relic": mon_recent,
         },
         "outros_brasileiros": {
             "total_monitored": catalog_total,
@@ -4987,14 +5117,16 @@ def _category_digest(bucket: dict[str, Any]) -> tuple[Any, Any, Any]:
 
 
 def compute_lobby_state_digest(snapshot: dict[str, Any]) -> str:
-    """Gera assinatura determinística da presença das categorias Veteranos e Outros Brasileiros."""
+    """Gera assinatura determinística da presença das 3 categorias (Veteranos, Players Monitorados e Outros Brasileiros)."""
     vet_bucket = snapshot.get("veteranos") or {
         "in_coh3": snapshot.get("in_coh3", []),
         "online_steam": snapshot.get("online_steam", []),
         "recent_relic": snapshot.get("recent_relic", []),
     }
+    mon_bucket = snapshot.get("monitorados") or {"in_coh3": [], "online_steam": [], "recent_relic": []}
     oth_bucket = snapshot.get("outros_brasileiros") or {"in_coh3": [], "online_steam": [], "recent_relic": []}
-    return repr((_category_digest(vet_bucket), _category_digest(oth_bucket)))
+    # IMPORTANTE: `dig[0]` permanece sendo Veteranos para retrocompatibilidade estrita com `coh3-br-scheduler`!
+    return repr((_category_digest(vet_bucket), _category_digest(mon_bucket), _category_digest(oth_bucket)))
 
 
 def get_unique_veteranos_count() -> int:
@@ -5002,14 +5134,19 @@ def get_unique_veteranos_count() -> int:
     return sum(1 for row in CORE_BR_ROSTER if not int(row.get("merged_into_profile_id", 0) or 0))
 
 
+def get_unique_monitorados_count() -> int:
+    """Retorna o total dinâmico de Players Monitorados cadastrados em `MONITORED_BR_PLAYERS`."""
+    return len(MONITORED_BR_PLAYERS)
+
+
 def extract_snapshot_category(snapshot: dict[str, Any], key: str) -> dict[str, Any]:
-    """Extrai de forma padronizada o bucket `veteranos` ou `outros_brasileiros` de um snapshot do Radar."""
+    """Extrai de forma padronizada o bucket `veteranos`, `monitorados` ou `outros_brasileiros` de um snapshot do Radar."""
     raw = snapshot.get(key)
     if isinstance(raw, dict):
         return {
             "total_monitored": int(raw.get("total_monitored") or 0),
             "checked_count": int(raw.get("checked_count") or 0),
-            "active_window_days": int(raw.get("active_window_days") or OTHER_BR_ACTIVE_COH3_DAYS),
+            "active_window_days": int(raw.get("active_window_days") or (0 if key in ("veteranos", "monitorados") else OTHER_BR_ACTIVE_COH3_DAYS)),
             "in_coh3": list(raw.get("in_coh3") or []),
             "online_steam": list(raw.get("online_steam") or []),
             "recent_relic": list(raw.get("recent_relic") or []),
@@ -5024,6 +5161,15 @@ def extract_snapshot_category(snapshot: dict[str, Any], key: str) -> dict[str, A
             "online_steam": list(snapshot.get("online_steam") or []),
             "recent_relic": list(snapshot.get("recent_relic") or []),
         }
+    if key == "monitorados":
+        return {
+            "total_monitored": 0,
+            "checked_count": 0,
+            "active_window_days": 0,
+            "in_coh3": [],
+            "online_steam": [],
+            "recent_relic": [],
+        }
     return {
         "total_monitored": 0,
         "checked_count": 0,
@@ -5034,10 +5180,18 @@ def extract_snapshot_category(snapshot: dict[str, Any], key: str) -> dict[str, A
     }
 
 
-def resolve_prominence_tier(pl: dict[str, Any], *, is_veteranos: bool, is_in_coh3: bool = False) -> str:
-    """Resolve o nível de evidência visual (`veterano`, `high`, `medium`, `low`) de um jogador no snapshot."""
+def resolve_prominence_tier(
+    pl: dict[str, Any],
+    *,
+    is_veteranos: bool,
+    is_in_coh3: bool = False,
+    is_monitorados: bool = False,
+) -> str:
+    """Resolve o nível de evidência visual (`veterano`, `monitorado`, `high`, `medium`, `low`) de um jogador no snapshot."""
     if is_veteranos:
         return "veterano"
+    if is_monitorados:
+        return "monitorado"
     raw = str(pl.get("prominence_tier") or "").strip().lower()
     if raw in ("high", "medium", "low"):
         return raw
