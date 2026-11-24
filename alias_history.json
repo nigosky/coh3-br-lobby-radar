@@ -108374,7 +108374,7 @@
         {
           "alias": "Panzer Ace",
           "first_seen": 1787506615,
-          "last_seen": 1795268821,
+          "last_seen": 1795515312,
           "sources": [
             "coh3stats_opendata",
             "local_db"
@@ -233814,5 +233814,5 @@
     "steam_web_api": 7388,
     "steam_xml": 6734
   },
-  "updated_at": 1795512661
+  "updated_at": 1795515360
 }
