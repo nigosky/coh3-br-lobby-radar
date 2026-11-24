@@ -45098,7 +45098,7 @@
     "464954": {
       "alias": "ecL",
       "br_source": "open_data_matches",
-      "last_match_date": 1795515391,
+      "last_match_date": 1795527932,
       "last_seen_ingame_ts": 1795526139,
       "last_seen_ingame_webapi_ts": 1795464611,
       "last_seen_online_ts": 1795526139,
@@ -45107,7 +45107,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795198463,
       "steam_id": "76561198037914162",
-      "total_matches": 502
+      "total_matches": 503
     },
     "467469": {
       "alias": "SaBbAtH",
@@ -46889,14 +46889,14 @@
     "928607": {
       "alias": "centurionsglory",
       "br_source": "open_data_matches",
-      "last_match_date": 1795125879,
+      "last_match_date": 1795527776,
       "last_seen_online_ts": 1795526139,
       "max_elo": 1012,
       "profile_id": 928607,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795479393,
       "steam_id": "76561198133055309",
-      "total_matches": 967
+      "total_matches": 968
     },
     "928857": {
       "alias": "Clysmor",
