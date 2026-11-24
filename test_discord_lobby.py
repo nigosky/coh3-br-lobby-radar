@@ -2942,6 +2942,180 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         _, _, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
         self.assertTrue(oth_png.startswith(b"\x89PNG\r\n\x1a\n"))
 
+    def test_smurf_name_colors_match_section_status_across_all_radars(self) -> None:
+        from unittest.mock import patch
+
+        import card_renderer
+        from card_renderer import (
+            SteamAvatarProvider,
+            _resolve_player_badges,
+            render_monitorados_card_png,
+            render_outros_br_card_png,
+            render_veteranos_card_png,
+        )
+
+        now = 1_800_000_000
+        avatar_provider = SteamAvatarProvider(allow_network=False)
+
+        def _make_pl(
+            pid: int,
+            alias: str,
+            *,
+            elo: int = 1200,
+            smurf_of: str = "",
+            status_note: str = "Partida 4v4 há 10 min",
+            total_matches: int = 500,
+        ) -> dict[str, Any]:
+            row: dict[str, Any] = {
+                "profile_id": pid,
+                "steam_id": f"7656119890{pid:07d}",
+                "alias": alias,
+                "max_elo": elo,
+                "total_matches": total_matches,
+                "last_match_date": now - 600,
+                "last_age_min": 10,
+                "status_note": status_note,
+                "flag_country": "br",
+            }
+            if smurf_of:
+                row["smurf_of"] = smurf_of
+            return row
+
+        def _capture_name_colors(render_fn: Any, snapshot: dict[str, Any]) -> dict[str, tuple[int, int, int, int]]:
+            captured: dict[str, tuple[int, int, int, int]] = {}
+            orig = card_renderer.draw_text_safe
+
+            def _spy(draw: Any, xy: Any, text: str, *args: Any, **kwargs: Any) -> float:
+                fill = kwargs.get("fill")
+                if fill is not None:
+                    captured[str(text)] = tuple(fill)
+                return orig(draw, xy, text, *args, **kwargs)
+
+            with patch.object(card_renderer, "draw_text_safe", side_effect=_spy):
+                png = render_fn(snapshot, avatar_provider)
+            self.assertTrue(png.startswith(b"\x89PNG\r\n\x1a\n"))
+            return captured
+
+        def _find_fill(captured: dict[str, tuple[int, int, int, int]], prefix: str) -> tuple[int, int, int, int]:
+            matches = [col for txt, col in captured.items() if txt.startswith(prefix)]
+            self.assertTrue(matches, f"Texto com prefixo {prefix!r} não renderizado. Capturados: {list(captured)}")
+            return matches[0]
+
+        # 1. Veteranos & Players Monitorados: 2-col (in_coh3 + online_steam + recent_relic) e 1-col (in_coh3 + recent_relic)
+        for bucket_key, render_fn in (
+            ("veteranos", render_veteranos_card_png),
+            ("monitorados", render_monitorados_card_png),
+        ):
+            snap_2col = {
+                "timestamp": now,
+                bucket_key: {
+                    "total_monitored": 20,
+                    "in_coh3": [
+                        _make_pl(101, "AlphaNormal", elo=1500, status_note="Em partida CoH3"),
+                        _make_pl(
+                            102,
+                            "BetaSmurf (Smurf: Alpha)",
+                            elo=1500,
+                            smurf_of="Alpha",
+                            status_note="Em partida CoH3",
+                        ),
+                    ],
+                    "online_steam": [
+                        _make_pl(103, "GammaOnline", elo=1450, status_note="Livre na Steam"),
+                        _make_pl(
+                            104,
+                            "DeltaSmurf (Smurf: Gamma)",
+                            elo=1450,
+                            smurf_of="Gamma",
+                            status_note="Livre na Steam",
+                        ),
+                    ],
+                    "recent_relic": [
+                        _make_pl(105, "NormalInvis", elo=1700),
+                        _make_pl(
+                            106,
+                            "General Winter (Smurf: General Winter)",
+                            elo=1775,
+                            smurf_of="General Winter",
+                        ),
+                    ],
+                },
+            }
+            cols_2 = _capture_name_colors(render_fn, snap_2col)
+            # Invisíveis 2-col: ambos em âmbar/creme quente (254, 243, 199, 255) — nunca azul claro!
+            self.assertEqual(_find_fill(cols_2, "NormalInvis"), (254, 243, 199, 255))
+            self.assertEqual(_find_fill(cols_2, "General Winter"), (254, 243, 199, 255))
+            # Jogando CoH3 2-col: ambos em branco-menta (240, 253, 244, 255)
+            self.assertEqual(_find_fill(cols_2, "AlphaNormal"), (240, 253, 244, 255))
+            self.assertEqual(_find_fill(cols_2, "BetaSmurf"), (240, 253, 244, 255))
+            # Online Steam 2-col: ambos na cor padrão Steam (186, 230, 253, 255)
+            self.assertEqual(_find_fill(cols_2, "GammaOnline"), (186, 230, 253, 255))
+            self.assertEqual(_find_fill(cols_2, "DeltaSmurf"), (186, 230, 253, 255))
+
+            # 1-col: 1 smurf solo em in_coh3 e 1 smurf solo em recent_relic
+            snap_1col = {
+                "timestamp": now,
+                bucket_key: {
+                    "total_monitored": 20,
+                    "in_coh3": [
+                        _make_pl(
+                            201,
+                            "SoloCoH3Smurf (Smurf: Main)",
+                            elo=1600,
+                            smurf_of="Main",
+                            status_note="Em partida CoH3",
+                        ),
+                    ],
+                    "online_steam": [],
+                    "recent_relic": [
+                        _make_pl(
+                            202,
+                            "General Winter (Smurf: General Winter)",
+                            elo=1775,
+                            smurf_of="General Winter",
+                        ),
+                    ],
+                },
+            }
+            cols_1 = _capture_name_colors(render_fn, snap_1col)
+            self.assertEqual(_find_fill(cols_1, "SoloCoH3Smurf"), (240, 253, 244, 255))
+            self.assertEqual(_find_fill(cols_1, "General Winter"), (254, 243, 199, 255))
+
+        # 2. Outros Brasileiros: smurf high-ELO recebe dourado (254, 249, 195, 255) e normal recebe a cor da seção
+        snap_outros = {
+            "timestamp": now,
+            "outros_brasileiros": {
+                "total_monitored": 100,
+                "active_window_days": 15,
+                "in_coh3": [
+                    _make_pl(301, "HighSmurfCoH3 (Smurf: X)", elo=1600, smurf_of="X", status_note="No CoH3"),
+                    _make_pl(302, "NormSmurfCoH3 (Smurf: Y)", elo=1150, smurf_of="Y", status_note="No CoH3"),
+                ],
+                "online_steam": [
+                    _make_pl(303, "HighSmurfSteam (Smurf: X)", elo=1600, smurf_of="X", status_note="Livre"),
+                    _make_pl(304, "NormSmurfSteam (Smurf: Y)", elo=1150, smurf_of="Y", status_note="Livre"),
+                ],
+                "recent_relic": [
+                    _make_pl(305, "HighSmurfInvis (Smurf: X)", elo=1600, smurf_of="X"),
+                    _make_pl(306, "NormSmurfInvis (Smurf: Y)", elo=1150, smurf_of="Y"),
+                ],
+            },
+        }
+        cols_oth = _capture_name_colors(render_outros_br_card_png, snap_outros)
+        self.assertEqual(_find_fill(cols_oth, "HighSmurfCoH3"), (254, 249, 195, 255))
+        self.assertEqual(_find_fill(cols_oth, "NormSmurfCoH3"), (240, 253, 244, 255))
+        self.assertEqual(_find_fill(cols_oth, "HighSmurfSteam"), (254, 249, 195, 255))
+        self.assertEqual(_find_fill(cols_oth, "NormSmurfSteam"), (186, 230, 253, 255))
+        self.assertEqual(_find_fill(cols_oth, "HighSmurfInvis"), (254, 249, 195, 255))
+        self.assertEqual(_find_fill(cols_oth, "NormSmurfInvis"), (254, 243, 199, 255))
+
+        # 3. Badge SMURF preservada quando smurf_of existe sem "(Smurf:" no alias, e não duplicada quando já está no alias
+        self.assertIn("SMURF", [b[0] for b in _resolve_player_badges({"alias": "AltAcc", "smurf_of": "Main"})])
+        self.assertNotIn(
+            "SMURF",
+            [b[0] for b in _resolve_player_badges({"alias": "General Winter (Smurf: General Winter)", "smurf_of": "General Winter"})],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

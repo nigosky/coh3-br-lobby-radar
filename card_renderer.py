@@ -1575,11 +1575,7 @@ def _draw_category_block(
                             size=name_2col_size,
                             bold=True,
                         )
-                        nm_col = (
-                            (186, 230, 253, 255)
-                            if _is_smurf_entry(pl)
-                            else ((254, 249, 195, 255) if is_high else (240, 253, 244, 255))
-                        )
+                        nm_col = (254, 249, 195, 255) if is_high else (240, 253, 244, 255)
                         alias_w = draw_text_safe(draw, (name_x, ry + 6 + a_dy), disp_alias, font=a_fnt, fill=nm_col, bold=True)
                         next_x = int(name_x + alias_w + 5)
                         if cat_xs is not None:
@@ -1694,11 +1690,7 @@ def _draw_category_block(
                         badge_pad = (34 if cat_sm is not None else 10) + pill_reserve
                         max_alias_px = max(110, int(elo_x - alias_x - badge_pad))
                         alias_sz = 23 if (is_curated or is_high) else 21
-                        alias_col = (
-                            (186, 230, 253, 255)
-                            if _is_smurf_entry(pl)
-                            else ((254, 249, 195, 255) if is_high else (240, 253, 244, 255))
-                        )
+                        alias_col = (254, 249, 195, 255) if is_high else (240, 253, 244, 255)
                         disp_alias, a_fnt, a_dy = fit_alias_to_px(
                             draw,
                             str(pl.get("alias") or ""),
@@ -1906,8 +1898,6 @@ def _draw_category_block(
                         nm_col = (254, 202, 202, 255)
                     elif is_away:
                         nm_col = (147, 197, 253, 235)
-                    elif _is_smurf_entry(pl):
-                        nm_col = (186, 230, 253, 255)
                     elif is_high:
                         nm_col = (254, 249, 195, 255)
                     else:
@@ -2114,11 +2104,7 @@ def _draw_category_block(
                         size=max(18, name_2col_size - 1),
                         bold=True,
                     )
-                    rec_nm_col = (
-                        (186, 230, 253, 255)
-                        if _is_smurf_entry(pl)
-                        else ((254, 249, 195, 255) if is_high else (254, 243, 199, 255))
-                    )
+                    rec_nm_col = (254, 249, 195, 255) if is_high else (254, 243, 199, 255)
                     alias_w = draw_text_safe(draw, (name_x, ry + 5 + a_dy), disp_alias, font=a_fnt, fill=rec_nm_col, bold=True)
                     next_x = int(name_x + alias_w + 5)
                     if cat_xs is not None:
@@ -2216,11 +2202,7 @@ def _draw_category_block(
                         size=20,
                         bold=True,
                     )
-                    rec1_nm_col = (
-                        (186, 230, 253, 255)
-                        if _is_smurf_entry(pl)
-                        else ((254, 249, 195, 255) if is_high else (254, 243, 199, 255))
-                    )
+                    rec1_nm_col = (254, 249, 195, 255) if is_high else (254, 243, 199, 255)
                     alias_w = draw_text_safe(draw, (alias_x, y + 15 + a_dy), disp_alias, font=a_fnt, fill=rec1_nm_col, bold=True)
                     next_x = int(alias_x + alias_w + 7)
                     if cat_sm is not None:
