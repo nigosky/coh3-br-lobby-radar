@@ -39041,14 +39041,14 @@
     "1214004": {
       "alias": "Major Caveira",
       "br_source": "open_data_lb",
-      "last_match_date": 1795492570,
+      "last_match_date": 1795527313,
       "last_seen_online_ts": 1795526139,
       "max_elo": 1013,
       "profile_id": 1214004,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795492578,
       "steam_id": "76561198854581943",
-      "total_matches": 796
+      "total_matches": 797
     },
     "1215326": {
       "alias": "Buzungo",
@@ -44883,14 +44883,14 @@
       "alias": "克鲁杰7分钟800人力就1v2",
       "br_source": "alias_history",
       "current_alias": "北方军港",
-      "last_match_date": 1795524016,
+      "last_match_date": 1795527323,
       "last_seen_ingame_ts": 1795505878,
       "last_seen_ingame_webapi_ts": 1795490096,
       "last_seen_online_ts": 1795526139,
       "max_elo": 1446,
       "profile_id": 3984,
       "steam_id": "76561198319696040",
-      "total_matches": 1268
+      "total_matches": 1269
     },
     "4005": {
       "alias": "JuniorLimaa",
