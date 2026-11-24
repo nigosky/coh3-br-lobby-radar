@@ -45674,12 +45674,12 @@
       "alias": "PABLO FLEXCOBAR",
       "br_source": "steam_location",
       "flag_country": "ar",
-      "last_match_date": 1795499082,
+      "last_match_date": 1795501361,
       "last_seen_online_ts": 0,
       "max_elo": 1203,
       "profile_id": 29737,
       "steam_id": "76561198158934331",
-      "total_matches": 1461
+      "total_matches": 1462
     },
     "300242": {
       "alias": "LionMaru",
@@ -46051,7 +46051,7 @@
     "383796": {
       "alias": "Vanghoul",
       "br_source": "open_data_lb",
-      "last_match_date": 1795500439,
+      "last_match_date": 1795501487,
       "last_seen_ingame_ts": 1795495277,
       "last_seen_ingame_webapi_ts": 1795488529,
       "last_seen_online_ts": 1795497907,
@@ -46060,7 +46060,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795213980,
       "steam_id": "76561197982976352",
-      "total_matches": 3303
+      "total_matches": 3304
     },
     "3888": {
       "alias": "Pepe Popo",

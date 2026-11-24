@@ -67,7 +67,7 @@
   "last_digest": "(([], [(1005730, '', False, False, False, 'arc', '', '', 'br', False), (5768, '', False, False, False, 'The Dog', '', '', 'br', False), (58737, 'TBH: Task Bar Hero', True, True, False, 'INFIEL', '', '', 'br', False), (1226910, '', True, False, False, 'Lupus Alba', '', '', 'br', False), (59864, '', True, True, False, 'Lion Heart', '', '', 'br', False), (975688, '', True, True, False, 'Kefbr', '', '', 'br', False)], []), ([], [], [(383796, 'Vanghoul', '', '', 'br', False), (29737, 'PABLO FLEXCOBAR', '', '', 'ar', False)]))",
   "last_steam_fast_sig": "([], [('76561197993922195', 'TBH: Task Bar Hero', True, True, False, 'INFIEL'), ('76561197994245218', '', True, True, False, 'Kefbr'), ('76561198123446420', '', True, True, False, 'Lion Heart'), ('76561198140782132', '', True, False, False, 'Lupus Alba'), ('76561198205052385', '', False, False, False, 'The Dog'), ('76561199791811246', '', False, False, False, 'arc')])",
   "last_steam_groups_scan_ts": 1795485156,
-  "last_sync_ts": 1795501274,
+  "last_sync_ts": 1795501575,
   "layout_version": 12,
   "manual_other_br_checked_pids": [
     11033,
@@ -93,14 +93,14 @@
   ],
   "manual_other_br_checked_ts": 1795494978,
   "other_br_rotation_offset": 0,
-  "panel_links_message_id": "1574671334921863186",
-  "panel_message_id": "1574671331641794661",
+  "panel_links_message_id": "1574672585478897686",
+  "panel_message_id": "1574672581800370236",
   "panel_message_ids": [
-    "1574671331641794661",
-    "1574671333663445022",
-    "1574671334921863186"
+    "1574672581800370236",
+    "1574672584258101329",
+    "1574672585478897686"
   ],
-  "panel_outros_message_id": "1574671333663445022",
+  "panel_outros_message_id": "1574672584258101329",
   "steam_gd_cache": {
     "76561197994245218": {
       "hidden": true,
