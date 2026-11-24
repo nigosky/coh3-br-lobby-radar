@@ -37194,7 +37194,7 @@
       "coh2_last_match_date": 1787242170,
       "coh2_profile_id": 2320007,
       "coh2_total_matches": 344,
-      "current_alias": "Xi Miss China",
+      "current_alias": "Tá Nervoso???",
       "scope": "legacy_coh1_coh2_br",
       "steam_id": "76561198163572537"
     },
@@ -84808,7 +84808,7 @@
       ],
       "canonical_alias": "patrickbrss",
       "coh3_country": "br",
-      "current_alias": "Patrickbrss",
+      "current_alias": "patrickbrss",
       "last_checked_at": 1795551474,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -95711,7 +95711,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1793988816,
       "coh3_total_matches": 245,
-      "current_alias": "Sonderkraftfarzheug",
+      "current_alias": "ZTZ99A",
       "last_checked_at": 1795495277,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795480318,
@@ -117665,7 +117665,7 @@
       ],
       "canonical_alias": "negromonte_",
       "coh3_country": "br",
-      "current_alias": "Negromonte_",
+      "current_alias": "negromonte_",
       "last_checked_at": 1795551474,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -130674,14 +130674,15 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
       "canonical_alias": "=*V*= Chirula",
       "coh3_country": "br",
       "current_alias": "=*V*= Chirula",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1417974,
@@ -130855,14 +130856,15 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
       "canonical_alias": "Matheus \"Merlin\" Silva",
       "coh3_country": "br",
       "current_alias": "Matheus \"Merlin\" Silva",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1420378,
@@ -133404,14 +133406,15 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
       "canonical_alias": "BR-Daniel",
       "coh3_country": "br",
       "current_alias": "BR-Daniel",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1437730,
@@ -133571,14 +133574,15 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
       "canonical_alias": "Ávila",
       "coh3_country": "br",
       "current_alias": "Ávila",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1438858,
@@ -135262,7 +135266,7 @@
       "coh3_last_match_date": 1794579345,
       "coh3_total_matches": 1,
       "current_alias": "Wiz",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1445924,
@@ -135432,7 +135436,7 @@
       "coh3_last_match_date": 1794597624,
       "coh3_total_matches": 6,
       "current_alias": "⚡😘💙 ☢ hnrjogos",
-      "last_checked_at": 1795551474,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1447630,
@@ -140410,14 +140414,15 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
       "canonical_alias": "chisd",
       "coh3_country": "br",
       "current_alias": "chisd",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1468051,
@@ -141452,14 +141457,15 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
       "canonical_alias": "tunes",
       "coh3_country": "br",
       "current_alias": "tunes",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1475522,
@@ -141614,14 +141620,15 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
       "canonical_alias": "fetansaD",
       "coh3_country": "br",
       "current_alias": "fetansaD",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1475859,
@@ -142463,14 +142470,15 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
       "canonical_alias": "NsC CHIF",
       "coh3_country": "br",
       "current_alias": "NsC CHIF",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1477854,
@@ -142534,7 +142542,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795551774,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -218795,7 +218803,7 @@
       "coh3_last_match_date": 1794526879,
       "coh3_total_matches": 4,
       "current_alias": "Qi 124",
-      "last_checked_at": 1795551474,
+      "last_checked_at": 1795551774,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -242236,8 +242244,8 @@
     "relic_coh1_api": 1953,
     "relic_coh2_api": 4742,
     "steam_aliases": 158,
-    "steam_web_api": 7462,
+    "steam_web_api": 7470,
     "steam_xml": 6739
   },
-  "updated_at": 1795551474
+  "updated_at": 1795551774
 }
