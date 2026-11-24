@@ -51076,7 +51076,7 @@
         {
           "alias": "nextv2013",
           "first_seen": 1795463240,
-          "last_seen": 1795463240,
+          "last_seen": 1795552472,
           "sources": [
             "relic_coh1_api",
             "steam_web_api"
@@ -120439,8 +120439,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1779644857,
       "coh3_total_matches": 1,
-      "current_alias": "Rafha",
-      "last_checked_at": 1795548773,
+      "current_alias": "RAFHA",
+      "last_checked_at": 1795552472,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1326448,
@@ -135266,7 +135266,7 @@
       "coh3_last_match_date": 1794579345,
       "coh3_total_matches": 1,
       "current_alias": "Wiz",
-      "last_checked_at": 1795552173,
+      "last_checked_at": 1795552472,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1445924,
@@ -135972,7 +135972,7 @@
       "coh3_last_match_date": 1794602764,
       "coh3_total_matches": 1,
       "current_alias": "BESON",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795552472,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1449348,
@@ -218803,7 +218803,7 @@
       "coh3_last_match_date": 1794526879,
       "coh3_total_matches": 4,
       "current_alias": "Qi 124",
-      "last_checked_at": 1795552173,
+      "last_checked_at": 1795552472,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -229432,8 +229432,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1781845321,
       "coh3_total_matches": 9,
-      "current_alias": "kbessa",
-      "last_checked_at": 1795548773,
+      "current_alias": "Kbessa",
+      "last_checked_at": 1795552472,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 929050,
@@ -235582,8 +235582,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1776803620,
       "coh3_total_matches": 60,
-      "current_alias": "Lampiaox_x",
-      "last_checked_at": 1795548773,
+      "current_alias": "LampiaoX_X",
+      "last_checked_at": 1795552472,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -242247,5 +242247,5 @@
     "steam_web_api": 7470,
     "steam_xml": 6739
   },
-  "updated_at": 1795552173
+  "updated_at": 1795552472
 }
