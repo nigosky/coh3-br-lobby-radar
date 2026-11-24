@@ -77,8 +77,8 @@ def _is_valid_history_alias(raw: str) -> bool:
 
 def _clean_alias_for_history(raw: str, *, smurf_of: str = "") -> str:
     """
-    Limpa o alias removendo envoltórios sintéticos gerados pelo Radar (`<Nick> (Smurf: <Original>)`),
-    preservando nicks reais da conta (incluindo tags genuínas como `[BR]` ou `*`).
+    Limpa o alias removendo envoltórios sintéticos gerados pelo Radar (`<Nick> (Smurf: <Original>)`
+    ou `<Nick> (<Original>)` em smurfs), preservando nicks reais da conta (incluindo tags genuínas).
     """
     clean = strip_unsafe_chars(raw)[:48]
     if not clean or is_legacy_synthetic_alias_label(clean):
@@ -86,9 +86,15 @@ def _clean_alias_for_history(raw: str, *, smurf_of: str = "") -> str:
     m = _SMURF_OR_PARENT_ALIAS_RE.match(clean)
     if m:
         clean = m.group(1).strip()
-    if smurf_of and clean.casefold() == strip_unsafe_chars(smurf_of).casefold():
-        # Conta smurf pode legitimamente usar o mesmo nick da conta principal (ex.: General Winter)
-        return clean
+    clean_smurf = strip_unsafe_chars(smurf_of).strip()
+    if clean_smurf:
+        # Remove rótulos antigos "<Nick> (<smurf_of>)" de known_aliases sem confundir com nick real
+        m_owner = re.match(r"^(.*?)\s*\(\s*([^)]+?)\s*\)\s*$", clean)
+        if m_owner and m_owner.group(2).strip().casefold() == clean_smurf.casefold() and m_owner.group(1).strip():
+            clean = m_owner.group(1).strip()
+        if clean.casefold() == clean_smurf.casefold():
+            # Conta smurf pode legitimamente usar o mesmo nick da conta principal (ex.: General Winter)
+            return clean
     return clean if _is_valid_history_alias(clean) else ""
 
 
@@ -102,7 +108,7 @@ def _empty_alias_history_doc() -> dict[str, Any]:
 
 
 def load_alias_history(history_path: Path = DEFAULT_ALIAS_HISTORY_PATH) -> dict[str, Any]:
-    """Carrega `alias_history.json` com proteção anti-symlink (`O_NOFOLLOW`) e limite de 16 MB."""
+    """Carrega `alias_history.json` com proteção anti-symlink (`O_NOFOLLOW`) e limite de 32 MB."""
     try:
         parsed = read_bounded_json_file(history_path, max_bytes=MAX_ALIAS_HISTORY_JSON_BYTES)
         if isinstance(parsed, dict) and isinstance(parsed.get("players"), dict):

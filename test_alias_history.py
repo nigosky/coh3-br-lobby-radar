@@ -116,7 +116,12 @@ class TestPersistentAliasHistory(unittest.TestCase):
                     "steam_id": sid,
                     "original_alias": "Charles Bronson (Smurf: Chacineiro)",
                     "smurf_of": "Chacineiro",
-                    "known_aliases": ["TearsInTheRain", "Charles Bronson (Smurf: Chacineiro)", "Fulano (Principal)"],
+                    "known_aliases": [
+                        "TearsInTheRain",
+                        "Charles Bronson (Smurf: Chacineiro)",
+                        "Charles Bronson (Chacineiro)",
+                        "Fulano (Principal)",
+                    ],
                 }
             ],
             manual_other_rows=[],
@@ -166,8 +171,8 @@ class TestPersistentAliasHistory(unittest.TestCase):
         self.assertEqual(rec["canonical_alias"], "Charles Bronson")
         self.assertEqual(rec["current_alias"], "Charles Bronson")
         names = [a["alias"] for a in rec["aliases"]]
-        # Nenhum rótulo sintético "(Smurf: ...)" ou "(Principal)" pode contaminar a lista
-        self.assertTrue(all("(Smurf:" not in n and "(Principal)" not in n for n in names))
+        # Nenhum rótulo sintético "(Smurf: ...)", "(Principal)" ou "(<smurf_of>)" pode contaminar a lista
+        self.assertTrue(all("(Smurf:" not in n and "(Principal)" not in n and "(Chacineiro)" not in n for n in names))
         # Ordem cronológica dos com data, seguida por known_aliases sem data
         self.assertEqual(
             names[:4],
