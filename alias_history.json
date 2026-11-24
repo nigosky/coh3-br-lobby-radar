@@ -74516,7 +74516,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1760050360,
       "coh3_total_matches": 13,
-      "current_alias": "bourne",
+      "current_alias": "Bourne",
       "last_checked_at": 1795553072,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -85312,8 +85312,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1746477337,
       "coh3_total_matches": 3,
-      "current_alias": "mooch",
-      "last_checked_at": 1795549974,
+      "current_alias": "Mooch",
+      "last_checked_at": 1795553373,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1118507,
@@ -92878,8 +92878,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1754886916,
       "coh3_total_matches": 32,
-      "current_alias": "maurilioazyzzs",
-      "last_checked_at": 1795549674,
+      "current_alias": "Maurilioazyzzs",
+      "last_checked_at": 1795553373,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1165921,
@@ -103142,8 +103142,8 @@
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 123228,
-      "scope": "outros_brasileiros",
-      "smurf_of": "",
+      "scope": "manual_other_br",
+      "smurf_of": "TrueLothar",
       "steam_id": "76561198064278734"
     },
     "1232389": {
@@ -134760,7 +134760,7 @@
       "coh3_last_match_date": 1794613740,
       "coh3_total_matches": 3,
       "current_alias": "corolla XEI 2008 prata",
-      "last_checked_at": 1795553072,
+      "last_checked_at": 1795553373,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1441520,
@@ -135976,7 +135976,7 @@
       "coh3_last_match_date": 1794602764,
       "coh3_total_matches": 1,
       "current_alias": "BESON",
-      "last_checked_at": 1795553072,
+      "last_checked_at": 1795553373,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1449348,
@@ -142546,7 +142546,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795552173,
+      "last_checked_at": 1795553373,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -183083,7 +183083,8 @@
           "first_seen": 1703887062,
           "last_seen": 1703887062,
           "sources": [
-            "coh3stats_opendata"
+            "coh3stats_opendata",
+            "local_db"
           ]
         },
         {
@@ -183135,7 +183136,7 @@
       "last_steam_aliases_at": 0,
       "profile_id": 655548,
       "scope": "manual_other_br",
-      "smurf_of": "",
+      "smurf_of": "Galva",
       "steam_br_group": true,
       "steam_id": "76561198037528747"
     },
@@ -187269,7 +187270,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1757727000,
       "coh3_total_matches": 44,
-      "current_alias": "BillFurY",
+      "current_alias": "Billfury",
       "last_checked_at": 1795553072,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
@@ -220341,7 +220342,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1756674722,
       "coh3_total_matches": 3,
-      "current_alias": "muller",
+      "current_alias": "Muller",
       "last_checked_at": 1795553072,
       "last_coh1_relic_at": 1795546807,
       "last_coh2_relic_at": 1795546807,
@@ -230203,8 +230204,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1745963893,
       "coh3_total_matches": 2,
-      "current_alias": "Kadaf1313",
-      "last_checked_at": 1795549974,
+      "current_alias": "kadaf1313",
+      "last_checked_at": 1795553373,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 931960,
@@ -242251,5 +242252,5 @@
     "steam_web_api": 7470,
     "steam_xml": 6739
   },
-  "updated_at": 1795553072
+  "updated_at": 1795553373
 }
