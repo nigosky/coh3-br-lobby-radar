@@ -1196,6 +1196,101 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertEqual(res["disqualified_reason"], "sobreposicao_simultanea")
         self.assertEqual(res["probability_pct"], 0)
 
+    def test_steam_ban_parsing_xml_and_private_html(self) -> None:
+        xml_vac = "<profile><privacyState>private</privacyState><isLimitedAccount>1</isLimitedAccount><vacBanned>1</vacBanned><tradeBanState>None</tradeBanState></profile>"
+        parsed = sd.SteamProfileOSINTClient.parse_profile_xml(xml_vac)
+        self.assertTrue(parsed["vac_banned"])
+        self.assertEqual(parsed["vac_bans"], 1)
+        self.assertTrue(parsed["is_limited_account"])
+
+        html_priv_ban = (
+            '<div class="profile_private_info">This profile is private.</div>'
+            '<div class="profile_ban_status"><div class="profile_ban">1 game ban on record | Info</div>'
+            '<div class="profile_ban">2 VAC bans on record | Info</div>'
+            '14 day(s) since last ban</div></div>'
+        )
+        hp = sd.SteamProfileOSINTClient.parse_profile_html_footprint(html_priv_ban)
+        self.assertEqual(hp["game_bans"], 1)
+        self.assertEqual(hp["vac_bans"], 2)
+        self.assertEqual(hp["days_since_last_ban"], 14)
+        self.assertIn("game ban", hp["ban_summary"].lower())
+
+    def test_arc_cross_era_alias_recycling_and_steam_cluster_and_ban_evasion(self) -> None:
+        # 1. Descoberta cross-era em alias_history.json (padrão arc: Dingo/Saffa -> conta burner 0-CoH2)
+        doc = {
+            "players": {
+                "917917": {"profile_id": 917917, "steam_id": "76561198287157768", "current_alias": "arc", "coh2_total_matches": 1398, "aliases": [{"alias": "Saffa"}, {"alias": "Dingo"}]},
+                "1160699": {"profile_id": 1160699, "steam_id": "76561199814547622", "current_alias": "Bubebolos", "coh2_total_matches": 0, "aliases": [{"alias": "Dingo"}, {"alias": "Beeble"}]},
+                "918241": {"profile_id": 918241, "steam_id": "76561199794093952", "current_alias": "Faint", "coh2_total_matches": 0, "aliases": [{"alias": "Saffa"}]},
+            }
+        }
+        recycled = sd.detect_cross_era_recycled_aliases(doc)
+        pairs_found = {(r["profile_id_a"], r["profile_id_b"]) for r in recycled}
+        self.assertIn((917917, 1160699), pairs_found)
+        self.assertIn((917917, 918241), pairs_found)
+
+        # 2. score_smurf_pair: reciclagem de alias + cluster de criação Steam + handoff unidirecional (evasão de ban) + ban Steam
+        from collections import Counter
+
+        t_main = sd.PlayerMatchTelemetry(
+            profile_id=1005730,
+            games=20,
+            wins=13,
+            mode_counts=Counter({"3v3": 20}),
+            mode_faction_counts=Counter({("3v3", 0): 20}),
+            mode_elo_max={"3v3": 1520},
+            hour_counts=Counter({23: 10, 0: 10}),
+            apm_values=[108.0] * 10,
+            intervals=[(1_750_000_000 + i * 3600, 1_750_001_500 + i * 3600, 100 + i) for i in range(10)],
+        )
+        # Candidata começa 2 dias após congelamento da principal e joga por >15 dias sem retorno da principal
+        t_cand = sd.PlayerMatchTelemetry(
+            profile_id=918241,
+            games=10,
+            wins=7,
+            mode_counts=Counter({"3v3": 10}),
+            mode_faction_counts=Counter({("3v3", 0): 10}),
+            mode_elo_max={"3v3": 1440},
+            hour_counts=Counter({23: 5, 0: 5}),
+            apm_values=[105.0] * 8,
+            intervals=[(1_750_200_000 + i * 180_000, 1_750_201_500 + i * 180_000, 200 + i) for i in range(10)],
+        )
+        res = sd.score_smurf_pair(
+            {"profile_id": 918241, "steam_id": "76561199794093952", "alias": "Faint", "country": "br", "max_elo": 1440, "total_matches": 36},
+            {"profile_id": 1005730, "steam_id": "76561199791811246", "alias": "arc", "country": "br", "max_elo": 1520, "total_matches": 1292, "relic_br_rank": 10},
+            t_cand,
+            t_main,
+            alias_history_by_pid={1005730: {"arc", "Saffa"}, 918241: {"Faint", "Saffa"}},
+            steam_osint_by_pid={
+                918241: {"is_limited_account": True, "game_bans": 1, "ban_summary": "1 game ban on record"},
+                1005730: {"is_limited_account": False},
+            },
+            coh2_matches_by_pid={1005730: 1398, 918241: 0},
+        )
+        self.assertTrue(res["metrics"]["arc_cross_era_recycling"])
+        self.assertTrue(res["metrics"]["steam_creation_cluster"])
+        self.assertTrue(res["metrics"]["ban_evasion_handoff"])
+        self.assertTrue(res["metrics"]["cand_has_steam_ban"])
+        self.assertGreaterEqual(res["probability_pct"], 80)
+
+    def test_analyze_griefing_drop_tanking_detects_negative_elo_and_chronic_drops(self) -> None:
+        grief = sd.analyze_griefing_drop_tanking(
+            [
+                {"wins": 1400, "losses": 2700, "rating": -2588, "drops": 98, "streak": -20, "lastmatchdate": 1_794_900_000},
+                {"wins": 350, "losses": 690, "rating": -412, "drops": 60, "streak": -5, "lastmatchdate": 1_794_800_000},
+            ]
+        )
+        self.assertTrue(grief["flagged"])
+        self.assertEqual(grief["min_rating"], -2588)
+        self.assertEqual(grief["total_drops"], 158)
+        self.assertTrue(any("elo_negativo" in f for f in grief["flags"]))
+        self.assertTrue(any("drops_cronicos" in f for f in grief["flags"]))
+
+        clean = sd.analyze_griefing_drop_tanking(
+            [{"wins": 80, "losses": 70, "rating": 1350, "drops": 1, "streak": -2, "lastmatchdate": 1_794_900_000}]
+        )
+        self.assertFalse(clean["flagged"])
+
 
 if __name__ == "__main__":
     unittest.main()

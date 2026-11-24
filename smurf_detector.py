@@ -135,9 +135,9 @@ MODEL_SMURF_BENCHMARKS: tuple[dict[str, Any], ...] = (
     },
     {
         "model_name": "arc",
-        "archetype": "family_sharing_elo_explosivo_squad_apm_bg",
+        "archetype": "family_sharing_elo_explosivo_squad_apm_bg_coh2_alias_recycling",
         "main_profile_id": 1005730,
-        "smurf_profile_ids": (1423426, 1487738, 1482961),
+        "smurf_profile_ids": (1423426, 1487738, 1482961, 917917, 1160699, 918241),
     },
     {
         "model_name": "Gabe",
@@ -442,6 +442,8 @@ class SteamProfileOSINTClient:
 
     _PRIVACY_RE = re.compile(r"<privacyState>([^<]{1,32})</privacyState>", re.I)
     _LIMITED_RE = re.compile(r"<isLimitedAccount>\s*([01])\s*</isLimitedAccount>", re.I)
+    _VAC_BANNED_RE = re.compile(r"<vacBanned>\s*([01])\s*</vacBanned>", re.I)
+    _TRADE_BAN_RE = re.compile(r"<tradeBanState>([^<]{1,32})</tradeBanState>", re.I)
     _MEMBER_SINCE_RAW_RE = re.compile(r"<memberSince>([^<]{1,48})</memberSince>", re.I)
     _YEAR_4_RE = re.compile(r"\b(20\d{2})\b")
     _MONTH_DAY_RE = re.compile(
@@ -457,6 +459,10 @@ class SteamProfileOSINTClient:
     _HTML_FRIENDS_RE = re.compile(r'/friends/"[^>]*>.*?profile_count_link_total">\s*([\d,]+)\s*<', re.S)
     _HTML_BADGES_RE = re.compile(r'/badges/"[^>]*>.*?profile_count_link_total">\s*([\d,]+)\s*<', re.S)
     _HTML_GAMES_RE = re.compile(r'/games/\?tab=all"[^>]*>.*?profile_count_link_total">\s*([\d,]+)\s*<', re.S)
+    _HTML_BAN_BLOCK_RE = re.compile(r'class="profile_ban_status"[^>]*>(.*?)</div>\s*</div>', re.S | re.I)
+    _HTML_GAME_BANS_RE = re.compile(r"(\d+)\s+game\s+ban(?:s)?\s+on\s+record", re.I)
+    _HTML_VAC_BANS_RE = re.compile(r"(\d+)\s+VAC\s+ban(?:s)?\s+on\s+record", re.I)
+    _HTML_DAYS_SINCE_BAN_RE = re.compile(r"(\d[\d,]*)\s+day\(s\)\s+since\s+last\s+ban", re.I)
     _PROFILE_HTML_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/?$")
 
     def __init__(
@@ -476,13 +482,17 @@ class SteamProfileOSINTClient:
 
     @classmethod
     def parse_profile_xml(cls, xml_body: str, *, current_year: int | None = None) -> dict[str, Any]:
-        """Extrai métricas OSINT e sinais de Steam Family Sharing do XML público de perfil Steam."""
+        """Extrai métricas OSINT, sinais de Steam Family Sharing e flags de banimento do XML público de perfil Steam."""
         body = str(xml_body or "")
         cur_yr = int(current_year) if current_year is not None else datetime.now(tz=timezone.utc).year
         priv_m = cls._PRIVACY_RE.search(body)
         privacy = priv_m.group(1).strip().lower() if priv_m else ""
         lim_m = cls._LIMITED_RE.search(body)
         is_limited = bool(lim_m and lim_m.group(1) == "1")
+        vac_m = cls._VAC_BANNED_RE.search(body)
+        vac_banned = bool(vac_m and vac_m.group(1) == "1")
+        trade_m = cls._TRADE_BAN_RE.search(body)
+        trade_ban_state = strip_unsafe_chars(trade_m.group(1)).strip() if trade_m else "None"
 
         ms_m = cls._MEMBER_SINCE_RAW_RE.search(body)
         member_since_raw = strip_unsafe_chars(ms_m.group(1))[:40] if ms_m else ""
@@ -511,10 +521,16 @@ class SteamProfileOSINTClient:
                 av_hash = hm.group(1).lower()
         games_visible = len(cls._GAME_NAME_RE.findall(body))
         return {
-            "ok": bool(privacy or av_hash or member_year or is_limited),
+            "ok": bool(privacy or av_hash or member_year or is_limited or vac_banned),
             "privacy_state": privacy,
             "is_private": bool(privacy and privacy != "public"),
             "is_limited_account": is_limited,
+            "vac_banned": vac_banned,
+            "trade_ban_state": trade_ban_state or "None",
+            "game_bans": 0,
+            "vac_bans": 1 if vac_banned else 0,
+            "days_since_last_ban": -1,
+            "ban_summary": "VAC ban no XML Steam" if vac_banned else "",
             "member_since_raw": member_since_raw,
             "member_since_year": member_year,
             "member_since_current_year": member_since_current_year,
@@ -533,11 +549,39 @@ class SteamProfileOSINTClient:
         }
 
     @classmethod
-    def parse_profile_html_footprint(cls, html_body: str) -> dict[str, int]:
-        """Extrai pegada mínima de conta burner/Family Sharing do HTML público (`steam_level`, `friends_count`, `badges_count`)."""
+    def parse_profile_html_footprint(cls, html_body: str) -> dict[str, Any]:
+        """Extrai pegada de conta burner/Family Sharing e banner público de Game/VAC bans (`profile_ban_status`)."""
         body = str(html_body or "")
-        out = {"steam_level": -1, "friends_count": -1, "badges_count": -1, "games_owned_count": -1}
-        if not body or "profile_private_info" in body:
+        out: dict[str, Any] = {
+            "steam_level": -1,
+            "friends_count": -1,
+            "badges_count": -1,
+            "games_owned_count": -1,
+            "game_bans": 0,
+            "vac_bans": 0,
+            "days_since_last_ban": -1,
+            "ban_summary": "",
+        }
+        if not body:
+            return out
+        # A Steam exibe `profile_ban_status` (Game Bans e VAC Bans) inclusive em perfis privados!
+        if "profile_ban_status" in body:
+            bm = cls._HTML_BAN_BLOCK_RE.search(body)
+            block = bm.group(1) if bm else body[body.find("profile_ban_status") : body.find("profile_ban_status") + 900]
+            clean_ban = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", block)).strip()
+            clean_ban = re.sub(r"\|\s*Info", "", clean_ban).strip()
+            gm = cls._HTML_GAME_BANS_RE.search(clean_ban)
+            vm = cls._HTML_VAC_BANS_RE.search(clean_ban)
+            dm = cls._HTML_DAYS_SINCE_BAN_RE.search(clean_ban)
+            if gm:
+                out["game_bans"] = int(gm.group(1))
+            if vm:
+                out["vac_bans"] = int(vm.group(1))
+            if dm:
+                out["days_since_last_ban"] = int(dm.group(1).replace(",", ""))
+            if out["game_bans"] > 0 or out["vac_bans"] > 0:
+                out["ban_summary"] = strip_unsafe_chars(clean_ban)[:180]
+        if "profile_private_info" in body:
             return out
         for key, rx in (
             ("steam_level", cls._HTML_LEVEL_RE),
@@ -590,8 +634,8 @@ class SteamProfileOSINTClient:
             self._cache[sid] = {}
             return {}
 
-        # Pegada pública HTML (apenas quando público e sem customURL -> HTTP 200 direto, zero redirect!)
-        if self.fetch_public_html and parsed.get("privacy_state") == "public" and not parsed.get("custom_url"):
+        # Pegada pública + banner de banimentos HTML (sem customURL -> HTTP 200 direto, zero redirect!)
+        if self.fetch_public_html and not parsed.get("custom_url"):
             html_url = f"https://steamcommunity.com/profiles/{sid}/"
             try:
                 validate_https_endpoint(
@@ -613,7 +657,17 @@ class SteamProfileOSINTClient:
                 )
                 with self._opener.open(hreq, timeout=8) as hresp:
                     hraw = read_bounded_http_body(hresp, 262_144)
-                parsed.update(self.parse_profile_html_footprint(hraw.decode("utf-8", errors="replace")))
+                html_parsed = self.parse_profile_html_footprint(hraw.decode("utf-8", errors="replace"))
+                # Preserva vac_banned do XML mesmo se o HTML não trouxer o bloco
+                prev_vac_bans = int(parsed.get("vac_bans", 0) or 0)
+                prev_ban_summary = str(parsed.get("ban_summary") or "")
+                parsed.update(html_parsed)
+                if prev_vac_bans > int(parsed.get("vac_bans", 0) or 0):
+                    parsed["vac_bans"] = prev_vac_bans
+                if not parsed.get("ban_summary") and prev_ban_summary:
+                    parsed["ban_summary"] = prev_ban_summary
+                if int(parsed.get("vac_bans", 0) or 0) > 0:
+                    parsed["vac_banned"] = True
             except Exception:
                 pass
 
@@ -2061,6 +2115,203 @@ def _compare_battlegroup_signatures(
     return res
 
 
+_CROSS_ERA_GENERIC_ALIASES: frozenset[str] = frozenset(
+    {
+        "", "player", "user", "unknown", "none", "null", "br", "brasil", "brazil", "ghost", "shadow",
+        "wolf", "fox", "bear", "tiger", "lion", "eagle", "hawk", "snake", "viper", "cobra", "dragon",
+        "killer", "sniper", "hunter", "general", "colonel", "major", "captain", "sergeant", "commander",
+        "rommel", "patton", "monty", "zhukov", "guderian", "manstein", "wittmann", "hitler", "stalin",
+        "lucas", "pedro", "joao", "gabriel", "rafael", "bruno", "felipe", "matheus", "thiago", "diego",
+        "rodrigo", "gustavo", "guilherme", "andre", "carlos", "paulo", "marcos", "daniel", "eduardo",
+        "vitor", "victor", "henrique", "fernando", "leonardo", "caio", "igor", "renan", "vinicius",
+        "alex", "max", "leo", "ace", "neo", "zero", "panzer", "sherman", "brazuca", "noob", "pro",
+        "william", "roberto", "juninho", "will", "gabi", "loki", "thor", "odin", "zeus", "ares", "kratos",
+    }
+)
+
+
+def analyze_griefing_drop_tanking(leaderboard_stats: list[dict[str, Any]] | None) -> dict[str, Any]:
+    """
+    Analisa `leaderboardStats` da Relic para detectar padrões crônicos de griefing/tanking/drop
+    (ex.: ELO negativo ou abaixo de 600, taxa alta de drops ou sequências extremas de derrotas).
+    """
+    total_games = 0
+    total_drops = 0
+    min_rating: int | None = None
+    max_rating: int | None = None
+    worst_streak = 0
+    last_match_ts = 0
+    for lb in leaderboard_stats or ():
+        if not isinstance(lb, dict):
+            continue
+        g = max(0, int(lb.get("wins", 0) or 0)) + max(0, int(lb.get("losses", 0) or 0))
+        total_games += g
+        total_drops += max(0, int(lb.get("drops", 0) or 0))
+        streak = int(lb.get("streak", 0) or 0)
+        if streak < worst_streak:
+            worst_streak = streak
+        lmd = int(lb.get("lastmatchdate", 0) or 0)
+        if lmd > last_match_ts:
+            last_match_ts = lmd
+        raw_r = lb.get("rating")
+        if raw_r is not None and g >= 5:
+            r_int = int(raw_r)
+            min_rating = r_int if min_rating is None else min(min_rating, r_int)
+            max_rating = r_int if max_rating is None else max(max_rating, r_int)
+    drop_rate = round(total_drops / total_games, 4) if total_games > 0 else 0.0
+    flags: list[str] = []
+    if min_rating is not None and min_rating < 0:
+        flags.append(f"elo_negativo ({min_rating})")
+    elif min_rating is not None and min_rating < 600 and total_games >= 100:
+        flags.append(f"elo_tanking ({min_rating})")
+    if total_games >= 80 and (drop_rate >= 0.04 or total_drops >= 50):
+        flags.append(f"drops_cronicos ({total_drops} drops / {drop_rate * 100:.1f}%)")
+    if worst_streak <= -12:
+        flags.append(f"sequencia_derrotas_extrema ({worst_streak})")
+    return {
+        "flagged": bool(flags),
+        "flags": flags,
+        "total_games": total_games,
+        "total_drops": total_drops,
+        "drop_rate": drop_rate,
+        "min_rating": min_rating,
+        "max_rating": max_rating,
+        "worst_streak": worst_streak,
+        "last_match_ts": last_match_ts,
+    }
+
+
+def _detect_ban_evasion_handoff(
+    cand_tel: PlayerMatchTelemetry | None,
+    main_tel: PlayerMatchTelemetry | None,
+    cand_osint: dict[str, Any] | None,
+    main_osint: dict[str, Any] | None,
+    *,
+    main_total_matches: int = 0,
+    main_last_match_ts: int = 0,
+) -> dict[str, Any]:
+    """
+    Detecta sinais forenses de conta banida/suspensa ativa no CoH3 ou evasão de banimento via conta nova/Family Sharing:
+    - Steam VAC/Game Bans ativos em qualquer das duas contas;
+    - Congelamento abrupto e unidirecional da conta principal (`>=14 dias` sem jogar após `>=50` partidas)
+      seguido imediatamente pela estreia da conta candidata sem retorno na conta original.
+    """
+    co = cand_osint or {}
+    mo = main_osint or {}
+    cand_has_ban = bool(co.get("vac_banned") or int(co.get("game_bans", 0) or 0) > 0 or int(co.get("vac_bans", 0) or 0) > 0)
+    main_has_ban = bool(mo.get("vac_banned") or int(mo.get("game_bans", 0) or 0) > 0 or int(mo.get("vac_bans", 0) or 0) > 0)
+    cand_start_ts = min((s for s, _, _ in cand_tel.intervals), default=0) if cand_tel else 0
+    cand_end_ts = max((e for _, e, _ in cand_tel.intervals), default=0) if cand_tel else 0
+    main_end_ts = max(
+        int(main_last_match_ts or 0),
+        max((e for _, e, _ in main_tel.intervals), default=0) if main_tel else 0,
+    )
+    unidirectional_freeze_handoff = False
+    freeze_gap_days = 0.0
+    if (
+        main_total_matches >= 50
+        and main_end_ts > 0
+        and cand_start_ts > 0
+        and cand_tel is not None
+        and cand_tel.games >= 3
+        and cand_start_ts > main_end_ts
+    ):
+        gap_sec = cand_start_ts - main_end_ts
+        span_after_sec = cand_end_ts - main_end_ts
+        # Conta principal parou completamente antes da candidata estrear e permaneceu congelada por >=14 dias
+        if gap_sec >= 0 and span_after_sec >= 14 * 86400:
+            unidirectional_freeze_handoff = True
+            freeze_gap_days = round(gap_sec / 86400.0, 1)
+    return {
+        "cand_has_steam_ban": cand_has_ban,
+        "main_has_steam_ban": main_has_ban,
+        "cand_ban_summary": str(co.get("ban_summary") or ""),
+        "main_ban_summary": str(mo.get("ban_summary") or ""),
+        "unidirectional_freeze_handoff": unidirectional_freeze_handoff,
+        "freeze_gap_days": freeze_gap_days,
+    }
+
+
+def detect_cross_era_recycled_aliases(
+    alias_history_doc: dict[str, Any] | None,
+    *,
+    min_len: int = 5,
+    max_profiles_per_alias: int = 3,
+) -> list[dict[str, Any]]:
+    """
+    Implementa o modelo `arc` de descoberta cross-era (CoH1/CoH2 → CoH3):
+    encontra pares de contas Steam distintas em `alias_history.json` que reciclam apelidos
+    históricos não-genéricos (ex.: alias antigo de CoH2 reaparecendo em conta burner/Family Sharing
+    ou conta alt legada do CoH2 ativada no CoH3).
+    """
+    if not isinstance(alias_history_doc, dict):
+        return []
+    players = alias_history_doc.get("players")
+    if not isinstance(players, dict):
+        return []
+
+    alias_to_pids: dict[str, set[int]] = defaultdict(set)
+    meta: dict[int, dict[str, Any]] = {}
+    for raw_pid, rec in players.items():
+        if not isinstance(rec, dict):
+            continue
+        pid = int(rec.get("profile_id", 0) or (int(raw_pid) if str(raw_pid).isdigit() else 0))
+        if pid <= 0:
+            continue
+        sid = str(rec.get("steam_id") or "").replace("/steam/", "").strip()
+        coh2 = max(0, int(rec.get("coh2_total_matches", 0) or 0))
+        cur = str(rec.get("current_alias") or "").strip()
+        all_al: list[str] = [cur] if cur else []
+        for entry in (rec.get("aliases") or rec.get("history") or []):
+            al = entry.get("alias", "") if isinstance(entry, dict) else str(entry or "")
+            if al:
+                all_al.append(str(al).strip())
+        meta[pid] = {"pid": pid, "steam_id": sid, "coh2_matches": coh2, "current_alias": cur}
+        for al in all_al:
+            norm = re.sub(r"[^a-z0-9]", "", al.lower())
+            if len(norm) >= min_len and norm not in _CROSS_ERA_GENERIC_ALIASES:
+                alias_to_pids[norm].add(pid)
+
+    pair_shared: dict[tuple[int, int], list[str]] = defaultdict(list)
+    for norm_al, pids in alias_to_pids.items():
+        if 2 <= len(pids) <= max_profiles_per_alias:
+            plist = sorted(pids)
+            for i in range(len(plist)):
+                for j in range(i + 1, len(plist)):
+                    a, b = plist[i], plist[j]
+                    sa, sb = meta[a]["steam_id"], meta[b]["steam_id"]
+                    if sa and sb and sa == sb:
+                        continue
+                    pair_shared[(a, b)].append(norm_al)
+
+    results: list[dict[str, Any]] = []
+    for (a, b), shared in pair_shared.items():
+        ma, mb = meta[a], meta[b]
+        ca, cb = ma["coh2_matches"], mb["coh2_matches"]
+        # Prioriza: >=2 aliases raros compartilhados OU transição CoH2->CoH3 (veterano CoH2 + conta 0-CoH2 ou alt CoH2)
+        if len(shared) >= 2 or max(ca, cb) >= 100:
+            results.append(
+                {
+                    "profile_id_a": a,
+                    "steam_id_a": ma["steam_id"],
+                    "alias_a": ma["current_alias"],
+                    "coh2_matches_a": ca,
+                    "profile_id_b": b,
+                    "steam_id_b": mb["steam_id"],
+                    "alias_b": mb["current_alias"],
+                    "coh2_matches_b": cb,
+                    "shared_aliases": sorted(set(shared)),
+                    "pattern": (
+                        "coh2_to_coh3_burner"
+                        if (max(ca, cb) >= 100 and min(ca, cb) == 0)
+                        else ("coh2_alt_activated" if (ca > 0 and cb > 0) else "multi_alias_recycling")
+                    ),
+                }
+            )
+    results.sort(key=lambda r: (-len(r["shared_aliases"]), -max(r["coh2_matches_a"], r["coh2_matches_b"])))
+    return results
+
+
 def score_smurf_pair(
     cand: dict[str, Any],
     main: dict[str, Any],
@@ -2645,9 +2896,14 @@ def score_smurf_pair(
         elif d_sim < 0.42:
             score -= 6.0
 
-    # Sinal 8C (Cruzamento Histórico CoH2 → CoH3):
-    # - 100% (11/11) das smurfs BR confirmadas no CoH3 possuem 0 jogos no CoH2;
-    # - Veteranos antigos com >=1500 jogos de CoH2 (ex.: Tokai Teio 7.407 jogos) recebem penalidade anti-FP.
+    # Sinal 8C (Cruzamento Histórico CoH2 → CoH3 + Padrão `arc`):
+    # - Veteranos antigos com >=1500 jogos de CoH2 (ex.: Tokai Teio 7.407 jogos) sem vínculo direto recebem penalidade anti-FP;
+    # - Reciclagem de alias histórico CoH2/CoH3 em conta Family Sharing ou burner 0-CoH2 (ex.: arc -> Dingo/Saffa, drytron -> tripod,);
+    # - Ativação de conta alt/smurf do CoH2 no CoH3 (ex.: 1..500 jogos CoH2 ativando no CoH3);
+    # - Cluster de criação Steam recente (contas novas criadas com poucos dias de diferença, ex.: arc #1005730 & #918241).
+    arc_cross_era_recycling = False
+    coh2_alt_activated = False
+    steam_creation_cluster = False
     if (
         cand_coh2_matches >= 1500
         and not direct_family_sharing_lender
@@ -2660,6 +2916,21 @@ def score_smurf_pair(
             f"Contra-evidência legado CoH2: candidata possui {cand_coh2_matches} partidas no CoH2 (conta veterana antiga, não burner CoH3)."
         )
     elif (
+        alias_pts >= 12
+        and (
+            is_limited_account
+            or family_shared_api
+            or (main_coh2_matches >= 100 and cand_coh2_matches == 0)
+            or (main_coh2_matches >= 300 and 1 <= cand_coh2_matches <= 500)
+        )
+    ):
+        arc_cross_era_recycling = True
+        score += 8.0
+        identity_anchor_signals += 1
+        evidence.append(
+            f"Padrão cross-era (modelo `arc`): reciclagem de apelido histórico em conta secundária/Family Sharing (CoH2 {cand_coh2_matches} vs {main_coh2_matches})."
+        )
+    elif (
         main_coh2_matches >= 300
         and cand_coh2_matches == 0
         and cand_elo >= 1300
@@ -2669,6 +2940,57 @@ def score_smurf_pair(
         score += 4.0
         evidence.append(
             f"Padrão legado CoH2→CoH3: principal é veterano de CoH2 ({main_coh2_matches} jogos) enquanto a candidata tem 0 jogos no CoH2."
+        )
+    elif (
+        main_coh2_matches >= 300
+        and 1 <= cand_coh2_matches <= 500
+        and (bool(shared_allies_info) or apm_strong_match or alias_pts >= 10 or is_limited_account)
+    ):
+        coh2_alt_activated = True
+        score += 5.0
+        evidence.append(
+            f"Ativação de conta secundária do CoH2 no CoH3: candidata possui {cand_coh2_matches} jogos no CoH2 (vs {main_coh2_matches} da principal) com convergência comportamental."
+        )
+
+    if cand_sid.isdigit() and main_sid.isdigit():
+        c_sid_i, m_sid_i = int(cand_sid), int(main_sid)
+        if (
+            c_sid_i >= 76561199400000000
+            and m_sid_i >= 76561199400000000
+            and 0 < abs(c_sid_i - m_sid_i) <= 3_000_000
+            and (alias_pts >= 10 or bool(shared_allies_info) or apm_strong_match or is_limited_account)
+        ):
+            steam_creation_cluster = True
+            score += 6.0
+            identity_anchor_signals += 1
+            evidence.append(
+                f"Cluster de criação Steam (modelo `arc`): contas criadas na mesma janela temporal (Δ SteamID32 = {abs(c_sid_i - m_sid_i):,})."
+            )
+
+    # Sinal 8D (Monitoramento de Banimentos Steam/Relic & Evasão de Banimento via Handoff Unidirecional):
+    ban_info = _detect_ban_evasion_handoff(
+        cand_tel,
+        main_tel,
+        cand_osint,
+        main_osint,
+        main_total_matches=main_total,
+        main_last_match_ts=int(main.get("last_match_date", 0) or 0),
+    )
+    if ban_info["unidirectional_freeze_handoff"] and (
+        apm_strong_match or bool(shared_allies_info) or alias_pts >= 10 or is_limited_account or family_shared_api
+    ):
+        score += 7.0
+        identity_anchor_signals += 1
+        evidence.append(
+            f"Possível evasão de suspensão/ban Relic: principal congelou abruptamente e candidata assumiu atividade unidirecionalmente ({ban_info['freeze_gap_days']:.1f}d após último jogo da principal)."
+        )
+    if ban_info["cand_has_steam_ban"]:
+        evidence.append(
+            f"ALERTA BAN STEAM (candidata ativa no CoH3): {ban_info['cand_ban_summary'] or 'VAC/Game Ban registrado'}."
+        )
+    if ban_info["main_has_steam_ban"]:
+        evidence.append(
+            f"ALERTA BAN STEAM (conta principal): {ban_info['main_ban_summary'] or 'VAC/Game Ban registrado'}."
         )
 
     # Sinal 9: Escolha de Battlegroups (Dupla camada: Loadout Relic `eslot 0–2` + BGs escolhidos no `cohdb.com`)
@@ -2805,6 +3127,12 @@ def score_smurf_pair(
             "distinct_br_sa_opps": distinct_br_sa_opps,
             "cand_coh2_matches": cand_coh2_matches,
             "main_coh2_matches": main_coh2_matches,
+            "arc_cross_era_recycling": arc_cross_era_recycling,
+            "coh2_alt_activated": coh2_alt_activated,
+            "steam_creation_cluster": steam_creation_cluster,
+            "ban_evasion_handoff": ban_info["unidirectional_freeze_handoff"],
+            "cand_has_steam_ban": ban_info["cand_has_steam_ban"],
+            "main_has_steam_ban": ban_info["main_has_steam_ban"],
             "same_custom_avatar": same_custom_avatar,
             "steam_br_location_leak": steam_br_location_leak,
             "is_limited_account": is_limited_account,
