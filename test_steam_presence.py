@@ -980,6 +980,131 @@ class TestSteamPresenceXmlParser(unittest.TestCase):
         self.assertEqual(format_coh3_recency_age({"last_coh3_age_hours": 48}), "2d")
         self.assertEqual(format_coh3_recency_age({"last_coh3_age_hours": 30, "last_coh3_age_days": 2}), "2d")
 
+    def test_coh3_only_never_coh1_coh2_veteranos_always_shown_and_other_br_elo_sample_priority(self) -> None:
+        from steam_presence import COH_LEGACY_STEAM_APP_IDS, parse_steam_web_api_player
+
+        # 1. CoH1 e CoH2 (Web API e XML) JAMAIS marcam `is_in_coh3=True`, mesmo com texto spoofing
+        for legacy_app_id, label in (
+            ("231430", "Company of Heroes 2"),
+            ("228200", "Company of Heroes"),
+            ("4560", "Company of Heroes"),
+            ("9340", "Company of Heroes: Opposing Fronts"),
+            ("20540", "Company of Heroes: Tales of Valor"),
+            ("231430", "Company of Heroes 3"),  # spoofed name com AppID do CoH2 -> bloqueado!
+        ):
+            self.assertIn(legacy_app_id, COH_LEGACY_STEAM_APP_IDS)
+            p_api = parse_steam_web_api_player(
+                {
+                    "steamid": SAMPLE_SID,
+                    "communityvisibilitystate": 3,
+                    "personastate": 1,
+                    "personaname": "TesterBR",
+                    "gameid": legacy_app_id,
+                    "gameextrainfo": label,
+                }
+            )
+            self.assertIsNotNone(p_api)
+            assert p_api is not None
+            self.assertFalse(p_api["is_in_coh3"], f"AppID legado {legacy_app_id} nunca pode marcar is_in_coh3")
+
+            xml_legacy = f"""<?xml version="1.0" encoding="UTF-8"?>
+            <profile>
+                <steamID64>{SAMPLE_SID}</steamID64>
+                <privacyState>public</privacyState>
+                <visibilityState>3</visibilityState>
+                <onlineState>in-game</onlineState>
+                <stateMessage>In-Game {label}</stateMessage>
+                <inGameInfo>
+                    <gameName>{label}</gameName>
+                    <gameLink>https://store.steampowered.com/app/{legacy_app_id}</gameLink>
+                </inGameInfo>
+            </profile>"""
+            p_xml = parse_steam_profile_xml(xml_legacy, SAMPLE_SID)
+            self.assertFalse(p_xml["is_in_coh3"], f"XML legado {legacy_app_id} nunca pode marcar is_in_coh3")
+
+        # AppID 1677280 (CoH3) marca is_in_coh3=True
+        p_coh3 = parse_steam_web_api_player(
+            {
+                "steamid": SAMPLE_SID,
+                "communityvisibilitystate": 3,
+                "personastate": 1,
+                "personaname": "TesterBR",
+                "gameid": "1677280",
+                "gameextrainfo": "Company of Heroes 3",
+            }
+        )
+        assert p_coh3 is not None
+        self.assertTrue(p_coh3["is_in_coh3"])
+
+        # 2. Veteranos inativos no CoH3 (400d sem jogar ou jogando CoH2) SEMPRE aparecem (nunca em in_coh3 por CoH2!)
+        # 3. Outros Brasileiros: >15d sem jogar CoH3 (mesmo jogando CoH2 ou online livre) NÃO aparecem;
+        #    ativos <=15d priorizam ELO alto + alta amostra de jogos no CoH3!
+        now = 1_800_000_000
+        vet_roster = [
+            {"profile_id": 79327, "steam_id": "76561198000001001", "original_alias": "VetInativo400d", "last_match_date": now - 400 * 86400},
+            {"profile_id": 79328, "steam_id": "76561198000001002", "original_alias": "VetNoCoH2", "last_match_date": 0},
+        ]
+        vet_pres = {
+            "76561198000001001": parse_steam_web_api_player(
+                {"steamid": "76561198000001001", "communityvisibilitystate": 3, "personastate": 1, "personaname": "VetInativo400d"}
+            ),
+            "76561198000001002": parse_steam_web_api_player(
+                {
+                    "steamid": "76561198000001002",
+                    "communityvisibilitystate": 3,
+                    "personastate": 1,
+                    "personaname": "VetNoCoH2",
+                    "gameid": "231430",
+                    "gameextrainfo": "Company of Heroes 2",
+                }
+            ),
+        }
+        other_roster = [
+            # Inativos (>15d ou sem partida CoH3): JAMAIS podem aparecer
+            {"profile_id": 9001, "steam_id": "76561198000009001", "alias": "OutroInativo16d", "max_elo": 1800, "last_match_date": now - 16 * 86400, "total_matches": 2000},
+            {"profile_id": 9002, "steam_id": "76561198000009002", "alias": "OutroInativoCoH2", "max_elo": 1700, "last_match_date": now - 40 * 86400, "total_matches": 900},
+            # Ativos <=15d: alta amostra + ELO alto > pequena amostra > ELO baixo
+            {"profile_id": 9003, "steam_id": "76561198000009003", "alias": "AltoEloAltaAmostra", "max_elo": 1400, "last_match_date": now - 1 * 86400, "total_matches": 2500},
+            {"profile_id": 9004, "steam_id": "76561198000009004", "alias": "AltoEloMediaAmostra", "max_elo": 1400, "last_match_date": now - 1 * 86400, "total_matches": 180},
+            {"profile_id": 9005, "steam_id": "76561198000009005", "alias": "Elo1350PoucosJogos", "max_elo": 1350, "last_match_date": now - 1 * 86400, "total_matches": 12},
+            {"profile_id": 9006, "steam_id": "76561198000009006", "alias": "EloBaixoAtivo", "max_elo": 980, "last_match_date": now - 1 * 86400, "total_matches": 60},
+        ]
+        other_pres = {
+            r["steam_id"]: parse_steam_web_api_player(
+                {
+                    "steamid": r["steam_id"],
+                    "communityvisibilitystate": 3,
+                    "personastate": 1,
+                    "personaname": r["alias"],
+                    **({"gameid": "231430", "gameextrainfo": "Company of Heroes 2"} if r["profile_id"] == 9002 else {}),
+                }
+            )
+            for r in other_roster
+        }
+        snap = build_lobby_radar_snapshot(
+            vet_roster,
+            {k: v for k, v in vet_pres.items() if v is not None},
+            now_ts=now,
+            other_br_players=other_roster,
+            other_presence_by_steam={k: v for k, v in other_pres.items() if v is not None},
+        )
+        # Veteranos: ambos exibidos em online_steam mesmo inativos no CoH3; NENHUM em in_coh3 por jogar CoH2!
+        self.assertEqual(snap["veteranos"]["in_coh3"], [])
+        self.assertEqual([p["alias"] for p in snap["veteranos"]["online_steam"]], ["VetInativo400d", "VetNoCoH2"])
+
+        # Outros Brasileiros: inativos (>15d / CoH2) totalmente ocultos; ordem estrita por ELO alto + alta amostra CoH3!
+        self.assertEqual(snap["outros_brasileiros"]["in_coh3"], [])
+        oth_online = snap["outros_brasileiros"]["online_steam"]
+        self.assertEqual(
+            [p["alias"] for p in oth_online],
+            ["AltoEloAltaAmostra", "AltoEloMediaAmostra", "Elo1350PoucosJogos", "EloBaixoAtivo"],
+        )
+        self.assertEqual(oth_online[0]["prominence_tier"], "high")
+        self.assertEqual(oth_online[1]["prominence_tier"], "high")
+        self.assertGreater(oth_online[0]["prominence_score"], oth_online[1]["prominence_score"])
+        self.assertEqual(oth_online[2]["prominence_tier"], "medium")  # apenas 12 jogos não entra no destaque ★ high
+        self.assertEqual(oth_online[3]["prominence_tier"], "low")
+
 
 if __name__ == "__main__":
     unittest.main()
