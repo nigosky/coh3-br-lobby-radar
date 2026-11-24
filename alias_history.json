@@ -24291,7 +24291,7 @@
         {
           "alias": "Pendragon",
           "first_seen": 1795466047,
-          "last_seen": 1795466047,
+          "last_seen": 1795554873,
           "sources": [
             "relic_coh1_api",
             "steam_web_api",
@@ -134760,7 +134760,7 @@
       "coh3_last_match_date": 1794613740,
       "coh3_total_matches": 3,
       "current_alias": "corolla XEI 2008 prata",
-      "last_checked_at": 1795554573,
+      "last_checked_at": 1795554873,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1441520,
@@ -135270,7 +135270,7 @@
       "coh3_last_match_date": 1794579345,
       "coh3_total_matches": 1,
       "current_alias": "Wiz",
-      "last_checked_at": 1795552472,
+      "last_checked_at": 1795554873,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1445924,
@@ -135976,7 +135976,7 @@
       "coh3_last_match_date": 1794602764,
       "coh3_total_matches": 1,
       "current_alias": "BESON",
-      "last_checked_at": 1795554573,
+      "last_checked_at": 1795554873,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1449348,
@@ -142546,7 +142546,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795554273,
+      "last_checked_at": 1795554873,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -171337,7 +171337,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1691721810,
       "coh3_total_matches": 27,
-      "current_alias": "AcumAn",
+      "current_alias": "AcUmAn",
       "last_checked_at": 1795554573,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
@@ -174837,7 +174837,7 @@
       "coh2_profile_id": 213,
       "coh2_total_matches": 86,
       "coh3_country": "br",
-      "current_alias": "mw",
+      "current_alias": "MW",
       "last_checked_at": 1795554573,
       "last_coh1_relic_at": 1795487784,
       "last_coh2_relic_at": 1795487784,
@@ -218808,7 +218808,7 @@
       "coh3_last_match_date": 1794526879,
       "coh3_total_matches": 4,
       "current_alias": "Qi 124",
-      "last_checked_at": 1795554573,
+      "last_checked_at": 1795554873,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -242252,5 +242252,5 @@
     "steam_web_api": 7470,
     "steam_xml": 6739
   },
-  "updated_at": 1795554573
+  "updated_at": 1795554873
 }
