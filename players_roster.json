@@ -740,6 +740,20 @@
       ]
     },
     {
+      "profile_id": 655548,
+      "steam_id": "76561198037528747",
+      "original_alias": "Garm (Smurf: Galva)",
+      "smurf_of": "Galva",
+      "country": "br",
+      "known_aliases": [
+        "Garm",
+        "Galva",
+        "Fidelis",
+        "lrs",
+        "Garm (Smurf: Galva)"
+      ]
+    },
+    {
       "profile_id": 13516,
       "steam_id": "76561198000943380",
       "original_alias": "NEBADON",
@@ -1076,6 +1090,17 @@
       "steam_id": "76561198099054871",
       "original_alias": "TrueLothar",
       "country": "br"
+    },
+    {
+      "profile_id": 123228,
+      "steam_id": "76561198064278734",
+      "original_alias": "Lothar (Smurf: TrueLothar)",
+      "smurf_of": "TrueLothar",
+      "country": "br",
+      "known_aliases": [
+        "Lothar",
+        "Lothar (Smurf: TrueLothar)"
+      ]
     },
     {
       "profile_id": 409715,

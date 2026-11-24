@@ -52,7 +52,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         tot_v, uniq_v, tot_m = manage_roster.validate_roster_doc(doc)
         self.assertEqual(tot_v, 48)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
-        self.assertEqual(tot_m, 162)
+        self.assertEqual(tot_m, 164)
         self.assertEqual(len(doc.get("outros_br_emigrados") or []), 15)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr e Tracker presentes; Lem22/Generick/Napa US e XAPA KENTE CA
@@ -117,18 +117,21 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Players Monitorados (162 contas): inclui panelinhas viperking/Shark, Brazuca/SkY e XAMPUZINHO (Smurf: Xampoo) fixadas (`pin_monitorados=True`)
+        # Players Monitorados (164 contas): inclui panelinhas viperking/Shark, Brazuca/SkY e XAMPUZINHO (Smurf: Xampoo) fixadas (`pin_monitorados=True`)
         from foreign_br_verifier import load_suspected_foreign_br_registry
         from steam_presence import MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS
 
         self.assertIs(MANUAL_OTHER_BR_PLAYERS, MONITORED_BR_PLAYERS)
         mon_by_pid = {int(r["profile_id"]): r for r in MONITORED_BR_PLAYERS}
         exp_by_pid = {int(r["profile_id"]): r for r in OUTROS_BR_EMIGRADOS}
-        self.assertEqual(len(mon_by_pid), 162)
+        self.assertEqual(len(mon_by_pid), 164)
         self.assertEqual(len(exp_by_pid), 15)
         sf_reg = load_suspected_foreign_br_registry()
         self.assertNotIn(448521, sf_reg.get("excluded_from_rankings_pids") or [])
         self.assertEqual((sf_reg.get("players") or {}).get("448521", {}).get("status"), "confirmed_br")
+        for sf_pid in (1221129, 947114):
+            self.assertIn(sf_pid, sf_reg.get("excluded_from_rankings_pids") or [])
+            self.assertEqual((sf_reg.get("players") or {}).get(str(sf_pid), {}).get("status"), "suspected_foreign_vpn")
         self.assertEqual(
             {pid for pid, r in mon_by_pid.items() if str(r.get("flag_country") or r.get("country") or "br").lower() != "br"},
             {212034, 7448, 33487, 1304336, 304013},
@@ -168,6 +171,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
             661598,
             821542,
             674379,
+            655548,
             13516,
             38270,
             970468,
@@ -208,6 +212,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
             5296,
             1162890,
             716376,
+            123228,
             409715,
             316794,
             946322,
@@ -394,6 +399,8 @@ class TestSharedPlayersRoster(unittest.TestCase):
             1297804: ("76561198723667226", "Leite Moço (Smurf: 『V』SKOBADARK)", "『V』SKOBADARK"),
             1076221: ("76561198815935562", "Lucielle (Smurf: Colossus)", "Colossus"),
             720147: ("76561199667577805", "アリス (Smurf: icemaker)", "icemaker"),
+            655548: ("76561198037528747", "Garm (Smurf: Galva)", "Galva"),
+            123228: ("76561198064278734", "Lothar (Smurf: TrueLothar)", "TrueLothar"),
         }
         for gpid, (gsid, galias, gowner) in expected_mon_smurfs.items():
             self.assertEqual(mon_by_pid[gpid]["steam_id"], gsid)

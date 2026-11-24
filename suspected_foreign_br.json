@@ -15,6 +15,7 @@
     811294,
     865785,
     944737,
+    947114,
     1026771,
     1027727,
     1096783,
@@ -22,6 +23,7 @@
     1157276,
     1159891,
     1187116,
+    1221129,
     1302582,
     1304022,
     1312071
@@ -416,6 +418,55 @@
       "span_days": 0.0,
       "status": "suspected_foreign_vpn",
       "steam_id": "76561198069882184"
+    },
+    "1221129": {
+      "alias": "mirage child",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.065,
+        "br_allies_matches": 1,
+        "brt_prime_share": 0.194,
+        "coh1_country": "",
+        "coh2_country": "ru",
+        "coh2_matches": 276,
+        "foreign_script_allies_matches": 26,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 31,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 110,
+        "steam_location": "Niger",
+        "unique_br_allies": 1
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795549477,
+      "foreign_score": 100,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Niger",
+            "zero_br_steam_friends:0/110",
+            "coh2_ru"
+          ],
+          "ts": 1795549477,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795549477,
+      "profile_id": 1221129,
+      "reasons": [
+        "steam_loc:Niger",
+        "zero_br_steam_friends:0/110",
+        "coh2_ru"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198045104755"
     },
     "1302582": {
       "alias": "math",
@@ -1474,6 +1525,53 @@
       "status": "suspected_foreign_vpn",
       "steam_id": "76561198117984620"
     },
+    "947114": {
+      "alias": "Sleepy",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.306,
+        "br_allies_matches": 1,
+        "brt_prime_share": 0.472,
+        "coh1_country": "",
+        "coh2_country": "ar",
+        "coh2_matches": 0,
+        "foreign_script_allies_matches": 40,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "recent_matches_analyzed": 36,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 21,
+        "steam_location": "",
+        "unique_br_allies": 1
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795549477,
+      "foreign_score": 15,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 15,
+          "reasons": [
+            "zero_br_steam_friends:0/21",
+            "coh2_ar"
+          ],
+          "ts": 1795549477,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795549477,
+      "profile_id": 947114,
+      "reasons": [
+        "zero_br_steam_friends:0/21",
+        "coh2_ar"
+      ],
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561199005516405"
+    },
     "952854": {
       "alias": "乂卂丨",
       "br_score": 100,
@@ -1527,5 +1625,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": 1795525976
+  "updated_at": 1795549477
 }
