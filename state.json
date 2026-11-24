@@ -63,10 +63,10 @@
     5768
   ],
   "last_alert_ts": 1795494077,
-  "last_digest": "(([(5768, False, False, False, False, 'The Dog', '', 'br', False)], [(1005730, '', False, False, False, 'arc', '', 'br', False), (6557, '', False, False, False, 'Dragoness', '', 'br', False), (58737, 'TBH: Task Bar Hero', True, True, False, 'INFIEL', '', 'br', False), (1226910, '', True, False, False, 'Lupus Alba', '', 'br', False), (735940, '', True, False, False, 'Jimmy Duelista', '', 'br', False), (59864, '', True, True, False, 'Lion Heart', '', 'br', False), (975688, '', True, True, False, 'Kefbr', '', 'br', False)], []), ([], [], [(383796, 'Vanghoul', '', 'br', False), (1475932, 'Ophill', '', 'br', False), (1476268, 'Dcpegas', '', 'br', False), (1041591, 'M/A/R/I/N/A', '', 'br', False), (793116, 'Beltrao', '', 'br', False)]))",
-  "last_steam_fast_sig": "([], [('76561197993922195', 'TBH: Task Bar Hero', True, True, False, 'INFIEL'), ('76561197994245218', '', True, True, False, 'Kefbr'), ('76561198034510845', '', True, False, False, 'Jimmy Duelista'), ('76561198123446420', '', True, True, False, 'Lion Heart'), ('76561198135142137', '', False, False, False, 'Dragoness'), ('76561198140782132', '', True, False, False, 'Lupus Alba'), ('76561198205052385', '', False, False, False, 'The Dog'), ('76561199791811246', '', False, False, False, 'arc')])",
+  "last_digest": "(([(5768, False, False, False, False, 'The Dog', '', 'br', False)], [(1005730, '', False, False, False, 'arc', '', 'br', False), (6557, '', False, False, False, 'Dragoness', '', 'br', False), (735940, '', False, False, False, 'Jimmy Duelista', '', 'br', False), (58737, 'TBH: Task Bar Hero', True, True, False, 'INFIEL', '', 'br', False), (1226910, '', True, False, False, 'Lupus Alba', '', 'br', False), (59864, '', True, True, False, 'Lion Heart', '', 'br', False), (975688, '', True, True, False, 'Kefbr', '', 'br', False)], []), ([], [], [(383796, 'Vanghoul', '', 'br', False), (1475932, 'Ophill', '', 'br', False), (1476268, 'Dcpegas', '', 'br', False), (793116, 'Beltrao', '', 'br', False)]))",
+  "last_steam_fast_sig": "([], [('76561197993922195', 'TBH: Task Bar Hero', True, True, False, 'INFIEL'), ('76561197994245218', '', True, True, False, 'Kefbr'), ('76561198034510845', '', False, False, False, 'Jimmy Duelista'), ('76561198123446420', '', True, True, False, 'Lion Heart'), ('76561198135142137', '', False, False, False, 'Dragoness'), ('76561198140782132', '', True, False, False, 'Lupus Alba'), ('76561198205052385', '', False, False, False, 'The Dog'), ('76561199791811246', '', False, False, False, 'arc')])",
   "last_steam_groups_scan_ts": 1795485156,
-  "last_sync_ts": 1795497008,
+  "last_sync_ts": 1795497308,
   "layout_version": 11,
   "manual_other_br_checked_pids": [
     11033,
@@ -92,14 +92,14 @@
   ],
   "manual_other_br_checked_ts": 1795494978,
   "other_br_rotation_offset": 0,
-  "panel_links_message_id": "1574653415986954242",
-  "panel_message_id": "1574653409628393492",
+  "panel_links_message_id": "1574654625179631695",
+  "panel_message_id": "1574654621408956458",
   "panel_message_ids": [
-    "1574653409628393492",
-    "1574653414250516662",
-    "1574653415986954242"
+    "1574654621408956458",
+    "1574654623669813368",
+    "1574654625179631695"
   ],
-  "panel_outros_message_id": "1574653414250516662",
+  "panel_outros_message_id": "1574654623669813368",
   "steam_gd_cache": {
     "76561197994245218": {
       "hidden": true,
