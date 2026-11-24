@@ -437,6 +437,18 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 812247, "steam_id": "76561198062044957", "original_alias": "Texugo", "country": "th", "flag_country": "th"},
     {"profile_id": 229162, "steam_id": "76561198089247149", "original_alias": "Sombra", "country": "us", "flag_country": "us"},
     {"profile_id": 212034, "steam_id": "76561198207565088", "original_alias": "XAPA KENTE", "country": "ca", "flag_country": "ca"},
+    {"profile_id": 110593, "steam_id": "76561198414864681", "original_alias": "Ethan Hunt", "country": "us", "flag_country": "us"},
+    {"profile_id": 1304336, "steam_id": "76561198043710924", "original_alias": "V.I.T.O.X", "country": "us", "flag_country": "us"},
+    {
+        "profile_id": 1168460,
+        "steam_id": "76561198012821540",
+        "original_alias": "Nonô",
+        "country": "ca",
+        "flag_country": "ca",
+        "known_aliases": ["Killer_BR", "Nonô"],
+    },
+    {"profile_id": 11033, "steam_id": "76561198009533220", "original_alias": "Coka", "country": "jp", "flag_country": "jp"},
+    {"profile_id": 24963, "steam_id": "76561197987674520", "original_alias": "Eduardo A.", "country": "sa", "flag_country": "sa"},
 ]
 
 
@@ -4285,6 +4297,124 @@ def classify_other_br_prominence(
     return tier, score
 
 
+_DECORATIVE_NON_LATIN_CHARS: frozenset[str] = frozenset("彡ツャー・『』★☆々〆ヽヾァィゥェォッュョ")
+_FOREIGN_CJK_HANGUL_ARAB_RE = re.compile(
+    r"[\u3041-\u309f\u30a1-\u30fa\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\u0600-\u06ff]"
+)
+_FOREIGN_CYRILLIC_RE = re.compile(r"[\u0400-\u04ff]")
+_FOREIGN_LATIN_RE = re.compile(r"[A-Za-z\u00c0-\u024f]")
+# Países de origem no CoH2 fortemente indicativos de estrangeiro usando loja/flag BR no CoH3
+# (exclui propositalmente `ar`/`tr`/`us`/`ca`/`pt` isolados pois brasileiros comuns usaram loja AR/TR ou moraram fora)
+SUSPECTED_FOREIGN_COH2_ORIGINS: frozenset[str] = frozenset(
+    {
+        "cn", "ru", "ua", "by", "jp", "kr", "tw", "hk", "ir", "dz", "ve", "az", "lk", "kz",
+        "de", "pl", "fr", "gb", "nl", "se", "cz", "ro", "hu", "vn", "id", "my", "sg", "th",
+        "ph", "in", "pk", "eg", "sa", "ae", "il", "au", "nz", "bg", "rs", "hr", "sk", "lt",
+        "lv", "ee", "fi", "no", "dk", "at", "ch", "be", "gr", "cl", "co", "pe", "mx", "uy",
+    }
+)
+
+
+def _count_alias_script_chars(alias: str) -> tuple[int, int, int]:
+    """Conta `(cjk_hangul_arab, cyrillic, latin)` após remover símbolos decorativos comuns no Brasil (`彡`, `ツ`, `ャ`, etc.)."""
+    cleaned = "".join(ch for ch in (alias or "") if ch not in _DECORATIVE_NON_LATIN_CHARS)
+    cjk = len(_FOREIGN_CJK_HANGUL_ARAB_RE.findall(cleaned))
+    cyr = len(_FOREIGN_CYRILLIC_RE.findall(cleaned))
+    lat = len(_FOREIGN_LATIN_RE.findall(cleaned))
+    return cjk, cyr, lat
+
+
+def detect_suspected_foreign_br_flag(
+    *,
+    profile_id: int,
+    flag_country: str,
+    current_aliases: list[str] | tuple[str, ...],
+    historical_aliases: list[str] | tuple[str, ...] | None = None,
+    steam_presences: list[dict[str, Any]] | None = None,
+    coh1_country: str = "",
+    coh2_country: str = "",
+    coh2_matches: int = 0,
+    br_source: str = "",
+) -> tuple[bool, str]:
+    """
+    Sinaliza contas com `flag_country == "br"` em Outros Brasileiros que apresentam fortes indícios
+    de serem jogadores de outra nacionalidade usando loja/flag BR na Steam (ex.: Nocturne, 北方军港, GDI).
+    Nunca sinaliza Veteranos, `MANUAL_OTHER_BR_PLAYERS`, emigrados já com bandeira estrangeira ou contas
+    com prova explícita de vínculo brasileiro (localização Steam Brasil, grupo BR, review PT-BR ou tag `[BR]`).
+    """
+    if normalize_flag_country(flag_country, default="br") != "br":
+        return False, ""
+    pid = int(profile_id or 0)
+    if pid > 0:
+        if any(int(r.get("profile_id", 0) or 0) == pid for r in CORE_BR_ROSTER):
+            return False, ""
+        if get_manual_other_br_override(pid) is not None:
+            return False, ""
+
+    src_low = str(br_source or "").strip().lower()
+    if src_low in ("steam_group_br", "steam_ptbr_review", "manual_other_br"):
+        return False, ""
+
+    pres_list = [p for p in (steam_presences or []) if isinstance(p, dict)]
+    if any(bool(p.get("is_steam_brazil")) or bool(p.get("has_brazil_steam_group")) for p in pres_list):
+        return False, ""
+
+    cur_clean = [strip_unsafe_chars(a)[:64] for a in (current_aliases or ()) if strip_unsafe_chars(a)]
+    hist_clean = [strip_unsafe_chars(a)[:64] for a in (historical_aliases or ()) if strip_unsafe_chars(a)]
+    all_aliases = list(dict.fromkeys(cur_clean + hist_clean))
+    if any(has_explicit_br_alias_tag(a) for a in all_aliases):
+        return False, ""
+
+    c1 = str(coh1_country or "").strip().lower()
+    c2 = str(coh2_country or "").strip().lower()
+    c2_m = max(0, int(coh2_matches or 0))
+    has_legacy_br = c1 == "br" or c2 == "br"
+
+    # 1. Escrita CJK / Hangul / Árabe dominante (atual >= 4 ideogramas ou frase >= 5 ou >= 2 aliases distintos no histórico)
+    cjk_hits: list[str] = []
+    has_long_cjk = False
+    has_cur_strong_cjk = False
+    for a in all_aliases:
+        cjk, _, lat = _count_alias_script_chars(a)
+        if cjk >= 5:
+            has_long_cjk = True
+        if cjk >= 2 and (lat == 0 or cjk >= lat):
+            cjk_hits.append(a)
+    for a in cur_clean:
+        cjk, _, lat = _count_alias_script_chars(a)
+        if cjk >= 4 and (lat == 0 or cjk >= lat):
+            has_cur_strong_cjk = True
+    if len(cjk_hits) >= 2 or has_long_cjk or has_cur_strong_cjk:
+        return True, "cjk_alias_history"
+
+    # 2. Localização explícita na Steam fora do Brasil (sem prova de Brasil no histórico CoH1/CoH2)
+    if not has_legacy_br:
+        for p in pres_list:
+            loc = strip_unsafe_chars(p.get("location") or "")
+            if loc and not is_brazil_steam_location(loc) and loc.upper() != "BR":
+                return True, f"steam_loc:{loc[:24]}"
+
+    # 3. Cirílico puro sem letras latinas (dispensa se houver CoH1/CoH2 BR, evitando falsos positivos em fãs soviéticos BR)
+    if not has_legacy_br:
+        cyr_hits = [
+            a
+            for a in all_aliases
+            if (lambda c: c[1] >= 4 and c[2] == 0)(_count_alias_script_chars(a))
+        ]
+        cur_strong_cyr = any(
+            (lambda c: c[1] >= 5 and c[2] == 0)(_count_alias_script_chars(a))
+            for a in cur_clean
+        )
+        if len(cyr_hits) >= 2 or cur_strong_cyr:
+            return True, "cyrillic_alias_history"
+
+    # 4. Histórico sólido de CoH2 em país estrangeiro fora dos padrões de loja BR (ex.: cn, ru, ve, dz, jp, kr)
+    if c2 in SUSPECTED_FOREIGN_COH2_ORIGINS and c2_m >= 20 and c1 != "br":
+        return True, f"coh2_{c2}"
+
+    return False, ""
+
+
 def _build_category_lists(
     roster: list[dict[str, Any]],
     presence_by_steam: dict[str, dict[str, Any]],
@@ -4297,6 +4427,7 @@ def _build_category_lists(
     max_coh3_inactivity_sec: int | None = None,
     known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
     known_ingame_visible_webapi_sids: set[str] | frozenset[str] | None = None,
+    alias_history_by_pid: dict[str, Any] | dict[int, Any] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], int]:
     canonical_entries: dict[int, dict[str, Any]] = {}
     secondary_rows: list[dict[str, Any]] = []
@@ -4334,7 +4465,8 @@ def _build_category_lists(
                 raw_alias = ov_alias
         if not smurf_of:
             _, smurf_of = extract_smurf_owner_and_nick(raw_alias)
-        flag_ctry = normalize_flag_country(row.get("flag_country")) or get_configured_flag_country(pid) or "br"
+        # Prioriza sempre o país configurado na base canônica (`players_roster.json`), sobrescrevendo eventual `"br"` antigo em cache
+        flag_ctry = get_configured_flag_country(pid) or normalize_flag_country(row.get("flag_country")) or "br"
         canonical_entries[pid] = {
             "profile_id": pid,
             "steam_id": sid,
@@ -4344,6 +4476,7 @@ def _build_category_lists(
             "pin_alias": pin_alias,
             "smurf_of": smurf_of,
             "flag_country": flag_ctry,
+            "br_source": strip_unsafe_chars(row.get("br_source") or "")[:32],
             "steam_ids_all": [sid] if sid else [],
             "profile_ids_all": [pid],
             "fallback_elo": int(row.get("max_elo", 0) or 0),
@@ -4474,12 +4607,35 @@ def _build_category_lists(
 
         is_in_coh3 = is_in_coh3_steam or is_in_coh3_via_relic
 
+        suspected_foreign = False
+        suspected_foreign_reason = ""
         if category == "outros_brasileiros":
             prom_tier, prom_score = classify_other_br_prominence(
                 max_elo=max_elo,
                 coh3_age_hours=coh3_age_hours,
                 total_matches=total_matches,
                 is_in_coh3=is_in_coh3,
+            )
+            hrec: dict[str, Any] = {}
+            if isinstance(alias_history_by_pid, dict):
+                raw_hrec = alias_history_by_pid.get(str(pid)) or alias_history_by_pid.get(pid)
+                if isinstance(raw_hrec, dict):
+                    hrec = raw_hrec
+            hist_alias_list = [
+                str(a.get("alias") if isinstance(a, dict) else a).strip()
+                for a in (hrec.get("aliases") or [])
+                if (a.get("alias") if isinstance(a, dict) else a)
+            ]
+            suspected_foreign, suspected_foreign_reason = detect_suspected_foreign_br_flag(
+                profile_id=pid,
+                flag_country=meta["flag_country"],
+                current_aliases=[meta["alias"], current_live_alias, live_steam_alias],
+                historical_aliases=hist_alias_list,
+                steam_presences=pres_candidates,
+                coh1_country=str(hrec.get("coh1_country") or ""),
+                coh2_country=str(hrec.get("coh2_country") or ""),
+                coh2_matches=int(hrec.get("coh2_total_matches", 0) or 0),
+                br_source=str(meta.get("br_source") or ""),
             )
         else:
             # Veteranos SEMPRE aparecem com destaque total, independente de ELO ou atividade
@@ -4493,6 +4649,8 @@ def _build_category_lists(
             "current_alias": current_live_alias,
             "nick_changed": bool(nick_changed),
             "flag_country": meta["flag_country"],
+            "suspected_foreign_flag": bool(suspected_foreign),
+            "suspected_foreign_reason": suspected_foreign_reason,
             "avatar_url": avatar_url,
             "max_elo": max_elo,
             "total_matches": total_matches,
@@ -4629,6 +4787,7 @@ def build_lobby_radar_snapshot(
     other_br_active_days: int = OTHER_BR_ACTIVE_COH3_DAYS,
     known_ingame_visible_sids: set[str] | frozenset[str] | None = None,
     known_ingame_visible_webapi_sids: set[str] | frozenset[str] | None = None,
+    alias_history_by_pid: dict[str, Any] | dict[int, Any] | None = None,
 ) -> dict[str, Any]:
     """
     Consolida as duas categorias do Radar de Lobby:
@@ -4692,6 +4851,7 @@ def build_lobby_radar_snapshot(
         max_coh3_inactivity_sec=other_inactivity_sec,
         known_ingame_visible_sids=known_ingame_visible_sids,
         known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
+        alias_history_by_pid=alias_history_by_pid,
     )
 
     xml_ok_accounts = sum(1 for v in merged_other_pres.values() if v.get("ok"))
@@ -4734,6 +4894,8 @@ def _category_digest(bucket: dict[str, Any]) -> tuple[Any, Any, Any]:
             bool(p.get("is_busy")),
             str(p.get("alias") or ""),
             str(p.get("current_alias") or ""),
+            str(p.get("flag_country") or "br"),
+            bool(p.get("suspected_foreign_flag")),
         )
         for p in bucket.get("in_coh3", [])
     ]
@@ -4746,11 +4908,19 @@ def _category_digest(bucket: dict[str, Any]) -> tuple[Any, Any, Any]:
             bool(p.get("is_busy")),
             str(p.get("alias") or ""),
             str(p.get("current_alias") or ""),
+            str(p.get("flag_country") or "br"),
+            bool(p.get("suspected_foreign_flag")),
         )
         for p in bucket.get("online_steam", [])
     ]
     recent_sig = [
-        (p["profile_id"], str(p.get("alias") or ""), str(p.get("current_alias") or ""))
+        (
+            p["profile_id"],
+            str(p.get("alias") or ""),
+            str(p.get("current_alias") or ""),
+            str(p.get("flag_country") or "br"),
+            bool(p.get("suspected_foreign_flag")),
+        )
         for p in bucket.get("recent_relic", [])
     ]
     return in_coh3_sig, online_sig, recent_sig

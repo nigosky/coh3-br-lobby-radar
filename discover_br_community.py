@@ -94,6 +94,7 @@ from steam_presence import (
     _merge_discovered_br_player,
     extract_roster_id_sets,
     extract_steam_id_from_relic_name,
+    get_configured_flag_country,
     has_explicit_br_alias_tag,
     is_brazil_steam_location,
 )
@@ -285,7 +286,13 @@ def run_deep_br_discovery(
             hc3 = str(hrec.get("coh3_country") or "").strip().lower()
             hc2 = str(hrec.get("coh2_country") or "").strip().lower()
             hc1 = str(hrec.get("coh1_country") or "").strip().lower()
-            if not (hc3 in ("br", "") or pid in manual_pids or hc2 == "br" or hc1 == "br" or bool(hrec.get("country_migration"))):
+            hc1_m = int(hrec.get("coh1_total_matches", 0) or 0)
+            mig_obj = hrec.get("country_migration") if isinstance(hrec.get("country_migration"), dict) else {}
+            mig_ev = str(mig_obj.get("evidence") or "").strip().lower()
+            has_strong_mig = bool(mig_obj) and (
+                mig_ev != "era_country_shift" or hc2 == "br" or (hc1 == "br" and hc1_m >= 15)
+            )
+            if not (hc3 in ("br", "") or pid in manual_pids or hc2 == "br" or (hc1 == "br" and hc1_m >= 15) or has_strong_mig):
                 continue
             _merge_discovered_br_player(
                 br_pool,
@@ -1183,7 +1190,10 @@ def run_deep_br_discovery(
                     if "steam_games_hidden" in prev and int(prev.get("steam_gd_checked_ts", 0) or 0) > 0:
                         target[key]["steam_games_hidden"] = bool(prev["steam_games_hidden"])
                         target[key]["steam_gd_checked_ts"] = int(prev["steam_gd_checked_ts"])
-                f_ctry = str(item.get("flag_country") or (prev.get("flag_country") if isinstance(prev, dict) else "") or "").strip().lower()
+                f_ctry = (
+                    get_configured_flag_country(pid)
+                    or str(item.get("flag_country") or (prev.get("flag_country") if isinstance(prev, dict) else "") or "").strip().lower()
+                )
                 if f_ctry and f_ctry != "br":
                     target[key]["flag_country"] = f_ctry
 

@@ -630,6 +630,40 @@
       "steam_id": "76561198207565088",
       "original_alias": "XAPA KENTE",
       "country": "ca"
+    },
+    {
+      "profile_id": 110593,
+      "steam_id": "76561198414864681",
+      "original_alias": "Ethan Hunt",
+      "country": "us"
+    },
+    {
+      "profile_id": 1304336,
+      "steam_id": "76561198043710924",
+      "original_alias": "V.I.T.O.X",
+      "country": "us"
+    },
+    {
+      "profile_id": 1168460,
+      "steam_id": "76561198012821540",
+      "original_alias": "Nonô",
+      "country": "ca",
+      "known_aliases": [
+        "Killer_BR",
+        "Nonô"
+      ]
+    },
+    {
+      "profile_id": 11033,
+      "steam_id": "76561198009533220",
+      "original_alias": "Coka",
+      "country": "jp"
+    },
+    {
+      "profile_id": 24963,
+      "steam_id": "76561197987674520",
+      "original_alias": "Eduardo A.",
+      "country": "sa"
     }
   ]
 }

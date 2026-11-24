@@ -82,7 +82,7 @@ DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
 # 4m30s garante que o ciclo de 5 min (300s) nunca pule a atualização por 1-2s de jitter do relógio
 PANEL_HEARTBEAT_REFRESH_SEC = 270
-PANEL_LAYOUT_VERSION = 10
+PANEL_LAYOUT_VERSION = 11
 COMMUNITY_SCHEMA_VERSION = 3
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
@@ -1055,6 +1055,21 @@ def run_lobby_radar_sync(
     manual_other_pids_set, _ = extract_roster_id_sets(MANUAL_OTHER_BR_PLAYERS)
     hist_players_map = hist_doc.get("players") if isinstance(hist_doc.get("players"), dict) else {}
 
+    def _is_confirmed_hist_expat(hrec: Any) -> bool:
+        if not isinstance(hrec, dict):
+            return False
+        hc2 = str(hrec.get("coh2_country") or "").strip().lower()
+        hc1 = str(hrec.get("coh1_country") or "").strip().lower()
+        hc1_m = int(hrec.get("coh1_total_matches", 0) or 0)
+        if hc2 == "br" or (hc1 == "br" and hc1_m >= 15):
+            return True
+        mig_obj = hrec.get("country_migration")
+        if isinstance(mig_obj, dict):
+            mig_ev = str(mig_obj.get("evidence") or "").strip().lower()
+            if mig_ev and mig_ev != "era_country_shift":
+                return True
+        return False
+
     def _is_leaked_foreign_cache_row(row_obj: dict[str, Any], row_pid: int) -> bool:
         if row_pid in manual_other_pids_set:
             return False
@@ -1063,13 +1078,7 @@ def run_lobby_radar_sync(
         rflag = str(row_obj.get("flag_country") or "").strip().lower()
         if rflag in ("", "br"):
             return False
-        hrec = hist_players_map.get(str(row_pid))
-        if isinstance(hrec, dict):
-            hc2 = str(hrec.get("coh2_country") or "").strip().lower()
-            hc1 = str(hrec.get("coh1_country") or "").strip().lower()
-            if hc2 == "br" or hc1 == "br" or bool(hrec.get("country_migration")):
-                return False
-        return True
+        return not _is_confirmed_hist_expat(hist_players_map.get(str(row_pid)))
 
     moved_to_dormant = 0
     pruned_inactive = 0
@@ -1131,14 +1140,10 @@ def run_lobby_radar_sync(
         ):
             continue
         hc3 = str(hrec.get("coh3_country") or "").strip().lower()
-        hc2 = str(hrec.get("coh2_country") or "").strip().lower()
-        hc1 = str(hrec.get("coh1_country") or "").strip().lower()
         is_confirmed_br_hist = (
             hc3 in ("br", "")
             or hpid in manual_other_pids_set
-            or hc2 == "br"
-            or hc1 == "br"
-            or bool(hrec.get("country_migration"))
+            or _is_confirmed_hist_expat(hrec)
         )
         if not is_confirmed_br_hist:
             continue
@@ -1897,6 +1902,7 @@ def run_lobby_radar_sync(
         other_br_active_days=OTHER_BR_ACTIVE_COH3_DAYS,
         known_ingame_visible_sids=known_ingame_visible_sids,
         known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
+        alias_history_by_pid=hist_players_map,
     )
     vet_bucket = snapshot["veteranos"]
     oth_bucket = snapshot["outros_brasileiros"]
