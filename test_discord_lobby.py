@@ -2566,6 +2566,10 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertTrue(yoda_entry["priority_watch"])
         self.assertEqual(yoda_entry["prominence_tier"], "monitorado")
 
+        # #13516 (antes "Pax Xavier youtube") deve sempre exibir como "NEBADON" (pin_alias=True)
+        nebadon_entry = next(p for p in snap["monitorados"]["online_steam"] if p["profile_id"] == 13516)
+        self.assertEqual(nebadon_entry["alias"], "NEBADON")
+
         # 2. Links Discord têm exatamente 3 embeds na ordem: Veteranos -> Players Monitorados -> Outros Brasileiros
         links = build_lobby_radar_links_payload(snap)
         self.assertEqual(len(links["embeds"]), 3)
@@ -2574,6 +2578,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         self.assertIn("OUTROS BRASILEIROS", links["embeds"][2]["title"])
         mon_desc = links["embeds"][1]["description"]
         self.assertIn("XAPA KENTE", mon_desc)
+        self.assertIn("NEBADON", mon_desc)
         self.assertIn("🇨🇦 *(BR no Canadá)*", mon_desc)
         self.assertIn("👁️", mon_desc)
         self.assertIn("YodaDisfarce \\(Sgt.Yoda\\)", mon_desc)
