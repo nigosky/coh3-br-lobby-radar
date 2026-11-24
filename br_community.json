@@ -39597,14 +39597,14 @@
       "alias": "Undead Slayer",
       "avatar_url": "https://avatars.steamstatic.com/885c4029fff92a6978617e0b730bcf245df812bb_medium.jpg",
       "br_source": "open_data_matches",
-      "last_match_date": 1795120600,
+      "last_match_date": 1795553812,
       "last_seen_ingame_ts": 1795192633,
       "last_seen_ingame_webapi_ts": 1795546885,
       "last_seen_online_ts": 1795552772,
       "max_elo": 1058,
       "profile_id": 115658,
       "steam_id": "76561198122325359",
-      "total_matches": 200
+      "total_matches": 201
     },
     "1157401": {
       "alias": "F.E.B_BRASIL_COH",
@@ -39890,12 +39890,12 @@
       "avatar_url": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "br_source": "alias_history",
       "current_alias": "西村",
-      "last_match_date": 1795464362,
+      "last_match_date": 1795553736,
       "last_seen_online_ts": 1795553373,
       "max_elo": 1013,
       "profile_id": 1200092,
       "steam_id": "76561198789788154",
-      "total_matches": 139
+      "total_matches": 140
     },
     "1200197": {
       "alias": "Spotlight",
@@ -41068,14 +41068,14 @@
       "alias": "LordBaconBR",
       "avatar_url": "https://avatars.steamstatic.com/c9f1e0e322f694170fa2a2d35e8c5a115daee6f5_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795551937,
+      "last_match_date": 1795553784,
       "last_seen_online_ts": 1795552173,
       "max_elo": 1012,
       "profile_id": 1304125,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795453031,
       "steam_id": "76561199482244877",
-      "total_matches": 831
+      "total_matches": 832
     },
     "1304518": {
       "alias": "B4NDEIRA",
@@ -41844,7 +41844,7 @@
       "avatar_url": "https://avatars.steamstatic.com/c3228b94822898b1ad88ea272ccdde21e6440e9b_medium.jpg",
       "br_source": "open_data_lb",
       "last_match_date": 1795319422,
-      "last_seen_online_ts": 1795552073,
+      "last_seen_online_ts": 1795553972,
       "max_elo": 1173,
       "profile_id": 1422841,
       "steam_games_hidden": true,
@@ -46338,14 +46338,14 @@
       "alias": "danielP",
       "avatar_url": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg",
       "br_source": "open_data_matches",
-      "last_match_date": 1795480190,
+      "last_match_date": 1795553812,
       "last_seen_online_ts": 1795553672,
       "max_elo": 1011,
       "profile_id": 390399,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795400595,
       "steam_id": "76561198227599948",
-      "total_matches": 674
+      "total_matches": 675
     },
     "3984": {
       "alias": "克鲁杰7分钟800人力就1v2",
@@ -47959,7 +47959,7 @@
       "br_source": "alias_history",
       "last_match_date": 1795522758,
       "last_seen_ingame_ts": 1795523058,
-      "last_seen_ingame_webapi_ts": 1795522758,
+      "last_seen_ingame_webapi_ts": 1795553972,
       "last_seen_online_ts": 1795552772,
       "max_elo": 0,
       "profile_id": 838710,
@@ -48857,12 +48857,12 @@
       "alias": "Daulon",
       "avatar_url": "https://avatars.steamstatic.com/08f3c8cb1ded0f9117325d146ebae5142fab2395_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795549810,
+      "last_match_date": 1795553800,
       "last_seen_online_ts": 0,
       "max_elo": 1008,
       "profile_id": 964593,
       "steam_id": "76561198049743790",
-      "total_matches": 459
+      "total_matches": 460
     },
     "965932": {
       "alias": "Benja",
@@ -48958,7 +48958,7 @@
       "last_match_date": 1795398147,
       "last_seen_ingame_ts": 1795122952,
       "last_seen_ingame_webapi_ts": 1795474624,
-      "last_seen_online_ts": 1795483956,
+      "last_seen_online_ts": 1795553972,
       "max_elo": 1117,
       "profile_id": 985599,
       "steam_id": "76561199803489658",
