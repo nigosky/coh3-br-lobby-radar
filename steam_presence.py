@@ -48,11 +48,19 @@ COH3_STEAM_APP_ID = "1677280"
 ALLOWED_STEAM_COMMUNITY_HOSTS: frozenset[str] = frozenset({"steamcommunity.com"})
 ALLOWED_STEAM_API_HOSTS: frozenset[str] = frozenset({"api.steampowered.com"})
 ALLOWED_RELIC_HOSTS: frozenset[str] = frozenset({"coh3-api.reliclink.com"})
+ALLOWED_RELIC_COH2_HOSTS: frozenset[str] = frozenset({"coh2-api.reliclink.com"})
+ALLOWED_RELIC_COH1_HOSTS: frozenset[str] = frozenset({"coh1-api.reliclink.com"})
 ALLOWED_COH3STATS_HOSTS: frozenset[str] = frozenset({"storage.coh3stats.com"})
+ALLOWED_COH2STATS_HOSTS: frozenset[str] = frozenset({"storage.coh2stats.com"})
+ALLOWED_COH1STATS_HOSTS: frozenset[str] = frozenset({"api.coh1stats.com"})
 RELIC_BASE_URL = "https://coh3-api.reliclink.com/community/leaderboard"
+RELIC_COH2_BASE_URL = "https://coh2-api.reliclink.com/community/leaderboard"
+RELIC_COH1_BASE_URL = "https://coh1-api.reliclink.com/community/leaderboard"
 STEAM_API_SUMMARIES_URL = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
 COH3STATS_LEADERBOARDS_BASE = "https://storage.coh3stats.com/leaderboards"
 COH3STATS_MATCHES_BASE = "https://storage.coh3stats.com/matches"
+COH2STATS_MATCHES_BASE = "https://storage.coh2stats.com/matches"
+COH1STATS_BASE_URL = "https://api.coh1stats.com"
 _RELIC_JSON_HEADERS: dict[str, str] = {
     "User-Agent": "CoH3-BR-Lobby-Radar/1.2",
     "Accept": "application/json",
@@ -95,6 +103,8 @@ COH3STATS_LEADERBOARD_PATH_RE = re.compile(
     r"^/leaderboards/\d{9,11}/\d{9,11}_(?:1v1|2v2|3v3|4v4)_(?:american|british|german|dak)\.json$"
 )
 COH3STATS_MATCHES_PATH_RE = re.compile(r"^/matches/matches-\d{9,11}\.json$")
+COH2STATS_MATCHES_PATH_RE = re.compile(r"^/matches/matches-\d{9,11}\.json$")
+COH1STATS_PLAYER_PATH_RE = re.compile(r"^/api/player/7656119\d{10}$")
 
 _STEAM_BRAZIL_LOC_RE = re.compile(r"(?i)\b(?:brazil|brasil)\b")
 _STEAM_BRAZIL_GROUP_RE = re.compile(r"(?i)\b(?:brazil|brasil|brasileir[oa]s?|coh2br|companybr|cohbr|gamersclub)\b")
@@ -108,6 +118,7 @@ MAX_STEAM_PRESENCE_XML_BYTES = 131_072  # 128 KB (cobre <groups> completos com f
 MAX_STEAM_ALIASES_BYTES = 65_536        # 64 KB (endpoint público ajaxaliases ~ 2 KB)
 MAX_STEAM_API_RESPONSE_BYTES = 524_288  # 512 KB (100 perfis GetPlayerSummaries ~ 40 KB)
 MAX_STEAM_GROUP_XML_BYTES = 2 * 1024 * 1024  # 2 MB
+MAX_COH1STATS_RESPONSE_BYTES = 262_144  # 256 KB (payload /api/player/<SteamID64> do coh1stats.com)
 MAX_RELIC_RESPONSE_BYTES = 8 * 1024 * 1024  # 8 MB (cobre históricos Relic > 2 MB de jogadores ativos com proteção anti-Gzip-bomb)
 MAX_OPENDATA_RESPONSE_BYTES = 128 * 1024 * 1024  # 128 MB limite seguro anti-bomb para leaderboards Open Data
 MAX_OPENDATA_MATCHES_BYTES = 256 * 1024 * 1024   # 256 MB limite seguro anti-bomb para dumps diários de partidas Open Data
@@ -1896,6 +1907,94 @@ def parse_steam_ajax_aliases_payload(
     return parsed_rows
 
 
+def extract_coh2_aliases_from_matches_payload(
+    data: dict[str, Any],
+    target_steam_ids: set[str] | frozenset[str],
+) -> dict[str, list[tuple[str, int]]]:
+    """
+    Extrai `{steam_id: [(alias, completiontime), ...]}` de um dump diário `matches-{day}.json`
+    do CoH2Stats Open Data (`storage.coh2stats.com`) filtrando apenas `target_steam_ids`.
+    """
+    if not isinstance(data, dict) or not target_steam_ids:
+        return {}
+    per_sid: dict[str, dict[str, tuple[str, int]]] = {}
+    for match in data.get("matches") or []:
+        if not isinstance(match, dict):
+            continue
+        ct = int(match.get("completiontime", 0) or match.get("startgametime", 0) or 0)
+        for rep in match.get("matchhistoryreportresults") or []:
+            if not isinstance(rep, dict):
+                continue
+            prof = rep.get("profile")
+            if not isinstance(prof, dict):
+                continue
+            sid = extract_steam_id_from_relic_name(prof.get("name"))
+            if not sid or sid not in target_steam_ids:
+                continue
+            alias = strip_unsafe_chars(prof.get("alias") or "")[:48]
+            if not alias:
+                continue
+            cf = alias.casefold()
+            bucket = per_sid.setdefault(sid, {})
+            prev = bucket.get(cf)
+            if prev is None or ct > prev[1]:
+                bucket[cf] = (alias, ct)
+    return {
+        sid: sorted(b.values(), key=lambda x: (x[1] if x[1] > 0 else 9_999_999_999, x[0].casefold()))
+        for sid, b in per_sid.items()
+    }
+
+
+def parse_coh1stats_player_payload(
+    data: Any,
+    *,
+    steam_id: str = "",
+) -> list[tuple[str, int]]:
+    """Extrai `[(alias, timestamp_utc), ...]` do payload JSON de `api.coh1stats.com/api/player/<SteamID64>`."""
+    if not isinstance(data, dict):
+        return []
+    resp_sid = str(data.get("steamId") or "").replace("/steam/", "").strip()
+    if steam_id and resp_sid and resp_sid != steam_id:
+        return []
+    out: dict[str, tuple[str, int]] = {}
+
+    def _add(raw_alias: Any, ts_val: int) -> None:
+        clean = strip_unsafe_chars(raw_alias or "")[:48]
+        if not clean:
+            return
+        cf = clean.casefold()
+        prev = out.get(cf)
+        if prev is None or ts_val > prev[1]:
+            out[cf] = (clean, max(0, int(ts_val or 0)))
+
+    latest_lb_ts = 0
+    for st in data.get("leaderboardStats") or []:
+        if isinstance(st, dict):
+            lmd = int(st.get("lastmatchdate", 0) or st.get("lastMatchDate", 0) or 0)
+            if lmd > latest_lb_ts:
+                latest_lb_ts = lmd
+
+    _add(data.get("alias"), latest_lb_ts)
+    for k in ("aliases", "previousNames", "knownAliases"):
+        vals = data.get(k)
+        if isinstance(vals, list):
+            for entry in vals[:30]:
+                if isinstance(entry, str):
+                    _add(entry, 0)
+                elif isinstance(entry, dict):
+                    _add(entry.get("alias") or entry.get("name"), int(entry.get("lastSeen", 0) or entry.get("timestamp", 0) or 0))
+
+    for mh in (data.get("matchHistory") or [])[:50]:
+        if not isinstance(mh, dict):
+            continue
+        m_ts = int(mh.get("completiontime", 0) or mh.get("completionTime", 0) or 0)
+        for p in mh.get("players") or []:
+            if isinstance(p, dict) and str(p.get("steamId") or "").replace("/steam/", "").strip() == (steam_id or resp_sid):
+                _add(p.get("alias") or p.get("name"), m_ts)
+
+    return sorted(out.values(), key=lambda x: (x[1] if x[1] > 0 else 9_999_999_999, x[0].casefold()))
+
+
 class RelicActivityClient:
     """Cliente seguro da API pública da Relic e do COH3 Stats Open Data (descoberta BR + última partida + ELO)."""
 
@@ -2144,14 +2243,19 @@ class RelicActivityClient:
                 logger.debug("Falha transitória em getPersonalStat: %s", redact_secrets(exc))
         return stats_map
 
-    def fetch_profile_stats_by_steam_ids(
+    def _fetch_relic_personal_stat_by_steam_ids(
         self,
         steam_ids: list[str],
-        pace_delay_sec: float = 0.24,
-    ) -> dict[int, dict[str, Any]]:
+        *,
+        title: str,
+        base_url: str,
+        allowed_hosts: frozenset[str],
+        pace_delay_sec: float = 0.20,
+        key_by_steam_id: bool = False,
+    ) -> dict[Any, dict[str, Any]]:
         """
-        Resolve uma lista de SteamID64 (ex.: membros de grupos Steam CoH Brasil) diretamente na Relic API
-        via `getPersonalStat?profile_names=["/steam/..."]` em lotes de 10, retornando apenas quem tem CoH3!
+        Consulta genérica endurecida de `getPersonalStat?profile_names=["/steam/..."]` em lotes de 10
+        para qualquer título RelicLink suportado (`coh3`, `coh2`, `coh1`).
         """
         valid_sids = list(
             dict.fromkeys(
@@ -2160,7 +2264,7 @@ class RelicActivityClient:
                 if STEAM_ID64_VALID_RE.fullmatch(str(s or "").replace("/steam/", "").strip())
             )
         )
-        stats_map: dict[int, dict[str, Any]] = {}
+        stats_by_pid: dict[int, dict[str, Any]] = {}
         chunk_size = 10
         headers = _RELIC_JSON_HEADERS
         pace = max(0.0, min(float(pace_delay_sec), 1.0))
@@ -2169,22 +2273,208 @@ class RelicActivityClient:
             if i > 0 and pace > 0.0:
                 time.sleep(pace)
             names = [f"/steam/{sid}" for sid in valid_sids[i : i + chunk_size]]
-            qs = urllib.parse.urlencode({"title": "coh3", "profile_names": json.dumps(names, separators=(",", ":"))})
-            url = f"{RELIC_BASE_URL}/getPersonalStat?{qs}"
-            validate_https_endpoint(url, ALLOWED_RELIC_HOSTS, path_prefix="/community/leaderboard/")
+            qs = urllib.parse.urlencode({"title": title, "profile_names": json.dumps(names, separators=(",", ":"))})
+            url = f"{base_url}/getPersonalStat?{qs}"
+            validate_https_endpoint(url, allowed_hosts, path_prefix="/community/leaderboard/")
             try:
                 req = urllib.request.Request(url, headers=headers, method="GET")
                 with _get_relic_opener().open(req, timeout=12) as resp:
                     data = json.loads(read_bounded_http_body(resp, MAX_RELIC_RESPONSE_BYTES).decode("utf-8"))
-                self._parse_personal_stat_response(data, stats_map)
+                self._parse_personal_stat_response(data, stats_by_pid)
             except urllib.error.HTTPError as exc:
                 if exc.code in (429, 403):
-                    logger.warning("Relic getPersonalStat(profile_names) atingiu HTTP %d; encerrando lote.", exc.code)
+                    logger.warning("Relic %s getPersonalStat(profile_names) atingiu HTTP %d; encerrando lote.", title, exc.code)
                     break
-                logger.debug("Falha HTTP %d em getPersonalStat(profile_names).", exc.code)
+                logger.debug("Falha HTTP %d em Relic %s getPersonalStat(profile_names).", exc.code, title)
             except Exception as exc:
-                logger.debug("Falha transitória em getPersonalStat(profile_names): %s", redact_secrets(exc))
-        return stats_map
+                logger.debug("Falha transitória em Relic %s getPersonalStat(profile_names): %s", title, redact_secrets(exc))
+
+        if not key_by_steam_id:
+            return stats_by_pid
+        by_sid: dict[str, dict[str, Any]] = {}
+        for row in stats_by_pid.values():
+            sid = str(row.get("steam_id") or "").strip()
+            if STEAM_ID64_VALID_RE.fullmatch(sid):
+                prev = by_sid.get(sid)
+                if prev is None or int(row.get("last_match_date", 0) or 0) >= int(prev.get("last_match_date", 0) or 0):
+                    by_sid[sid] = row
+        return by_sid
+
+    def fetch_profile_stats_by_steam_ids(
+        self,
+        steam_ids: list[str],
+        pace_delay_sec: float = 0.24,
+    ) -> dict[int, dict[str, Any]]:
+        """
+        Resolve uma lista de SteamID64 (ex.: membros de grupos Steam CoH Brasil) diretamente na Relic API CoH3
+        via `getPersonalStat?profile_names=["/steam/..."]` em lotes de 10, retornando apenas quem tem CoH3!
+        """
+        return self._fetch_relic_personal_stat_by_steam_ids(
+            steam_ids,
+            title="coh3",
+            base_url=RELIC_BASE_URL,
+            allowed_hosts=ALLOWED_RELIC_HOSTS,
+            pace_delay_sec=pace_delay_sec,
+            key_by_steam_id=False,
+        )
+
+    def fetch_coh2_profile_stats_by_steam_ids(
+        self,
+        steam_ids: list[str],
+        pace_delay_sec: float = 0.14,
+    ) -> dict[str, dict[str, Any]]:
+        """Consulta perfis históricos de CoH2 na API oficial da Relic (`coh2-api.reliclink.com`) por SteamID64."""
+        return self._fetch_relic_personal_stat_by_steam_ids(
+            steam_ids,
+            title="coh2",
+            base_url=RELIC_COH2_BASE_URL,
+            allowed_hosts=ALLOWED_RELIC_COH2_HOSTS,
+            pace_delay_sec=pace_delay_sec,
+            key_by_steam_id=True,
+        )
+
+    def fetch_coh1_profile_stats_by_steam_ids(
+        self,
+        steam_ids: list[str],
+        pace_delay_sec: float = 0.14,
+    ) -> dict[str, dict[str, Any]]:
+        """Consulta perfis históricos de CoH1 na API oficial da Relic (`coh1-api.reliclink.com`) por SteamID64."""
+        return self._fetch_relic_personal_stat_by_steam_ids(
+            steam_ids,
+            title="coh1",
+            base_url=RELIC_COH1_BASE_URL,
+            allowed_hosts=ALLOWED_RELIC_COH1_HOSTS,
+            pace_delay_sec=pace_delay_sec,
+            key_by_steam_id=True,
+        )
+
+    def fetch_coh2stats_match_aliases(
+        self,
+        target_steam_ids: set[str] | frozenset[str],
+        *,
+        days: int = 7,
+        now_ts: int | None = None,
+    ) -> tuple[dict[str, list[tuple[str, int]]], dict[str, Any]]:
+        """
+        Varre dumps diários abertos do CoH2Stats Open Data (`storage.coh2stats.com/matches/matches-{day}.json`)
+        para coletar nicks históricos usados no CoH2 pelos SteamID64 monitorados.
+        """
+        clean_targets = {
+            str(s).replace("/steam/", "").strip()
+            for s in (target_steam_ids or ())
+            if STEAM_ID64_VALID_RE.fullmatch(str(s or "").replace("/steam/", "").strip())
+        }
+        if not clean_targets:
+            return {}, {"days_requested": 0, "days_ok": 0, "days_failed": 0, "players_matched": 0}
+
+        now_dt = datetime.fromtimestamp(int(now_ts) if now_ts is not None else int(time.time()), tz=timezone.utc)
+        base_day = datetime(now_dt.year, now_dt.month, now_dt.day, tzinfo=timezone.utc)
+        days_clamped = max(1, min(int(days), 30))
+        start_offset = 1 if now_dt.hour >= 7 else 2
+        target_days = [int((base_day - timedelta(days=start_offset + i)).timestamp()) for i in range(days_clamped)]
+
+        out_by_sid: dict[str, list[tuple[str, int]]] = {}
+        days_ok = 0
+        days_failed = 0
+
+        for day_ts in target_days:
+            url = f"{COH2STATS_MATCHES_BASE}/matches-{day_ts}.json"
+            validate_https_endpoint(
+                url,
+                ALLOWED_COH2STATS_HOSTS,
+                path_prefix="/matches/",
+                path_regex=COH2STATS_MATCHES_PATH_RE,
+                allow_query=False,
+            )
+            data: dict[str, Any] | None = None
+            for attempt in range(2):
+                req = urllib.request.Request(url, headers=_RELIC_JSON_HEADERS, method="GET")
+                try:
+                    with _get_relic_opener().open(req, timeout=60) as resp:
+                        raw = read_bounded_http_body(resp, MAX_OPENDATA_MATCHES_BYTES)
+                    data = json.loads(raw.decode("utf-8"))
+                    del raw
+                    break
+                except Exception as exc:
+                    if attempt == 0:
+                        time.sleep(0.6)
+                    else:
+                        logger.debug("CoH2Stats Open Data matches indisponível (day=%s): %s", day_ts, redact_secrets(exc))
+            if not isinstance(data, dict):
+                days_failed += 1
+                continue
+            days_ok += 1
+            day_aliases = extract_coh2_aliases_from_matches_payload(data, clean_targets)
+            del data
+            for sid, pairs in day_aliases.items():
+                out_by_sid.setdefault(sid, []).extend(pairs)
+
+        return out_by_sid, {
+            "days_requested": days_clamped,
+            "days_ok": days_ok,
+            "days_failed": days_failed,
+            "players_matched": len(out_by_sid),
+        }
+
+    def fetch_coh1stats_player_aliases(
+        self,
+        steam_ids: list[str],
+        *,
+        pace_delay_sec: float = 0.16,
+        rate_limit_threshold: int = 4,
+    ) -> dict[str, list[tuple[str, int]]]:
+        """
+        Consulta a API pública comunitária do CoH1 (`api.coh1stats.com/api/player/<SteamID64>`)
+        com allowlist estrita, `allow_query=False`, limite 256 KB e circuit-breaker anti-429.
+        """
+        valid_sids = list(
+            dict.fromkeys(
+                str(s).replace("/steam/", "").strip()
+                for s in steam_ids
+                if STEAM_ID64_VALID_RE.fullmatch(str(s or "").replace("/steam/", "").strip())
+            )
+        )
+        if not valid_sids:
+            return {}
+        pace = max(0.0, min(float(pace_delay_sec), 1.0))
+        rl_limit = max(1, int(rate_limit_threshold))
+        out: dict[str, list[tuple[str, int]]] = {}
+        consecutive_errors = 0
+
+        for idx, sid in enumerate(valid_sids):
+            if idx > 0 and pace > 0.0:
+                time.sleep(pace)
+            url = f"{COH1STATS_BASE_URL}/api/player/{sid}"
+            validate_https_endpoint(
+                url,
+                ALLOWED_COH1STATS_HOSTS,
+                path_prefix="/api/player/",
+                path_regex=COH1STATS_PLAYER_PATH_RE,
+                allow_query=False,
+            )
+            req = urllib.request.Request(url, headers=_RELIC_JSON_HEADERS, method="GET")
+            try:
+                with _get_relic_opener().open(req, timeout=10) as resp:
+                    raw = read_bounded_http_body(resp, MAX_COH1STATS_RESPONSE_BYTES)
+                data = json.loads(raw.decode("utf-8", errors="ignore"))
+                consecutive_errors = 0
+                out[sid] = parse_coh1stats_player_payload(data, steam_id=sid)
+            except urllib.error.HTTPError as exc:
+                if exc.code == 404:
+                    consecutive_errors = 0
+                    out[sid] = []
+                    continue
+                consecutive_errors += 1
+                if exc.code in (429, 403) or consecutive_errors >= rl_limit:
+                    logger.warning("Circuit-breaker api.coh1stats.com ativado (HTTP %d); encerrando lote.", exc.code)
+                    break
+            except Exception as exc:
+                consecutive_errors += 1
+                logger.debug("Falha transitória em api.coh1stats.com (%s): %s", sid, redact_secrets(exc))
+                if consecutive_errors >= rl_limit:
+                    logger.warning("Circuit-breaker api.coh1stats.com ativado após %d falhas consecutivas.", consecutive_errors)
+                    break
+        return out
 
     def fetch_available_pc_leaderboards(self) -> list[int]:
         """Consulta `getAvailableLeaderboards?title=coh3` para descobrir todas as tabelas 1v1-4v4 ativas do CoH3."""

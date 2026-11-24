@@ -32,6 +32,7 @@ from alias_history import (
     COHDB_ALIASES_TTL_SEC,
     DEFAULT_ALIAS_HISTORY_PATH,
     STEAM_ALIASES_TTL_SEC,
+    enrich_legacy_coh_sources,
     ingest_coh3stats_opendata,
     ingest_cohdb_observations,
     ingest_local_database,
@@ -365,7 +366,7 @@ def run_deep_br_discovery(
                     continue
                 lmd = int(st.get("last_match_date", 0) or 0)
                 sid = str(st.get("steam_id") or "")
-                if lmd < active_cutoff or not sid or sid in vet_sids:
+                if not sid or sid in vet_sids:
                     continue
                 ctry = str(st.get("country") or "").strip().lower()
                 if ctry in ("br", ""):
@@ -381,8 +382,9 @@ def run_deep_br_discovery(
                         region_id=int(st.get("region_id", 0) or 0),
                         br_source="steam_group_br",
                     )
-                    steam_group_confirmed += 1
-                else:
+                    if lmd >= active_cutoff:
+                        steam_group_confirmed += 1
+                elif lmd >= active_cutoff:
                     verify_foreign_group.append(st)
 
             # Para membros de grupo BR cuja Relic mostra outro país, confirma via `<location>` da Steam
@@ -719,8 +721,8 @@ def run_deep_br_discovery(
     if not dry_run and final_players:
         save_community_cache(community_cache_path, out_cache_snapshot)
 
-    # 8. Consolidação do Histórico Persistente Multi-Fonte de Nicks (`alias_history.json`)
-    #    Cruza: Base local + Relic API + Steam Key API/XML + Steam ajaxaliases + COH3 Stats Open Data + CoHDB
+    # 8. Consolidação do Histórico Persistente Multi-Era de Nicks (`alias_history.json`)
+    #    Cruza: Base local + Relic CoH3/CoH2/CoH1 + Steam Key API/ajaxaliases + COH3/COH2 Stats Open Data + CoHDB + CoH1Stats
     try:
         hist_dirty = ingest_local_database(
             alias_history_doc,
@@ -816,6 +818,22 @@ def run_deep_br_discovery(
                         cohdb_obs[pid] = shared_cohdb.fetch_player_alias_observations(pid, sample_replays=3)
                     if ingest_cohdb_observations(alias_history_doc, cohdb_obs, now_ts=now):
                         hist_dirty = True
+
+            # Fontes históricas legadas (Relic CoH2, CoH2Stats Open Data, Relic CoH1 e CoH1Stats Public API)
+            legacy_res = enrich_legacy_coh_sources(
+                alias_history_doc,
+                relic_client=r_client,
+                focus_pids=focus_hist_pids,
+                pid_by_steam=pid_by_steam,
+                now_ts=now,
+                include_coh2_relic=True,
+                include_coh1_relic=True,
+                include_coh2stats_days=min(7, max(1, int(match_days))) if match_days > 0 else 0,
+                include_coh1stats=True,
+                max_legacy_relic_profiles=500,
+            )
+            if legacy_res.get("dirty"):
+                hist_dirty = True
 
         if hist_dirty and not dry_run:
             save_alias_history(hist_path, alias_history_doc, now_ts=now)
