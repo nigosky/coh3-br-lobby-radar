@@ -1312,6 +1312,102 @@ class TestSteamFriendsGraphClient(unittest.TestCase):
             self.assertNotIn(dummy_tok, req.full_url)
             self.assertEqual(req.get_header("X-webapi-key"), dummy_tok)
 
+    def test_web_api_preserves_partial_results_on_later_chunk_429_and_caches_avatar(self) -> None:
+        import json
+        import urllib.error
+        from unittest import mock
+
+        import steam_presence as sp
+        from card_renderer import HAS_CJK_RE, SteamAvatarProvider, draw_text_safe, pick_font
+        from PIL import Image, ImageDraw
+
+        sids = [f"765611980000{i:05d}" for i in range(1, 151)]
+        fake_key = "A1B2C3D4E5F60718293A4B5C6D7E8F90"
+        client = sp.SteamPresenceClient(api_key=fake_key)
+
+        class _FakeResp:
+            def __init__(self, payload: dict[str, Any]) -> None:
+                self._raw = json.dumps(payload).encode("utf-8")
+                self.headers = {}
+
+            def read(self, n: int = -1) -> bytes:
+                if n < 0:
+                    data, self._raw = self._raw, b""
+                    return data
+                chunk, self._raw = self._raw[:n], self._raw[n:]
+                return chunk
+
+            def __enter__(self) -> "_FakeResp":
+                return self
+
+            def __exit__(self, *args: Any) -> bool:
+                return False
+
+        call_idx = {"n": 0}
+
+        class _FakeOpener:
+            def open(self, req: Any, timeout: float = 12.0) -> _FakeResp:
+                call_idx["n"] += 1
+                if call_idx["n"] == 1:
+                    return _FakeResp(
+                        {
+                            "response": {
+                                "players": [
+                                    {
+                                        "steamid": sids[0],
+                                        "communityvisibilitystate": 3,
+                                        "personastate": 1,
+                                        "personaname": "アリス",
+                                        "avatarmedium": "https://avatars.fastly.steamstatic.com/15e4e449867eb0d66c169af87938f4e04b2de5be_medium.jpg",
+                                    }
+                                ]
+                            }
+                        }
+                    )
+                raise urllib.error.HTTPError(req.full_url, 429, "Too Many Requests", {}, None)
+
+        with mock.patch.object(sp, "_get_relic_opener", return_value=_FakeOpener()), mock.patch.object(sp.time, "sleep"):
+            res = client.fetch_web_api_presence_batch(sids, enrich_free_online_xml=False)
+
+        # Lote 1 (100 contas) é preservado integralmente mesmo com HTTP 429 no lote 2 (nunca retorna None!)
+        self.assertIsNotNone(res)
+        assert res is not None
+        self.assertIn(sids[0], res)
+        self.assertTrue(res[sids[0]]["is_online_steam"])
+        self.assertEqual(
+            res[sids[0]]["avatar_url"],
+            "https://avatars.fastly.steamstatic.com/15e4e449867eb0d66c169af87938f4e04b2de5be_medium.jpg",
+        )
+
+        # Fallback de avatar em cache é propagado para `recent_relic` mesmo quando presença Steam falhou
+        now_ts = 1_800_000_000
+        cached_url = "https://avatars.fastly.steamstatic.com/15e4e449867eb0d66c169af87938f4e04b2de5be_medium.jpg"
+        snap = sp.build_lobby_radar_snapshot(
+            custom_players=[
+                {"profile_id": 720147, "steam_id": "76561199667577805", "original_alias": "アリス (Smurf: icemaker)", "smurf_of": "icemaker"},
+            ],
+            presence_by_steam={},
+            latest_matches_by_pid={720147: {"profile_id": 720147, "completion_time": now_ts - 300, "mode": "3v3"}},
+            now_ts=now_ts,
+            avatar_url_by_steam={"76561199667577805": cached_url},
+        )
+        self.assertEqual(len(snap["veteranos"]["recent_relic"]), 1)
+        self.assertEqual(snap["veteranos"]["recent_relic"][0]["avatar_url"], cached_url)
+
+        # Valida CJK + mixed-script + validação estrita de URL no Radar SteamAvatarProvider
+        self.assertIsNotNone(HAS_CJK_RE.search("アリス (Smurf: icemaker)"))
+        self.assertIsNotNone(HAS_CJK_RE.search("北方军港 (克鲁杰7分钟800人力就1v2)"))
+        self.assertIsNotNone(HAS_CJK_RE.search("『V』SKOBADARK"))
+        im = Image.new("RGBA", (400, 50), (0, 0, 0, 255))
+        draw = ImageDraw.Draw(im)
+        fnt = pick_font("アリス (Smurf: icemaker)", size=18, bold=True)
+        w = draw_text_safe(draw, (4, 4), "『V』SKOBADARK ★ アリス", font=fnt, fill=(255, 255, 255, 255), bold=True)
+        self.assertGreater(w, 20.0)
+        ap = SteamAvatarProvider(allow_network=False, steam_api_key="")
+        self.assertEqual(ap._validate_avatar_url(cached_url), cached_url)
+        self.assertEqual(ap._validate_avatar_url("https://evil.example/a.jpg"), "")
+        self.assertEqual(ap._validate_avatar_url(cached_url + "?q=1"), "")
+
 
 if __name__ == "__main__":
     unittest.main()

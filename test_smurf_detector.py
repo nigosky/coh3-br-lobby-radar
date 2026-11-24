@@ -1177,9 +1177,13 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertTrue(vel["strong_velocity"])
         self.assertGreaterEqual(vel["velocity_pts"], 10.0)
 
-        # Benchmarks expandidos incluem arc (3 smurfs confirmadas), Gabe e Colossus
+        # Benchmarks expandidos incluem arc (6 smurfs confirmadas), Gabe, Colossus e icemaker -> アリス (#720147)
         model_names = {b["model_name"] for b in sd.MODEL_SMURF_BENCHMARKS}
-        self.assertTrue({"Chacineiro", "General Winter", "Alekel", "『V』SKOBADARK", "arc", "Gabe", "Colossus"}.issubset(model_names))
+        self.assertEqual(len(sd.MODEL_SMURF_BENCHMARKS), 8)
+        self.assertTrue({"Chacineiro", "General Winter", "Alekel", "『V』SKOBADARK", "arc", "Gabe", "Colossus", "icemaker"}.issubset(model_names))
+        icemaker_bench = next(b for b in sd.MODEL_SMURF_BENCHMARKS if b["model_name"] == "icemaker")
+        self.assertEqual(icemaker_bench["main_profile_id"], 448521)
+        self.assertIn(720147, icemaker_bench["smurf_profile_ids"])
 
     def test_family_interval_overlap_disqualifies_smurf_pair(self) -> None:
         t_main = sd.PlayerMatchTelemetry(profile_id=1005730, intervals=[(1_760_000_000, 1_760_001_800, 1)])

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Base unica compartilhada de jogadores CoH3 Brasil (Radar, Scheduler, Tracker e Ranking) em 3 categorias: 'veteranos' (topo, consumida pelo Ranking com in_ranking=true), 'monitorados' (Players Monitorados — categoria intermediaria com players citados/movidos, Top 100 BR >1300 ELO e amigos, e emigrados XAPA KENTE e icewarp) e Outros Brasileiros (descobertos automaticamente + 'outros_br_emigrados' com bandeira real de residencia e badge BR EXT).",
+  "description": "Base unica compartilhada de jogadores CoH3 Brasil (Radar, Scheduler, Tracker e Ranking) em 3 categorias: 'veteranos' (topo, consumida pelo Ranking com in_ranking=true), 'monitorados' (Players Monitorados — categoria intermediaria com players citados/movidos, Top 100 BR >1300 ELO e amigos, e emigrados XAPA KENTE, icewarp, Generick e V.I.T.O.X) e Outros Brasileiros (descobertos automaticamente + 'outros_br_emigrados' com bandeira real de residencia e badge BR EXT).",
   "naming_convention": {
     "main_account": "<NomeOriginal> (sem indicacao '(Principal)')",
     "smurf_account": "<NickAtualDaSmurf> (Smurf: <NomeOriginal>) com smurf_of=<NomeOriginal>",
@@ -1066,11 +1066,13 @@
     {
       "profile_id": 6880,
       "steam_id": "76561198078150897",
-      "original_alias": "ArguS",
+      "original_alias": "ArguS (VonDun)",
       "country": "br",
       "known_aliases": [
         "ArguS",
-        "VonDun #Trump2016"
+        "VonDun",
+        "VonDun #Trump2016",
+        "ArguS (VonDun)"
       ]
     },
     {
@@ -1772,6 +1774,7 @@
       "steam_id": "76561198831175531",
       "original_alias": "icemaker",
       "country": "br",
+      "priority_watch": true,
       "known_aliases": [
         "icemaker",
         "stop",
@@ -1787,24 +1790,80 @@
     {
       "profile_id": 720147,
       "steam_id": "76561199667577805",
-      "original_alias": "アリス",
+      "original_alias": "アリス (Smurf: icemaker)",
+      "smurf_of": "icemaker",
       "country": "br",
+      "priority_watch": true,
       "known_aliases": [
         "アリス",
         "David42",
         "Denis",
         "Deneuve",
-        "Mia Khalifa"
+        "Mia Khalifa",
+        "アリス (icemaker)",
+        "アリス (Smurf: icemaker)"
       ]
-    }
-  ],
-  "outros_br_emigrados": [
+    },
     {
       "profile_id": 33487,
       "steam_id": "76561197995712470",
       "original_alias": "Generick",
       "country": "us"
     },
+    {
+      "profile_id": 1304336,
+      "steam_id": "76561198043710924",
+      "original_alias": "V.I.T.O.X",
+      "country": "us"
+    },
+    {
+      "profile_id": 673604,
+      "steam_id": "76561197975133878",
+      "original_alias": "MataMOsca",
+      "country": "br"
+    },
+    {
+      "profile_id": 893043,
+      "steam_id": "76561197974495191",
+      "original_alias": "Rodrigo Ragagnin",
+      "country": "br",
+      "known_aliases": [
+        "Rodrigo Ragagnin",
+        "Rodrigo"
+      ]
+    },
+    {
+      "profile_id": 1315226,
+      "steam_id": "76561198272707523",
+      "original_alias": "Olegnalehcim",
+      "country": "br"
+    },
+    {
+      "profile_id": 1115599,
+      "steam_id": "76561197966038733",
+      "original_alias": "Paisano",
+      "country": "br"
+    },
+    {
+      "profile_id": 942935,
+      "steam_id": "76561198066317871",
+      "original_alias": "SrLmo",
+      "country": "br",
+      "known_aliases": [
+        "SrLmo",
+        "8===D",
+        "Tsugiro kimimame",
+        "Renan Santos 2026"
+      ]
+    },
+    {
+      "profile_id": 26172,
+      "steam_id": "76561198092618442",
+      "original_alias": "SmiLeYxBR",
+      "country": "br"
+    }
+  ],
+  "outros_br_emigrados": [
     {
       "profile_id": 91827,
       "steam_id": "76561198031697638",
@@ -1893,12 +1952,6 @@
       "profile_id": 110593,
       "steam_id": "76561198414864681",
       "original_alias": "Ethan Hunt",
-      "country": "us"
-    },
-    {
-      "profile_id": 1304336,
-      "steam_id": "76561198043710924",
-      "original_alias": "V.I.T.O.X",
       "country": "us"
     },
     {

@@ -52,8 +52,8 @@ class TestSharedPlayersRoster(unittest.TestCase):
         tot_v, uniq_v, tot_m = manage_roster.validate_roster_doc(doc)
         self.assertEqual(tot_v, 48)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
-        self.assertEqual(tot_m, 161)
-        self.assertEqual(len(doc.get("outros_br_emigrados") or []), 18)
+        self.assertEqual(tot_m, 169)
+        self.assertEqual(len(doc.get("outros_br_emigrados") or []), 16)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr e Tracker presentes; Lem22/Generick US e XAPA KENTE CA
         vet_by_pid = {int(r["profile_id"]): r for r in CORE_BR_ROSTER}
@@ -116,22 +116,22 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Players Monitorados (161 contas): citados/movidos + Top 100 BR >1300 + amigos + Xampoo + icemaker/アリス + XAPA KENTE e icewarp
+        # Players Monitorados (169 contas): citados/movidos + Top 100 BR >1300 + amigos + Xampoo + icemaker/アリス + Generick + panelinha ArguS
         from foreign_br_verifier import load_suspected_foreign_br_registry
         from steam_presence import MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS
 
         self.assertIs(MANUAL_OTHER_BR_PLAYERS, MONITORED_BR_PLAYERS)
         mon_by_pid = {int(r["profile_id"]): r for r in MONITORED_BR_PLAYERS}
         exp_by_pid = {int(r["profile_id"]): r for r in OUTROS_BR_EMIGRADOS}
-        self.assertEqual(len(mon_by_pid), 161)
-        self.assertEqual(len(exp_by_pid), 18)
+        self.assertEqual(len(mon_by_pid), 169)
+        self.assertEqual(len(exp_by_pid), 16)
         sf_reg = load_suspected_foreign_br_registry()
         self.assertNotIn(448521, sf_reg.get("excluded_from_rankings_pids") or [])
         self.assertEqual((sf_reg.get("players") or {}).get("448521", {}).get("status"), "confirmed_br")
         self.assertEqual(
             {pid for pid, r in mon_by_pid.items() if str(r.get("flag_country") or r.get("country") or "br").lower() != "br"},
-            {212034, 7448},
-            "Apenas XAPA KENTE (212034) e icewarp (7448) devem permanecer como emigrados em Players Monitorados.",
+            {212034, 7448, 33487, 1304336},
+            "XAPA KENTE (212034), icewarp (7448), Generick (33487) e V.I.T.O.X (1304336) devem estar em Players Monitorados.",
         )
         for mon_pid in (
             16867,
@@ -222,10 +222,18 @@ class TestSharedPlayersRoster(unittest.TestCase):
             3888,
             656815,
             86675,
-            # Xampoo + icemaker e possível conta secundária アリス
+            # Xampoo + icemaker e smurf confirmada アリス + Generick + panelinha ArguS (VonDun)
             2834,
             448521,
             720147,
+            33487,
+            1304336,
+            673604,
+            893043,
+            1315226,
+            1115599,
+            942935,
+            26172,
         ):
             self.assertIn(mon_pid, mon_by_pid)
             self.assertNotIn(mon_pid, vet_by_pid)
@@ -235,10 +243,18 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertEqual(mon_by_pid[212034].get("flag_country"), "ca")
         self.assertEqual(mon_by_pid[7448]["original_alias"], "icewarp")
         self.assertEqual(mon_by_pid[7448].get("flag_country"), "za")
+        self.assertEqual(mon_by_pid[33487]["original_alias"], "Generick")
+        self.assertEqual(mon_by_pid[33487].get("flag_country"), "us")
+        self.assertEqual(mon_by_pid[1304336]["original_alias"], "V.I.T.O.X")
+        self.assertEqual(mon_by_pid[1304336].get("flag_country"), "us")
+        self.assertEqual(mon_by_pid[6880]["original_alias"], "ArguS (VonDun)")
+        self.assertIn("VonDun", mon_by_pid[6880].get("known_aliases") or [])
+        self.assertIn("ArguS", mon_by_pid[6880].get("known_aliases") or [])
+        self.assertTrue(mon_by_pid[448521].get("priority_watch"))
+        self.assertTrue(mon_by_pid[720147].get("priority_watch"))
 
-        # Os 18 emigrados movidos para Outros Brasileiros (fora de Monitorados e Veteranos, com bandeira real preservada!)
+        # Os 16 emigrados mantidos em Outros Brasileiros (fora de Monitorados e Veteranos, com bandeira real preservada!)
         for exp_pid, exp_alias, exp_ctry in (
-            (33487, "Generick", "us"),
             (91827, "[★General★] Apollo", "au"),
             (312670, "TNF", "au"),
             (263517, "Angel of Death", "jp"),
@@ -252,7 +268,6 @@ class TestSharedPlayersRoster(unittest.TestCase):
             (812247, "Texugo", "th"),
             (229162, "Sombra", "us"),
             (110593, "Ethan Hunt", "us"),
-            (1304336, "V.I.T.O.X", "us"),
             (1168460, "Nonô", "ca"),
             (11033, "Coka", "jp"),
             (24963, "Eduardo A.", "sa"),
@@ -300,6 +315,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
             1297853: ("76561198721980631", "Shadow (Smurf: Alekel)", "Alekel"),
             1297804: ("76561198723667226", "Leite Moço (Smurf: 『V』SKOBADARK)", "『V』SKOBADARK"),
             1076221: ("76561198815935562", "Lucielle (Smurf: Colossus)", "Colossus"),
+            720147: ("76561199667577805", "アリス (Smurf: icemaker)", "icemaker"),
         }
         for gpid, (gsid, galias, gowner) in expected_mon_smurfs.items():
             self.assertEqual(mon_by_pid[gpid]["steam_id"], gsid)

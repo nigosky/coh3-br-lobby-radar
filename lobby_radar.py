@@ -108,6 +108,10 @@ MAX_OTHER_BR_ACTIVE_WEB_API = 2500
 MAX_OTHER_BR_DORMANT_CACHE = 8000
 MAX_OTHER_BR_DORMANT_WATCH_WEB_API = 8000
 MAX_LEGACY_BR_WATCH_WEB_API = 4000
+SILENT_DORMANT_PER_CYCLE_WEB_API = 1200
+SILENT_LEGACY_PER_CYCLE_WEB_API = 800
+AVATAR_CACHE_TTL_SEC = 14 * 86400
+MAX_AVATAR_CACHE_ENTRIES = 600
 MAX_OTHER_BR_DORMANT_RELIC_RECHECK = 20
 OTHER_BR_ROTATION_SLICE = 64
 OTHER_BR_HOT_ONLINE_PIN_SEC = 90 * 60     # 90 min: fixa no ciclo de 5 min quem foi visto online há pouco
@@ -1634,9 +1638,10 @@ def run_lobby_radar_sync(
             other_skip_xml_sids.add(sid)
 
     # Vigília silenciosa permanente via Steam Web API (100 SteamIDs/req, zero XML):
-    # 1) TODOS os brasileiros inativos de CoH3 (`dormant_players`, sem limite de 90 dias);
-    # 2) TODOS os brasileiros legados de CoH1/CoH2/Grupos Steam BR sem CoH3 (`legacy_br_players`).
-    # Estando inativos NUNCA aparecem no card do Radar; ao abrir o CoH3 são promovidos/reativados na hora!
+    # 1) Brasileiros inativos de CoH3 (`dormant_players`, sem limite de 90 dias);
+    # 2) Brasileiros legados de CoH1/CoH2/Grupos Steam BR sem CoH3 (`legacy_br_players`).
+    # Rotaciona em fatias corteses por ciclo de 5 min para varrer 100% da base sem disparar HTTP 429
+    # na Steam Web API e JAMAIS interferir na consulta prioritária dos Outros Brasileiros ativos (<=15d)!
     dormant_watch: list[dict[str, Any]] = []
     dormant_steam_ids: list[str] = []
     if uses_web_api and dormant_players:
@@ -1653,37 +1658,74 @@ def run_lobby_radar_sync(
                 -int(r.get("max_elo", 0) or 0),
                 int(r.get("profile_id", 0) or 0),
             ),
-        )
-        dormant_watch = dormant_sorted[:MAX_OTHER_BR_DORMANT_WATCH_WEB_API]
+        )[:MAX_OTHER_BR_DORMANT_WATCH_WEB_API]
+        if len(dormant_sorted) > SILENT_DORMANT_PER_CYCLE_WEB_API:
+            d_off = int(state.get("silent_dormant_offset", 0) or 0) % len(dormant_sorted)
+            d_slice = dormant_sorted[d_off : d_off + SILENT_DORMANT_PER_CYCLE_WEB_API]
+            if len(d_slice) < SILENT_DORMANT_PER_CYCLE_WEB_API:
+                d_slice += dormant_sorted[: SILENT_DORMANT_PER_CYCLE_WEB_API - len(d_slice)]
+            dormant_watch = d_slice
+            next_d_off = (d_off + SILENT_DORMANT_PER_CYCLE_WEB_API) % len(dormant_sorted)
+            if next_d_off != int(state.get("silent_dormant_offset", 0) or 0):
+                state["silent_dormant_offset"] = next_d_off
+                state_dirty = True
+        else:
+            dormant_watch = dormant_sorted
         dormant_steam_ids = [str(r["steam_id"]) for r in dormant_watch]
-        other_skip_xml_sids.update(dormant_steam_ids)
 
     already_watched_sids = set(curated_sids_set) | set(other_steam_ids) | set(dormant_steam_ids)
     legacy_watch: list[dict[str, Any]] = []
     legacy_steam_ids: list[str] = []
     if uses_web_api and isinstance(hist_doc.get("legacy_br_players"), dict):
+        all_legacy_pairs: list[tuple[str, dict[str, Any]]] = []
         for lsid, lrec in hist_doc["legacy_br_players"].items():
             clean_lsid = str((lrec.get("steam_id") if isinstance(lrec, dict) else "") or lsid or "").strip()
             if not STEAM_ID64_VALID_RE.fullmatch(clean_lsid) or clean_lsid in already_watched_sids:
                 continue
             already_watched_sids.add(clean_lsid)
-            legacy_watch.append(lrec if isinstance(lrec, dict) else {"steam_id": clean_lsid})
-            legacy_steam_ids.append(clean_lsid)
-            if len(legacy_steam_ids) >= MAX_LEGACY_BR_WATCH_WEB_API:
+            all_legacy_pairs.append((clean_lsid, lrec if isinstance(lrec, dict) else {"steam_id": clean_lsid}))
+            if len(all_legacy_pairs) >= MAX_LEGACY_BR_WATCH_WEB_API:
                 break
-        other_skip_xml_sids.update(legacy_steam_ids)
+        if len(all_legacy_pairs) > SILENT_LEGACY_PER_CYCLE_WEB_API:
+            l_off = int(state.get("silent_legacy_offset", 0) or 0) % len(all_legacy_pairs)
+            l_slice = all_legacy_pairs[l_off : l_off + SILENT_LEGACY_PER_CYCLE_WEB_API]
+            if len(l_slice) < SILENT_LEGACY_PER_CYCLE_WEB_API:
+                l_slice += all_legacy_pairs[: SILENT_LEGACY_PER_CYCLE_WEB_API - len(l_slice)]
+            next_l_off = (l_off + SILENT_LEGACY_PER_CYCLE_WEB_API) % len(all_legacy_pairs)
+            if next_l_off != int(state.get("silent_legacy_offset", 0) or 0):
+                state["silent_legacy_offset"] = next_l_off
+                state_dirty = True
+        else:
+            l_slice = all_legacy_pairs
+        legacy_steam_ids = [pair[0] for pair in l_slice]
+        legacy_watch = [pair[1] for pair in l_slice]
 
-    scan_steam_ids = list(dict.fromkeys(other_steam_ids + dormant_steam_ids + legacy_steam_ids))
+    # 1º lote prioritário: Outros Brasileiros ATIVOS (<=15d) — isolado para garantir presença + avatares Steam 100% preservados
     other_presence_map: dict[str, dict[str, Any]] = {}
-    if scan_steam_ids:
+    if other_steam_ids:
         other_presence_map = _call_batch_presence(
             p_client,
-            scan_steam_ids,
+            other_steam_ids,
             max_workers=5,
             pace_delay_sec=0.05,
             stop_on_rate_limit=True,
             skip_xml_enrich_sids=other_skip_xml_sids,
         )
+
+    # 2º lote secundário: Vigília silenciosa rotativa (dormentes CoH3 + legados CoH1/CoH2) — nunca afeta os ativos acima
+    silent_scan_ids = list(dict.fromkeys(dormant_steam_ids + legacy_steam_ids))
+    if silent_scan_ids:
+        silent_presence_map = _call_batch_presence(
+            p_client,
+            silent_scan_ids,
+            max_workers=5,
+            pace_delay_sec=0.05,
+            stop_on_rate_limit=True,
+            skip_xml_enrich_sids=set(silent_scan_ids),
+        )
+        for s_sid, s_pres in silent_presence_map.items():
+            if s_sid not in other_presence_map:
+                other_presence_map[s_sid] = s_pres
 
     # Reativação instantânea: se algum inativo (CoH3 dormente) abriu CoH3 agora na Steam, volta imediatamente ao lobby!
     selected_other_pids: set[int] = {int(r["profile_id"]) for r in selected_others if int(r.get("profile_id", 0) or 0) > 0}
@@ -1795,6 +1837,10 @@ def run_lobby_radar_sync(
         if pres and pres.get("steam_alias"):
             if _record_community_alias_update(row, str(pres["steam_alias"]), pid=rpid):
                 community_dirty = True
+        pres_av = str((pres or {}).get("avatar_url") or "").strip()
+        if pres_av.startswith("https://") and len(pres_av) <= 256 and row.get("avatar_url") != pres_av:
+            row["avatar_url"] = pres_av
+            community_dirty = True
         if pres and (pres.get("is_in_coh3") or pres.get("is_online_steam")):
             prev_seen = int(row.get("last_seen_online_ts", 0) or 0)
             if (now - prev_seen) >= 1800:
@@ -2026,6 +2072,39 @@ def run_lobby_radar_sync(
         load_suspected_foreign_br_registry(foreign_reg_path)
     )
 
+    avatar_cache_raw = state.get("avatar_url_cache")
+    avatar_cache: dict[str, dict[str, Any]] = {}
+    avatar_cache_changed = False
+    if isinstance(avatar_cache_raw, dict):
+        for k_sid, rec in avatar_cache_raw.items():
+            if (
+                STEAM_ID64_VALID_RE.fullmatch(str(k_sid))
+                and isinstance(rec, dict)
+                and str(rec.get("url") or "").startswith("https://")
+                and (now - int(rec.get("ts", 0) or 0)) <= AVATAR_CACHE_TTL_SEC
+            ):
+                avatar_cache[str(k_sid)] = {"url": str(rec["url"])[:256], "ts": int(rec.get("ts", 0) or 0)}
+            else:
+                avatar_cache_changed = True
+    for pmap in (vet_presence_map, mon_presence_map):
+        for sid, pres in pmap.items():
+            if not isinstance(pres, dict) or not STEAM_ID64_VALID_RE.fullmatch(str(sid)):
+                continue
+            av_u = str(pres.get("avatar_url") or "").strip()
+            if av_u.startswith("https://") and len(av_u) <= 256:
+                prev_av = avatar_cache.get(sid)
+                if prev_av is None or prev_av["url"] != av_u or (now - prev_av["ts"]) >= 86400:
+                    avatar_cache[sid] = {"url": av_u, "ts": now}
+                    avatar_cache_changed = True
+    if len(avatar_cache) > MAX_AVATAR_CACHE_ENTRIES:
+        sorted_av = sorted(avatar_cache.items(), key=lambda kv: -int(kv[1].get("ts", 0)))[:MAX_AVATAR_CACHE_ENTRIES]
+        avatar_cache = dict(sorted_av)
+        avatar_cache_changed = True
+    if avatar_cache_changed:
+        state["avatar_url_cache"] = avatar_cache
+        state_dirty = True
+    avatar_url_by_steam: dict[str, str] = {sid: rec["url"] for sid, rec in avatar_cache.items()}
+
     snapshot = build_lobby_radar_snapshot(
         custom_players=vet_roster,
         presence_by_steam=vet_presence_map,
@@ -2047,6 +2126,7 @@ def run_lobby_radar_sync(
         known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
         alias_history_by_pid=hist_players_map,
         verified_foreign_status_by_pid=verified_foreign_status_map,
+        avatar_url_by_steam=avatar_url_by_steam,
     )
     vet_bucket = snapshot["veteranos"]
     mon_bucket = snapshot["monitorados"]
