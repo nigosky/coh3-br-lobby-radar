@@ -941,9 +941,134 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
             self.assertIn("930002", dormant)
             self.assertEqual(dormant["930002"]["br_source"], "steam_friends_br")
 
-            # Argentino rejeitado mesmo sendo amigo de Veterano e estando em grupo BR!
+            # Argentino rejeitado mesmo sendo amigo de Veterano e estando em grupo BR — e JAMAIS vaza para alias_history.json!
             self.assertNotIn("930004", players)
             self.assertNotIn("930004", dormant)
+            saved_hist = json.loads(hist_path.read_text(encoding="utf-8"))
+            self.assertIn("930001", saved_hist["players"])
+            self.assertIn("930002", saved_hist["players"])
+            self.assertIn("930003", saved_hist["players"])
+            self.assertNotIn("930004", saved_hist["players"])
+
+    def test_stage4d_hop2_stage4e_relic_custom_and_sister_groups(self) -> None:
+        now = 1_800_000_000
+        vet_sid = "76561197963172584"  # Chacineiro
+        sid_hop1_br = "76561198900940001"
+        sid_hop2_br = "76561198900940002"
+        sid_hop2_uk = "76561198900940003"
+        sid_custom_br = "76561198900940004"
+        sid_sister_br = "76561198900940005"
+        sid_sister_us = "76561198900940006"
+
+        class _FakeRelicAll:
+            def discover_br_and_candidates_from_open_data(self, now_ts: int | None = None) -> Any:
+                return {}, {}, {"chosen_day": now, "files_ok": 16, "files_failed": [], "total_bytes": 100}
+
+            def discover_br_and_candidates_from_open_data_matches(self, **kwargs: Any) -> Any:
+                return {}, {}, {"days_requested": 1, "days_ok": 1, "days_failed": 0, "matches_scanned": 0}
+
+            def discover_br_and_candidates_from_relic_sa(self, **kwargs: Any) -> Any:
+                return {}, {}
+
+            def fetch_profile_stats_by_steam_ids(self, steam_ids: list[str], pace_delay_sec: float = 0.16) -> dict[int, dict[str, Any]]:
+                catalog = {
+                    sid_hop1_br: {"profile_id": 940001, "steam_id": sid_hop1_br, "alias": "Hop1BR", "country": "br", "max_elo": 1300, "last_match_date": now - 86400, "total_matches": 100},
+                    sid_hop2_br: {"profile_id": 940002, "steam_id": sid_hop2_br, "alias": "Hop2BR", "country": "br", "max_elo": 1250, "last_match_date": now - 2 * 86400, "total_matches": 80},
+                    sid_hop2_uk: {"profile_id": 940003, "steam_id": sid_hop2_uk, "alias": "HelpingHansFake", "country": "gb", "max_elo": 1800, "last_match_date": now - 3600, "total_matches": 3000},
+                    sid_sister_br: {"profile_id": 940005, "steam_id": sid_sister_br, "alias": "HllBrasilCoH3", "country": "br", "max_elo": 1180, "last_match_date": now - 3 * 86400, "total_matches": 40},
+                    sid_sister_us: {"profile_id": 940006, "steam_id": sid_sister_us, "alias": "GringoNoGrupo", "country": "us", "max_elo": 1500, "last_match_date": now - 3600, "total_matches": 200},
+                }
+                return {v["profile_id"]: v for s, v in catalog.items() if s in steam_ids}
+
+            def _fetch_one_match_history_raw(self, profile_id: int) -> tuple[int, dict[str, Any] | None]:
+                if profile_id != 79327:
+                    return profile_id, None
+                return profile_id, {
+                    "profiles": [
+                        {"profile_id": 79327, "name": f"/steam/{vet_sid}", "alias": "Chacineiro", "country": "br"},
+                        {"profile_id": 940004, "name": f"/steam/{sid_custom_br}", "alias": "ParceiroCustomBR", "country": "br"},
+                    ],
+                    "matchHistoryStats": [
+                        {
+                            "id": 99001,
+                            "matchtype_id": 0,
+                            "completiontime": now - 7200,
+                            "matchhistoryreportresults": [
+                                {"profile_id": 79327, "teamid": 0},
+                                {"profile_id": 940004, "teamid": 0},
+                            ],
+                        }
+                    ],
+                }
+
+            def fetch_profile_stats_batch(self, profile_ids: list[int], pace_delay_sec: float = 0.14) -> dict[int, dict[str, Any]]:
+                if 940004 in profile_ids:
+                    return {
+                        940004: {
+                            "profile_id": 940004,
+                            "steam_id": sid_custom_br,
+                            "alias": "ParceiroCustomBR",
+                            "country": "br",
+                            "max_elo": 1290,
+                            "last_match_date": now - 7200,
+                            "total_matches": 75,
+                        }
+                    }
+                return {}
+
+        class _FakeSteamAll:
+            uses_web_api = True
+
+            def fetch_group_member_steam_ids(self, slug: str, *, max_pages: int = 2) -> list[str]:
+                if slug == "hllbrasil":
+                    return [sid_sister_br, sid_sister_us]
+                return []
+
+            def fetch_batch_friend_steam_ids(self, steam_ids: list[str]) -> dict[str, list[str]]:
+                out: dict[str, list[str]] = {}
+                if vet_sid in steam_ids:
+                    out[vet_sid] = [sid_hop1_br]
+                if sid_hop1_br in steam_ids:
+                    out[sid_hop1_br] = [sid_hop2_br, sid_hop2_uk]
+                return out
+
+            def fetch_batch_presence(self, steam_ids: list[str], **kwargs: Any) -> dict[str, dict[str, Any]]:
+                return {}
+
+        with tempfile.TemporaryDirectory() as td:
+            comm_path = Path(td) / "br_community.json"
+            state_path = Path(td) / "state.json"
+            hist_path = Path(td) / "alias_history.json"
+            summary = run_deep_br_discovery(
+                community_cache_path=comm_path,
+                state_path=state_path,
+                alias_history_path=hist_path,
+                relic_client=_FakeRelicAll(),  # type: ignore[arg-type]
+                presence_client=_FakeSteamAll(),  # type: ignore[arg-type]
+                match_days=1,
+                max_steam_verify=0,
+                max_friend_seeds=50,
+                friend_hops=2,
+                max_custom_history_seeds=50,
+                steam_groups=(),
+                sister_steam_groups=("hllbrasil",),
+                now_ts=now,
+                smurf_check=False,
+                enable_external_alias_enrichment=False,
+            )
+            self.assertEqual(summary["steam_friends_confirmed"], 2)  # Hop 1 + Hop 2 BR
+            self.assertEqual(summary["relic_custom_confirmed"], 1)   # Custom match BR
+            self.assertEqual(summary["steam_sister_confirmed"], 1)   # Sister group strict BR
+
+            saved = json.loads(comm_path.read_text(encoding="utf-8"))
+            saved_hist = json.loads(hist_path.read_text(encoding="utf-8"))
+            for expected_pid in ("940001", "940002", "940004", "940005"):
+                self.assertIn(expected_pid, saved["players"])
+                self.assertIn(expected_pid, saved_hist["players"])
+            # Estrangeiros de 2º grau e de grupo irmão JAMAIS entram em players ou alias_history!
+            for forbidden_pid in ("940003", "940006"):
+                self.assertNotIn(forbidden_pid, saved["players"])
+                self.assertNotIn(forbidden_pid, saved_hist["players"])
 
 
 if __name__ == "__main__":

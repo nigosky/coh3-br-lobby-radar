@@ -76,6 +76,7 @@ from smurf_detector import (
 )
 from steam_presence import (
     BRAZILIAN_COH_STEAM_GROUPS,
+    BRAZILIAN_SISTER_RTS_STEAM_GROUPS,
     MANUAL_OTHER_BR_PLAYERS,
     OTHER_BR_ACTIVE_COH3_DAYS,
     SOUTH_AMERICA_REGION_ID,
@@ -84,6 +85,7 @@ from steam_presence import (
     SteamPresenceClient,
     _merge_discovered_br_player,
     extract_roster_id_sets,
+    extract_steam_id_from_relic_name,
     has_explicit_br_alias_tag,
     is_brazil_steam_location,
 )
@@ -92,7 +94,7 @@ configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("coh3_br.lobby.discovery")
 
 DEFAULT_MAX_STEAM_VERIFY = 750
-DEFAULT_MAX_FRIEND_SEEDS = 350
+DEFAULT_MAX_FRIEND_SEEDS = 500
 DEFAULT_RELIC_SA_PAGES = 14
 
 _HISPANIC_SA_COUNTRIES: frozenset[str] = frozenset({"ar", "cl", "pe", "uy", "py", "co", "ve", "ec", "bo"})
@@ -180,8 +182,11 @@ def run_deep_br_discovery(
     match_days: int = DEFAULT_MATCH_DAYS,
     max_steam_verify: int = DEFAULT_MAX_STEAM_VERIFY,
     max_friend_seeds: int = DEFAULT_MAX_FRIEND_SEEDS,
+    friend_hops: int = 2,
+    max_custom_history_seeds: int = 120,
     relic_sa_pages: int = DEFAULT_RELIC_SA_PAGES,
     steam_groups: tuple[str, ...] = BRAZILIAN_COH_STEAM_GROUPS,
+    sister_steam_groups: tuple[str, ...] | None = None,
     dry_run: bool = False,
     now_ts: int | None = None,
     smurf_check: bool = True,
@@ -191,7 +196,7 @@ def run_deep_br_discovery(
     enable_external_alias_enrichment: bool | None = None,
 ) -> dict[str, Any]:
     """
-    Executa a varredura profunda e convergente em 4 fontes oficiais/abertas, atualiza `br_community.json`,
+    Executa a varredura profunda e convergente em fontes oficiais/abertas, atualiza `br_community.json`,
     consolida o histórico persistente multi-fonte de nicks (`alias_history.json`: Relic + Steam Key API/ajaxaliases
     + COH3 Stats Open Data + CoHDB + base local) e roda a verificação forense de contas Smurf do Top 50 BR.
     """
@@ -240,6 +245,11 @@ def run_deep_br_discovery(
         pid = int(row.get("profile_id", 0) or 0)
         sid = str(row.get("steam_id") or "").strip()
         if pid > 0 and STEAM_ID64_VALID_RE.fullmatch(sid) and pid not in vet_pids and sid not in vet_sids:
+            # Defesa anti-vazamento: se o registro anterior veio de `alias_history` com bandeira estrangeira não confirmada, ignora
+            prev_src = str(row.get("br_source") or "").strip()
+            prev_flag = str(row.get("flag_country") or "").strip().lower()
+            if prev_src == "alias_history" and prev_flag and prev_flag != "br" and pid not in manual_pids:
+                continue
             _merge_discovered_br_player(
                 br_pool,
                 profile_id=pid,
@@ -249,17 +259,22 @@ def run_deep_br_discovery(
                 max_elo=int(row.get("max_elo", 0) or 0),
                 last_match_date=int(row.get("last_match_date", 0) or 0),
                 total_matches=int(row.get("total_matches", 0) or 0),
-                br_source=str(row.get("br_source") or ""),
-                flag_country=str(row.get("flag_country") or ""),
+                br_source=prev_src,
+                flag_country=prev_flag,
             )
 
-    # Semeia também todos os brasileiros de CoH3 já catalogados no histórico multi-era (`alias_history.json`)
+    # Semeia também todos os brasileiros confirmados de CoH3 catalogados no histórico multi-era (`alias_history.json`)
     for raw_pid, hrec in (alias_history_doc.get("players") or {}).items():
         if not isinstance(hrec, dict):
             continue
         pid = int(hrec.get("profile_id", 0) or (int(raw_pid) if str(raw_pid).isdigit() else 0))
         sid = str(hrec.get("steam_id") or "").replace("/steam/", "").strip()
         if pid > 0 and STEAM_ID64_VALID_RE.fullmatch(sid) and pid not in vet_pids and sid not in vet_sids and pid not in br_pool:
+            hc3 = str(hrec.get("coh3_country") or "").strip().lower()
+            hc2 = str(hrec.get("coh2_country") or "").strip().lower()
+            hc1 = str(hrec.get("coh1_country") or "").strip().lower()
+            if not (hc3 in ("br", "") or pid in manual_pids or hc2 == "br" or hc1 == "br" or bool(hrec.get("country_migration"))):
+                continue
             _merge_discovered_br_player(
                 br_pool,
                 profile_id=pid,
@@ -268,9 +283,9 @@ def run_deep_br_discovery(
                 current_alias=str(hrec.get("current_alias") or ""),
                 last_match_date=int(hrec.get("coh3_last_match_date", 0) or 0),
                 total_matches=int(hrec.get("coh3_total_matches", 0) or 0),
-                country=str(hrec.get("coh3_country") or ""),
+                country=hc3,
                 br_source="alias_history",
-                flag_country=str(hrec.get("coh3_country") or "") if str(hrec.get("coh3_country") or "").lower() not in ("", "br") else "",
+                flag_country=hc3 if hc3 not in ("", "br") else "",
             )
 
     sources_used: list[str] = []
@@ -466,6 +481,64 @@ def run_deep_br_discovery(
                 len(steam_group_non_coh3_sids),
             )
 
+    # 4a-bis. Grupos Steam brasileiros de RTS/2ª Guerra e hubs CoH globais (filtro ESTRITO country == 'br')
+    steam_sister_confirmed = 0
+    effective_sister_groups = (
+        sister_steam_groups
+        if sister_steam_groups is not None
+        else (BRAZILIAN_SISTER_RTS_STEAM_GROUPS if steam_groups else ())
+    )
+    if (
+        effective_sister_groups
+        and hasattr(p_client, "fetch_group_member_steam_ids")
+        and hasattr(r_client, "fetch_profile_stats_by_steam_ids")
+    ):
+        known_sids_sister = set(vet_sids) | {str(v.get("steam_id") or "") for v in br_pool.values()}
+        sister_sids: list[str] = []
+        seen_sister: set[str] = set()
+        for slug in effective_sister_groups:
+            try:
+                members = p_client.fetch_group_member_steam_ids(slug, max_pages=2)
+                for sid in members:
+                    if sid not in seen_sister and sid not in known_sids_sister and STEAM_ID64_VALID_RE.fullmatch(sid):
+                        seen_sister.add(sid)
+                        sister_sids.append(sid)
+            except Exception as exc:
+                logger.warning("[STAGE 4a-bis] Falha ao ler grupo irmão %s: %s", slug, redact_secrets(exc))
+        if sister_sids:
+            sister_slice = sister_sids[:2500]
+            sister_stats = r_client.fetch_profile_stats_by_steam_ids(sister_slice, pace_delay_sec=0.22)
+            for pid, st in (sister_stats or {}).items():
+                if pid in vet_pids or pid in br_pool:
+                    continue
+                sid = str(st.get("steam_id") or "").replace("/steam/", "").strip()
+                if not sid or sid in vet_sids or not STEAM_ID64_VALID_RE.fullmatch(sid):
+                    continue
+                if str(st.get("country") or "").strip().lower() == "br":
+                    _merge_discovered_br_player(
+                        br_pool,
+                        profile_id=pid,
+                        steam_id=sid,
+                        alias=str(st.get("alias") or ""),
+                        max_elo=int(st.get("max_elo", 0) or 0),
+                        last_match_date=int(st.get("last_match_date", 0) or 0),
+                        total_matches=int(st.get("total_matches", 0) or 0),
+                        country="br",
+                        region_id=int(st.get("region_id", 0) or 0),
+                        br_source="steam_sister_group_br",
+                        accumulate_matches=False,
+                    )
+                    relic_stats_collected[pid] = st
+                    steam_sister_confirmed += 1
+            if steam_sister_confirmed:
+                sources_used.append("steam_sister_groups")
+            logger.info(
+                "[STAGE 4a-bis — GRUPOS IRMÃOS RTS/WW2] %d grupos (%d SteamIDs consultados) -> +%d BRs confirmados (country=='br').",
+                len(effective_sister_groups),
+                len(sister_slice),
+                steam_sister_confirmed,
+            )
+
     # 4b. Steam Community — Verificação de `<location>Brazil</location>` e `<groups>` BR para candidatos ativos não-`br`
     steam_verified_count = 0
     steam_pres_map: dict[str, dict[str, Any]] = {}
@@ -636,9 +709,7 @@ def run_deep_br_discovery(
                 logger.warning("[STAGE 4d] Falha ao cruzar amigos na Relic API: %s", redact_secrets(exc))
                 friend_stats = {}
 
-            if isinstance(friend_stats, dict) and friend_stats:
-                relic_stats_collected.update(friend_stats)
-
+            hop1_new_br_sids: list[str] = []
             verify_foreign_friends: list[tuple[dict[str, Any], int, int]] = []
             for pid, st in (friend_stats or {}).items():
                 if pid in vet_pids or pid in br_pool:
@@ -663,6 +734,9 @@ def run_deep_br_discovery(
                         br_source="steam_friends_br",
                         accumulate_matches=False,
                     )
+                    relic_stats_collected[pid] = st
+                    hop1_new_br_sids.append(sid)
+                    known_sids_all.add(sid)
                     steam_friends_confirmed += 1
                     if lmd >= active_cutoff:
                         steam_friends_active += 1
@@ -689,8 +763,6 @@ def run_deep_br_discovery(
                     stop_on_rate_limit=True,
                     require_xml_details=True,
                 )
-                if isinstance(ff_pres, dict):
-                    steam_pres_map.update(ff_pres)
                 for st, _, _ in ff_slice:
                     sid = str(st.get("steam_id") or "").strip()
                     pres = (ff_pres or {}).get(sid)
@@ -706,9 +778,10 @@ def run_deep_br_discovery(
                     )
                     if is_br_loc or is_br_grp:
                         lmd = int(st.get("last_match_date", 0) or 0)
+                        pid_exp = int(st["profile_id"])
                         _merge_discovered_br_player(
                             br_pool,
-                            profile_id=int(st["profile_id"]),
+                            profile_id=pid_exp,
                             steam_id=sid,
                             alias=str(st.get("alias") or ""),
                             max_elo=int(st.get("max_elo", 0) or 0),
@@ -720,24 +793,193 @@ def run_deep_br_discovery(
                             flag_country=ctry if ctry and ctry != "br" else "",
                             accumulate_matches=False,
                         )
+                        relic_stats_collected[pid_exp] = st
+                        steam_pres_map[sid] = pres
+                        hop1_new_br_sids.append(sid)
+                        known_sids_all.add(sid)
                         steam_friends_confirmed += 1
                         steam_friends_expat_verified += 1
                         if lmd >= active_cutoff:
                             steam_friends_active += 1
 
+            # 2º grau (amigos dos novos BRs descobertos no 1º grau — somente quando Steam Web API estiver ativa)
+            hop2_confirmed = 0
+            if has_web_api_friends and int(friend_hops or 1) >= 2 and hop1_new_br_sids:
+                hop2_seeds = [s for s in dict.fromkeys(hop1_new_br_sids) if s not in seen_seed_sids][:120]
+                if hop2_seeds:
+                    try:
+                        hop2_map = p_client.fetch_batch_friend_steam_ids(hop2_seeds)
+                    except Exception as exc:
+                        logger.warning("[STAGE 4d — 2º GRAU] Falha ao ler amigos de 2º grau: %s", redact_secrets(exc))
+                        hop2_map = {}
+                    hop2_counts: Counter[str] = Counter()
+                    for flist in (hop2_map or {}).values():
+                        if not isinstance(flist, list):
+                            continue
+                        for fsid in flist:
+                            if fsid and fsid not in known_sids_all and fsid not in friend_links and STEAM_ID64_VALID_RE.fullmatch(fsid):
+                                hop2_counts[fsid] += 1
+                    if hop2_counts:
+                        hop2_query = [sid for sid, _ in hop2_counts.most_common(3000)]
+                        try:
+                            hop2_stats = r_client.fetch_profile_stats_by_steam_ids(hop2_query, pace_delay_sec=0.18)
+                        except Exception as exc:
+                            logger.warning("[STAGE 4d — 2º GRAU] Falha ao cruzar na Relic API: %s", redact_secrets(exc))
+                            hop2_stats = {}
+                        for pid, st in (hop2_stats or {}).items():
+                            if pid in vet_pids or pid in br_pool:
+                                continue
+                            sid = str(st.get("steam_id") or "").replace("/steam/", "").strip()
+                            if not sid or sid in vet_sids or not STEAM_ID64_VALID_RE.fullmatch(sid):
+                                continue
+                            if str(st.get("country") or "").strip().lower() == "br":
+                                lmd = int(st.get("last_match_date", 0) or 0)
+                                _merge_discovered_br_player(
+                                    br_pool,
+                                    profile_id=pid,
+                                    steam_id=sid,
+                                    alias=str(st.get("alias") or ""),
+                                    max_elo=int(st.get("max_elo", 0) or 0),
+                                    last_match_date=lmd,
+                                    total_matches=int(st.get("total_matches", 0) or 0),
+                                    country="br",
+                                    region_id=int(st.get("region_id", 0) or 0),
+                                    br_source="steam_friends_hop2_br",
+                                    accumulate_matches=False,
+                                )
+                                relic_stats_collected[pid] = st
+                                known_sids_all.add(sid)
+                                steam_friends_confirmed += 1
+                                hop2_confirmed += 1
+                                if lmd >= active_cutoff:
+                                    steam_friends_active += 1
+
             if steam_friends_confirmed:
                 sources_used.append("steam_friends")
             logger.info(
-                "[STAGE 4d — GRAFO DE AMIGOS STEAM] %d/%d listas públicas -> %d amigos inéditos (%d consultados na Relic) -> +%d BRs confirmados (ativos <=%dd: %d, dormentes: %d, emigrados/sem bandeira via Steam: %d).",
+                "[STAGE 4d — GRAFO DE AMIGOS STEAM] %d/%d listas públicas -> %d amigos inéditos (%d consultados na Relic) -> +%d BRs confirmados (2º grau: +%d | ativos <=%dd: %d, dormentes: %d, emigrados/sem bandeira via Steam: %d).",
                 public_lists_ok,
                 len(seed_sids),
                 len(friend_links),
                 len(friend_query_sids),
                 steam_friends_confirmed,
+                hop2_confirmed,
                 OTHER_BR_ACTIVE_COH3_DAYS,
                 steam_friends_active,
                 steam_friends_confirmed - steam_friends_active,
                 steam_friends_expat_verified,
+            )
+
+    # 4e. Relic API — Parceiros `country == 'br'` em Partidas Customizadas / Co-Op vs IA recentes dos Veteranos e Top BR
+    relic_custom_confirmed = 0
+    if max_custom_history_seeds > 0 and hasattr(r_client, "_fetch_one_match_history_raw"):
+        custom_seed_pids: list[int] = []
+        seen_cpids: set[int] = set()
+        for row in list(vet_roster) + list(MANUAL_OTHER_BR_PLAYERS):
+            cpid = int(row.get("profile_id", 0) or 0)
+            if cpid > 0 and cpid not in seen_cpids:
+                seen_cpids.add(cpid)
+                custom_seed_pids.append(cpid)
+        top_active_br = sorted(
+            (r for r in br_pool.values() if int(r.get("last_match_date", 0) or 0) >= active_cutoff),
+            key=lambda r: (-int(r.get("max_elo", 0) or 0), -int(r.get("total_matches", 0) or 0)),
+        )
+        for row in top_active_br:
+            if len(custom_seed_pids) >= int(max_custom_history_seeds):
+                break
+            cpid = int(row.get("profile_id", 0) or 0)
+            if cpid > 0 and cpid not in seen_cpids:
+                seen_cpids.add(cpid)
+                custom_seed_pids.append(cpid)
+
+        custom_new_br: dict[int, dict[str, Any]] = {}
+        for idx, spid in enumerate(custom_seed_pids[: int(max_custom_history_seeds)]):
+            if idx > 0 and isinstance(r_client, RelicActivityClient):
+                time.sleep(0.06)
+            try:
+                res_raw = r_client._fetch_one_match_history_raw(spid)
+            except Exception:
+                continue
+            raw_hist = res_raw[1] if isinstance(res_raw, tuple) and len(res_raw) >= 2 else res_raw
+            if not isinstance(raw_hist, dict):
+                continue
+            profs_map = {
+                int(p.get("profile_id", 0) or 0): p
+                for p in (raw_hist.get("profiles") or [])
+                if isinstance(p, dict) and int(p.get("profile_id", 0) or 0) > 0
+            }
+            for m in raw_hist.get("matchHistoryStats") or []:
+                if not isinstance(m, dict):
+                    continue
+                ct = int(m.get("completiontime", 0) or m.get("startgametime", 0) or 0)
+                for rep in m.get("matchhistoryreportresults") or []:
+                    if not isinstance(rep, dict):
+                        continue
+                    ppid = int(rep.get("profile_id", 0) or 0)
+                    if ppid <= 0 or ppid in vet_pids or ppid in br_pool:
+                        continue
+                    prof = profs_map.get(ppid)
+                    if not isinstance(prof, dict):
+                        continue
+                    if str(prof.get("country") or "").strip().lower() != "br":
+                        continue
+                    psid = extract_steam_id_from_relic_name(prof.get("name"))
+                    if not psid or psid in vet_sids:
+                        continue
+                    cur = custom_new_br.get(ppid)
+                    if cur is None or ct > int(cur.get("last_match_date", 0) or 0):
+                        custom_new_br[ppid] = {
+                            "profile_id": ppid,
+                            "steam_id": psid,
+                            "alias": str(prof.get("alias") or ""),
+                            "country": "br",
+                            "last_match_date": ct,
+                            "max_elo": 0,
+                            "total_matches": 0,
+                        }
+        if custom_new_br:
+            if hasattr(r_client, "fetch_profile_stats_batch"):
+                try:
+                    c_enriched = r_client.fetch_profile_stats_batch(list(custom_new_br.keys())[:300], pace_delay_sec=0.14)
+                except Exception:
+                    c_enriched = {}
+                for ppid, st in (c_enriched or {}).items():
+                    if ppid in custom_new_br and isinstance(st, dict):
+                        custom_new_br[ppid]["max_elo"] = max(
+                            int(custom_new_br[ppid].get("max_elo", 0) or 0),
+                            int(st.get("max_elo", 0) or 0),
+                        )
+                        custom_new_br[ppid]["total_matches"] = max(
+                            int(custom_new_br[ppid].get("total_matches", 0) or 0),
+                            int(st.get("total_matches", 0) or 0),
+                        )
+                        custom_new_br[ppid]["last_match_date"] = max(
+                            int(custom_new_br[ppid].get("last_match_date", 0) or 0),
+                            int(st.get("last_match_date", 0) or 0),
+                        )
+                        if st.get("alias"):
+                            custom_new_br[ppid]["alias"] = str(st["alias"])
+                        relic_stats_collected[ppid] = st
+            for ppid, item in custom_new_br.items():
+                _merge_discovered_br_player(
+                    br_pool,
+                    profile_id=ppid,
+                    steam_id=str(item["steam_id"]),
+                    alias=str(item["alias"]),
+                    max_elo=int(item.get("max_elo", 0) or 0),
+                    last_match_date=int(item.get("last_match_date", 0) or 0),
+                    total_matches=int(item.get("total_matches", 0) or 0),
+                    country="br",
+                    br_source="relic_custom_br",
+                    accumulate_matches=False,
+                )
+                relic_custom_confirmed += 1
+            if relic_custom_confirmed:
+                sources_used.append("relic_custom")
+            logger.info(
+                "[STAGE 4e — PARTIDAS CUSTOM/VS IA RELIC] %d perfis BR consultados -> +%d novos brasileiros confirmados.",
+                len(custom_seed_pids[: int(max_custom_history_seeds)]),
+                relic_custom_confirmed,
             )
 
     # 5. Filtra apenas ativos no CoH3 (<= 15d) e enriquece TODOS com ELO máximo real / total_matches na Relic API
@@ -1273,7 +1515,9 @@ def run_deep_br_discovery(
         "matches_diag": matches_diag,
         "sa_br_count": sa_br_count,
         "steam_group_confirmed": steam_group_confirmed,
+        "steam_sister_confirmed": steam_sister_confirmed,
         "steam_friends_confirmed": steam_friends_confirmed,
+        "relic_custom_confirmed": relic_custom_confirmed,
         "steam_verified_count": steam_verified_count,
         "top_new_players": newly_added_rows[:30],
         "arranged_teams_audit": arranged_audit,
@@ -1290,6 +1534,8 @@ def main() -> int:
     parser.add_argument("--match-days", type=int, default=DEFAULT_MATCH_DAYS, help="Dias de dumps Open Data Matches (1..30)")
     parser.add_argument("--max-steam-verify", type=int, default=DEFAULT_MAX_STEAM_VERIFY, help="Máximo de perfis verificados no XML Steam")
     parser.add_argument("--max-friend-seeds", type=int, default=DEFAULT_MAX_FRIEND_SEEDS, help="Máximo de contas BR consultadas no grafo de amigos Steam")
+    parser.add_argument("--friend-hops", type=int, default=2, help="Profundidade do grafo de amigos Steam (1 ou 2 graus; padrão 2 com Web API)")
+    parser.add_argument("--max-custom-seeds", type=int, default=120, help="Máximo de perfis BR consultados em partidas Custom/vs-IA na Relic")
     parser.add_argument("--relic-sa-pages", type=int, default=DEFAULT_RELIC_SA_PAGES, help="Páginas por leaderboard SA na Relic (1..15)")
     parser.add_argument("--no-smurf-check", action="store_true", help="Desativa a verificação forense de Smurfs do Top 50 BR")
     parser.add_argument("--smurf-top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado para smurfs (padrão: 50)")
@@ -1305,6 +1551,8 @@ def main() -> int:
             match_days=args.match_days,
             max_steam_verify=args.max_steam_verify,
             max_friend_seeds=max(0, int(args.max_friend_seeds)),
+            friend_hops=max(1, min(2, int(args.friend_hops))),
+            max_custom_history_seeds=max(0, int(args.max_custom_seeds)),
             relic_sa_pages=args.relic_sa_pages,
             dry_run=bool(args.dry_run),
             smurf_check=not bool(args.no_smurf_check),

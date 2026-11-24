@@ -1051,7 +1051,26 @@ def run_lobby_radar_sync(
             return True
         return False
 
-    # Move inativos (>15d) para `dormant_players` (vigília silenciosa permanente, SEM descarte por 90d!) e remove Veteranos/inválidos
+    # Move inativos (>15d) para `dormant_players` (vigília silenciosa permanente, SEM descarte por 90d!) e remove Veteranos/inválidos/estrangeiros vazados
+    manual_other_pids_set, _ = extract_roster_id_sets(MANUAL_OTHER_BR_PLAYERS)
+    hist_players_map = hist_doc.get("players") if isinstance(hist_doc.get("players"), dict) else {}
+
+    def _is_leaked_foreign_cache_row(row_obj: dict[str, Any], row_pid: int) -> bool:
+        if row_pid in manual_other_pids_set:
+            return False
+        if str(row_obj.get("br_source") or "").strip() != "alias_history":
+            return False
+        rflag = str(row_obj.get("flag_country") or "").strip().lower()
+        if rflag in ("", "br"):
+            return False
+        hrec = hist_players_map.get(str(row_pid))
+        if isinstance(hrec, dict):
+            hc2 = str(hrec.get("coh2_country") or "").strip().lower()
+            hc1 = str(hrec.get("coh1_country") or "").strip().lower()
+            if hc2 == "br" or hc1 == "br" or bool(hrec.get("country_migration")):
+                return False
+        return True
+
     moved_to_dormant = 0
     pruned_inactive = 0
     for k in list(community_players.keys()):
@@ -1059,7 +1078,7 @@ def run_lobby_radar_sync(
         rpid = int(row.get("profile_id", 0) or 0) if isinstance(row, dict) else 0
         rsid = str(row.get("steam_id") or "").strip() if isinstance(row, dict) else ""
         rlmd = int(row.get("last_match_date", 0) or 0) if isinstance(row, dict) else 0
-        if rpid in vet_pids_set or rsid in vet_sids_set or rpid <= 0:
+        if not isinstance(row, dict) or rpid in vet_pids_set or rsid in vet_sids_set or rpid <= 0 or _is_leaked_foreign_cache_row(row, rpid):
             del community_players[k]
             community_dirty = True
         elif rlmd < active_coh3_cutoff:
@@ -1071,7 +1090,7 @@ def run_lobby_radar_sync(
             else:
                 pruned_inactive += 1
 
-    # Higieniza `dormant_players`: remove apenas Veteranos/inválidos/duplicados; promove se voltou <=15d (nunca expira por inatividade!)
+    # Higieniza `dormant_players`: remove Veteranos/inválidos/duplicados/estrangeiros vazados; promove se voltou <=15d (nunca expira por inatividade!)
     for k in list(dormant_players.keys()):
         row = dormant_players[k]
         rpid = int(row.get("profile_id", 0) or 0) if isinstance(row, dict) else 0
@@ -1084,6 +1103,7 @@ def run_lobby_radar_sync(
             or rpid in vet_pids_set
             or rsid in vet_sids_set
             or str(rpid) in community_players
+            or _is_leaked_foreign_cache_row(row, rpid)
             or (dormant_retention_cutoff > 0 and rlmd < dormant_retention_cutoff)
         ):
             del dormant_players[k]
@@ -1110,10 +1130,22 @@ def run_lobby_radar_sync(
             or str(hpid) in dormant_players
         ):
             continue
+        hc3 = str(hrec.get("coh3_country") or "").strip().lower()
+        hc2 = str(hrec.get("coh2_country") or "").strip().lower()
+        hc1 = str(hrec.get("coh1_country") or "").strip().lower()
+        is_confirmed_br_hist = (
+            hc3 in ("br", "")
+            or hpid in manual_other_pids_set
+            or hc2 == "br"
+            or hc1 == "br"
+            or bool(hrec.get("country_migration"))
+        )
+        if not is_confirmed_br_hist:
+            continue
         hlmd = int(hrec.get("coh3_last_match_date", 0) or 0)
         h_alias = str(hrec.get("canonical_alias") or hrec.get("current_alias") or "").strip() or f"Jogador {hpid}"
         h_cur = str(hrec.get("current_alias") or "").strip()
-        h_flag = normalize_flag_country(hrec.get("coh3_country") or "")
+        h_flag = normalize_flag_country(hc3)
         seed_item: dict[str, Any] = {
             "profile_id": hpid,
             "steam_id": hsid,
