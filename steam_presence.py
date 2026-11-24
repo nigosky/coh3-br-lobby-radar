@@ -96,6 +96,21 @@ BRAZILIAN_COH_STEAM_GROUPS: tuple[str, ...] = (
     "companyofheroesativos",  # Company of Heroes - jogadores ativos
     "BRCOH2",                 # COMPANY OF BR
 )
+# Grupos Steam brasileiros de RTS/2ª Guerra e hubs CoH globais (cruzados na Relic filtrando ESTRITAMENTE country == 'br')
+BRAZILIAN_SISTER_RTS_STEAM_GROUPS: tuple[str, ...] = (
+    "hllbrasil",              # Hell Let Loose Brasil
+    "hoi4brasil",             # Hearts of Iron 4 Brasil
+    "menofwarbrasil",         # Men of War Brasil
+    "steeldivisionbrasil",    # Steel Division Brasil
+    "aoe2br",                 # Age of Empires 2 BR
+    "ageofempiresbrasil",     # Age of Empires Brasil
+    "squad-brasil",           # Squad Brasil
+    "warthunderbr",           # War Thunder Brasil
+    "arma3brasil",            # Arma 3 Brasil
+    "coh2org",                # COH2.ORG (global, estrito country=='br')
+    "helpinghans",            # HelpingHans Stream (global, estrito country=='br')
+    "blitzkrieg-mod",         # Blitzkrieg Mod (global, estrito country=='br')
+)
 COH2_RANKED_LEADERBOARD_IDS: tuple[int, ...] = (
     4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 51, 52, 53, 54,
 )
@@ -274,6 +289,7 @@ _FALLBACK_CORE_BR_ROSTER: list[dict[str, Any]] = [
         "smurf_of": "Colossus",
         "known_aliases": ["Lucielle", "Lucifer", "Lucielle (Colossus)", "Lucielle (Smurf: Colossus)"],
     },
+    {"profile_id": 1119784, "steam_id": "76561198000067932", "original_alias": "Tracker"},
 ]
 
 _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
@@ -392,6 +408,7 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 999940, "steam_id": "76561198074249692", "original_alias": "Warmech11", "country": "py", "flag_country": "py"},
     {"profile_id": 812247, "steam_id": "76561198062044957", "original_alias": "Texugo", "country": "th", "flag_country": "th"},
     {"profile_id": 229162, "steam_id": "76561198089247149", "original_alias": "Sombra", "country": "us", "flag_country": "us"},
+    {"profile_id": 212034, "steam_id": "76561198207565088", "original_alias": "XAPA KENTE", "country": "ca", "flag_country": "ca"},
 ]
 
 

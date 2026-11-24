@@ -358,6 +358,13 @@
         "Lucielle (Colossus)",
         "Lucielle (Smurf: Colossus)"
       ]
+    },
+    {
+      "profile_id": 1119784,
+      "steam_id": "76561198000067932",
+      "original_alias": "Tracker",
+      "country": "br",
+      "in_ranking": true
     }
   ],
   "manual_other_br": [
@@ -591,6 +598,12 @@
       "steam_id": "76561198089247149",
       "original_alias": "Sombra",
       "country": "us"
+    },
+    {
+      "profile_id": 212034,
+      "steam_id": "76561198207565088",
+      "original_alias": "XAPA KENTE",
+      "country": "ca"
     }
   ]
 }
