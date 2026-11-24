@@ -84921,8 +84921,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1746477337,
       "coh3_total_matches": 3,
-      "current_alias": "mooch",
-      "last_checked_at": 1795533553,
+      "current_alias": "Mooch",
+      "last_checked_at": 1795535055,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1118507,
@@ -133462,7 +133462,7 @@
       "coh3_last_match_date": 1794579345,
       "coh3_total_matches": 1,
       "current_alias": "Wiz",
-      "last_checked_at": 1795534755,
+      "last_checked_at": 1795535055,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1445924,
@@ -140578,7 +140578,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795534755,
+      "last_checked_at": 1795535055,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -233994,5 +233994,5 @@
     "steam_web_api": 7388,
     "steam_xml": 6734
   },
-  "updated_at": 1795534755
+  "updated_at": 1795535055
 }
