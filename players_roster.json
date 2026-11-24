@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Base unica compartilhada de jogadores CoH3 Brasil (Radar, Scheduler, Tracker e Ranking) em 3 categorias: 'veteranos' (topo, consumida pelo Ranking com in_ranking=true), 'monitorados' (Players Monitorados — categoria intermediaria com players citados/movidos, Top 100 BR >1300 ELO e amigos, e emigrados XAPA KENTE, icewarp, Generick, V.I.T.O.X e Napa) e Outros Brasileiros (descobertos automaticamente + 'outros_br_emigrados' com bandeira real de residencia e badge BR EXT).",
+  "description": "Base unica compartilhada de jogadores CoH3 Brasil (Radar, Scheduler, Tracker e Ranking) em 3 categorias: 'veteranos' (topo, consumida pelo Ranking com in_ranking=true), 'monitorados' (Players Monitorados — categoria intermediaria com players citados/movidos, Top 100 BR >1300 ELO e amigos, emigrados XAPA KENTE, icewarp, Generick, V.I.T.O.X e Napa; contas <1200 ELO sem frequencia >=15d no CoH3 seguem para Outros Brasileiros e contas >=1200 ELO sem frequencia >=30d recebem ressalva de inatividade no CoH3) e Outros Brasileiros (descobertos automaticamente + 'outros_br_emigrados' com bandeira real de residencia e badge BR EXT).",
   "naming_convention": {
     "main_account": "<NomeOriginal> (sem indicacao '(Principal)')",
     "smurf_account": "<NickAtualDaSmurf> (Smurf: <NomeOriginal>) com smurf_of=<NomeOriginal>",
@@ -444,16 +444,6 @@
       "country": "br"
     },
     {
-      "profile_id": 23250,
-      "steam_id": "76561198028378060",
-      "original_alias": "Nargoth",
-      "country": "br",
-      "known_aliases": [
-        "Nargoth de Bebbanburg",
-        "Nargoth"
-      ]
-    },
-    {
       "profile_id": 28937,
       "steam_id": "76561198089948995",
       "original_alias": "Mjr Bruno",
@@ -784,17 +774,6 @@
       "country": "br"
     },
     {
-      "profile_id": 940355,
-      "steam_id": "76561198018536980",
-      "original_alias": "SacanaLord",
-      "country": "br",
-      "known_aliases": [
-        "SacanaLord",
-        "Fidelis",
-        "Faraco"
-      ]
-    },
-    {
       "profile_id": 1279100,
       "steam_id": "76561198117204290",
       "original_alias": "Tiagod",
@@ -828,12 +807,6 @@
       ]
     },
     {
-      "profile_id": 28570,
-      "steam_id": "76561198060258379",
-      "original_alias": "Paulo220V",
-      "country": "br"
-    },
-    {
       "profile_id": 779143,
       "steam_id": "76561198874288631",
       "original_alias": "Nicolau",
@@ -842,22 +815,6 @@
         "Nicolau",
         "ニコラス"
       ]
-    },
-    {
-      "profile_id": 952854,
-      "steam_id": "76561198131209135",
-      "original_alias": "乂卂丨",
-      "country": "br",
-      "known_aliases": [
-        "乂卂丨",
-        "乂卂丨☁"
-      ]
-    },
-    {
-      "profile_id": 1041470,
-      "steam_id": "76561198125923649",
-      "original_alias": "芋サラダ",
-      "country": "br"
     },
     {
       "profile_id": 1216477,
@@ -996,16 +953,6 @@
         "Michelin Brasil",
         "Coronel Jesuino",
         "Redutor de Carbono"
-      ]
-    },
-    {
-      "profile_id": 59671,
-      "steam_id": "76561198257105445",
-      "original_alias": "Gurenn",
-      "country": "br",
-      "known_aliases": [
-        "Gurenn",
-        "ttv/gurennplays"
       ]
     },
     {
@@ -1197,18 +1144,6 @@
       "country": "br"
     },
     {
-      "profile_id": 1361626,
-      "steam_id": "76561198155881999",
-      "original_alias": "Giota",
-      "country": "br"
-    },
-    {
-      "profile_id": 1201954,
-      "steam_id": "76561198124850127",
-      "original_alias": "Corvo",
-      "country": "br"
-    },
-    {
       "profile_id": 1332786,
       "steam_id": "76561198093892211",
       "original_alias": "Katana Man",
@@ -1226,96 +1161,15 @@
       ]
     },
     {
-      "profile_id": 1286523,
-      "steam_id": "76561198417833011",
-      "original_alias": "Megumula",
-      "country": "br",
-      "known_aliases": [
-        "Megumula",
-        "Gugouf"
-      ]
-    },
-    {
       "profile_id": 1461766,
       "steam_id": "76561198067634756",
       "original_alias": "Hugola",
       "country": "br"
     },
     {
-      "profile_id": 71274,
-      "steam_id": "76561198092092480",
-      "original_alias": "Tavares",
-      "country": "br",
-      "known_aliases": [
-        "Tavares",
-        "Wonder of U"
-      ]
-    },
-    {
-      "profile_id": 1046646,
-      "steam_id": "76561198868863447",
-      "original_alias": "Viktor Maia",
-      "country": "br",
-      "known_aliases": [
-        "Viktor Maia",
-        "Vickeh"
-      ]
-    },
-    {
-      "profile_id": 145299,
-      "steam_id": "76561198017254697",
-      "original_alias": "Andre",
-      "country": "br"
-    },
-    {
       "profile_id": 677441,
       "steam_id": "76561198013484803",
       "original_alias": "Resilient",
-      "country": "br"
-    },
-    {
-      "profile_id": 173761,
-      "steam_id": "76561198873253024",
-      "original_alias": "EUSOU",
-      "country": "br",
-      "known_aliases": [
-        "EUSOU",
-        "EU SOU",
-        "EU SOU - I AM"
-      ]
-    },
-    {
-      "profile_id": 1232389,
-      "steam_id": "76561198372477752",
-      "original_alias": "caralhassauro",
-      "country": "br"
-    },
-    {
-      "profile_id": 1024394,
-      "steam_id": "76561198431410480",
-      "original_alias": "MOKUJIN",
-      "country": "br"
-    },
-    {
-      "profile_id": 893197,
-      "steam_id": "76561198048254869",
-      "original_alias": "Alexandre",
-      "country": "br"
-    },
-    {
-      "profile_id": 902305,
-      "steam_id": "76561198098458214",
-      "original_alias": "Vanigas",
-      "country": "br",
-      "known_aliases": [
-        "Vanigas",
-        "Brazilian Monkey"
-      ]
-    },
-    {
-      "profile_id": 1043198,
-      "steam_id": "76561198017121369",
-      "original_alias": "Immortalxw",
       "country": "br"
     },
     {
@@ -1388,18 +1242,6 @@
       ]
     },
     {
-      "profile_id": 85746,
-      "steam_id": "76561198045288427",
-      "original_alias": "[IRON] Kabal-PE",
-      "country": "br"
-    },
-    {
-      "profile_id": 36206,
-      "steam_id": "76561198144804075",
-      "original_alias": "Sentinela",
-      "country": "br"
-    },
-    {
       "profile_id": 8764,
       "steam_id": "76561198155662761",
       "original_alias": "Maverick",
@@ -1414,23 +1256,6 @@
       "steam_id": "76561199055548856",
       "original_alias": "gleison-luan",
       "country": "br"
-    },
-    {
-      "profile_id": 220378,
-      "steam_id": "76561198074392592",
-      "original_alias": "Edimar.",
-      "country": "br"
-    },
-    {
-      "profile_id": 31405,
-      "steam_id": "76561198122862152",
-      "original_alias": "[IRON]ViROX",
-      "country": "br",
-      "known_aliases": [
-        "[IRON]ViROX",
-        "[COHBR]ViROX",
-        "ViROX"
-      ]
     },
     {
       "profile_id": 85670,
@@ -1461,12 +1286,6 @@
         "Ricardin_ihuull",
         "SABUGO"
       ]
-    },
-    {
-      "profile_id": 756737,
-      "steam_id": "76561198001254162",
-      "original_alias": "JonyCalcinha",
-      "country": "br"
     },
     {
       "profile_id": 11112,
@@ -1503,48 +1322,10 @@
       "country": "br"
     },
     {
-      "profile_id": 32791,
-      "steam_id": "76561198355821508",
-      "original_alias": "FALAV",
-      "country": "br"
-    },
-    {
-      "profile_id": 741345,
-      "steam_id": "76561198108658944",
-      "original_alias": "defanteinfante",
-      "country": "br"
-    },
-    {
-      "profile_id": 20491,
-      "steam_id": "76561198893359627",
-      "original_alias": "Captan_Igor",
-      "country": "br",
-      "known_aliases": [
-        "Captan_Igor",
-        "BruxoSagaz"
-      ]
-    },
-    {
       "profile_id": 893019,
       "steam_id": "76561198193551428",
       "original_alias": "Chuck Norris",
       "country": "br"
-    },
-    {
-      "profile_id": 996815,
-      "steam_id": "76561198388487203",
-      "original_alias": "richard.eop",
-      "country": "br"
-    },
-    {
-      "profile_id": 111954,
-      "steam_id": "76561198019263316",
-      "original_alias": "Marques",
-      "country": "br",
-      "known_aliases": [
-        "Marques",
-        "[IRON]Marques"
-      ]
     },
     {
       "profile_id": 1123905,
@@ -1555,16 +1336,6 @@
         "Wintermute",
         "Wintermute #t.420",
         "Wintermute420"
-      ]
-    },
-    {
-      "profile_id": 764130,
-      "steam_id": "76561198260873423",
-      "original_alias": "Indra",
-      "country": "br",
-      "known_aliases": [
-        "Indra",
-        "General Grievous"
       ]
     },
     {
@@ -1590,12 +1361,6 @@
         "TERMINATOR GAY",
         "WOODY WOODDICK"
       ]
-    },
-    {
-      "profile_id": 780673,
-      "steam_id": "76561198034277846",
-      "original_alias": "VenturadeJesus",
-      "country": "br"
     },
     {
       "profile_id": 12326,
@@ -1636,12 +1401,6 @@
       ]
     },
     {
-      "profile_id": 8427,
-      "steam_id": "76561197990778045",
-      "original_alias": "Tom_BR",
-      "country": "br"
-    },
-    {
       "profile_id": 87903,
       "steam_id": "76561199112478566",
       "original_alias": "Daniloparre",
@@ -1654,29 +1413,6 @@
       "country": "br"
     },
     {
-      "profile_id": 1383106,
-      "steam_id": "76561199017071156",
-      "original_alias": "weed4i20",
-      "country": "br"
-    },
-    {
-      "profile_id": 86675,
-      "steam_id": "76561198079508454",
-      "original_alias": "Fred",
-      "country": "br"
-    },
-    {
-      "profile_id": 655548,
-      "steam_id": "76561198037528747",
-      "original_alias": "Garm",
-      "country": "br",
-      "known_aliases": [
-        "Garm",
-        "Galva",
-        "lrs"
-      ]
-    },
-    {
       "profile_id": 3917,
       "steam_id": "76561197967668319",
       "original_alias": "[IRON] ManchaNegra",
@@ -1685,16 +1421,6 @@
         "[IRON] ManchaNegra",
         "BlackSpot_BR",
         "Mancha Negra"
-      ]
-    },
-    {
-      "profile_id": 207951,
-      "steam_id": "76561198183965757",
-      "original_alias": "≫ Last_Night",
-      "country": "br",
-      "known_aliases": [
-        "≫ Last_Night",
-        "»BAIN« Last_Night"
       ]
     },
     {
@@ -1719,28 +1445,6 @@
         "TOM E JEBA",
         "Rômioul"
       ]
-    },
-    {
-      "profile_id": 96129,
-      "steam_id": "76561198016825303",
-      "original_alias": "Gerhard",
-      "country": "br",
-      "known_aliases": [
-        "Gerhard",
-        "G_e_h_4_r_d"
-      ]
-    },
-    {
-      "profile_id": 766215,
-      "steam_id": "76561197997896382",
-      "original_alias": "L3ooW",
-      "country": "br"
-    },
-    {
-      "profile_id": 143443,
-      "steam_id": "76561198149823284",
-      "original_alias": "Ted",
-      "country": "br"
     },
     {
       "profile_id": 29557,
@@ -1817,34 +1521,6 @@
       "country": "us"
     },
     {
-      "profile_id": 673604,
-      "steam_id": "76561197975133878",
-      "original_alias": "MataMOsca",
-      "country": "br"
-    },
-    {
-      "profile_id": 893043,
-      "steam_id": "76561197974495191",
-      "original_alias": "Rodrigo Ragagnin",
-      "country": "br",
-      "known_aliases": [
-        "Rodrigo Ragagnin",
-        "Rodrigo"
-      ]
-    },
-    {
-      "profile_id": 1315226,
-      "steam_id": "76561198272707523",
-      "original_alias": "Olegnalehcim",
-      "country": "br"
-    },
-    {
-      "profile_id": 1115599,
-      "steam_id": "76561197966038733",
-      "original_alias": "Paisano",
-      "country": "br"
-    },
-    {
       "profile_id": 942935,
       "steam_id": "76561198066317871",
       "original_alias": "SrLmo",
@@ -1855,12 +1531,6 @@
         "Tsugiro kimimame",
         "Renan Santos 2026"
       ]
-    },
-    {
-      "profile_id": 26172,
-      "steam_id": "76561198092618442",
-      "original_alias": "SmiLeYxBR",
-      "country": "br"
     },
     {
       "profile_id": 1214336,

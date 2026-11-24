@@ -222,6 +222,26 @@ def _format_suspected_foreign_badge(
     return " 🌐 (VPN?)" if compact else " 🌐 *(possível estrangeiro usando VPN)*"
 
 
+def _format_monitored_inactivity_tag(
+    player: dict[str, Any],
+    *,
+    is_monitorados: bool = False,
+) -> str:
+    """Ressalva explícita de inatividade no CoH3 (>=30d) para Players Monitorados (>=1200 ELO)."""
+    if not is_monitorados or not bool(player.get("coh3_inactive_warning")):
+        return ""
+    raw_days = player.get("coh3_inactive_days")
+    if raw_days is None:
+        raw_days = player.get("last_coh3_age_days")
+    try:
+        d_int = int(raw_days) if raw_days is not None else 0
+    except (TypeError, ValueError):
+        d_int = 0
+    if d_int >= 30:
+        return f" ⚠️ *(inativo no CoH3 há {d_int}d)*"
+    return " ⚠️ *(inativo no CoH3 há 30d+)*"
+
+
 def _resolve_discord_display_alias(player: dict[str, Any], *, max_len: int = 48) -> str:
     """
     Resolve o nome de exibição no Discord preservando `<NovoNick> (<NomeOriginal>)` e
@@ -358,6 +378,7 @@ def _format_category_vertical_description(
             flag_tag = _format_player_flag_badge(pl)
             foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos, is_monitorados=is_monitorados)
             watch_tag = "👁️ " if (is_monitorados and pl.get("priority_watch")) else ""
+            inact_tag = _format_monitored_inactivity_tag(pl, is_monitorados=is_monitorados)
             rec_tag = _format_coh3_recency_tag(pl) if show_coh3_recency else ""
             if not full_visibility:
                 tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
@@ -374,7 +395,7 @@ def _format_category_vertical_description(
                 link_txt = _format_discord_player_link(pl, bold=True, max_len=48)
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 elo_txt = f" — {elo_val} ELO" if (is_monitorados and elo_val > 0) else ""
-                on_lines.append(f"• {watch_tag}{link_txt}{flag_tag}{elo_txt}{rec_tag}")
+                on_lines.append(f"• {watch_tag}{link_txt}{flag_tag}{elo_txt}{rec_tag}{inact_tag}")
         if len(free_online) > free_cap:
             on_lines.append(f"• _...e mais {len(free_online) - free_cap} online livres_")
         rem = _append_vertical_section(
@@ -391,6 +412,7 @@ def _format_category_vertical_description(
             flag_tag = _format_player_flag_badge(pl)
             foreign_tag = _format_suspected_foreign_badge(pl, is_veteranos=is_veteranos, is_monitorados=is_monitorados)
             watch_tag = "👁️ " if (is_monitorados and pl.get("priority_watch")) else ""
+            inact_tag = _format_monitored_inactivity_tag(pl, is_monitorados=is_monitorados)
             og = _format_presence_status_label(pl)
             if not full_visibility:
                 tier = resolve_prominence_tier(pl, is_veteranos=False, is_in_coh3=False)
@@ -401,7 +423,7 @@ def _format_category_vertical_description(
             else:
                 elo_val = int(pl.get("max_elo", 0) or 0)
                 elo_txt = f" — {elo_val} ELO" if (is_monitorados and elo_val > 0) else ""
-                bz_lines.append(f"• {watch_tag}{link_txt}{flag_tag}{elo_txt} *({og})*")
+                bz_lines.append(f"• {watch_tag}{link_txt}{flag_tag}{elo_txt} *({og})*{inact_tag}")
         if len(busy_online) > busy_cap:
             bz_lines.append(f"• _...e mais {len(busy_online) - busy_cap} em outro jogo / ausentes / ocupados_")
         rem = _append_vertical_section(

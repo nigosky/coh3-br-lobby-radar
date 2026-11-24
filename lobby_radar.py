@@ -93,7 +93,7 @@ DEFAULT_ALERT_MIN_IN_COH3 = 2
 ELO_CACHE_TTL_SEC = 6 * 3600
 # 4m30s garante que o ciclo de 5 min (300s) nunca pule a atualização por 1-2s de jitter do relógio
 PANEL_HEARTBEAT_REFRESH_SEC = 270
-PANEL_LAYOUT_VERSION = 13
+PANEL_LAYOUT_VERSION = 14
 COMMUNITY_SCHEMA_VERSION = 3
 
 COMMUNITY_DISCOVERY_TTL_SEC = 12 * 3600
@@ -119,6 +119,8 @@ OTHER_BR_HOT_INGAME_PIN_SEC = 2 * 3600    # 2h: fixa quem foi visto jogando há 
 OTHER_BR_HOT_MATCH_PIN_SEC = 3 * 3600     # 3h: fixa quem jogou partida CoH3 há pouco
 MAX_OTHER_BR_RELIC_INVISIBLE_CHECK = 200
 MAX_OTHER_BR_RECENT_HISTORY_CHECK = 25    # Consulta getRecentMatchHistoryByProfileId (Custom / vs IA) para online com jogos ocultos
+MONITORED_HIST_CACHE_TTL_SEC = 24 * 3600  # Cache 24h de histórico completo (Custom / vs IA) para Monitorados sem ranqueada recente
+MAX_MONITORED_STALE_HIST_CHECK = 12       # Máximo de consultas extras/ciclo para confirmar frequência de Monitorados sem ranqueada recente
 RECENT_RELIC_WINDOW_MINUTES = 45
 STEAM_INGAME_VISIBLE_TTL_SEC = 14 * 86400
 STEAM_INGAME_VISIBLE_REFRESH_SEC = 6 * 3600
@@ -1150,9 +1152,44 @@ def run_lobby_radar_sync(
         except Exception as exc:
             logger.debug("Falha transitória ao consultar stats Relic dos Players Monitorados: %s", redact_secrets(exc))
 
-    # Contas Monitoradas em vigília prioritária (`priority_watch`, ex.: Sgt.Yoda) ou online com jogos ocultos:
-    # consulta também `getRecentMatchHistoryByProfileId` (cobre Custom / vs IA e invisíveis!)
+    # Cache persistente 24h de histórico completo (Custom / vs IA + ranqueadas) para Players Monitorados
+    # sem ranqueada recente (>14d), garantindo que a ressalva de inatividade >=30d e o corte <1200 >=15d
+    # jamais penalizem quem joga partidas Customizadas ou vs IA!
+    mon_hist_cache_raw = state.get("monitored_hist_match_cache")
+    mon_hist_cache: dict[str, dict[str, Any]] = {}
+    mon_hist_cache_dirty = False
+    if isinstance(mon_hist_cache_raw, dict):
+        for k_pid, rec in mon_hist_cache_raw.items():
+            if not str(k_pid).isdigit() or not isinstance(rec, dict):
+                mon_hist_cache_dirty = True
+                continue
+            ipid = int(k_pid)
+            if ipid not in mon_pids_set:
+                mon_hist_cache_dirty = True
+                continue
+            chk_ts = int(rec.get("checked_ts", 0) or 0)
+            ct_val = int(rec.get("ct", 0) or 0)
+            mode_val = str(rec.get("mode") or "Partida")[:32]
+            if chk_ts > 0 and (now - chk_ts) <= (MONITORED_HIST_CACHE_TTL_SEC * 7):
+                mon_hist_cache[str(ipid)] = {"ct": ct_val, "mode": mode_val, "checked_ts": chk_ts}
+                if ct_val > 0:
+                    prev_m = mon_latest_matches.get(ipid)
+                    if prev_m is None or ct_val > int(prev_m.get("completion_time", 0) or 0):
+                        mon_latest_matches[ipid] = {
+                            "profile_id": ipid,
+                            "match_id": 0,
+                            "completion_time": ct_val,
+                            "mode": mode_val,
+                        }
+            else:
+                mon_hist_cache_dirty = True
+
+    # Contas Monitoradas em vigília prioritária (`priority_watch`, ex.: Sgt.Yoda), online com jogos ocultos,
+    # ou sem ranqueada recente (>14d) e ainda sem checagem 24h do histórico completo (Custom / vs IA):
     mon_hist_candidates: list[int] = []
+    mon_stale_online_candidates: list[int] = []
+    mon_stale_offline_candidates: list[int] = []
+    stale_ranked_cutoff_sec = 14 * 86400
     for mrow in mon_roster:
         mpid = int(mrow.get("profile_id", 0) or 0)
         msid = str(mrow.get("steam_id") or "")
@@ -1160,7 +1197,8 @@ def run_lobby_radar_sync(
         if mpid <= 0 or mpres.get("is_in_coh3"):
             continue
         cur_m = mon_latest_matches.get(mpid)
-        if cur_m and (now - int(cur_m.get("completion_time", 0) or 0)) <= mon_recent_cutoff_sec:
+        cur_ct = int(cur_m.get("completion_time", 0) or 0) if cur_m else 0
+        if cur_ct > 0 and (now - cur_ct) <= mon_recent_cutoff_sec:
             continue
         is_prio = bool(mrow.get("priority_watch"))
         is_hidden_online = (
@@ -1180,19 +1218,36 @@ def run_lobby_radar_sync(
         )
         if is_prio or is_hidden_online:
             mon_hist_candidates.append(mpid)
+        elif cur_ct > 0 and (now - cur_ct) >= stale_ranked_cutoff_sec:
+            cached_h = mon_hist_cache.get(str(mpid))
+            if cached_h is None or (now - int(cached_h.get("checked_ts", 0) or 0)) >= MONITORED_HIST_CACHE_TTL_SEC:
+                if bool(mpres.get("is_online_steam")):
+                    mon_stale_online_candidates.append(mpid)
+                else:
+                    mon_stale_offline_candidates.append(mpid)
 
-    if mon_hist_candidates and hasattr(r_client, "fetch_latest_matches_batch"):
+    stale_slice = (mon_stale_online_candidates + mon_stale_offline_candidates)[:MAX_MONITORED_STALE_HIST_CHECK]
+    mon_hist_batch = list(dict.fromkeys(mon_hist_candidates[:20] + stale_slice))
+    if mon_hist_batch and hasattr(r_client, "fetch_latest_matches_batch"):
         try:
-            mon_hist_matches = _call_latest_matches_batch(r_client, mon_hist_candidates[:20], max_workers=3)
-            for pid, m in mon_hist_matches.items():
-                ct = int(m.get("completion_time", 0) or 0)
-                if ct <= 0:
-                    continue
-                prev_m = mon_latest_matches.get(pid)
-                if prev_m is None or ct > int(prev_m.get("completion_time", 0) or 0):
-                    mon_latest_matches[pid] = m
+            mon_hist_matches = _call_latest_matches_batch(r_client, mon_hist_batch, max_workers=3)
+            for pid in mon_hist_batch:
+                m = mon_hist_matches.get(pid)
+                ct = int(m.get("completion_time", 0) or 0) if isinstance(m, dict) else 0
+                mode_lbl = str(m.get("mode") or "Partida")[:32] if isinstance(m, dict) else "Partida"
+                if ct > 0:
+                    prev_m = mon_latest_matches.get(pid)
+                    if prev_m is None or ct > int(prev_m.get("completion_time", 0) or 0):
+                        mon_latest_matches[pid] = m
+                if pid in stale_slice or ct > 0:
+                    mon_hist_cache[str(pid)] = {"ct": ct, "mode": mode_lbl, "checked_ts": now}
+                    mon_hist_cache_dirty = True
         except Exception as exc:
             logger.debug("Falha transitória ao consultar histórico Relic dos Players Monitorados: %s", redact_secrets(exc))
+
+    if mon_hist_cache_dirty:
+        state["monitored_hist_match_cache"] = mon_hist_cache
+        state_dirty = True
 
     vet_elo_by_pid = {int(k): int(v) for k, v in elo_cache_raw.items() if str(k).isdigit()}
     mon_elo_by_pid = dict(vet_elo_by_pid)

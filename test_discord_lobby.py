@@ -516,7 +516,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             )
             self.assertTrue(summary["panel_updated"])
             self.assertEqual(summary["alerts_pruned"], 1)
-            self.assertEqual(summary["monitorados_total"], 175)
+            self.assertEqual(summary["monitorados_total"], 132)
             self.assertEqual(summary["other_br_catalog_total"], 3)
             self.assertEqual(summary["other_br_in_coh3"], 1)
             self.assertEqual(summary["other_br_online_steam"], 1)
@@ -2731,6 +2731,91 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             self.assertEqual(other_call["chunk_pace_sec"], 0.30)
             self.assertEqual(other_call["max_429_retries"], 3)
             self.assertTrue(all("76561198999999999" not in c["steam_ids"] for c in fake_presence.calls))
+
+    def test_monitorados_inactivity_rules_demote_below_1200_15d_and_caveat_above_1200_30d(self) -> None:
+        from card_renderer import _resolve_player_badges
+        from steam_presence import build_lobby_radar_snapshot, compute_lobby_state_digest
+
+        now = 1_800_000_000
+        mon_players = [
+            {"profile_id": 500001, "steam_id": "76561198500000001", "original_alias": "AtivoHigh"},
+            {"profile_id": 500002, "steam_id": "76561198500000002", "original_alias": "InativoHighLivre"},
+            {"profile_id": 500003, "steam_id": "76561198500000003", "original_alias": "InativoHighOutroJogo"},
+            {"profile_id": 500004, "steam_id": "76561198500000004", "original_alias": "InativoLowDemote"},
+            {"profile_id": 500005, "steam_id": "76561198500000005", "original_alias": "AtivoLowFica"},
+            {"profile_id": 500006, "steam_id": "76561198500000006", "original_alias": "InativoHighNoCoH3Agora"},
+        ]
+        pres = {
+            "76561198500000001": {"steam_id": "76561198500000001", "ok": True, "is_in_coh3": False, "is_online_steam": True},
+            "76561198500000002": {"steam_id": "76561198500000002", "ok": True, "is_in_coh3": False, "is_online_steam": True},
+            "76561198500000003": {"steam_id": "76561198500000003", "ok": True, "is_in_coh3": False, "is_online_steam": True, "other_game": "Counter-Strike 2"},
+            "76561198500000004": {"steam_id": "76561198500000004", "ok": True, "is_in_coh3": False, "is_online_steam": True},
+            "76561198500000005": {"steam_id": "76561198500000005", "ok": True, "is_in_coh3": False, "is_online_steam": True},
+            "76561198500000006": {"steam_id": "76561198500000006", "ok": True, "is_in_coh3": True, "is_online_steam": True},
+        }
+        matches = {
+            500001: {"profile_id": 500001, "completion_time": now - 5 * 86400, "mode": "2v2"},     # ELO 1350, 5d -> ativo
+            500002: {"profile_id": 500002, "completion_time": now - 95 * 86400, "mode": "2v2"},    # ELO 1550, 95d -> ressalva
+            500003: {"profile_id": 500003, "completion_time": now - 45 * 86400, "mode": "4v4"},    # ELO 1420, 45d -> ressalva
+            500004: {"profile_id": 500004, "completion_time": now - 20 * 86400, "mode": "4v4"},    # ELO 1080, 20d -> demote p/ Outros BR
+            500005: {"profile_id": 500005, "completion_time": now - 7 * 86400, "mode": "4v4"},     # ELO 1080, 7d -> permanece em Monitorados
+            500006: {"profile_id": 500006, "completion_time": now - 120 * 86400, "mode": "1v1"},   # ELO 1600, 120d MAS abriu CoH3 agora -> sem ressalva!
+        }
+        elos = {500001: 1350, 500002: 1550, 500003: 1420, 500004: 1080, 500005: 1080, 500006: 1600}
+
+        snap = build_lobby_radar_snapshot(
+            custom_players=[{"profile_id": 79327, "steam_id": "76561197963172584", "original_alias": "Chacineiro"}],
+            presence_by_steam={},
+            now_ts=now,
+            monitored_br_players=mon_players,
+            monitored_presence_by_steam=pres,
+            monitored_latest_matches_by_pid=matches,
+            monitored_elo_by_pid=elos,
+        )
+
+        # 1. InativoLowDemote (<1200 ELO e >=15d) sai de Players Monitorados e vai para Outros BR (oculto por corte 15d)
+        mon_online_pids = [p["profile_id"] for p in snap["monitorados"]["online_steam"]]
+        self.assertNotIn(500004, mon_online_pids)
+        self.assertEqual(snap["monitorados"]["total_monitored"], 5)
+        self.assertEqual(snap["outros_brasileiros"]["online_steam"], [])
+
+        # 2. Ordenação em Monitorados: livres ativos (AtivoHigh 1350, AtivoLowFica 1080) vêm ANTES de livre inativo (>=30d, InativoHighLivre 1550)!
+        self.assertEqual(mon_online_pids, [500001, 500005, 500002, 500003])
+
+        by_pid = {p["profile_id"]: p for p in snap["monitorados"]["online_steam"]}
+        self.assertFalse(by_pid[500001]["coh3_inactive_warning"])
+        self.assertFalse(by_pid[500005]["coh3_inactive_warning"])
+        self.assertTrue(by_pid[500002]["coh3_inactive_warning"])
+        self.assertEqual(by_pid[500002]["coh3_inactive_days"], 95)
+        self.assertTrue(by_pid[500003]["coh3_inactive_warning"])
+        self.assertEqual(by_pid[500003]["coh3_inactive_days"], 45)
+
+        # 3. Quem abriu CoH3 agora NÃO recebe ressalva de inatividade mesmo com última partida há 120d
+        self.assertEqual([p["profile_id"] for p in snap["monitorados"]["in_coh3"]], [500006])
+        self.assertFalse(snap["monitorados"]["in_coh3"][0]["coh3_inactive_warning"])
+
+        # 4. Badge no card PNG + ressalva nos links do Discord + renderização PNG válida
+        badges_inactive = [b[0] for b in _resolve_player_badges(by_pid[500002], is_monitorados=True)]
+        badges_active = [b[0] for b in _resolve_player_badges(by_pid[500001], is_monitorados=True)]
+        self.assertIn("INATIVO CoH3", badges_inactive)
+        self.assertNotIn("INATIVO CoH3", badges_active)
+
+        links = build_lobby_radar_links_payload(snap)
+        mon_desc = links["embeds"][1]["description"]
+        self.assertIn("InativoHighLivre", mon_desc)
+        self.assertIn("⚠️ *(inativo no CoH3 há 95d)*", mon_desc)
+        self.assertIn("⚠️ *(inativo no CoH3 há 45d)*", mon_desc)
+        self.assertNotIn("InativoLowDemote", mon_desc)
+
+        vet_png, mon_png, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
+        for raw_png in (vet_png, mon_png, oth_png):
+            self.assertTrue(raw_png.startswith(b"\x89PNG\r\n\x1a\n"))
+
+        # 5. Mudança do flag `coh3_inactive_warning` altera o digest do painel
+        dig_before = compute_lobby_state_digest(snap)
+        by_pid[500002]["coh3_inactive_warning"] = False
+        dig_after = compute_lobby_state_digest(snap)
+        self.assertNotEqual(dig_before, dig_after)
 
 
 if __name__ == "__main__":

@@ -1102,6 +1102,21 @@ def _resolve_foreign_flag_badge(
     return ("VPN?", (74, 34, 14, 255), (251, 146, 60, 240), (253, 186, 116, 255))
 
 
+def _resolve_coh3_inactivity_badge(
+    pl: dict[str, Any],
+    *,
+    is_monitorados: bool = False,
+    compact: bool = False,
+) -> tuple[str, tuple[int, int, int, int], tuple[int, int, int, int], tuple[int, int, int, int]] | None:
+    """Retorna selo âmbar `INATIVO CoH3` (ou `INATIVO` compacto) para Players Monitorados (>=1200 ELO) sem partida CoH3 há >=30 dias."""
+    if not is_monitorados or not bool(pl.get("coh3_inactive_warning")):
+        return None
+    if str(pl.get("status_kind") or "") == "in_coh3":
+        return None
+    lbl = "INATIVO" if compact else "INATIVO CoH3"
+    return (lbl, (74, 42, 12, 255), (245, 158, 11, 235), (253, 224, 71, 255))
+
+
 def _resolve_player_badges(
     pl: dict[str, Any],
     *,
@@ -1114,13 +1129,19 @@ def _resolve_player_badges(
         badges.append(("SMURF", (16, 46, 68, 255), (56, 189, 248, 230), (186, 230, 253, 255)))
     if bool(pl.get("priority_watch")):
         badges.append(("VIGÍLIA", (24, 38, 82, 255), (129, 140, 248, 240), (199, 210, 254, 255)))
+    pb = _resolve_presence_badge(pl) if include_presence else None
+    ib = _resolve_coh3_inactivity_badge(
+        pl,
+        is_monitorados=is_monitorados,
+        compact=bool(badges and pb is not None),
+    )
+    if ib is not None:
+        badges.append(ib)
     fb = _resolve_foreign_flag_badge(pl, is_veteranos=is_veteranos, is_monitorados=is_monitorados)
     if fb is not None:
         badges.append(fb)
-    if include_presence:
-        pb = _resolve_presence_badge(pl)
-        if pb is not None:
-            badges.append(pb)
+    if pb is not None:
+        badges.append(pb)
     return badges
 
 
@@ -1684,6 +1705,11 @@ def _draw_category_block(
             leg_fnt = pick_font(leg_txt, size=15, bold=True)
             lw = text_width(draw, leg_txt, leg_fnt)
             draw.text((width - 24 - lw, y + 9), leg_txt, font=leg_fnt, fill=(253, 224, 71, 235))
+        elif is_monitorados and any(bool(p.get("coh3_inactive_warning")) for p in online):
+            leg_txt = "⚠ Ressalva: inativo no CoH3 ≥30d"
+            leg_fnt = pick_font(leg_txt, size=15, bold=True)
+            lw = text_width(draw, leg_txt, leg_fnt)
+            draw.text((width - 24 - lw, y + 9), leg_txt, font=leg_fnt, fill=(253, 224, 71, 230))
         y += sec_hdr_h
 
         if not online:
@@ -1731,6 +1757,7 @@ def _draw_category_block(
                     has_other = bool(pl.get("other_game"))
                     is_away = bool(pl.get("is_away") or pl.get("is_snooze"))
                     is_busy = bool(pl.get("is_busy"))
+                    is_mon_inactive = bool(is_monitorados and pl.get("coh3_inactive_warning"))
 
                     if is_high:
                         draw.rectangle((cell_x0, ry + 2, cell_x1, ry + online_row_h - 2), fill=(24, 33, 45, 255))
@@ -1752,6 +1779,8 @@ def _draw_category_block(
                             ring_c = (96, 165, 250, 215)
                         elif is_monitorados and bool(pl.get("priority_watch")):
                             ring_c = (129, 140, 248, 255)
+                        elif is_mon_inactive:
+                            ring_c = (245, 158, 11, 220)
                         else:
                             ring_c = (56, 189, 248, 245)
 
@@ -1831,18 +1860,40 @@ def _draw_category_block(
                         next_x += pw + 6
 
                     rec_tag = _format_coh3_recency_short(pl) if not is_curated else ""
+                    inact_days = pl.get("coh3_inactive_days") if is_mon_inactive else None
+                    if is_mon_inactive and inact_days is None:
+                        inact_days = pl.get("last_coh3_age_days")
+                    inact_txt = (
+                        f"inativo no CoH3 há {int(inact_days)}d"
+                        if (is_mon_inactive and inact_days is not None and int(inact_days) >= 30)
+                        else ("inativo no CoH3 ≥30d" if is_mon_inactive else "")
+                    )
+                    inact_short_txt = (
+                        f"sem CoH3 há {int(inact_days)}d"
+                        if (is_mon_inactive and inact_days is not None and int(inact_days) >= 30)
+                        else ("sem CoH3 ≥30d" if is_mon_inactive else "")
+                    )
                     if has_other:
-                        sub_st = f"Em outro jogo: {pl['other_game']}"
-                        sub_col = (148, 163, 184, 255)
+                        if inact_short_txt:
+                            sub_st = f"Outro jogo: {pl['other_game']} • {inact_short_txt}"
+                            sub_col = (217, 175, 110, 240)
+                        else:
+                            sub_st = f"Em outro jogo: {pl['other_game']}"
+                            sub_col = (148, 163, 184, 255)
                     elif is_busy:
-                        sub_st = f"Ocupado • {rec_tag}" if rec_tag else "Ocupado na Steam"
+                        extra_tag = inact_txt or rec_tag
+                        sub_st = f"Ocupado • {extra_tag}" if extra_tag else "Ocupado na Steam"
                         sub_col = (252, 165, 165, 255)
                     elif is_away:
-                        sub_st = f"Ausente na Steam (zZz) • {rec_tag}" if rec_tag else "Ausente na Steam (zZz)"
-                        sub_col = (125, 175, 224, 255)
+                        extra_tag = inact_txt or rec_tag
+                        sub_st = f"Ausente (zZz) • {extra_tag}" if extra_tag else "Ausente na Steam (zZz)"
+                        sub_col = (217, 175, 110, 235) if inact_txt else (125, 175, 224, 255)
                     elif pl.get("last_age_min") is not None and int(pl["last_age_min"]) <= 35:
                         sub_st = f"Livre • jogou CoH3 há {max(1, int(pl['last_age_min']))} min"
                         sub_col = (134, 239, 172, 255)
+                    elif inact_txt:
+                        sub_st = f"Livre na Steam • {inact_txt}"
+                        sub_col = (253, 224, 71, 235)
                     elif rec_tag:
                         sub_st = f"Livre na Steam • {rec_tag}"
                         sub_col = (134, 239, 172, 255) if is_high else (125, 211, 252, 255)
@@ -2380,9 +2431,11 @@ def _render_single_category_card_png(
         foot_txt = f"Veteranos: todos os {total_cat} monitorados exibidos sem filtro{expat_leg}  •  Links Steam abaixo"
     elif is_monitorados:
         has_any_prio = any(bool(p.get("priority_watch")) for p in all_cat_players)
+        has_any_inact = any(bool(p.get("coh3_inactive_warning")) for p in all_cat_players)
         prio_leg = "  •  VIGÍLIA = conta prioritária" if has_any_prio else ""
+        inact_leg = "  •  INATIVO CoH3 = sem partida ≥30d (≥1200 ELO)" if has_any_inact else ""
         expat_short = "  •  BR EXT = BR no exterior" if has_any_expat else ""
-        foot_txt = f"Players Monitorados: {total_cat} acompanhados sem corte de inatividade{expat_short}{prio_leg}  •  Links Steam abaixo"
+        foot_txt = f"Players Monitorados: {total_cat} acompanhados{expat_short}{inact_leg}{prio_leg}  •  Links Steam abaixo"
     else:
         cat_count_lbl = f" ({total_cat})" if total_cat > 0 else ""
         has_any_foreign = any(bool(p.get("suspected_foreign_flag")) for p in all_cat_players)

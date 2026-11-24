@@ -52,7 +52,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         tot_v, uniq_v, tot_m = manage_roster.validate_roster_doc(doc)
         self.assertEqual(tot_v, 48)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
-        self.assertEqual(tot_m, 175)
+        self.assertEqual(tot_m, 132)
         self.assertEqual(len(doc.get("outros_br_emigrados") or []), 15)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr e Tracker presentes; Lem22/Generick/Napa US e XAPA KENTE CA
@@ -117,14 +117,14 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Players Monitorados (175 contas): citados/movidos + Top 100 BR >1300 + amigos + Xampoo + icemaker/アリス + Generick + panelinha ArguS + 6 BRs >1300
+        # Players Monitorados (132 contas): 43 contas <1200 ELO sem frequência (>=15d) movidas para Outros Brasileiros
         from foreign_br_verifier import load_suspected_foreign_br_registry
         from steam_presence import MONITORED_BR_PLAYERS, OUTROS_BR_EMIGRADOS
 
         self.assertIs(MANUAL_OTHER_BR_PLAYERS, MONITORED_BR_PLAYERS)
         mon_by_pid = {int(r["profile_id"]): r for r in MONITORED_BR_PLAYERS}
         exp_by_pid = {int(r["profile_id"]): r for r in OUTROS_BR_EMIGRADOS}
-        self.assertEqual(len(mon_by_pid), 175)
+        self.assertEqual(len(mon_by_pid), 132)
         self.assertEqual(len(exp_by_pid), 15)
         sf_reg = load_suspected_foreign_br_registry()
         self.assertNotIn(448521, sf_reg.get("excluded_from_rankings_pids") or [])
@@ -137,7 +137,6 @@ class TestSharedPlayersRoster(unittest.TestCase):
         for mon_pid in (
             16867,
             19747,
-            23250,
             28937,
             81751,
             3895,
@@ -156,7 +155,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
             40833,
             991551,
             667564,
-            # Jogadores citados/investigados no projeto
+            # Jogadores citados/investigados no projeto (ativos ou >=1200 ELO)
             357310,
             17169,
             1178218,
@@ -173,15 +172,11 @@ class TestSharedPlayersRoster(unittest.TestCase):
             38270,
             970468,
             20523,
-            940355,
             1279100,
             1453831,
             198711,
             1010793,
-            28570,
             779143,
-            952854,
-            1041470,
             1216477,
             1216912,
             1276975,
@@ -198,8 +193,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
             11710,
             4517,
             624624,
-            59671,
-            # Novos Top 100 BR >1300 ELO + parceiros recorrentes + amigos Steam CoH3 BR
+            # Top 100 BR >1300 ELO + parceiros ativos + amigos Steam CoH3 BR
             649535,
             765837,
             975900,
@@ -222,19 +216,13 @@ class TestSharedPlayersRoster(unittest.TestCase):
             1330031,
             3888,
             656815,
-            86675,
-            # Xampoo + icemaker e smurf confirmada アリス + Generick + panelinha ArguS (VonDun)
+            # Xampoo + icemaker e smurf confirmada アリス + Generick + panelinha ativa ArguS (VonDun)
             2834,
             448521,
             720147,
             33487,
             1304336,
-            673604,
-            893043,
-            1315226,
-            1115599,
             942935,
-            26172,
             # Promovidos de Outros Brasileiros com ELO > 1300 (Carp, Napa US, Salïty, Açucar Macabro, Roda, Arthoumadbro)
             1214336,
             304013,
@@ -246,6 +234,12 @@ class TestSharedPlayersRoster(unittest.TestCase):
             self.assertIn(mon_pid, mon_by_pid)
             self.assertNotIn(mon_pid, vet_by_pid)
             self.assertNotIn(mon_pid, exp_by_pid)
+
+        # Contas <1200 ELO e sem frequência >=15d foram movidas de Players Monitorados para Outros Brasileiros
+        for demoted_pid in (23250, 673604, 893043, 1115599, 1315226, 26172, 766215, 28570, 59671, 940355):
+            self.assertNotIn(demoted_pid, mon_by_pid)
+            self.assertNotIn(demoted_pid, vet_by_pid)
+
         self.assertEqual(mon_by_pid[212034]["original_alias"], "XAPA KENTE")
         self.assertEqual(mon_by_pid[212034]["steam_id"], "76561198207565088")
         self.assertEqual(mon_by_pid[212034].get("flag_country"), "ca")
@@ -289,7 +283,6 @@ class TestSharedPlayersRoster(unittest.TestCase):
             self.assertEqual(get_configured_flag_country(exp_pid), exp_ctry)
         self.assertEqual(mon_by_pid[16867]["original_alias"], "Golden Cobra")
         self.assertIn("COHBRAMACHINE", mon_by_pid[16867].get("known_aliases") or [])
-        self.assertIn("Nargoth de Bebbanburg", mon_by_pid[23250].get("known_aliases") or [])
 
         # Sgt.Yoda (164152): conta principal renomeada de 'seu pai', SEM smurf_of, SEM pin_alias, COM priority_watch=True!
         yoda = mon_by_pid[164152]
