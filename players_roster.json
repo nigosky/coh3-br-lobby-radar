@@ -742,9 +742,11 @@
     {
       "profile_id": 13516,
       "steam_id": "76561198000943380",
-      "original_alias": "Pax Xavier youtube",
+      "original_alias": "NEBADON",
       "country": "br",
+      "pin_alias": true,
       "known_aliases": [
+        "NEBADON",
         "Pax Xavier youtube",
         "Pax_Nebadon_Br",
         "Nébadon",
