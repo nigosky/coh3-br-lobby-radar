@@ -42456,14 +42456,14 @@
     "1456842": {
       "alias": "[BGD] Panella",
       "br_source": "open_data_lb",
-      "last_match_date": 1795530220,
+      "last_match_date": 1795531900,
       "last_seen_ingame_ts": 1795523058,
       "last_seen_ingame_webapi_ts": 1795522758,
       "last_seen_online_ts": 1795529220,
       "max_elo": 1050,
       "profile_id": 1456842,
       "steam_id": "76561198272287621",
-      "total_matches": 77
+      "total_matches": 78
     },
     "1457577": {
       "alias": "Karyu",
@@ -44031,7 +44031,7 @@
     "17906": {
       "alias": "Leo",
       "br_source": "open_data_lb",
-      "last_match_date": 1795522562,
+      "last_match_date": 1795531744,
       "last_seen_ingame_ts": 1795509009,
       "last_seen_ingame_webapi_ts": 1795511109,
       "last_seen_online_ts": 1795529220,
@@ -44040,7 +44040,7 @@
       "steam_games_hidden": false,
       "steam_gd_checked_ts": 1795217335,
       "steam_id": "76561198312734088",
-      "total_matches": 582
+      "total_matches": 583
     },
     "179332": {
       "alias": "Cotoko",
