@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import io
+import json
 import logging
+import os
 import re
 import time
+import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -15,7 +19,9 @@ from typing import Any
 from PIL import Image, ImageDraw, ImageFont
 
 from security import (
+    HttpsOnlySchemeHandler,
     build_no_redirect_https_opener,
+    create_hardened_ssl_context,
     read_bounded_http_body,
     redact_secrets,
     strip_unsafe_chars,
@@ -23,6 +29,7 @@ from security import (
 )
 from steam_presence import (
     OTHER_BR_ACTIVE_COH3_DAYS,
+    STEAM_ID64_VALID_RE,
     extract_snapshot_category,
     format_coh3_recency_age,
     get_unique_monitorados_count,
@@ -50,6 +57,8 @@ FLAG_CODE_ALIASES: dict[str, str] = {
     "can": "ca",
 }
 
+ALLOWED_STEAM_API_HOSTS: frozenset[str] = frozenset({"api.steampowered.com"})
+ALLOWED_STEAM_XML_HOSTS: frozenset[str] = frozenset({"steamcommunity.com"})
 ALLOWED_STEAM_AVATAR_HOSTS: frozenset[str] = frozenset(
     {
         "avatars.steamstatic.com",
@@ -60,15 +69,54 @@ ALLOWED_STEAM_AVATAR_HOSTS: frozenset[str] = frozenset(
         "cdn.akamai.steamstatic.com",
     }
 )
+STEAM_API_SUMMARIES_URL = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
+STEAM_API_SUMMARIES_PATH_RE = re.compile(r"^/ISteamUser/GetPlayerSummaries/v0*2/?$")
+STEAM_API_KEY_VALID_RE = re.compile(r"^[A-Za-z0-9]{16,64}$")
+STEAM_XML_AVATAR_MEDIUM_RE = re.compile(
+    r"<avatarMedium>\s*<!\[CDATA\[(https://[^\s\]]+)\]\]>\s*</avatarMedium>",
+    re.IGNORECASE,
+)
+STEAM_XML_AVATAR_FULL_RE = re.compile(
+    r"<avatarFull>\s*<!\[CDATA\[(https://[^\s\]]+)\]\]>\s*</avatarFull>",
+    re.IGNORECASE,
+)
 SAFE_AVATAR_EXT_RE = re.compile(r"\.(?:jpg|jpeg|png|webp)$", re.IGNORECASE)
 ALLOWED_DECODER_FORMATS: frozenset[str] = frozenset({"JPEG", "PNG", "WEBP", "GIF"})
-MAX_STEAM_AVATAR_BYTES = 524_288  # 512 KB
+MAX_STEAM_AVATAR_BYTES = 524_288     # 512 KB
+MAX_STEAM_API_JSON_BYTES = 524_288   # 512 KB
+MAX_STEAM_XML_BYTES = 65_536         # 64 KB
 
-HAS_CJK_RE = re.compile(r"[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\u3040-\u30ff]")
+HAS_CJK_RE = re.compile(
+    r"[\u1100-\u11ff\u2e80-\u33ff\u3400-\u4dbf\u4e00-\u9fff"
+    r"\uac00-\ud7af\uf900-\ufaff\ufe30-\ufe4f\uff00-\uffef]"
+)
 NEEDS_DEJAVU_RE = re.compile(r"[^\u0000-\u024f]")
 
+
+class _SteamXMLRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Permite até 3 redirecionamentos exclusivamente dentro de https://steamcommunity.com/(id|profiles)/."""
+
+    max_redirections = 3
+
+    def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
+        try:
+            parsed = validate_https_endpoint(newurl, ALLOWED_STEAM_XML_HOSTS)
+        except ValueError as exc:
+            raise urllib.error.HTTPError(req.full_url, code, f"Redirect Steam bloqueado: {exc}", headers, fp) from None
+        if not (parsed.path.startswith("/id/") or parsed.path.startswith("/profiles/")):
+            raise urllib.error.HTTPError(req.full_url, code, "Caminho de redirect Steam não autorizado", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 _NO_REDIRECT_OPENER = build_no_redirect_https_opener()
+_STEAM_XML_OPENER = urllib.request.build_opener(
+    HttpsOnlySchemeHandler(),
+    urllib.request.HTTPSHandler(context=create_hardened_ssl_context()),
+    _SteamXMLRedirectHandler(),
+)
 _FONT_CACHE: dict[tuple[str, int], ImageFont.FreeTypeFont | ImageFont.ImageFont] = {}
+_DISCOVERED_CJK_FONTS: dict[str, list[str]] | None = None
+_WARNED_MISSING_CJK = False
 _VETERANOS_BADGE_CACHE: dict[int, Image.Image] = {}
 _MONITORADOS_BADGE_CACHE: dict[int, Image.Image] = {}
 _FLAG_BASE_CACHE: dict[str, Image.Image | None] = {}
@@ -93,19 +141,104 @@ FONT_CANDIDATES: dict[str, list[str]] = {
         "/usr/share/fonts/truetype/roboto/unhinted/RobotoCondensed-Bold.ttf",
         "/usr/share/fonts/truetype/roboto/hinted/RobotoCondensed-Bold.ttf",
         "/usr/share/fonts/truetype/roboto/RobotoCondensed-Bold.ttf",
+        "/usr/share/fonts/truetype/roboto/unhinted/RobotoTTF/Roboto-Bold.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
     ],
     "unicode_regular": ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"],
     "unicode_bold": ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"],
     "cjk_regular": [
         "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf",
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+        "/usr/share/fonts/opentype/ipafont-gothic/ipagp.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
     ],
     "cjk_bold": [
         "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/noto-cjk/NotoSansCJK-Bold.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Bold.otf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+        "/usr/share/fonts/opentype/ipafont-gothic/ipagp.ttf",
     ],
 }
+
+
+def _discover_cjk_fonts() -> dict[str, list[str]]:
+    """Varre /usr/share/fonts uma única vez para localizar fontes CJK/JP mesmo se o caminho mudar entre versões do SO."""
+    global _DISCOVERED_CJK_FONTS
+    if _DISCOVERED_CJK_FONTS is not None:
+        return _DISCOVERED_CJK_FONTS
+
+    regular: list[str] = []
+    bold: list[str] = []
+    fonts_root = Path("/usr/share/fonts")
+    if fonts_root.is_dir():
+        for p in sorted(fonts_root.rglob("*")):
+            if not p.is_file() or p.suffix.lower() not in (".ttc", ".ttf", ".otf"):
+                continue
+            low = p.name.lower()
+            if not any(tok in low for tok in ("notosanscjk", "notosanssc", "notosanstc", "notosansjp", "wqy-", "sourcehansans", "ipag")):
+                continue
+            if "bold" in low:
+                bold.append(str(p))
+            else:
+                regular.append(str(p))
+
+    _DISCOVERED_CJK_FONTS = {
+        "cjk_regular": regular + bold,
+        "cjk_bold": bold + regular,
+    }
+    return _DISCOVERED_CJK_FONTS
+
+
+def _load_truetype_font(path: Path, size: int, is_cjk: bool = False) -> ImageFont.FreeTypeFont:
+    """Carrega fonte TrueType/OpenType; em coleções NotoSansCJK.ttc prioriza face SC/JP pan-asiática."""
+    if is_cjk and path.suffix.lower() == ".ttc" and "notosanscjk" in path.name.lower():
+        for idx in (2, 0):
+            try:
+                return ImageFont.truetype(str(path), size=size, index=idx)
+            except OSError:
+                continue
+    return ImageFont.truetype(str(path), size=size)
+
+
+def _get_font_by_role(role: str, size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    global _WARNED_MISSING_CJK
+    key = (role, size)
+    cached = _FONT_CACHE.get(key)
+    if cached is not None:
+        return cached
+
+    is_cjk = role in ("cjk_regular", "cjk_bold")
+    candidates = list(FONT_CANDIDATES.get(role, FONT_CANDIDATES["regular"]))
+    if is_cjk:
+        for extra in _discover_cjk_fonts().get(role, []):
+            if extra not in candidates:
+                candidates.append(extra)
+
+    for candidate in candidates:
+        p = Path(candidate)
+        if p.is_file():
+            try:
+                fnt = _load_truetype_font(p, size=size, is_cjk=is_cjk)
+                _FONT_CACHE[key] = fnt
+                return fnt
+            except OSError:
+                continue
+
+    if is_cjk:
+        if not _WARNED_MISSING_CJK:
+            logger.warning("Fonte CJK não encontrada em /usr/share/fonts; usando fallback DejaVu.")
+            _WARNED_MISSING_CJK = True
+        return _get_font_by_role("unicode_bold" if role == "cjk_bold" else "unicode_regular", size)
+
+    fallback = ImageFont.load_default()
+    _FONT_CACHE[key] = fallback
+    return fallback
 
 
 def pick_font(
@@ -115,31 +248,71 @@ def pick_font(
     condensed: bool = False,
 ) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     if HAS_CJK_RE.search(text):
-        group = "cjk_bold" if bold else "cjk_regular"
-    elif NEEDS_DEJAVU_RE.search(text):
-        group = "unicode_bold" if bold else "unicode_regular"
-    elif condensed:
-        group = "condensed_bold"
-    else:
-        group = "bold" if bold else "regular"
+        return _get_font_by_role("cjk_bold" if bold else "cjk_regular", size)
+    if NEEDS_DEJAVU_RE.search(text):
+        return _get_font_by_role("unicode_bold" if bold else "unicode_regular", size)
+    if condensed:
+        return _get_font_by_role("condensed_bold", size)
+    return _get_font_by_role("bold" if bold else "regular", size)
 
-    key = (group, size)
-    cached = _FONT_CACHE.get(key)
-    if cached is not None:
-        return cached
 
-    for candidate in FONT_CANDIDATES[group]:
-        if Path(candidate).is_file():
-            try:
-                fnt = ImageFont.truetype(candidate, size=size)
-                _FONT_CACHE[key] = fnt
-                return fnt
-            except OSError:
-                continue
+def _split_mixed_script_runs(text: str, size: int, *, bold: bool = True) -> list[tuple[str, Any]]:
+    """
+    Divide nicks que misturam CJK/Katakana com símbolos especiais/sobrescritos/diacríticos fora de ASCII
+    (ex.: 'アリス ★' ou '『V』SKOBADARK ᵀᴹ') em segmentos por fonte para eliminar quadrados (tofu).
+    """
+    if not text or not HAS_CJK_RE.search(text):
+        return [(text, pick_font(text, size=size, bold=bold))]
+    # Se todos os caracteres não-CJK forem ASCII puro, uma única chamada com fonte CJK já renderiza 100% nítido
+    has_non_ascii_non_cjk = any(ord(ch) > 127 and not HAS_CJK_RE.match(ch) for ch in text)
+    if not has_non_ascii_non_cjk:
+        return [(text, _get_font_by_role("cjk_bold" if bold else "cjk_regular", size))]
 
-    fallback = ImageFont.load_default()
-    _FONT_CACHE[key] = fallback
-    return fallback
+    runs: list[tuple[str, Any]] = []
+    cur_role = ""
+    buf: list[str] = []
+    for ch in text:
+        if HAS_CJK_RE.match(ch):
+            role = "cjk_bold" if bold else "cjk_regular"
+        elif ord(ch) > 127:
+            role = "unicode_bold" if bold else "unicode_regular"
+        else:
+            role = cur_role or ("cjk_bold" if bold else "cjk_regular")
+        if role != cur_role and buf:
+            runs.append(("".join(buf), _get_font_by_role(cur_role, size)))
+            buf = [ch]
+            cur_role = role
+        else:
+            buf.append(ch)
+            if not cur_role:
+                cur_role = role
+    if buf:
+        runs.append(("".join(buf), _get_font_by_role(cur_role, size)))
+    return runs
+
+
+def draw_text_safe(
+    draw: ImageDraw.ImageDraw,
+    xy: tuple[float, float],
+    text: str,
+    *,
+    font: Any,
+    fill: Any,
+    bold: bool = True,
+) -> float:
+    """Desenha texto com fallback automático por segmento quando há mistura CJK + símbolos/diacríticos."""
+    if not text:
+        return 0.0
+    if HAS_CJK_RE.search(text) and any(ord(ch) > 127 and not HAS_CJK_RE.match(ch) for ch in text):
+        sz = int(getattr(font, "size", 18) or 18)
+        x, y = float(xy[0]), float(xy[1])
+        total_w = 0.0
+        for seg, seg_fnt in _split_mixed_script_runs(text, size=sz, bold=bold):
+            draw.text((x + total_w, y), seg, font=seg_fnt, fill=fill)
+            total_w += text_width(draw, seg, seg_fnt)
+        return total_w
+    draw.text(xy, text, font=font, fill=fill)
+    return text_width(draw, text, font)
 
 
 def text_width(draw: ImageDraw.ImageDraw, text: str, font: Any) -> float:
@@ -502,35 +675,163 @@ def get_monitorados_badge_icon(size: int = 20) -> Image.Image:
 
 
 class SteamAvatarProvider:
-    """Baixa avatares Steam validados por allowlist de CDN oficial (direto da URL extraída do XML público)."""
+    """Baixa avatares Steam validados por allowlist de CDN oficial (direto da URL, lote Web API ou fallback XML)."""
 
-    def __init__(self, allow_network: bool = True) -> None:
+    def __init__(self, allow_network: bool = True, steam_api_key: str | None = None) -> None:
         self.allow_network = allow_network
+        raw_key = os.environ.get("STEAM_WEB_API_KEY", "") if steam_api_key is None else str(steam_api_key or "")
+        clean_key = raw_key.strip()
+        self._steam_api_key = clean_key if STEAM_API_KEY_VALID_RE.fullmatch(clean_key) else ""
         self._raw_cache: dict[str, bytes] = {}
+        self._prefetched_avatar_urls: dict[str, str] = {}
+        self._failed_sids: set[str] = set()
+        self._xml_rate_limited = False
         self._circle_cache: dict[tuple[str, int, tuple[int, int, int, int]], Image.Image] = {}
+
+    @staticmethod
+    def _validate_avatar_url(avatar_url: str) -> str:
+        clean = str(avatar_url or "").strip()
+        if not clean:
+            return ""
+        try:
+            parsed = validate_https_endpoint(clean, ALLOWED_STEAM_AVATAR_HOSTS)
+            if parsed.query or parsed.fragment or not SAFE_AVATAR_EXT_RE.search(parsed.path or ""):
+                return ""
+            return clean
+        except ValueError:
+            return ""
+
+    def prefetch_avatar_urls(self, players: list[dict[str, Any]]) -> int:
+        """
+        Pré-carrega URLs de avatar em lote (até 100 SteamIDs por requisição) via Steam Web API
+        (`ISteamUser/GetPlayerSummaries/v2`) para jogadores cujo `avatar_url` veio vazio no snapshot.
+        """
+        if not self.allow_network or not self._steam_api_key or not players:
+            return 0
+        pending_sids: list[str] = []
+        seen: set[str] = set()
+        for pl in players:
+            if not isinstance(pl, dict):
+                continue
+            if self._validate_avatar_url(str(pl.get("avatar_url") or "")):
+                continue
+            sid = str(pl.get("steam_id") or "").replace("/steam/", "").strip()
+            if (
+                not STEAM_ID64_VALID_RE.fullmatch(sid)
+                or sid in seen
+                or sid in self._prefetched_avatar_urls
+                or sid in self._failed_sids
+            ):
+                continue
+            seen.add(sid)
+            pending_sids.append(sid)
+
+        if not pending_sids:
+            return 0
+
+        fetched = 0
+        for idx in range(0, len(pending_sids), 100):
+            batch = pending_sids[idx : idx + 100]
+            query = urllib.parse.urlencode({"key": self._steam_api_key, "steamids": ",".join(batch)})
+            url = f"{STEAM_API_SUMMARIES_URL}?{query}"
+            try:
+                validate_https_endpoint(
+                    url,
+                    ALLOWED_STEAM_API_HOSTS,
+                    path_prefix="/ISteamUser/",
+                    path_regex=STEAM_API_SUMMARIES_PATH_RE,
+                )
+                req = urllib.request.Request(
+                    url,
+                    headers={
+                        "User-Agent": "CoH3-BR-Lobby-Radar/1.4",
+                        "Accept": "application/json",
+                        "Accept-Encoding": "gzip",
+                    },
+                )
+                with _NO_REDIRECT_OPENER.open(req, timeout=10) as resp:
+                    raw = read_bounded_http_body(resp, MAX_STEAM_API_JSON_BYTES)
+                payload = json.loads(raw.decode("utf-8", errors="ignore"))
+                api_players = (payload.get("response") or {}).get("players") if isinstance(payload, dict) else None
+                if not isinstance(api_players, list):
+                    continue
+                for item in api_players:
+                    if not isinstance(item, dict):
+                        continue
+                    sid = str(item.get("steamid") or "").strip()
+                    if not STEAM_ID64_VALID_RE.fullmatch(sid):
+                        continue
+                    av_url = self._validate_avatar_url(
+                        str(item.get("avatarmedium") or item.get("avatarfull") or item.get("avatar") or "")
+                    )
+                    if av_url:
+                        self._prefetched_avatar_urls[sid] = av_url
+                        fetched += 1
+            except Exception as exc:
+                logger.warning("Prefetch de avatares Steam Web API indisponível no Radar: %s", redact_secrets(exc))
+                break
+        return fetched
+
+    def _fetch_avatar_url_from_xml(self, steam_id: str) -> str:
+        sid = str(steam_id or "").replace("/steam/", "").strip()
+        if (
+            not self.allow_network
+            or self._xml_rate_limited
+            or not STEAM_ID64_VALID_RE.fullmatch(sid)
+            or sid in self._failed_sids
+        ):
+            return ""
+        cached = self._prefetched_avatar_urls.get(sid)
+        if cached:
+            return cached
+        xml_url = f"https://steamcommunity.com/profiles/{sid}/?xml=1"
+        try:
+            validate_https_endpoint(xml_url, ALLOWED_STEAM_XML_HOSTS, path_prefix="/profiles/")
+            req = urllib.request.Request(
+                xml_url,
+                headers={"User-Agent": "CoH3-BR-Lobby-Radar/1.4", "Accept": "application/xml,text/xml"},
+            )
+            with _STEAM_XML_OPENER.open(req, timeout=6) as resp:
+                xml_raw = read_bounded_http_body(resp, MAX_STEAM_XML_BYTES)
+            xml_text = xml_raw.decode("utf-8", errors="ignore")
+            m = STEAM_XML_AVATAR_MEDIUM_RE.search(xml_text) or STEAM_XML_AVATAR_FULL_RE.search(xml_text)
+            if m:
+                valid = self._validate_avatar_url(m.group(1).strip())
+                if valid:
+                    self._prefetched_avatar_urls[sid] = valid
+                    return valid
+        except urllib.error.HTTPError as exc:
+            if exc.code in (429, 403):
+                self._xml_rate_limited = True
+        except Exception:
+            pass
+        self._failed_sids.add(sid)
+        return ""
 
     def _download_avatar(self, avatar_url: str) -> bytes | None:
         if not self.allow_network or not avatar_url:
             return None
-        cached = self._raw_cache.get(avatar_url)
+        valid_url = self._validate_avatar_url(avatar_url)
+        if not valid_url:
+            return None
+        cached = self._raw_cache.get(valid_url)
         if cached is not None:
             return cached
         try:
-            parsed = validate_https_endpoint(avatar_url, ALLOWED_STEAM_AVATAR_HOSTS)
-            if parsed.query or not SAFE_AVATAR_EXT_RE.search(parsed.path or ""):
-                return None
-            req = urllib.request.Request(avatar_url, headers={"User-Agent": "CoH3-BR-Lobby-Radar/1.0"})
+            req = urllib.request.Request(valid_url, headers={"User-Agent": "CoH3-BR-Lobby-Radar/1.4"})
             with _NO_REDIRECT_OPENER.open(req, timeout=6) as resp:
                 raw = read_bounded_http_body(resp, MAX_STEAM_AVATAR_BYTES)
             with Image.open(io.BytesIO(raw), formats=list(ALLOWED_DECODER_FORMATS)) as im:
                 im.load()
+                if not (1 <= im.width <= 1024 and 1 <= im.height <= 1024):
+                    return None
                 norm = im.convert("RGB").resize((96, 96), Image.Resampling.LANCZOS)
                 buf = io.BytesIO()
                 norm.save(buf, format="PNG")
                 png_bytes = buf.getvalue()
-            if len(self._raw_cache) >= 96:
+            if len(self._raw_cache) >= 192:
                 self._raw_cache.clear()
-            self._raw_cache[avatar_url] = png_bytes
+            self._raw_cache[valid_url] = png_bytes
             return png_bytes
         except Exception:
             return None
@@ -541,18 +842,26 @@ class SteamAvatarProvider:
         alias: str,
         avatar_url: str = "",
         ring_color: tuple[int, int, int, int] = (74, 222, 128, 255),
+        steam_id: str = "",
     ) -> Image.Image:
-        ckey = (avatar_url or alias, size, ring_color)
+        clean_sid = str(steam_id or "").replace("/steam/", "").strip()
+        resolved_url = self._validate_avatar_url(avatar_url)
+        if not resolved_url and STEAM_ID64_VALID_RE.fullmatch(clean_sid):
+            resolved_url = self._prefetched_avatar_urls.get(clean_sid, "")
+            if not resolved_url and self.allow_network:
+                resolved_url = self._fetch_avatar_url_from_xml(clean_sid)
+
+        ckey = (resolved_url or clean_sid or alias, size, ring_color)
         cached = self._circle_cache.get(ckey)
         if cached is not None:
             return cached
 
-        raw_png = self._download_avatar(avatar_url)
+        raw_png = self._download_avatar(resolved_url) if resolved_url else None
         if raw_png:
             with Image.open(io.BytesIO(raw_png), formats=["PNG"]) as im:
                 base_sq = im.convert("RGBA").resize((size, size), Image.Resampling.LANCZOS)
         else:
-            digest = hashlib.sha256(alias.encode("utf-8")).digest()
+            digest = hashlib.sha256((clean_sid or alias).encode("utf-8")).digest()
             bg = (30 + (digest[0] % 50), 42 + (digest[1] % 50), 58 + (digest[2] % 60), 255)
             base_sq = Image.new("RGBA", (size, size), bg)
             d = ImageDraw.Draw(base_sq)
@@ -560,7 +869,8 @@ class SteamAvatarProvider:
             letter = (clean_a[:1] or "?").upper()
             fnt = pick_font(letter, size=max(13, int(size * 0.48)), bold=True)
             bb = d.textbbox((0, 0), letter, font=fnt)
-            d.text(((size - (bb[2] - bb[0])) / 2, (size - (bb[3] - bb[1])) / 2 - 2), letter, font=fnt, fill=(241, 245, 249, 255))
+            tw, th = bb[2] - bb[0], bb[3] - bb[1]
+            d.text(((size - tw) / 2 - bb[0], (size - th) / 2 - bb[1]), letter, font=fnt, fill=(241, 245, 249, 255))
 
         ss = size * 3
         mask = Image.new("L", (ss, ss), 0)
@@ -574,7 +884,7 @@ class SteamAvatarProvider:
         ImageDraw.Draw(ring_ss).ellipse((2, 2, ss - 3, ss - 3), outline=ring_color, width=6)
         out = Image.alpha_composite(out, ring_ss.resize((size, size), Image.Resampling.LANCZOS))
 
-        if len(self._circle_cache) >= 128:
+        if len(self._circle_cache) >= 256:
             self._circle_cache.clear()
         self._circle_cache[ckey] = out
         return out
@@ -1154,6 +1464,7 @@ def _draw_category_block(
                             alias=str(pl.get("alias") or "BR"),
                             avatar_url=str(pl.get("avatar_url") or ""),
                             ring_color=ring_c,
+                            steam_id=str(pl.get("steam_id") or ""),
                         )
                         img.paste(av_im, (cx0, ry + 8), av_im)
                         name_x = _draw_flag_with_expat_badge(
@@ -1206,8 +1517,8 @@ def _draw_category_block(
                             if _is_smurf_entry(pl)
                             else ((254, 249, 195, 255) if is_high else (240, 253, 244, 255))
                         )
-                        draw.text((name_x, ry + 6 + a_dy), disp_alias, font=a_fnt, fill=nm_col)
-                        next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
+                        alias_w = draw_text_safe(draw, (name_x, ry + 6 + a_dy), disp_alias, font=a_fnt, fill=nm_col, bold=True)
+                        next_x = int(name_x + alias_w + 5)
                         if cat_xs is not None:
                             img.paste(cat_xs, (next_x, ry + 8), cat_xs)
                             next_x += 24
@@ -1252,6 +1563,7 @@ def _draw_category_block(
                             alias=str(pl.get("alias") or "BR"),
                             avatar_url=str(pl.get("avatar_url") or ""),
                             ring_color=ring_c,
+                            steam_id=str(pl.get("steam_id") or ""),
                         )
                         img.paste(av_im, (28, y + 8), av_im)
                         alias_x = _draw_flag_with_expat_badge(
@@ -1311,8 +1623,15 @@ def _draw_category_block(
                             size=alias_sz,
                             bold=True,
                         )
-                        draw.text((alias_x, y + (15 if alias_sz >= 22 else 17) + a_dy), disp_alias, font=a_fnt, fill=alias_col)
-                        next_x = int(alias_x + text_width(draw, disp_alias, a_fnt) + 8)
+                        alias_w = draw_text_safe(
+                            draw,
+                            (alias_x, y + (15 if alias_sz >= 22 else 17) + a_dy),
+                            disp_alias,
+                            font=a_fnt,
+                            fill=alias_col,
+                            bold=True,
+                        )
+                        next_x = int(alias_x + alias_w + 8)
                         if cat_sm is not None:
                             img.paste(cat_sm, (next_x, y + 18), cat_sm)
                             next_x += 29
@@ -1441,6 +1760,7 @@ def _draw_category_block(
                         alias=str(pl.get("alias") or "BR"),
                         avatar_url=str(pl.get("avatar_url") or ""),
                         ring_color=ring_c,
+                        steam_id=str(pl.get("steam_id") or ""),
                     )
                     img.paste(av_im, (cx0, ry + 8), av_im)
                     name_x = _draw_flag_with_expat_badge(
@@ -1501,8 +1821,8 @@ def _draw_category_block(
                         nm_col = (254, 249, 195, 255)
                     else:
                         nm_col = (186, 230, 253, 255)
-                    draw.text((name_x, ry + 6 + a_dy), disp_alias, font=a_fnt, fill=nm_col)
-                    next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
+                    alias_w = draw_text_safe(draw, (name_x, ry + 6 + a_dy), disp_alias, font=a_fnt, fill=nm_col, bold=True)
+                    next_x = int(name_x + alias_w + 5)
                     if cat_xs is not None:
                         img.paste(cat_xs, (next_x, ry + 8), cat_xs)
                         next_x += 24
@@ -1618,6 +1938,7 @@ def _draw_category_block(
                         alias=str(pl.get("alias") or "BR"),
                         avatar_url=str(pl.get("avatar_url") or ""),
                         ring_color=(250, 204, 21, 255) if is_high else (245, 184, 46, 235),
+                        steam_id=str(pl.get("steam_id") or ""),
                     )
                     img.paste(av_im, (cx0, ry + 8), av_im)
                     name_x = _draw_flag_with_expat_badge(
@@ -1670,8 +1991,8 @@ def _draw_category_block(
                         if _is_smurf_entry(pl)
                         else ((254, 249, 195, 255) if is_high else (254, 243, 199, 255))
                     )
-                    draw.text((name_x, ry + 5 + a_dy), disp_alias, font=a_fnt, fill=rec_nm_col)
-                    next_x = int(name_x + text_width(draw, disp_alias, a_fnt) + 5)
+                    alias_w = draw_text_safe(draw, (name_x, ry + 5 + a_dy), disp_alias, font=a_fnt, fill=rec_nm_col, bold=True)
+                    next_x = int(name_x + alias_w + 5)
                     if cat_xs is not None:
                         img.paste(cat_xs, (next_x, ry + 6), cat_xs)
                         next_x += 24
@@ -1700,6 +2021,7 @@ def _draw_category_block(
                         alias=str(pl.get("alias") or "BR"),
                         avatar_url=str(pl.get("avatar_url") or ""),
                         ring_color=(250, 204, 21, 255) if is_high else (245, 184, 46, 235),
+                        steam_id=str(pl.get("steam_id") or ""),
                     )
                     img.paste(av_im, (28, y + 8), av_im)
                     alias_x = _draw_flag_with_expat_badge(
@@ -1759,8 +2081,8 @@ def _draw_category_block(
                         if _is_smurf_entry(pl)
                         else ((254, 249, 195, 255) if is_high else (254, 243, 199, 255))
                     )
-                    draw.text((alias_x, y + 15 + a_dy), disp_alias, font=a_fnt, fill=rec1_nm_col)
-                    next_x = int(alias_x + text_width(draw, disp_alias, a_fnt) + 7)
+                    alias_w = draw_text_safe(draw, (alias_x, y + 15 + a_dy), disp_alias, font=a_fnt, fill=rec1_nm_col, bold=True)
+                    next_x = int(alias_x + alias_w + 7)
                     if cat_sm is not None:
                         img.paste(cat_sm, (next_x, y + 16), cat_sm)
                         next_x += 29
@@ -1818,6 +2140,10 @@ def _render_single_category_card_png(
     bucket_key = "veteranos" if is_veteranos else ("monitorados" if is_monitorados else "outros_brasileiros")
     bucket = extract_snapshot_category(snapshot, bucket_key)
     now_ts = int(snapshot.get("timestamp") or time.time())
+    if hasattr(avatar_provider, "prefetch_avatar_urls"):
+        avatar_provider.prefetch_avatar_urls(
+            list(bucket["in_coh3"][:45]) + list(bucket["online_steam"][:45]) + list(bucket["recent_relic"][:45])
+        )
 
     n_coh3 = len(bucket["in_coh3"])
     n_online = len(bucket["online_steam"])

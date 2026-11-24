@@ -516,7 +516,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             )
             self.assertTrue(summary["panel_updated"])
             self.assertEqual(summary["alerts_pruned"], 1)
-            self.assertEqual(summary["monitorados_total"], 161)
+            self.assertEqual(summary["monitorados_total"], 169)
             self.assertEqual(summary["other_br_catalog_total"], 3)
             self.assertEqual(summary["other_br_in_coh3"], 1)
             self.assertEqual(summary["other_br_online_steam"], 1)
@@ -1136,7 +1136,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             get_configured_flag_country,
         )
 
-        # 1. Verifica cadastro explícito de bandeira EUA para Lem22 (Veteranos) e Generick (Outros Brasileiros)
+        # 1. Verifica cadastro explícito de bandeira EUA para Lem22 (Veteranos) e Generick (Players Monitorados)
         self.assertEqual(get_configured_flag_country(366826), "us")
         self.assertEqual(get_configured_flag_country(33487), "us")
         self.assertEqual(get_configured_flag_country(26910), "")
@@ -1144,10 +1144,10 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             any(int(r.get("profile_id", 0) or 0) == 366826 and r.get("flag_country") == "us" for r in CORE_BR_ROSTER)
         )
         self.assertTrue(
-            any(int(r.get("profile_id", 0) or 0) == 33487 and r.get("flag_country") == "us" for r in OUTROS_BR_EMIGRADOS)
+            any(int(r.get("profile_id", 0) or 0) == 33487 and r.get("flag_country") == "us" for r in MANUAL_OTHER_BR_PLAYERS)
         )
         self.assertFalse(
-            any(int(r.get("profile_id", 0) or 0) == 33487 for r in MANUAL_OTHER_BR_PLAYERS)
+            any(int(r.get("profile_id", 0) or 0) == 33487 for r in OUTROS_BR_EMIGRADOS)
         )
 
         # 2. Verifica distinção visual real entre bandeira EUA (listras vermelhas + cantão azul) e bandeira BR (verde)

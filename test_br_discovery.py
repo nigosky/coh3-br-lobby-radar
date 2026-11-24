@@ -640,12 +640,12 @@ class DeepBrDiscoveryIntegrationTests(unittest.TestCase):
 
         now = 1_800_000_000
         self.assertTrue(
-            any(int(r.get("profile_id", 0) or 0) == 33487 for r in OUTROS_BR_EMIGRADOS),
-            "Generick (pid=33487) deve estar cadastrado em OUTROS_BR_EMIGRADOS.",
+            any(int(r.get("profile_id", 0) or 0) == 33487 for r in MONITORED_BR_PLAYERS),
+            "Generick (pid=33487) deve estar cadastrado em MONITORED_BR_PLAYERS.",
         )
         self.assertFalse(
-            any(int(r.get("profile_id", 0) or 0) == 33487 for r in MONITORED_BR_PLAYERS),
-            "Generick (pid=33487) deve ficar em Outros Brasileiros, fora de Players Monitorados.",
+            any(int(r.get("profile_id", 0) or 0) == 33487 for r in OUTROS_BR_EMIGRADOS),
+            "Generick (pid=33487) foi movido para Players Monitorados, fora de OUTROS_BR_EMIGRADOS.",
         )
 
         class _FakeRelicGenerick:

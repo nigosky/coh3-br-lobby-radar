@@ -404,7 +404,7 @@ _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 890394, "steam_id": "76561198049023794", "original_alias": "TheKat", "country": "br", "known_aliases": ["TheKat", "Liez \"The Kat\"", "Dois Lule Numa Moto"]},
     {"profile_id": 7375, "steam_id": "76561198047826077", "original_alias": "pigote", "country": "br", "known_aliases": ["pigote", "mr. got", "pigoteiro"]},
     {"profile_id": 87314, "steam_id": "76561197986521921", "original_alias": "Pedro Jedi", "country": "br"},
-    {"profile_id": 6880, "steam_id": "76561198078150897", "original_alias": "ArguS", "country": "br", "known_aliases": ["ArguS", "VonDun #Trump2016"]},
+    {"profile_id": 6880, "steam_id": "76561198078150897", "original_alias": "ArguS (VonDun)", "country": "br", "known_aliases": ["ArguS", "VonDun", "VonDun #Trump2016", "ArguS (VonDun)"]},
     {"profile_id": 383796, "steam_id": "76561197982976352", "original_alias": "Vanghoul", "country": "br", "known_aliases": ["Vanghoul", "darkcostaxxx"]},
     {"profile_id": 396850, "steam_id": "76561198148238879", "original_alias": "Thiklitsa", "country": "br"},
     {"profile_id": 946312, "steam_id": "76561198259733766", "original_alias": "colgatti", "country": "br"},
@@ -494,8 +494,16 @@ _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 143443, "steam_id": "76561198149823284", "original_alias": "Ted", "country": "br"},
     {"profile_id": 29557, "steam_id": "76561198144606355", "original_alias": "Rylanor", "country": "br", "known_aliases": ["Rylanor", "Rylanor, Cavalo Forte"]},
     {"profile_id": 2834, "steam_id": "76561198091708083", "original_alias": "Xampoo", "country": "br", "known_aliases": ["Xampoo", "Xampoo - ☭", "Xampoo - ❤", "Xampoo - ♛", "Xampoo -  🔞", "Xampoo - có3 ficô bom ?", "IRONSHIT", "ANALÂNDIA (SP)", "TIMÃO E POMBA"]},
-    {"profile_id": 448521, "steam_id": "76561198831175531", "original_alias": "icemaker", "country": "br", "known_aliases": ["icemaker", "stop", "v1", "高浜 雅己", "dbs", "morena", "CabeloRosa", "A floresta escura da noite", "Nativo de Antes"]},
-    {"profile_id": 720147, "steam_id": "76561199667577805", "original_alias": "アリス", "country": "br", "known_aliases": ["アリス", "David42", "Denis", "Deneuve", "Mia Khalifa"]},
+    {"profile_id": 448521, "steam_id": "76561198831175531", "original_alias": "icemaker", "country": "br", "priority_watch": True, "known_aliases": ["icemaker", "stop", "v1", "高浜 雅己", "dbs", "morena", "CabeloRosa", "A floresta escura da noite", "Nativo de Antes"]},
+    {"profile_id": 720147, "steam_id": "76561199667577805", "original_alias": "アリス (Smurf: icemaker)", "smurf_of": "icemaker", "country": "br", "priority_watch": True, "known_aliases": ["アリス", "David42", "Denis", "Deneuve", "Mia Khalifa", "アリス (icemaker)", "アリス (Smurf: icemaker)"]},
+    {"profile_id": 33487, "steam_id": "76561197995712470", "original_alias": "Generick", "country": "us", "flag_country": "us"},
+    {"profile_id": 1304336, "steam_id": "76561198043710924", "original_alias": "V.I.T.O.X", "country": "us", "flag_country": "us"},
+    {"profile_id": 673604, "steam_id": "76561197975133878", "original_alias": "MataMOsca", "country": "br"},
+    {"profile_id": 893043, "steam_id": "76561197974495191", "original_alias": "Rodrigo Ragagnin", "country": "br", "known_aliases": ["Rodrigo Ragagnin", "Rodrigo"]},
+    {"profile_id": 1315226, "steam_id": "76561198272707523", "original_alias": "Olegnalehcim", "country": "br"},
+    {"profile_id": 1115599, "steam_id": "76561197966038733", "original_alias": "Paisano", "country": "br"},
+    {"profile_id": 942935, "steam_id": "76561198066317871", "original_alias": "SrLmo", "country": "br", "known_aliases": ["SrLmo", "8===D", "Tsugiro kimimame", "Renan Santos 2026"]},
+    {"profile_id": 26172, "steam_id": "76561198092618442", "original_alias": "SmiLeYxBR", "country": "br"},
 ]
 
 # Alias retrocompatível para o fallback da 3ª categoria (`monitorados`)
@@ -503,7 +511,6 @@ _FALLBACK_MANUAL_OTHER_BR_PLAYERS: list[dict[str, Any]] = _FALLBACK_MONITORED_BR
 
 # Emigrados brasileiros mantidos em Outros Brasileiros com bandeira real de residência + badge BR EXT
 _FALLBACK_OUTROS_BR_EMIGRADOS: list[dict[str, Any]] = [
-    {"profile_id": 33487, "steam_id": "76561197995712470", "original_alias": "Generick", "country": "us", "flag_country": "us"},
     {"profile_id": 91827, "steam_id": "76561198031697638", "original_alias": "[★General★] Apollo", "country": "au", "flag_country": "au", "known_aliases": ["General Apolo", "[★General★] Apollo"]},
     {"profile_id": 312670, "steam_id": "76561197978279848", "original_alias": "TNF", "country": "au", "flag_country": "au"},
     {"profile_id": 263517, "steam_id": "76561197994925919", "original_alias": "Angel of Death", "country": "jp", "flag_country": "jp"},
@@ -517,7 +524,6 @@ _FALLBACK_OUTROS_BR_EMIGRADOS: list[dict[str, Any]] = [
     {"profile_id": 812247, "steam_id": "76561198062044957", "original_alias": "Texugo", "country": "th", "flag_country": "th"},
     {"profile_id": 229162, "steam_id": "76561198089247149", "original_alias": "Sombra", "country": "us", "flag_country": "us"},
     {"profile_id": 110593, "steam_id": "76561198414864681", "original_alias": "Ethan Hunt", "country": "us", "flag_country": "us"},
-    {"profile_id": 1304336, "steam_id": "76561198043710924", "original_alias": "V.I.T.O.X", "country": "us", "flag_country": "us"},
     {"profile_id": 1168460, "steam_id": "76561198012821540", "original_alias": "Nonô", "country": "ca", "flag_country": "ca", "known_aliases": ["Killer_BR", "Nonô"]},
     {"profile_id": 11033, "steam_id": "76561198009533220", "original_alias": "Coka", "country": "jp", "flag_country": "jp"},
     {"profile_id": 24963, "steam_id": "76561197987674520", "original_alias": "Eduardo A.", "country": "sa", "flag_country": "sa"},
@@ -1919,8 +1925,11 @@ class SteamPresenceClient:
         }
         result: dict[str, dict[str, Any]] = {}
         chunk_size = 100
+        total_chunks = (len(valid_sids) + chunk_size - 1) // chunk_size
 
-        for idx in range(0, len(valid_sids), chunk_size):
+        for chunk_num, idx in enumerate(range(0, len(valid_sids), chunk_size), start=1):
+            if chunk_num > 1:
+                time.sleep(0.12)
             chunk = valid_sids[idx : idx + chunk_size]
             qs = urllib.parse.urlencode({"key": self._api_key, "steamids": ",".join(chunk), "format": "json"})
             url = f"{STEAM_API_SUMMARIES_URL}?{qs}"
@@ -1931,7 +1940,8 @@ class SteamPresenceClient:
                 path_regex=STEAM_API_SUMMARIES_PATH_RE,
             )
             chunk_ok = False
-            for attempt in range(2):
+            rate_limited_stop = False
+            for attempt in range(3):
                 req = urllib.request.Request(url, headers=headers, method="GET")
                 try:
                     with _get_relic_opener().open(req, timeout=12) as resp:
@@ -1957,23 +1967,64 @@ class SteamPresenceClient:
                             "Steam Web API retornou HTTP %d (chave inválida ou revogada); usando fallback XML público.",
                             exc.code,
                         )
+                        return result if result else None
+                    if exc.code == 429:
+                        if attempt < 2:
+                            retry_hdr = str(getattr(exc, "headers", {}).get("Retry-After") or "").strip() if getattr(exc, "headers", None) else ""
+                            wait_sec = 1.5 * (attempt + 1)
+                            if retry_hdr.isdigit():
+                                wait_sec = max(1.0, min(float(int(retry_hdr)), 8.0))
+                            time.sleep(wait_sec)
+                            continue
+                        if result:
+                            logger.warning(
+                                "Steam Web API retornou HTTP 429 no lote %d/%d; preservando %d perfis já coletados sem acionar fallback XML.",
+                                chunk_num,
+                                total_chunks,
+                                len(result),
+                            )
+                            rate_limited_stop = True
+                            break
+                        logger.warning("Steam Web API falhou com HTTP 429; usando fallback XML público.")
                         return None
                     if attempt == 0:
-                        time.sleep(0.4)
+                        time.sleep(0.5)
+                    elif result:
+                        logger.warning(
+                            "Steam Web API retornou HTTP %d no lote %d/%d; preservando %d perfis já coletados.",
+                            exc.code,
+                            chunk_num,
+                            total_chunks,
+                            len(result),
+                        )
+                        rate_limited_stop = True
+                        break
                     else:
                         logger.warning("Steam Web API falhou com HTTP %d; usando fallback XML público.", exc.code)
                         return None
                 except Exception as exc:
                     if attempt == 0:
-                        time.sleep(0.4)
+                        time.sleep(0.5)
+                    elif result:
+                        logger.warning(
+                            "Falha transitória na Steam Web API no lote %d/%d; preservando %d perfis já coletados: %s",
+                            chunk_num,
+                            total_chunks,
+                            len(result),
+                            redact_secrets(exc),
+                        )
+                        rate_limited_stop = True
+                        break
                     else:
                         logger.warning(
                             "Falha transitória na Steam Web API; usando fallback XML público: %s",
                             redact_secrets(exc),
                         )
                         return None
+            if rate_limited_stop:
+                break
             if not chunk_ok:
-                return None
+                return result if result else None
 
         # Para perfis públicos "Online livres" ainda sem cache recente de privacidade de jogos, consulta XML
         # somente para saber se "Detalhes dos jogos" está oculto (preservando `personastate`/nick da Web API!)
@@ -4564,6 +4615,7 @@ def _build_category_lists(
     known_ingame_visible_webapi_sids: set[str] | frozenset[str] | None = None,
     alias_history_by_pid: dict[str, Any] | dict[int, Any] | None = None,
     verified_foreign_status_by_pid: dict[int, dict[str, Any]] | dict[str, Any] | None = None,
+    avatar_url_by_steam: dict[str, str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], int]:
     canonical_entries: dict[int, dict[str, Any]] = {}
     secondary_rows: list[dict[str, Any]] = []
@@ -4626,6 +4678,7 @@ def _build_category_lists(
             "fallback_elo": int(row.get("max_elo", 0) or 0),
             "catalog_last_match_date": int(row.get("last_match_date", 0) or 0),
             "total_matches": max(0, int(row.get("total_matches", 0) or 0)),
+            "cached_avatar_url": str(row.get("avatar_url") or "").strip(),
         }
 
     for sec in secondary_rows:
@@ -4686,6 +4739,15 @@ def _build_category_lists(
                 is_away = bool(p.get("is_away"))
                 is_snooze = bool(p.get("is_snooze"))
                 is_busy = bool(p.get("is_busy"))
+
+        if not avatar_url:
+            if isinstance(avatar_url_by_steam, dict):
+                for cand_sid in ([active_steam_id] + list(meta["steam_ids_all"])):
+                    if cand_sid and avatar_url_by_steam.get(cand_sid):
+                        avatar_url = str(avatar_url_by_steam[cand_sid]).strip()
+                        break
+            if not avatar_url and meta.get("cached_avatar_url"):
+                avatar_url = str(meta["cached_avatar_url"]).strip()
 
         # Mantém mudança de nick com a conta original entre parênteses (`<NovoNick> (<Original>)` ou `<NovoNick> (Smurf: <Original>)`)
         live_nick_candidate = live_steam_alias or str(meta.get("current_alias") or "")
@@ -4970,6 +5032,7 @@ def build_lobby_radar_snapshot(
     known_ingame_visible_webapi_sids: set[str] | frozenset[str] | None = None,
     alias_history_by_pid: dict[str, Any] | dict[int, Any] | None = None,
     verified_foreign_status_by_pid: dict[int, dict[str, Any]] | dict[str, Any] | None = None,
+    avatar_url_by_steam: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """
     Consolida as TRÊS categorias do Radar de Lobby em ordem fixa:
@@ -4996,6 +5059,7 @@ def build_lobby_radar_snapshot(
         category="veteranos",
         known_ingame_visible_sids=known_ingame_visible_sids,
         known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
+        avatar_url_by_steam=avatar_url_by_steam,
     )
 
     vet_pids, vet_sids = extract_roster_id_sets(vet_roster)
@@ -5038,6 +5102,7 @@ def build_lobby_radar_snapshot(
         category="monitorados",
         known_ingame_visible_sids=known_ingame_visible_sids,
         known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
+        avatar_url_by_steam=avatar_url_by_steam,
     )
 
     # 3. Separação estrita: nenhum Veterano nem Player Monitorado pode duplicar em "Outros Brasileiros"
@@ -5064,6 +5129,7 @@ def build_lobby_radar_snapshot(
         known_ingame_visible_webapi_sids=known_ingame_visible_webapi_sids,
         alias_history_by_pid=alias_history_by_pid,
         verified_foreign_status_by_pid=verified_foreign_status_by_pid,
+        avatar_url_by_steam=avatar_url_by_steam,
     )
 
     xml_ok_accounts = sum(1 for v in merged_mon_pres.values() if v.get("ok"))

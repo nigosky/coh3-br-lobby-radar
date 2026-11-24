@@ -154,6 +154,12 @@ MODEL_SMURF_BENCHMARKS: tuple[dict[str, Any], ...] = (
         "main_profile_id": 941524,
         "smurf_profile_ids": (1076221,),
     },
+    {
+        "model_name": "icemaker",
+        "archetype": "family_sharing_limited_handoff_loadout_bg_dna_rotacao_nick",
+        "main_profile_id": 448521,
+        "smurf_profile_ids": (720147,),
+    },
 )
 
 SA_COUNTRIES: frozenset[str] = frozenset(
@@ -2336,7 +2342,7 @@ def score_smurf_pair(
     """
     Calcula a probabilidade forense (`0..99%`) de `cand` ser uma smurf de `main`, com evidências detalhadas em português.
     Calibrado pelos modelos reais brasileiros confirmados (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`,
-    `arc`, `Gabe`, `Colossus`) e expandido com critérios multi-gênero anti-disfarce (velocidade/taxa de crescimento de ELO,
+    `arc`, `Gabe`, `Colossus`, `icemaker`) e expandido com critérios multi-gênero anti-disfarce (velocidade/taxa de crescimento de ELO,
     matchmaking regional/ping BR-SA da Relic, histórico cruzado CoH2→CoH3, sandbagging/tanking, Combat DNA multi-eixo,
     alternância de dias exclusivos, ciclo circadiano BRT, leetspeak/trigramas/PT-BR, cosméticos burner, OSINT Steam
     e sinais de **Steam Family Sharing**).
@@ -4071,7 +4077,7 @@ def evaluate_model_benchmarks(
 ) -> list[dict[str, Any]]:
     """
     Executa avaliação forense cega direta sobre todos os modelos reais confirmados em `MODEL_SMURF_BENCHMARKS`
-    (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`, `arc`, `Gabe`, `Colossus`)
+    (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`, `arc`, `Gabe`, `Colossus`, `icemaker`)
     usando Relic + cohdb + OSINT Steam + Family Sharing + MM BR/SA + histórico CoH2.
     """
     all_pids = sorted(
@@ -4312,7 +4318,7 @@ def main() -> int:
     parser.add_argument("--include-veteranos", action="store_true", help="Incluir todos os Veteranos do elenco além do Top N BR")
     parser.add_argument("--no-relic-verify", action="store_true", help="Pular Estágio 2 de verificação direta na Relic API")
     parser.add_argument("--no-cohdb", action="store_true", help="Pular coleta de Battlegroups escolhidos no cohdb.com")
-    parser.add_argument("--evaluate-models", action="store_true", help="Avaliar calibração nos 7 modelos BR confirmados (Chacineiro, General Winter, Alekel, Skobadark, arc, Gabe, Colossus)")
+    parser.add_argument("--evaluate-models", action="store_true", help="Avaliar calibração nos 8 modelos BR confirmados (Chacineiro, General Winter, Alekel, Skobadark, arc, Gabe, Colossus, icemaker)")
     parser.add_argument("--out", type=Path, default=None, help="Arquivo JSON opcional para salvar o relatório estruturado")
     args = parser.parse_args()
 
