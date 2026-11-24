@@ -52,7 +52,7 @@ class TestSharedPlayersRoster(unittest.TestCase):
         tot_v, uniq_v, tot_m = manage_roster.validate_roster_doc(doc)
         self.assertEqual(tot_v, 48)
         self.assertEqual(uniq_v, tot_v)  # Todas as contas Veteranos são independentes (0 contas mescladas)
-        self.assertEqual(tot_m, 39)
+        self.assertEqual(tot_m, 81)
 
         # Todos os Veteranos têm SteamID64 válido; Kefbr e Tracker presentes; Lem22/Generick US e XAPA KENTE CA
         vet_by_pid = {int(r["profile_id"]): r for r in CORE_BR_ROSTER}
@@ -115,12 +115,12 @@ class TestSharedPlayersRoster(unittest.TestCase):
         ):
             self.assertIn(expected_alias, vet_by_pid[1333418].get("known_aliases") or [])
 
-        # Players Monitorados (39 contas): todos os citados/movidos/emigrados + Lucielle, Colossus, Tokai Teio, Caveira-., Friedhelm Winter, Sgt.Yoda
+        # Players Monitorados (81 contas): todos os citados/movidos/emigrados do projeto CoH3 (zero duplicidade com Veteranos)
         from steam_presence import MONITORED_BR_PLAYERS
 
         self.assertIs(MANUAL_OTHER_BR_PLAYERS, MONITORED_BR_PLAYERS)
         mon_by_pid = {int(r["profile_id"]): r for r in MONITORED_BR_PLAYERS}
-        self.assertEqual(len(mon_by_pid), 39)
+        self.assertEqual(len(mon_by_pid), 81)
         for mon_pid in (
             33487,
             16867,
@@ -148,6 +148,49 @@ class TestSharedPlayersRoster(unittest.TestCase):
             40833,
             991551,
             667564,
+            # 42 jogadores citados/investigados no projeto migrados de Outros Brasileiros para Players Monitorados
+            357310,
+            17169,
+            1178218,
+            71299,
+            16507,
+            18414,
+            869772,
+            845669,
+            2583,
+            661598,
+            821542,
+            674379,
+            13516,
+            38270,
+            970468,
+            20523,
+            940355,
+            1279100,
+            1453831,
+            198711,
+            1010793,
+            28570,
+            779143,
+            952854,
+            1041470,
+            1216477,
+            1216912,
+            1276975,
+            1356223,
+            1402500,
+            197937,
+            58933,
+            11180,
+            207342,
+            703146,
+            110123,
+            864699,
+            424813,
+            11710,
+            4517,
+            624624,
+            59671,
         ):
             self.assertIn(mon_pid, mon_by_pid)
             self.assertNotIn(mon_pid, vet_by_pid)

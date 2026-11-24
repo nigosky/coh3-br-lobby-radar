@@ -516,7 +516,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             )
             self.assertTrue(summary["panel_updated"])
             self.assertEqual(summary["alerts_pruned"], 1)
-            self.assertEqual(summary["monitorados_total"], 39)
+            self.assertEqual(summary["monitorados_total"], 81)
             self.assertEqual(summary["other_br_catalog_total"], 3)
             self.assertEqual(summary["other_br_in_coh3"], 1)
             self.assertEqual(summary["other_br_online_steam"], 1)
@@ -945,17 +945,19 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
 
     def test_pax_xavier_regression_hot_pinning_and_custom_match_detection_for_outros_br(self) -> None:
         """
-        Reproduz o caso `Pax Xavier youtube` (`pid=13516`, ELO 908, 2330 partidas):
+        Reproduz o cenário clássico descoberto no caso `Pax Xavier youtube` (hoje promovido a Players Monitorados)
+        para qualquer jogador comum em `Outros Brasileiros` (ELO 908, 2330 partidas):
         1) Mesmo abaixo do top 220 em ELO, jogadores vistos online/ativos recentemente são FIXADOS
            em todos os ciclos de 5 min (nunca somem por 20 min na fila de rotação!).
         2) Quando o perfil oculta jogos na Steam e joga Custom/vs IA (que `getPersonalStat` não vê),
            `fetch_latest_matches_batch` detecta a partida recente e promove o jogador para `in_coh3`.
         """
         now = 1_800_000_000
-        pax_pid = 13516
-        pax_sid = "76561198000943380"
+        # Usa ID sintético fora de `monitorados` (Pax Xavier real #13516 agora está em Players Monitorados!)
+        pax_pid = 913516
+        pax_sid = "76561198000913516"
 
-        # Monta 260 jogadores dormentes de ELO alto (1500+) + Pax Xavier (ELO 908, visto online há 5 min)
+        # Monta 260 jogadores dormentes de ELO alto (1500+) + jogador Outros BR (ELO 908, visto online há 5 min)
         players: dict[str, dict[str, Any]] = {}
         for i in range(260):
             pid = 800000 + i
@@ -971,18 +973,18 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         players[str(pax_pid)] = {
             "profile_id": pax_pid,
             "steam_id": pax_sid,
-            "alias": "Pax Xavier youtube",
+            "alias": "OutroBR CustomTest",
             "max_elo": 908,
             "last_match_date": now - 2 * 3600,
             "total_matches": 2330,
             "last_seen_online_ts": now - 300,
         }
 
-        # Verifica que Pax Xavier entra em TODOS os offsets de rotação (jamais cai no overflow de 25 min!)
+        # Verifica que o jogador quente entra em TODOS os offsets de rotação (jamais cai no overflow de 25 min!)
         for rot in (0, 40, 80, 120):
             selected, _ = _select_other_br_candidates(players, now=now, rotation_offset=rot)
             sel_pids = {int(r["profile_id"]) for r in selected}
-            self.assertIn(pax_pid, sel_pids, msg=f"Pax Xavier sumiu na rotação rot={rot}")
+            self.assertIn(pax_pid, sel_pids, msg=f"Jogador quente sumiu na rotação rot={rot}")
 
         # Agora testa fim a fim: Steam oculta jogos, getPersonalStat só vê ranqueada de 2h atrás,
         # mas fetch_latest_matches_batch vê partida Custom concluída há 10 min!
@@ -1076,7 +1078,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                         pax_pid: {
                             "profile_id": pax_pid,
                             "steam_id": pax_sid,
-                            "alias": "Pax Xavier youtube",
+                            "alias": "OutroBR CustomTest",
                             "country": "br",
                             "max_elo": 908,
                             "last_match_date": now - 2 * 3600,
@@ -1121,7 +1123,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             links_post = fake_discord.calls[3][2]
             assert links_post is not None
             oth_desc = links_post["embeds"][2]["description"]
-            self.assertIn("Pax Xavier youtube", oth_desc)
+            self.assertIn("OutroBR CustomTest", oth_desc)
             self.assertIn("no CoH3", oth_desc)
 
     def test_us_resident_brazilian_players_lem22_and_generick_render_us_flag_on_cards_and_links(self) -> None:
@@ -2511,6 +2513,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         yoda_sid = "76561198029749621"     # Sgt.Yoda (priority_watch=True, inativo há >1000d -> DEVE aparecer!)
         xapa_sid = "76561198207565088"     # XAPA KENTE (CA, BR EXT)
         lucielle_sid = "76561198815935562" # Lucielle (Smurf: Colossus) movida p/ Monitorados
+        sheep_sid = "76561197994129168"    # Sleeping Sheep (citado no projeto -> movido de Outros BR p/ Monitorados!)
+        pax_sid = "76561198000943380"      # Pax Xavier youtube (citado no PR #16 -> movido de Outros BR p/ Monitorados!)
         chac_sid = "76561197963172584"     # Chacineiro (Veterano)
         outro_sid = "76561198988887777"    # Outro BR comum
 
@@ -2519,6 +2523,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             yoda_sid: {"steam_id": yoda_sid, "ok": True, "is_in_coh3": False, "is_online_steam": True, "steam_alias": "YodaDisfarce"},
             xapa_sid: {"steam_id": xapa_sid, "ok": True, "is_in_coh3": True, "is_online_steam": True, "steam_alias": "XAPA KENTE"},
             lucielle_sid: {"steam_id": lucielle_sid, "ok": True, "is_in_coh3": False, "is_online_steam": True, "steam_alias": "Lucielle"},
+            sheep_sid: {"steam_id": sheep_sid, "ok": True, "is_in_coh3": True, "is_online_steam": True, "steam_alias": "Sleeping Sheep"},
+            pax_sid: {"steam_id": pax_sid, "ok": True, "is_in_coh3": False, "is_online_steam": True, "steam_alias": "Pax Xavier youtube"},
             outro_sid: {"steam_id": outro_sid, "ok": True, "is_in_coh3": True, "is_online_steam": True, "steam_alias": "ComunidadeBR"},
         }
         snap = build_lobby_radar_snapshot(
@@ -2528,11 +2534,13 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             now_ts=now,
             monitored_br_players=MONITORED_BR_PLAYERS,
             monitored_presence_by_steam=pres,
-            monitored_elo_by_pid={164152: 1500, 212034: 1329, 1076221: 1545},
+            monitored_elo_by_pid={164152: 1500, 212034: 1329, 1076221: 1545, 357310: 1519, 13516: 908},
             other_br_players=[
-                # Tentativa proposital de duplicação de Veterano e Monitorado em Outros BR -> filtrada!
+                # Tentativa proposital de duplicação de Veterano e Monitorados em Outros BR -> filtrada!
                 {"profile_id": 79327, "steam_id": chac_sid, "alias": "Chacineiro", "max_elo": 1680, "last_match_date": now - 600},
                 {"profile_id": 212034, "steam_id": xapa_sid, "alias": "XAPA KENTE", "max_elo": 1329, "last_match_date": now - 600},
+                {"profile_id": 357310, "steam_id": sheep_sid, "alias": "Sleeping Sheep", "max_elo": 1519, "last_match_date": now - 600},
+                {"profile_id": 13516, "steam_id": pax_sid, "alias": "Pax Xavier youtube", "max_elo": 908, "last_match_date": now - 600},
                 {"profile_id": 999777, "steam_id": outro_sid, "alias": "ComunidadeBR", "max_elo": 1410, "last_match_date": now - 600},
             ],
             other_presence_by_steam=pres,
@@ -2540,8 +2548,8 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
 
         # 1. Ordem e isolamento total entre as 3 categorias (ZERO sobreposição)
         self.assertEqual([p["profile_id"] for p in snap["veteranos"]["in_coh3"]], [79327])
-        self.assertEqual([p["profile_id"] for p in snap["monitorados"]["in_coh3"]], [212034])
-        self.assertEqual([p["profile_id"] for p in snap["monitorados"]["online_steam"]], [164152, 1076221])
+        self.assertEqual([p["profile_id"] for p in snap["monitorados"]["in_coh3"]], [357310, 212034])
+        self.assertEqual([p["profile_id"] for p in snap["monitorados"]["online_steam"]], [164152, 1076221, 13516])
         self.assertEqual([p["profile_id"] for p in snap["outros_brasileiros"]["in_coh3"]], [999777])
 
         # Sgt.Yoda aparece em primeiro no online_steam (priority_watch=True), sem corte de 15d e com nick novo!
