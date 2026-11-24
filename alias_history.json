@@ -74301,7 +74301,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1760050360,
       "coh3_total_matches": 13,
-      "current_alias": "bourne",
+      "current_alias": "Bourne",
       "last_checked_at": 1795542592,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -84921,8 +84921,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1746477337,
       "coh3_total_matches": 3,
-      "current_alias": "mooch",
-      "last_checked_at": 1795539498,
+      "current_alias": "Mooch",
+      "last_checked_at": 1795542893,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1118507,
@@ -133470,7 +133470,7 @@
       "coh3_last_match_date": 1794579345,
       "coh3_total_matches": 1,
       "current_alias": "Wiz",
-      "last_checked_at": 1795542592,
+      "last_checked_at": 1795542893,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1445924,
@@ -134176,7 +134176,7 @@
       "coh3_last_match_date": 1794602764,
       "coh3_total_matches": 1,
       "current_alias": "BESON",
-      "last_checked_at": 1795542292,
+      "last_checked_at": 1795542893,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1449348,
@@ -183559,7 +183559,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1757727000,
       "coh3_total_matches": 44,
-      "current_alias": "BillFurY",
+      "current_alias": "Billfury",
       "last_checked_at": 1795542592,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
@@ -234002,5 +234002,5 @@
     "steam_web_api": 7388,
     "steam_xml": 6734
   },
-  "updated_at": 1795542592
+  "updated_at": 1795542893
 }
