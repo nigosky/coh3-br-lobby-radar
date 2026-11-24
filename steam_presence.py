@@ -385,7 +385,7 @@ _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 58933, "steam_id": "76561198209825195", "original_alias": "Mister \"Generic\"", "country": "br", "known_aliases": ["Mister \"Generic\"", "General Cris.P.Bacon", "SS-Verwaltung von Paris [TNO]", "Lieutenant Moe Ron"]},
     {"profile_id": 11180, "steam_id": "76561197982280686", "original_alias": "Brujoga", "country": "br", "known_aliases": ["Brujoga", "Brujoga10"]},
     {"profile_id": 207342, "steam_id": "76561197961608539", "original_alias": "AkvaBr", "country": "br", "known_aliases": ["AkvaBr", "AkvaBr_TTV", "Akva"]},
-    {"profile_id": 703146, "steam_id": "76561198217753836", "original_alias": "viperking", "country": "br"},
+    {"profile_id": 703146, "steam_id": "76561198217753836", "original_alias": "viperking", "country": "br", "pin_monitorados": True, "known_aliases": ["viperking", "Manicômio", "Edu"]},
     {"profile_id": 110123, "steam_id": "76561198003329628", "original_alias": "Iracnats", "country": "br", "known_aliases": ["Iracnats", "Iracnats de Bebbanburg"]},
     {"profile_id": 864699, "steam_id": "76561198037383807", "original_alias": "Mael Radec", "country": "br", "known_aliases": ["Mael Radec", "Radec"]},
     {"profile_id": 424813, "steam_id": "76561198163017219", "original_alias": "peace", "country": "br"},
@@ -469,6 +469,18 @@ _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 502544, "steam_id": "76561198049822246", "original_alias": "Arthoumadbro", "country": "br"},
     {"profile_id": 673604, "steam_id": "76561197975133878", "original_alias": "MataMOsca", "country": "br", "pin_monitorados": True},
     {"profile_id": 893043, "steam_id": "76561197974495191", "original_alias": "Rodrigo Ragagnin", "country": "br", "pin_monitorados": True, "known_aliases": ["Rodrigo Ragagnin", "Rodrigo"]},
+    {"profile_id": 5882, "steam_id": "76561198034364786", "original_alias": "ElektroStomper", "country": "br", "pin_monitorados": True, "known_aliases": ["ElektroStomper", "Ʊ ElektroStomper ☭", "⛧ ElektroStomper ⛧", "⛧ ElektroStomper ☭"]},
+    {"profile_id": 2821, "steam_id": "76561198051332729", "original_alias": "Shark", "country": "br", "pin_monitorados": True},
+    {"profile_id": 2185, "steam_id": "76561197999712702", "original_alias": "BrazilianHunter (Hunter)", "country": "br", "pin_monitorados": True, "known_aliases": ["BrazilianHunter", "Hunter", "BrazilianHunter (Hunter)"]},
+    {"profile_id": 31992, "steam_id": "76561198060948936", "original_alias": ".:PacMan:.", "country": "br", "pin_monitorados": True, "known_aliases": [".:PacMan:.", "PacMan", "Pac Man"]},
+    {"profile_id": 4005, "steam_id": "76561197999564490", "original_alias": "JuniorLimaa", "country": "br", "pin_monitorados": True, "known_aliases": ["JuniorLimaa", "Noob Lima", "$$$-KING-$$$-NOOB-$$$ (BR)", "Lima Al-Sharif"]},
+    {"profile_id": 83244, "steam_id": "76561198064709981", "original_alias": "PROMETHEUS", "country": "br", "pin_monitorados": True, "known_aliases": ["PROMETHEUS", "Berserker"]},
+    {"profile_id": 5128, "steam_id": "76561198047280225", "original_alias": "rafaeldjx", "country": "br", "pin_monitorados": True, "known_aliases": ["rafaeldjx", "[SOCTD] ★ rafaeldjx ★"]},
+    {"profile_id": 1292305, "steam_id": "76561198121355576", "original_alias": "rafaeldjx42 (Smurf: rafaeldjx)", "smurf_of": "rafaeldjx", "country": "br", "pin_monitorados": True, "known_aliases": ["rafaeldjx42", "rafaeldjx42 (Smurf: rafaeldjx)"]},
+    {"profile_id": 702745, "steam_id": "76561199239019193", "original_alias": "KSxWOS", "country": "br", "pin_monitorados": True},
+    {"profile_id": 173761, "steam_id": "76561198873253024", "original_alias": "EUSOU", "country": "br", "pin_monitorados": True, "known_aliases": ["EUSOU", "EU SOU", "EU SOU - I AM"]},
+    {"profile_id": 1056541, "steam_id": "76561198064149997", "original_alias": "YOUMORREU", "country": "br", "pin_monitorados": True},
+    {"profile_id": 23250, "steam_id": "76561198028378060", "original_alias": "Nargoth", "country": "br", "pin_monitorados": True, "known_aliases": ["Nargoth", "Nargoth de Bebbanburg"]},
 ]
 
 # Alias retrocompatível para o fallback da 3ª categoria (`monitorados`)
