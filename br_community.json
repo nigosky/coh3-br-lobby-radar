@@ -38030,12 +38030,12 @@
       "alias": "-CP-BlackWolf",
       "avatar_url": "https://avatars.steamstatic.com/6ba4c81b6bc0533f5e202fefe498d48c48ef5b82_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795450167,
+      "last_match_date": 1795534631,
       "last_seen_online_ts": 0,
       "max_elo": 1190,
       "profile_id": 106497,
       "steam_id": "76561198059586895",
-      "total_matches": 1394
+      "total_matches": 1395
     },
     "1066445": {
       "alias": "Tenshi",
@@ -38654,12 +38654,12 @@
       "alias": "F.E.B_BRASIL_COH",
       "avatar_url": "https://avatars.steamstatic.com/fe962656be8c3923fcf37ff3e56386c508ab9417_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795468876,
+      "last_match_date": 1795528664,
       "last_seen_online_ts": 0,
       "max_elo": 1073,
       "profile_id": 1157401,
       "steam_id": "76561198096999667",
-      "total_matches": 138
+      "total_matches": 147
     },
     "1158074": {
       "alias": "Noriaki",
@@ -41398,14 +41398,14 @@
       "alias": "guridocafe",
       "avatar_url": "https://avatars.steamstatic.com/ed76a1ca99d2a18216fb935718d8cf45802ea931_medium.jpg",
       "br_source": "open_data_lb",
-      "last_match_date": 1795485841,
+      "last_match_date": 1795534659,
       "last_seen_online_ts": 1795533254,
       "max_elo": 1117,
       "profile_id": 1438656,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795483355,
       "steam_id": "76561198870731987",
-      "total_matches": 118
+      "total_matches": 119
     },
     "1438814": {
       "alias": "Ninguem Skins",
@@ -41600,7 +41600,7 @@
       "last_match_date": 1794710727,
       "last_seen_ingame_ts": 1795188356,
       "last_seen_ingame_webapi_ts": 1795382328,
-      "last_seen_online_ts": 1795472220,
+      "last_seen_online_ts": 1795534755,
       "max_elo": 1048,
       "profile_id": 1440331,
       "steam_games_hidden": false,
@@ -44586,7 +44586,7 @@
       "br_source": "open_data_lb",
       "last_match_date": 1794584224,
       "last_seen_ingame_ts": 1795526139,
-      "last_seen_ingame_webapi_ts": 1795468860,
+      "last_seen_ingame_webapi_ts": 1795534755,
       "last_seen_online_ts": 1795534455,
       "max_elo": 1000,
       "profile_id": 202388,
