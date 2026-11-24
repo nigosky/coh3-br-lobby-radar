@@ -40338,13 +40338,13 @@
     "1369003": {
       "alias": "KyronCrane",
       "br_source": "open_data_lb",
-      "last_match_date": 1795530278,
+      "last_match_date": 1795530747,
       "last_seen_ingame_webapi_ts": 1795389918,
       "last_seen_online_ts": 1795389918,
       "max_elo": 1150,
       "profile_id": 1369003,
       "steam_id": "76561198155713664",
-      "total_matches": 1514
+      "total_matches": 1515
     },
     "1369418": {
       "alias": "xandaoro",
@@ -41139,14 +41139,14 @@
     "1436158": {
       "alias": "luannmarcel",
       "br_source": "open_data_lb",
-      "last_match_date": 1795478538,
+      "last_match_date": 1795530680,
       "last_seen_online_ts": 1795530420,
       "max_elo": 1067,
       "profile_id": 1436158,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795454531,
       "steam_id": "76561198068195832",
-      "total_matches": 129
+      "total_matches": 130
     },
     "1436197": {
       "alias": "awe",
@@ -41692,7 +41692,6 @@
     "1445924": {
       "alias": "Et Bilusca",
       "br_source": "open_data_matches",
-      "current_alias": "Wiz",
       "last_match_date": 1794579345,
       "last_seen_ingame_webapi_ts": 1795484556,
       "last_seen_online_ts": 1795529220,
@@ -41843,7 +41842,6 @@
     "1449348": {
       "alias": "ES BRIEB CSGOSKINS.GG",
       "br_source": "open_data_matches",
-      "current_alias": "BESON",
       "last_match_date": 1794602764,
       "last_seen_ingame_ts": 1795529220,
       "last_seen_ingame_webapi_ts": 1795530420,
@@ -44884,14 +44882,14 @@
       "alias": "克鲁杰7分钟800人力就1v2",
       "br_source": "alias_history",
       "current_alias": "北方军港",
-      "last_match_date": 1795529573,
+      "last_match_date": 1795530486,
       "last_seen_ingame_ts": 1795529220,
       "last_seen_ingame_webapi_ts": 1795530420,
       "last_seen_online_ts": 1795529220,
       "max_elo": 1446,
       "profile_id": 3984,
       "steam_id": "76561198319696040",
-      "total_matches": 1270
+      "total_matches": 1271
     },
     "4005": {
       "alias": "JuniorLimaa",
