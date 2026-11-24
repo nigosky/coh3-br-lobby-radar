@@ -39902,12 +39902,12 @@
     "1297870": {
       "alias": "AVESTRUZ TE SEDUZ",
       "br_source": "open_data_lb",
-      "last_match_date": 1795530804,
+      "last_match_date": 1795532422,
       "last_seen_online_ts": 0,
       "max_elo": 1285,
       "profile_id": 1297870,
       "steam_id": "76561198047131936",
-      "total_matches": 1742
+      "total_matches": 1743
     },
     "1298464": {
       "alias": "Maçã",
@@ -40594,12 +40594,12 @@
     "1411117": {
       "alias": "Riddler",
       "br_source": "open_data_lb",
-      "last_match_date": 1795530265,
+      "last_match_date": 1795532302,
       "last_seen_online_ts": 0,
       "max_elo": 1159,
       "profile_id": 1411117,
       "steam_id": "76561197979719612",
-      "total_matches": 241
+      "total_matches": 242
     },
     "1413158": {
       "alias": "⭐Igor0078⭐",
@@ -45132,12 +45132,12 @@
     "508115": {
       "alias": "Geladeira eletrolux",
       "br_source": "open_data_lb",
-      "last_match_date": 1795530265,
+      "last_match_date": 1795532402,
       "last_seen_online_ts": 0,
       "max_elo": 1141,
       "profile_id": 508115,
       "steam_id": "76561198203397500",
-      "total_matches": 1037
+      "total_matches": 1038
     },
     "51059": {
       "alias": "S3np41",
@@ -47381,12 +47381,12 @@
       "alias": "Warmech11",
       "br_source": "manual_other_br",
       "flag_country": "py",
-      "last_match_date": 1795531047,
+      "last_match_date": 1795532388,
       "last_seen_online_ts": 1795529220,
       "max_elo": 1155,
       "profile_id": 999940,
       "steam_id": "76561198074249692",
-      "total_matches": 676
+      "total_matches": 677
     }
   },
   "schema_version": 3,
