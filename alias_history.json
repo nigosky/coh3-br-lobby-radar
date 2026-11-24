@@ -97642,7 +97642,7 @@
         {
           "alias": "Claudinho",
           "first_seen": 1766015989,
-          "last_seen": 1766015989,
+          "last_seen": 1795464362,
           "sources": [
             "coh3stats_opendata",
             "local_db"
@@ -104673,7 +104673,8 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -104682,7 +104683,7 @@
       "coh3_last_match_date": 1766796086,
       "coh3_total_matches": 5,
       "current_alias": "om58860",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795549374,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1244876,
@@ -105670,8 +105671,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1767220765,
       "coh3_total_matches": 2,
-      "current_alias": "falcon0102",
-      "last_checked_at": 1795545686,
+      "current_alias": "Falcon0102",
+      "last_checked_at": 1795549374,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1249671,
@@ -106268,7 +106269,8 @@
           "sources": [
             "coh3stats_opendata",
             "local_db",
-            "relic_api"
+            "relic_api",
+            "steam_web_api"
           ]
         }
       ],
@@ -106277,7 +106279,7 @@
       "coh3_last_match_date": 1768164016,
       "coh3_total_matches": 11,
       "current_alias": "Welli",
-      "last_checked_at": 1795546807,
+      "last_checked_at": 1795549374,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1253702,
@@ -135372,7 +135374,7 @@
       "coh3_last_match_date": 1794597624,
       "coh3_total_matches": 6,
       "current_alias": "⚡😘💙 ☢ hnrjogos",
-      "last_checked_at": 1795549074,
+      "last_checked_at": 1795549374,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1447630,
@@ -141247,7 +141249,7 @@
       "coh3_last_match_date": 1794771844,
       "coh3_total_matches": 2,
       "current_alias": "Уилла",
-      "last_checked_at": 1795549074,
+      "last_checked_at": 1795549374,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1475296,
@@ -218647,7 +218649,7 @@
       "coh3_last_match_date": 1794526879,
       "coh3_total_matches": 4,
       "current_alias": "Qi 124",
-      "last_checked_at": 1795549074,
+      "last_checked_at": 1795549374,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -242081,8 +242083,8 @@
     "relic_coh1_api": 1953,
     "relic_coh2_api": 4742,
     "steam_aliases": 158,
-    "steam_web_api": 7396,
+    "steam_web_api": 7398,
     "steam_xml": 6739
   },
-  "updated_at": 1795549074
+  "updated_at": 1795549374
 }
