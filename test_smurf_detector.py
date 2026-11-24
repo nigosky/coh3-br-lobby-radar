@@ -701,12 +701,217 @@ class TestTop50SmurfDetector(unittest.TestCase):
         )
         self.assertEqual(collector.players[77001].ordered_seen_aliases(), ["OldAliasBR", "NewAliasBR"])
 
-        # 3. CohDBBattlegroupClient usa opener endurecido HTTPS-only + anti-redirect de security.py
+        # 3. CohDBBattlegroupClient e SteamProfileOSINTClient usam opener endurecido HTTPS-only + anti-redirect de security.py
         cohdb = sd.CohDBBattlegroupClient()
         handler_types = {type(h) for h in cohdb._opener.handlers}
         self.assertIn(HttpsOnlySchemeHandler, handler_types)
         self.assertIn(StrictNoRedirectHandler, handler_types)
 
+        osint = sd.SteamProfileOSINTClient()
+        osint_handlers = {type(h) for h in osint._opener.handlers}
+        self.assertIn(HttpsOnlySchemeHandler, osint_handlers)
+        self.assertIn(StrictNoRedirectHandler, osint_handlers)
+
+    def test_cross_genre_nicks_leetspeak_trigrams_clans_ptbr_and_barcode(self) -> None:
+        # Leetspeak e acentos
+        self.assertEqual(sd._normalize_leetspeak("Ch4c1n31r0"), "chacineiro")
+        pts_leet, ev_leet = sd._alias_similarity_bonus("Ch4c1n31r0", "Chacineiro", set(), set())
+        self.assertEqual(pts_leet, 18)
+        self.assertIn("leetspeak", ev_leet)
+
+        # Trigramas resistentes a sufixo/disfarce
+        self.assertGreaterEqual(sd._trigram_similarity("SkobadarkX", "SkobadarkZ"), 0.55)
+        pts_tri, ev_tri = sd._alias_similarity_bonus("SkobadarkX", "SkobadarkZ", set(), set())
+        self.assertEqual(pts_tri, 10)
+        self.assertIn("trigramas", ev_tri)
+
+        # Tag de clã específica (ignora tag genérica [BR])
+        self.assertEqual(sd._extract_clan_tags("[BR] Soldado"), set())
+        self.assertEqual(sd._extract_clan_tags("『V』SKOBADARK"), {"v"})
+        pts_clan, ev_clan = sd._alias_similarity_bonus("『V』Fantasma", "『V』SKOBADARK", set(), set())
+        self.assertEqual(pts_clan, 10)
+        self.assertIn("tag de clã", ev_clan)
+
+        # Indício linguístico PT-BR e nicks descartáveis/barcode
+        has_pt, _ = sd._detect_ptbr_linguistic_signal("Leite Moço")
+        self.assertTrue(has_pt)
+        has_pt2, _ = sd._detect_ptbr_linguistic_signal("Capivara Carioca")
+        self.assertTrue(has_pt2)
+        has_pt3, _ = sd._detect_ptbr_linguistic_signal("seu pai")
+        self.assertTrue(has_pt3)
+        has_pt_en, _ = sd._detect_ptbr_linguistic_signal("RandomDE")
+        self.assertFalse(has_pt_en)
+
+        self.assertTrue(sd._is_throwaway_or_barcode_nick("IIlIIlII"))
+        self.assertTrue(sd._is_throwaway_or_barcode_nick("1234567"))
+        self.assertTrue(sd._is_throwaway_or_barcode_nick("ab"))
+        self.assertFalse(sd._is_throwaway_or_barcode_nick("General Winter"))
+
+    def test_steam_profile_xml_osint_parser(self) -> None:
+        br_xml = (
+            "<?xml version='1.0' encoding='UTF-8'?>"
+            "<profile>"
+            "<privacyState>public</privacyState>"
+            "<memberSince>January 15, 2025</memberSince>"
+            "<location><![CDATA[São Paulo, Brazil]]></location>"
+            "<avatarMedium><![CDATA[https://avatars.fastly.steamstatic.com/11223344556677889900aabbccddeeff11223344_medium.jpg]]></avatarMedium>"
+            "<mostPlayedGames><mostPlayedGame><gameName>Company of Heroes 3</gameName></mostPlayedGame></mostPlayedGames>"
+            "</profile>"
+        )
+        parsed = sd.SteamProfileOSINTClient.parse_profile_xml(br_xml)
+        self.assertTrue(parsed["ok"])
+        self.assertFalse(parsed["is_private"])
+        self.assertEqual(parsed["member_since_year"], 2025)
+        self.assertTrue(parsed["is_br_location"])
+        self.assertEqual(parsed["avatar_hash"], "11223344556677889900aabbccddeeff11223344")
+        self.assertFalse(parsed["is_default_avatar"])
+        self.assertEqual(parsed["games_visible_count"], 1)
+
+        burner_xml = (
+            "<profile>"
+            "<privacyState>private</privacyState>"
+            f"<avatarMedium>https://avatars.fastly.steamstatic.com/{sd.STEAM_DEFAULT_AVATAR_HASH}_medium.jpg</avatarMedium>"
+            "</profile>"
+        )
+        burner = sd.SteamProfileOSINTClient.parse_profile_xml(burner_xml)
+        self.assertTrue(burner["ok"])
+        self.assertTrue(burner["is_private"])
+        self.assertTrue(burner["is_default_avatar"])
+        self.assertFalse(burner["is_br_location"])
+
+    def test_cross_genre_velocity_sandbagging_combat_dna_and_dormancy_swap(self) -> None:
+        # Simula smurf solo cross-faction (estilo Alekel -> Shadow / Chacineiro -> TearsInTheRain):
+        # 0 aliados em comum, facções diferentes, mas APM idêntico, Combat DNA 6 eixos idêntico,
+        # dias alternados (100% exclusivos), escalada rápida + sandbagging + cosméticos enxutos + 2 filas >=1300
+        t_cand = sd.PlayerMatchTelemetry(profile_id=1_950_001, games=14, wins=10)
+        t_main = sd.PlayerMatchTelemetry(profile_id=2001, games=20, wins=12)
+
+        t_cand.mode_counts["1v1"] = 10
+        t_cand.mode_counts["2v2"] = 4
+        t_cand.mode_elo_max["1v1"] = 1580
+        t_cand.mode_elo_max["2v2"] = 1420
+        t_main.mode_counts["1v1"] = 14
+        t_main.mode_counts["2v2"] = 6
+        t_main.mode_elo_max["1v1"] = 1610
+        t_main.mode_elo_max["2v2"] = 1490
+
+        # Dias exclusivos (cand joga dias pares, main joga dias ímpares -> 100% dormancy swap) + mesmo Prime Time BRT
+        for d in range(1, 11):
+            t_cand.active_brt_days.add(f"2026-10-{d * 2:02d}")
+            t_main.active_brt_days.add(f"2026-10-{d * 2 - 1:02d}")
+            t_cand.hour_counts[23] += 1  # 20h BRT
+            t_main.hour_counts[23] += 1
+            t_cand.brt_hour_counts[20] += 1
+            t_main.brt_hour_counts[20] += 1
+            t_cand.weekday_counts[5] += 1
+            t_main.weekday_counts[5] += 1
+
+        # 6 vitórias seguidas (+180 ELO) + 3 derrotas relâmpago (<4m) + 8 vitórias em jogos longos (sandbagging!)
+        base_ct = 1_799_000_000
+        for i in range(6):
+            t_cand.elo_history.append((base_ct + i * 3600, 1, 1400 + i * 30, 1430 + i * 30))
+        t_cand.early_loss_count = 3
+        t_cand.long_game_count = 10
+        t_cand.long_game_wins = 8
+        t_cand.equipped_cosmetic_ids.update(range(1, 36))  # 35 itens -> perfil burner enxuto
+
+        # Combat DNA 6 eixos idêntico + APM quase idêntico (facções diferentes: 137123 vs 129494!)
+        det_cand = {"kd": 1.45, "dpm": 245.0, "pcap_pm": 1.15, "inact_ratio": 0.042, "sq_trade": 1.80}
+        det_main = {"kd": 1.42, "dpm": 250.0, "pcap_pm": 1.18, "inact_ratio": 0.041, "sq_trade": 1.75}
+        for _ in range(8):
+            t_cand.record_biometrics(mode="1v1", race_id=137123, apm=84.2, abil_pm=2.9, combat_metrics=det_cand)
+            t_main.record_biometrics(mode="1v1", race_id=129494, apm=84.7, abil_pm=3.0, combat_metrics=det_main)
+        for _ in range(4):
+            t_cand.loss_durations_sec.append(1380)  # 23m
+            t_main.loss_durations_sec.append(1410)  # 23.5m
+
+        vel = sd._analyze_skill_velocity_and_tanking(t_cand, {"max_elo": 1580, "total_matches": 90})
+        self.assertTrue(vel["sandbagging"])
+        self.assertTrue(vel["multi_mode_transfer"])
+        self.assertTrue(vel["barebones_cosmetics"])
+        self.assertGreaterEqual(vel["net_elo_gain"], 180)
+        self.assertEqual(vel["max_win_streak"], 6)
+
+        dna = sd._compare_combat_dna(t_cand, t_main)
+        self.assertTrue(dna["valid"])
+        self.assertGreaterEqual(dna["dna_sim"], 0.90)
+
+        temp = sd._analyze_temporal_anti_disguise(t_cand, t_main)
+        self.assertTrue(temp["dormancy_swap"])
+        self.assertEqual(temp["exclusive_day_ratio"], 1.0)
+
+        scored = sd.score_smurf_pair(
+            {"profile_id": 1_950_001, "steam_id": "76561199950000001", "alias": "IIlIIlII", "country": "br", "max_elo": 1580, "total_matches": 90},
+            {"profile_id": 2001, "steam_id": "76561198000002001", "alias": "TopSoloBR", "country": "br", "max_elo": 1610, "total_matches": 1800, "relic_br_rank": 8},
+            t_cand,
+            t_main,
+        )
+        self.assertGreaterEqual(scored["probability_pct"], 55)
+        self.assertTrue(any("DNA de combate" in e for e in scored["evidence"]))
+        self.assertTrue(any("Alternância de dias exclusivos" in e for e in scored["evidence"]))
+        self.assertTrue(any("sandbagging/tanking" in e for e in scored["evidence"]))
+
+    def test_foreign_flag_disguise_broken_by_steam_location_or_shared_avatar(self) -> None:
+        # Smurf com bandeira estrangeira ("de") mas vazamento de <location> no Brasil + mesmo avatar customizado no Steam!
+        t_cand = sd.PlayerMatchTelemetry(profile_id=1_960_001, games=10, wins=7)
+        t_main = sd.PlayerMatchTelemetry(profile_id=3001, games=16, wins=10)
+        for d in range(1, 7):
+            t_cand.active_brt_days.add(f"2026-10-{d * 2:02d}")
+            t_main.active_brt_days.add(f"2026-10-{d * 2 - 1:02d}")
+            t_cand.hour_counts[23] += 1
+            t_main.hour_counts[23] += 1
+            t_cand.brt_hour_counts[20] += 1
+            t_main.brt_hour_counts[20] += 1
+            t_cand.record_biometrics(
+                mode="1v1",
+                race_id=137123,
+                apm=78.0,
+                abil_pm=2.4,
+                combat_metrics={"kd": 1.35, "dpm": 220.0, "pcap_pm": 1.1, "inact_ratio": 0.05, "sq_trade": 1.6},
+            )
+            t_main.record_biometrics(
+                mode="1v1",
+                race_id=137123,
+                apm=78.5,
+                abil_pm=2.5,
+                combat_metrics={"kd": 1.33, "dpm": 225.0, "pcap_pm": 1.1, "inact_ratio": 0.05, "sq_trade": 1.55},
+            )
+        same_hash = "aa11bb22cc33dd44ee55ff6677889900aabbccdd"
+        osint_map = {
+            1_960_001: {
+                "ok": True,
+                "is_private": False,
+                "member_since_year": 2025,
+                "location": "Curitiba, Brazil",
+                "is_br_location": True,
+                "avatar_hash": same_hash,
+                "is_default_avatar": False,
+                "games_visible_count": 1,
+            },
+            3001: {
+                "ok": True,
+                "is_private": False,
+                "member_since_year": 2015,
+                "location": "Curitiba, Brazil",
+                "is_br_location": True,
+                "avatar_hash": same_hash,
+                "is_default_avatar": False,
+                "games_visible_count": 40,
+            },
+        }
+        res = sd.score_smurf_pair(
+            {"profile_id": 1_960_001, "steam_id": "76561199960000001", "alias": "HansFakeDE", "country": "de", "max_elo": 1650, "total_matches": 80},
+            {"profile_id": 3001, "steam_id": "76561198000003001", "alias": "VeteranoCWB", "country": "br", "max_elo": 1680, "total_matches": 2200, "relic_br_rank": 4},
+            t_cand,
+            t_main,
+            steam_osint_by_pid=osint_map,
+        )
+        self.assertEqual(res["disqualified_reason"], "")
+        self.assertGreaterEqual(res["probability_pct"], 70)
+        self.assertTrue(any("Avatar customizado Steam 100% idêntico" in e for e in res["evidence"]))
+        self.assertTrue(any("localização no Brasil" in e for e in res["evidence"]))
+
 
 if __name__ == "__main__":
     unittest.main()
+

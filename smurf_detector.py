@@ -30,6 +30,7 @@ import re
 import statistics
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.request
 from collections import Counter, defaultdict
@@ -166,34 +167,178 @@ def normalize_battlegroup_label(raw_key: str = "", raw_name: str = "") -> str:
     return _BG_NAME_TO_OFFICIAL.get(n.casefold(), n[:40])
 
 
+ALLOWED_STEAM_PROFILE_HOSTS: frozenset[str] = frozenset({"steamcommunity.com"})
+STEAM_PROFILE_XML_PATH_RE = re.compile(r"^/profiles/7656119\d{10}$")
+MAX_STEAM_XML_BYTES = 65_536
+STEAM_DEFAULT_AVATAR_HASH = "fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb"
+BRT_PRIME_HOURS: frozenset[int] = frozenset({18, 19, 20, 21, 22, 23, 0, 1, 2})
+
+_LEET_TABLE = str.maketrans({"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s"})
+_CLAN_TAG_RE = re.compile(r"(?:\[([^\[\]]{2,10})\]|『([^『』]{1,8})』|\{([^{}]{2,10})\}|<([^<>]{2,10})>)")
+_GENERIC_CLAN_TAGS: frozenset[str] = frozenset({"br", "pt", "us", "eu", "ru", "cn", "de", "uk", "fr", "ar", "cl", "uy"})
+_BARCODE_NICK_RE = re.compile(r"^[il1|!]{4,}$", re.I)
+_THROWAWAY_NICKS: frozenset[str] = frozenset(
+    {"player", "user", "guest", "smurf", "alt", "test", "noname", "unknown", "none", "newbie", "noob"}
+)
+
+_PTBR_SLANG_TOKENS: frozenset[str] = frozenset(
+    {
+        "brasil", "brasileiro", "brasileira", "brazuca", "tupiniquim", "carioca", "paulista", "mineiro",
+        "gaucho", "baiano", "nordeste", "sampa", "favela", "sertao", "flamengo", "corinthians", "palmeiras",
+        "vasco", "gremio", "cruzeiro", "botafogo", "capivara", "caramelo", "feijoada", "caipirinha",
+        "churrasco", "picanha", "coxinha", "brigadeiro", "pacoca", "farofa", "cachaca", "pastel",
+        "geladeira", "cachorro", "zueira", "malandro", "parca", "truta", "bolsonaro", "lula", "moco",
+        "velha", "duelista", "chacineiro", "sapoboi", "alface", "binho", "itaperuna", "divisao",
+    }
+)
+_PTBR_PHRASE_PATTERNS: tuple[str, ...] = ("seu pai", "leite moco", "pao de queijo", "eh o ", "e o ", "do br", " br")
+_PTBR_DIACRITICS_RE = re.compile(r"[çãõ]", re.I)
+_STEAM_BR_LOCATION_RE = re.compile(
+    r"\b(?:brazil|brasil|sao paulo|são paulo|rio de janeiro|belo horizonte|curitiba|porto alegre|"
+    r"brasilia|brasília|salvador|fortaleza|recife|florianopolis|florianópolis|campinas|goiania|goiânia|"
+    r"manaus|belem|belém|vitoria|vitória|minas gerais|parana|paraná|bahia|ceara|ceará|pernambuco|"
+    r"santa catarina|rio grande do sul|espirito santo|espírito santo|mato grosso)\b",
+    re.I,
+)
+
+
+def _normalize_leetspeak(text: str) -> str:
+    """Remove acentos, aplica substituição leetspeak (`0->o, 1->i, 3->e, 4->a, 5->s, 7->t`) e mantém alfanuméricos."""
+    raw = strip_unsafe_chars(text).strip().lower()
+    if not raw:
+        return ""
+    decomposed = unicodedata.normalize("NFKD", raw)
+    no_marks = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    de_leet = no_marks.translate(_LEET_TABLE)
+    return re.sub(r"[^a-z0-9]+", "", de_leet)
+
+
+def _trigram_similarity(a: str, b: str) -> float:
+    """Similaridade Jaccard de trigramas (resistente a sufixos/prefixos e trocas de letra de smurfs disfarçados)."""
+    na = _normalize_leetspeak(a)
+    nb = _normalize_leetspeak(b)
+    if len(na) < 4 or len(nb) < 4:
+        return 0.0
+    ga = {na[i : i + 3] for i in range(len(na) - 2)}
+    gb = {nb[i : i + 3] for i in range(len(nb) - 2)}
+    if not ga or not gb:
+        return 0.0
+    return len(ga & gb) / float(len(ga | gb))
+
+
+def _extract_clan_tags(alias: str) -> set[str]:
+    """Extrai tags de clã específicas (`[TAG]`, `『V』`, `{TAG}`), ignorando códigos genéricos de país."""
+    tags: set[str] = set()
+    for m in _CLAN_TAG_RE.finditer(str(alias or "")):
+        raw_tag = next((g for g in m.groups() if g), "").strip().casefold()
+        if raw_tag and raw_tag not in _GENERIC_CLAN_TAGS:
+            tags.add(raw_tag)
+    return tags
+
+
+def _detect_ptbr_linguistic_signal(alias: str) -> tuple[bool, str]:
+    """Detecta indícios linguísticos/culturais PT-BR em nicks de smurfs com bandeira estrangeira ou oculta."""
+    clean = strip_unsafe_chars(alias).strip()
+    if len(clean) < 3:
+        return False, ""
+    if _PTBR_DIACRITICS_RE.search(clean):
+        return True, f"diacrítico PT-BR no nick ('{clean}')"
+    decomposed = unicodedata.normalize("NFKD", clean.lower())
+    plain = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    for phrase in _PTBR_PHRASE_PATTERNS:
+        if phrase in plain:
+            return True, f"expressão PT-BR no nick ('{clean}')"
+    tokens = set(re.findall(r"[a-z]{3,}", plain))
+    hits = sorted(tokens & _PTBR_SLANG_TOKENS)
+    if hits:
+        return True, f"termo PT-BR no nick ('{hits[0]}')"
+    return False, ""
+
+
+def _is_throwaway_or_barcode_nick(alias: str) -> bool:
+    """Identifica nicks descartáveis típicos de contas smurf/burner em vários gêneros (1–2 chars, barcode `IIlIIl`, dígitos)."""
+    clean = strip_unsafe_chars(alias).strip()
+    if not clean:
+        return True
+    if len(clean) <= 2:
+        return True
+    alnum = re.sub(r"[^A-Za-z0-9]+", "", clean)
+    if not alnum or len(alnum) <= 2 or alnum.isdigit():
+        return True
+    if _BARCODE_NICK_RE.fullmatch(clean):
+        return True
+    return alnum.lower() in _THROWAWAY_NICKS
+
+
+def _parse_counters_detailed(raw_counters: Any) -> dict[str, float]:
+    """
+    Extrai vetor biométrico multi-gênero dos `counters` oficiais da Relic (partidas >=180s):
+    - `apm`, `abil_pm` (cadência motora / habilidades)
+    - `kd` (`ekills / edeaths` — eficiência K/D estilo FPS/MOBA)
+    - `dpm` (`dmgdone * 60 / gt` — pressão de dano/min estilo ADR/DPM)
+    - `pcap_pm` (`pcap * 60 / gt` — ritmo de controle de objetivos)
+    - `inact_ratio` (`inactperiod / gt` — padrão de atenção/inatividade)
+    - `sq_trade` (`(sqkill + 1) / (sqlost + 1)` — disciplina de trocas/preservação)
+    """
+    if not raw_counters:
+        return {}
+    if isinstance(raw_counters, str):
+        try:
+            c = json.loads(raw_counters)
+        except Exception:
+            return {}
+    elif isinstance(raw_counters, dict):
+        c = raw_counters
+    else:
+        return {}
+    if not isinstance(c, dict):
+        return {}
+    gt = float(c.get("gt", 0) or 0)
+    if gt < 180.0:
+        return {}
+
+    out: dict[str, float] = {}
+    cmds = float(c.get("totalcmds", 0) or 0)
+    if cmds > 0.0:
+        apm = cmds * 60.0 / gt
+        if 10.0 <= apm <= 300.0:
+            out["apm"] = apm
+            abil = float(c.get("abil", 0) or 0)
+            if abil >= 0.0:
+                out["abil_pm"] = max(0.0, min(30.0, abil * 60.0 / gt))
+
+    ek = float(c.get("ekills", 0) or 0)
+    ed = float(c.get("edeaths", 0) or 0)
+    if ek >= 0.0 and ed >= 0.0 and (ek + ed) >= 10.0:
+        out["kd"] = min(10.0, ek / max(1.0, ed))
+
+    dmg = float(c.get("dmgdone", 0) or 0)
+    if dmg > 0.0:
+        out["dpm"] = min(2500.0, dmg * 60.0 / gt)
+
+    pcap = float(c.get("pcap", 0) or 0)
+    if pcap >= 0.0:
+        out["pcap_pm"] = min(10.0, pcap * 60.0 / gt)
+
+    inact = float(c.get("inactperiod", 0) or 0)
+    if 0.0 <= inact <= gt:
+        out["inact_ratio"] = min(0.5, inact / gt)
+
+    sqk = float(c.get("sqkill", 0) or 0)
+    sql = float(c.get("sqlost", 0) or 0)
+    if sqk >= 0.0 and sql >= 0.0 and (sqk + sql) >= 1.0:
+        out["sq_trade"] = min(12.0, (sqk + 1.0) / (sql + 1.0))
+
+    return out
+
+
 def _parse_counters_biometrics(raw_counters: Any) -> tuple[float, float]:
     """
     Extrai `(apm, abil_per_min)` dos `counters` oficiais da Relic (`totalcmds`, `abil`, `gt`).
     Ignora partidas muito curtas (<180s) ou valores absurdos fora de `[10, 300]` APM.
     """
-    if not raw_counters:
-        return 0.0, 0.0
-    if isinstance(raw_counters, str):
-        try:
-            c = json.loads(raw_counters)
-        except Exception:
-            return 0.0, 0.0
-    elif isinstance(raw_counters, dict):
-        c = raw_counters
-    else:
-        return 0.0, 0.0
-    if not isinstance(c, dict):
-        return 0.0, 0.0
-    gt = float(c.get("gt", 0) or 0)
-    cmds = float(c.get("totalcmds", 0) or 0)
-    if gt < 180.0 or cmds <= 0.0:
-        return 0.0, 0.0
-    apm = cmds * 60.0 / gt
-    if not (10.0 <= apm <= 300.0):
-        return 0.0, 0.0
-    abil = float(c.get("abil", 0) or 0)
-    abil_pm = max(0.0, min(30.0, abil * 60.0 / gt)) if abil >= 0.0 else 0.0
-    return apm, abil_pm
+    det = _parse_counters_detailed(raw_counters)
+    return float(det.get("apm", 0.0)), float(det.get("abil_pm", 0.0))
 
 
 def _extract_bg_loadout_by_pid(match_items: Any) -> dict[int, list[int]]:
@@ -228,6 +373,125 @@ def _extract_bg_loadout_by_pid(match_items: Any) -> dict[int, list[int]]:
         if str(meta.get("eslot", "")) in ("0", "1", "2"):
             out[pid].append(idef)
     return dict(out)
+
+
+def _extract_cosmetic_items_by_pid(match_items: Any) -> dict[int, set[int]]:
+    """Extrai `itemdefinition_id` equipados fora dos slots de BG (`eslot != 0,1,2`) para perfil cosmético/burner."""
+    if not isinstance(match_items, list) or not match_items:
+        return {}
+    out: dict[int, set[int]] = defaultdict(set)
+    for item in match_items:
+        if not isinstance(item, dict):
+            continue
+        pid = int(item.get("profile_id", 0) or 0)
+        idef = int(item.get("itemdefinition_id", 0) or 0)
+        if pid <= 0 or idef <= 0:
+            continue
+        raw_meta = item.get("metadata")
+        if not raw_meta:
+            continue
+        if isinstance(raw_meta, str):
+            if '"eslot"' not in raw_meta:
+                continue
+            if '"eslot":"0"' in raw_meta or '"eslot":"1"' in raw_meta or '"eslot":"2"' in raw_meta:
+                continue
+            out[pid].add(idef)
+        elif isinstance(raw_meta, dict):
+            eslot = str(raw_meta.get("eslot", ""))
+            if eslot and eslot not in ("0", "1", "2"):
+                out[pid].add(idef)
+    return dict(out)
+
+
+class SteamProfileOSINTClient:
+    """
+    Cliente HTTPS endurecido (somente-leitura, zero API key) para consultar o XML público
+    `https://steamcommunity.com/profiles/<steam_id>?xml=1` e extrair sinais anti-disfarce multi-gênero
+    (perfil privado/novo, avatar padrão `?`, hash de avatar idêntico, vazamento de `<location>` no Brasil).
+    """
+
+    _PRIVACY_RE = re.compile(r"<privacyState>([^<]{1,32})</privacyState>", re.I)
+    _MEMBER_YEAR_RE = re.compile(r"<memberSince>[^<]*\b(20\d{2})\b[^<]*</memberSince>", re.I)
+    _LOCATION_RE = re.compile(r"<location>(?:<!\[CDATA\[)?([^<\]]{1,120})(?:\]\]>)?</location>", re.I)
+    _AVATAR_RE = re.compile(r"<avatarMedium>(?:<!\[CDATA\[)?(https://[^\s<\]]+)(?:\]\]>)?</avatarMedium>", re.I)
+    _AVATAR_HASH_RE = re.compile(r"/([0-9a-f]{40})(?:_medium|_full)?\.(?:jpg|jpeg|png|webp)$", re.I)
+    _GAME_NAME_RE = re.compile(r"<gameName>(?:<!\[CDATA\[)?([^<\]]{1,120})(?:\]\]>)?</gameName>", re.I)
+
+    def __init__(self, *, pace_delay_sec: float = 0.12) -> None:
+        self.pace_delay_sec = max(0.05, float(pace_delay_sec))
+        self._opener = build_no_redirect_https_opener()
+        self._cache: dict[str, dict[str, Any]] = {}
+        self._consecutive_errors = 0
+        self._circuit_open = False
+
+    @classmethod
+    def parse_profile_xml(cls, xml_body: str) -> dict[str, Any]:
+        """Extrai métricas OSINT seguras do XML público de perfil Steam."""
+        body = str(xml_body or "")
+        priv_m = cls._PRIVACY_RE.search(body)
+        privacy = priv_m.group(1).strip().lower() if priv_m else ""
+        yr_m = cls._MEMBER_YEAR_RE.search(body)
+        member_year = int(yr_m.group(1)) if yr_m else 0
+        loc_m = cls._LOCATION_RE.search(body)
+        location = strip_unsafe_chars(loc_m.group(1))[:80] if loc_m else ""
+        is_br_loc = bool(location and _STEAM_BR_LOCATION_RE.search(location))
+        av_m = cls._AVATAR_RE.search(body)
+        av_hash = ""
+        if av_m:
+            hm = cls._AVATAR_HASH_RE.search(av_m.group(1).strip())
+            if hm:
+                av_hash = hm.group(1).lower()
+        games_visible = len(cls._GAME_NAME_RE.findall(body))
+        return {
+            "ok": bool(privacy or av_hash or member_year),
+            "privacy_state": privacy,
+            "is_private": bool(privacy and privacy != "public"),
+            "member_since_year": member_year,
+            "location": location,
+            "is_br_location": is_br_loc,
+            "avatar_hash": av_hash,
+            "is_default_avatar": bool(av_hash == STEAM_DEFAULT_AVATAR_HASH),
+            "games_visible_count": games_visible,
+        }
+
+    def fetch_profile_osint(self, steam_id: str) -> dict[str, Any]:
+        sid = str(steam_id or "").replace("/steam/", "").strip()
+        if not STEAM_ID64_VALID_RE.fullmatch(sid) or self._circuit_open:
+            return {}
+        if sid in self._cache:
+            return dict(self._cache[sid])
+        url = f"https://steamcommunity.com/profiles/{sid}?xml=1"
+        validate_https_endpoint(
+            url,
+            ALLOWED_STEAM_PROFILE_HOSTS,
+            path_prefix="/profiles/",
+            path_regex=STEAM_PROFILE_XML_PATH_RE,
+            allow_query=True,
+        )
+        time.sleep(self.pace_delay_sec)
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "CoH3-BR-Lobby-Radar/1.4",
+                "Accept": "application/xml,text/xml",
+                "Accept-Encoding": "gzip",
+            },
+            method="GET",
+        )
+        try:
+            with self._opener.open(req, timeout=8) as resp:
+                raw = read_bounded_http_body(resp, MAX_STEAM_XML_BYTES)
+            self._consecutive_errors = 0
+            parsed = self.parse_profile_xml(raw.decode("utf-8", errors="replace"))
+            self._cache[sid] = parsed
+            return dict(parsed)
+        except Exception as exc:
+            self._consecutive_errors += 1
+            if self._consecutive_errors >= 4:
+                self._circuit_open = True
+                logger.warning("[STEAM OSINT] Circuit-breaker ativado após erros: %s", redact_secrets(exc))
+            self._cache[sid] = {}
+            return {}
 
 
 class CohDBBattlegroupClient:
@@ -495,7 +759,7 @@ class CohDBBattlegroupClient:
 
 @dataclass
 class PlayerMatchTelemetry:
-    """Telemetria compacta de partidas de um jogador coletada via Open Data, Relic API direta e cohdb."""
+    """Telemetria compacta multi-gênero de partidas de um jogador coletada via Open Data, Relic API direta e cohdb."""
 
     profile_id: int
     intervals: list[tuple[int, int, int]] = field(default_factory=list)  # (start_ts, end_ts, match_id)
@@ -518,6 +782,22 @@ class PlayerMatchTelemetry:
     abil_per_min: list[float] = field(default_factory=list)
     bg_loadout_by_race: dict[int, Counter[int]] = field(default_factory=lambda: defaultdict(Counter))
     cohdb_battlegroups: Counter[str] = field(default_factory=Counter)
+    # Biometria de combate multi-gênero (FPS K/D & ADR, MOBA DPM/trocas/objetivos, tolerância a rendição)
+    kd_ratios: list[float] = field(default_factory=list)
+    dpm_values: list[float] = field(default_factory=list)
+    capture_rates: list[float] = field(default_factory=list)
+    inactivity_ratios: list[float] = field(default_factory=list)
+    squad_trade_ratios: list[float] = field(default_factory=list)
+    loss_durations_sec: list[int] = field(default_factory=list)
+    # Velocidade de ELO, sequências de vitórias, sandbagging/tanking e padrão circadiano BRT
+    elo_history: list[tuple[int, int, int, int]] = field(default_factory=list)  # (ct, win_01, old_elo, new_elo)
+    early_loss_count: int = 0
+    long_game_count: int = 0
+    long_game_wins: int = 0
+    active_brt_days: set[str] = field(default_factory=set)
+    weekday_counts: Counter[int] = field(default_factory=Counter)
+    brt_hour_counts: Counter[int] = field(default_factory=Counter)
+    equipped_cosmetic_ids: set[int] = field(default_factory=set)
 
     def winrate(self) -> float:
         return (self.wins / self.games) if self.games > 0 else 0.0
@@ -556,6 +836,8 @@ class PlayerMatchTelemetry:
         apm: float = 0.0,
         abil_pm: float = 0.0,
         bg_loadout_items: list[int] | None = None,
+        combat_metrics: dict[str, float] | None = None,
+        cosmetic_items: set[int] | None = None,
         max_samples: int = 200,
     ) -> None:
         if apm > 0.0 and len(self.apm_values) < max_samples:
@@ -569,6 +851,19 @@ class PlayerMatchTelemetry:
             for idef in bg_loadout_items:
                 if idef > 0:
                     rc[idef] += 1
+        if combat_metrics:
+            for key, dest in (
+                ("kd", self.kd_ratios),
+                ("dpm", self.dpm_values),
+                ("pcap_pm", self.capture_rates),
+                ("inact_ratio", self.inactivity_ratios),
+                ("sq_trade", self.squad_trade_ratios),
+            ):
+                val = combat_metrics.get(key)
+                if val is not None and len(dest) < max_samples:
+                    dest.append(float(val))
+        if cosmetic_items and len(self.equipped_cosmetic_ids) < 500:
+            self.equipped_cosmetic_ids.update(int(x) for x in cosmetic_items if int(x or 0) > 0)
 
     def median_apm(self, min_samples: int = 3) -> float:
         if len(self.apm_values) < min_samples:
@@ -586,6 +881,13 @@ class PlayerMatchTelemetry:
             return 0.0
         return float(statistics.median(self.abil_per_min))
 
+    def brt_prime_ratio(self) -> float:
+        tot = sum(self.brt_hour_counts.values())
+        if tot <= 0:
+            return 0.0
+        prime = sum(self.brt_hour_counts[h] for h in BRT_PRIME_HOURS)
+        return prime / float(tot)
+
 
 def _normalize_match_window(start_ts: Any, completion_ts: Any) -> tuple[int, int] | None:
     """Normaliza `(start_ts, completion_ts)` de uma partida aplicando fallback padrão de 20 min quando ausente."""
@@ -601,7 +903,7 @@ def _normalize_match_window(start_ts: Any, completion_ts: Any) -> tuple[int, int
 
 
 class SmurfTelemetryCollector:
-    """Coleta telemetria leve de partidas (incluindo APM e loadouts de Battlegroup) sobre Open Data e Relic direta."""
+    """Coleta telemetria leve multi-gênero de partidas (APM, Combat DNA, ELO velocity, loadouts e Custom) sobre Open Data e Relic."""
 
     def __init__(self, *, max_intervals_per_player: int = 400) -> None:
         self.players: dict[int, PlayerMatchTelemetry] = {}
@@ -634,33 +936,58 @@ class SmurfTelemetryCollector:
         bg_loadout_items: list[int] | None,
         co_players: list[tuple[int, int]],
         alias: str = "",
+        old_elo: int = 0,
+        new_elo: int = 0,
+        cosmetic_items: set[int] | None = None,
+        is_custom: bool = False,
     ) -> bool:
         """Registra uma única observação deduplicada de partida na telemetria de `tel`."""
         if mid > 0 and mid in tel.seen_match_ids:
             return False
         if mid > 0:
             tel.seen_match_ids.add(mid)
-        tel.games += 1
-        if res_type == 1:
-            tel.wins += 1
-        tel.mode_counts[mode] += 1
-        if race_id >= 0:
-            tel.mode_faction_counts[(mode, race_id)] += 1
-        tel.hour_counts[utc_hour] += 1
-        if elo > tel.mode_elo_max.get(mode, 0):
-            tel.mode_elo_max[mode] = elo
+
+        dur_sec = max(0, int(ct) - int(st))
+        dt_brt = datetime.fromtimestamp(max(0, int(ct) - 3 * 3600), tz=timezone.utc)
+        tel.active_brt_days.add(dt_brt.strftime("%Y-%m-%d"))
+        tel.weekday_counts[dt_brt.weekday()] += 1
+        tel.brt_hour_counts[dt_brt.hour] += 1
+
+        if not is_custom:
+            tel.games += 1
+            if res_type == 1:
+                tel.wins += 1
+            tel.mode_counts[mode] += 1
+            if race_id >= 0:
+                tel.mode_faction_counts[(mode, race_id)] += 1
+            tel.hour_counts[utc_hour] += 1
+            if elo > tel.mode_elo_max.get(mode, 0):
+                tel.mode_elo_max[mode] = elo
+            if len(tel.elo_history) < self.max_intervals_per_player:
+                tel.elo_history.append((int(ct), 1 if res_type == 1 else 0, int(old_elo or 0), int(new_elo or 0)))
+            if res_type != 1 and 0 < dur_sec < 240:
+                tel.early_loss_count += 1
+            if dur_sec >= 480:
+                tel.long_game_count += 1
+                if res_type == 1:
+                    tel.long_game_wins += 1
+            if res_type != 1 and dur_sec >= 120 and len(tel.loss_durations_sec) < 200:
+                tel.loss_durations_sec.append(dur_sec)
+
         if alias:
             tel.record_alias(alias, ct)
         if len(tel.intervals) < self.max_intervals_per_player:
             tel.intervals.append((st, ct, mid))
 
-        apm, abil_pm = _parse_counters_biometrics(raw_counters)
+        det = _parse_counters_detailed(raw_counters)
         tel.record_biometrics(
-            mode=mode,
+            mode="" if is_custom else mode,
             race_id=race_id,
-            apm=apm,
-            abil_pm=abil_pm,
+            apm=float(det.get("apm", 0.0)),
+            abil_pm=float(det.get("abil_pm", 0.0)),
             bg_loadout_items=bg_loadout_items,
+            combat_metrics=det,
+            cosmetic_items=cosmetic_items,
         )
 
         for op_pid, op_team in co_players:
@@ -699,7 +1026,7 @@ class SmurfTelemetryCollector:
             if not isinstance(reports, list) or len(reports) < 2:
                 continue
 
-            participants: list[tuple[int, int, int, int, int, str, str, Any]] = []
+            participants: list[tuple[int, int, int, int, int, int, int, str, str, Any]] = []
             has_br_interest = False
             for rep in reports:
                 if not isinstance(rep, dict):
@@ -716,14 +1043,12 @@ class SmurfTelemetryCollector:
                 race_id = int(rep.get("race_id", -1) if rep.get("race_id") is not None else -1)
                 res_type = int(rep.get("resulttype", 0) or 0)
                 mhm = rep.get("matchhistorymember") if isinstance(rep.get("matchhistorymember"), dict) else {}
-                elo = max(
-                    int(float(mhm.get("newrating", 0) or 0)),
-                    int(float(mhm.get("oldrating", 0) or 0)),
-                    0,
-                )
+                old_r = int(float(mhm.get("oldrating", 0) or 0))
+                new_r = int(float(mhm.get("newrating", 0) or 0))
+                elo = max(new_r, old_r, 0)
                 if ctry == "br" or pid in br_set:
                     has_br_interest = True
-                participants.append((pid, team_id, race_id, res_type, elo, alias, ctry, rep.get("counters")))
+                participants.append((pid, team_id, race_id, res_type, elo, old_r, new_r, alias, ctry, rep.get("counters")))
 
             if not has_br_interest or len(participants) < 2:
                 continue
@@ -733,18 +1058,21 @@ class SmurfTelemetryCollector:
             self.matches_observed += 1
 
             bg_by_pid = _extract_bg_loadout_by_pid(match.get("matchhistoryitems"))
+            cos_by_pid = _extract_cosmetic_items_by_pid(match.get("matchhistoryitems"))
             utc_hour = datetime.fromtimestamp(ct, tz=timezone.utc).hour
             co_players = [(op_pid, op_team) for op_pid, op_team, *_ in participants]
-            for pid, team_id, race_id, res_type, elo, alias, ctry, raw_counters in participants:
+            for pid, team_id, race_id, res_type, elo, old_r, new_r, alias, ctry, raw_counters in participants:
                 if alias:
                     self.pid_aliases[pid] = alias
                 if ctry != "br" and pid not in br_set:
-                    # Ainda registra se jogou no mesmo time de um BR (candidato smurf sem bandeira BR)
-                    if not any(
+                    # Registra também quem jogou no mesmo time de um BR OU tem sinal linguístico PT-BR no nick
+                    same_team_br = any(
                         (op_ctry == "br" or op_pid in br_set) and op_team == team_id and team_id >= 0
-                        for op_pid, op_team, _, _, _, _, op_ctry, _ in participants
+                        for op_pid, op_team, _, _, _, _, _, _, op_ctry, _ in participants
                         if op_pid != pid
-                    ):
+                    )
+                    ptbr_nick, _ = _detect_ptbr_linguistic_signal(alias)
+                    if not same_team_br and not ptbr_nick:
                         continue
 
                 self._record_player_match_sample(
@@ -762,12 +1090,15 @@ class SmurfTelemetryCollector:
                     bg_loadout_items=bg_by_pid.get(pid),
                     co_players=co_players,
                     alias=alias,
+                    old_elo=old_r,
+                    new_elo=new_r,
+                    cosmetic_items=cos_by_pid.get(pid),
                 )
 
     def observe_relic_match_history(self, target_pid: int, data: dict[str, Any] | None) -> int:
         """
         Incorpora o histórico completo recente retornado por `getRecentMatchHistoryByProfileId`
-        para `target_pid` (incluindo APM, abil/min e loadouts de Battlegroup `eslot 0–2`).
+        para `target_pid` (Automatch + Custom `mt=0` para sobreposição/handoffs/squad/Combat DNA/cosméticos).
         """
         pid = int(target_pid or 0)
         if pid <= 0 or not isinstance(data, dict):
@@ -788,7 +1119,8 @@ class SmurfTelemetryCollector:
             if not isinstance(match, dict):
                 continue
             mt_id = int(match.get("matchtype_id", -1))
-            mode = _MATCHTYPE_TO_MODE.get(mt_id)
+            is_custom = mt_id == 0
+            mode = "Custom" if is_custom else _MATCHTYPE_TO_MODE.get(mt_id)
             if not mode:
                 continue
             mid = int(match.get("id", 0) or 0)
@@ -809,13 +1141,12 @@ class SmurfTelemetryCollector:
 
             members = [m for m in (match.get("matchhistorymember") or []) if isinstance(m, dict)]
             my_mem = next((m for m in members if int(m.get("profile_id", 0) or 0) == pid), None) or {}
-            elo = max(
-                int(float(my_mem.get("newrating", 0) or 0)),
-                int(float(my_mem.get("oldrating", 0) or 0)),
-                0,
-            )
+            old_r = int(float(my_mem.get("oldrating", 0) or 0))
+            new_r = int(float(my_mem.get("newrating", 0) or 0))
+            elo = max(new_r, old_r, 0)
 
             bg_by_pid = _extract_bg_loadout_by_pid(match.get("matchhistoryitems"))
+            cos_by_pid = _extract_cosmetic_items_by_pid(match.get("matchhistoryitems"))
             co_players = [
                 (
                     int(rep.get("profile_id", 0) or 0),
@@ -837,6 +1168,10 @@ class SmurfTelemetryCollector:
                 raw_counters=my_row.get("counters"),
                 bg_loadout_items=bg_by_pid.get(pid),
                 co_players=co_players,
+                old_elo=old_r,
+                new_elo=new_r,
+                cosmetic_items=cos_by_pid.get(pid),
+                is_custom=is_custom,
             ):
                 added += 1
 
@@ -1106,18 +1441,238 @@ def _steam_account32(steam_id: str) -> int:
 
 
 def _alias_similarity_bonus(cand_alias: str, main_alias: str, cand_seen: set[str], main_seen: set[str]) -> tuple[int, str]:
-    c_all = {a.strip().casefold() for a in ({cand_alias} | set(cand_seen)) if len(a.strip()) >= 3}
-    m_all = {a.strip().casefold() for a in ({main_alias} | set(main_seen)) if len(a.strip()) >= 3}
-    if not c_all or not m_all:
+    c_raw = {a.strip() for a in ({cand_alias} | set(cand_seen)) if len(a.strip()) >= 3}
+    m_raw = {a.strip() for a in ({main_alias} | set(main_seen)) if len(a.strip()) >= 3}
+    if not c_raw or not m_raw:
         return 0, ""
-    if c_all & m_all:
-        hit = sorted(c_all & m_all)[0]
+
+    c_cf = {a.casefold() for a in c_raw}
+    m_cf = {a.casefold() for a in m_raw}
+    if c_cf & m_cf:
+        hit = sorted(c_cf & m_cf)[0]
         return 22, f"Nick idêntico utilizado nas duas contas ('{hit}')"
-    for ca in c_all:
-        for ma in m_all:
+
+    # Leetspeak / variação sem acentos (ex.: Ch4c1n31r0 ↔ Chacineiro, Sk0ba ↔ Skoba)
+    c_leet = {_normalize_leetspeak(a): a for a in c_raw if len(_normalize_leetspeak(a)) >= 4}
+    m_leet = {_normalize_leetspeak(a): a for a in m_raw if len(_normalize_leetspeak(a)) >= 4}
+    leet_hits = set(c_leet.keys()) & set(m_leet.keys())
+    if leet_hits:
+        k = sorted(leet_hits)[0]
+        return 18, f"Variação leetspeak/ortográfica do mesmo nick ('{c_leet[k]}' ↔ '{m_leet[k]}')"
+
+    for ca in c_cf:
+        for ma in m_cf:
             if len(ca) >= 5 and len(ma) >= 5 and (ca in ma or ma in ca):
                 return 10, f"Similaridade direta de nick ('{ca}' ↔ '{ma}')"
+
+    best_tri = 0.0
+    best_pair = ("", "")
+    for ca in c_raw:
+        for ma in m_raw:
+            sim = _trigram_similarity(ca, ma)
+            if sim > best_tri:
+                best_tri = sim
+                best_pair = (ca, ma)
+    if best_tri >= 0.55:
+        return 10, f"Similaridade fonética/trigramas de nick ({best_tri * 100:.0f}%: '{best_pair[0]}' ↔ '{best_pair[1]}')"
+
+    c_tags = {t for a in c_raw for t in _extract_clan_tags(a)}
+    m_tags = {t for a in m_raw for t in _extract_clan_tags(a)}
+    shared_tags = sorted(c_tags & m_tags)
+    if shared_tags:
+        return 10, f"Mesma tag de clã utilizada nas duas contas ('{shared_tags[0]}')"
+
     return 0, ""
+
+
+def _analyze_skill_velocity_and_tanking(
+    cand_tel: PlayerMatchTelemetry | None,
+    cand: dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Critérios multi-gênero (CS2/Faceit, LoL, Valorant, Rocket League, Xadrez):
+    - Aceleração de ELO (`net_elo_gain` alto em poucas partidas)
+    - Sequência dominante de vitórias (`max_win_streak >= 5`)
+    - Sandbagging / ELO tanking (>=3 derrotas relâmpago <4 min intercaladas com WR >=60% em jogos reais)
+    - Transferência imediata de piso de habilidade entre múltiplas filas (`>=2` modos >=1300 ELO com <=300 jogos)
+    - Conta burner minimalista (`<=55` cosméticos equipados em ELO >=1400)
+    """
+    res: dict[str, Any] = {
+        "net_elo_gain": 0,
+        "max_win_streak": 0,
+        "sandbagging": False,
+        "multi_mode_transfer": False,
+        "high_elo_modes": [],
+        "barebones_cosmetics": False,
+        "cosmetics_count": 0,
+        "velocity_pts": 0.0,
+        "strong_velocity": False,
+        "notes": [],
+    }
+    if not cand_tel:
+        return res
+
+    cand_elo = int(cand.get("max_elo", 0) or 0)
+    cand_total = max(0, int(cand.get("total_matches", 0) or 0))
+
+    chrono = sorted(cand_tel.elo_history, key=lambda x: x[0])
+    net_elo = 0
+    max_streak = 0
+    cur_streak = 0
+    for _ct, win01, old_r, new_r in chrono:
+        if win01:
+            cur_streak += 1
+            if cur_streak > max_streak:
+                max_streak = cur_streak
+        else:
+            cur_streak = 0
+        if old_r > 0 and new_r > 0:
+            delta = new_r - old_r
+            if -80 <= delta <= 80:
+                net_elo += delta
+
+    res["net_elo_gain"] = net_elo
+    res["max_win_streak"] = max_streak
+
+    pts = 0.0
+    notes: list[str] = []
+    if net_elo >= 140 and len(chrono) <= 50:
+        pts += 7.0 if net_elo >= 220 else 5.0
+        notes.append(f"escalada rápida de +{net_elo} ELO em {len(chrono)} jogos")
+    if max_streak >= 5:
+        pts += 5.0 if max_streak >= 7 else 3.0
+        notes.append(f"sequência de {max_streak} vitórias seguidas")
+
+    if cand_tel.early_loss_count >= 3 and cand_tel.long_game_count >= 6:
+        long_wr = cand_tel.long_game_wins / float(cand_tel.long_game_count)
+        if long_wr >= 0.60:
+            res["sandbagging"] = True
+            pts += 8.0
+            notes.append(
+                f"indício de sandbagging/tanking ({cand_tel.early_loss_count} derrotas <4m + {long_wr * 100:.0f}% WR em jogos longos)"
+            )
+
+    high_modes = sorted(m for m, e in cand_tel.mode_elo_max.items() if e >= 1300)
+    res["high_elo_modes"] = high_modes
+    if len(high_modes) >= 2 and 0 < cand_total <= 300:
+        res["multi_mode_transfer"] = True
+        pts += 5.0
+        notes.append(f"piso alto imediato em {len(high_modes)} filas ({'/'.join(high_modes)}) com {cand_total} jogos")
+
+    cos_cnt = len(cand_tel.equipped_cosmetic_ids)
+    res["cosmetics_count"] = cos_cnt
+    if 0 < cos_cnt <= 55 and cand_elo >= 1400 and cand_tel.games >= 8:
+        res["barebones_cosmetics"] = True
+        pts += 3.0
+        notes.append(f"perfil cosmético enxuto/burner ({cos_cnt} itens em ELO {cand_elo})")
+
+    res["velocity_pts"] = min(14.0, pts)
+    res["strong_velocity"] = bool(pts >= 7.0 or res["sandbagging"])
+    res["notes"] = notes
+    return res
+
+
+def _compare_combat_dna(
+    cand_tel: PlayerMatchTelemetry | None,
+    main_tel: PlayerMatchTelemetry | None,
+) -> dict[str, Any]:
+    """
+    Compara o DNA de combate multi-gênero independente de facção (6 eixos normalizados):
+    K/D (FPS/MOBA), DPM (ADR/DPM), ritmo de captura de objetivos, taxa de inatividade,
+    eficiência de trocas de esquadrões e tolerância a rendição (duração mediana em derrotas).
+    """
+    res: dict[str, Any] = {
+        "valid": False,
+        "dna_sim": 0.0,
+        "axes_used": 0,
+        "close_axes": [],
+    }
+    if not cand_tel or not main_tel:
+        return res
+
+    axes: list[tuple[str, float, float, float, str]] = []
+    if len(cand_tel.kd_ratios) >= 4 and len(main_tel.kd_ratios) >= 4:
+        c_kd = float(statistics.median(cand_tel.kd_ratios))
+        m_kd = float(statistics.median(main_tel.kd_ratios))
+        axes.append(("K/D", c_kd, m_kd, 0.75, f"K/D {c_kd:.2f} vs {m_kd:.2f}"))
+    if len(cand_tel.dpm_values) >= 4 and len(main_tel.dpm_values) >= 4:
+        c_dpm = float(statistics.median(cand_tel.dpm_values))
+        m_dpm = float(statistics.median(main_tel.dpm_values))
+        axes.append(("DPM", c_dpm, m_dpm, 140.0, f"DPM {c_dpm:.0f} vs {m_dpm:.0f}"))
+    if len(cand_tel.capture_rates) >= 4 and len(main_tel.capture_rates) >= 4:
+        c_cap = float(statistics.median(cand_tel.capture_rates))
+        m_cap = float(statistics.median(main_tel.capture_rates))
+        axes.append(("Capturas/m", c_cap, m_cap, 0.70, f"obj {c_cap:.2f} vs {m_cap:.2f}/m"))
+    if len(cand_tel.inactivity_ratios) >= 4 and len(main_tel.inactivity_ratios) >= 4:
+        c_in = float(statistics.median(cand_tel.inactivity_ratios))
+        m_in = float(statistics.median(main_tel.inactivity_ratios))
+        axes.append(("Inatividade", c_in, m_in, 0.025, f"inativ {c_in * 100:.1f}% vs {m_in * 100:.1f}%"))
+    if len(cand_tel.squad_trade_ratios) >= 4 and len(main_tel.squad_trade_ratios) >= 4:
+        c_tr = float(statistics.median(cand_tel.squad_trade_ratios))
+        m_tr = float(statistics.median(main_tel.squad_trade_ratios))
+        axes.append(("Trocas", c_tr, m_tr, 1.40, f"trocas {c_tr:.2f} vs {m_tr:.2f}"))
+    if len(cand_tel.loss_durations_sec) >= 3 and len(main_tel.loss_durations_sec) >= 3:
+        c_ld = float(statistics.median(cand_tel.loss_durations_sec)) / 60.0
+        m_ld = float(statistics.median(main_tel.loss_durations_sec)) / 60.0
+        axes.append(("Rendição", c_ld, m_ld, 12.0, f"derrota med {c_ld:.0f}m vs {m_ld:.0f}m"))
+
+    if len(axes) < 4:
+        return res
+
+    scores: list[tuple[float, str]] = []
+    for _name, cv, mv, scale, lbl in axes:
+        closeness = max(0.0, 1.0 - (abs(cv - mv) / scale))
+        scores.append((closeness, lbl))
+
+    avg_sim = sum(s for s, _ in scores) / float(len(scores))
+    close_labels = [lbl for s, lbl in sorted(scores, key=lambda x: -x[0]) if s >= 0.72][:3]
+    res["valid"] = True
+    res["dna_sim"] = round(avg_sim, 3)
+    res["axes_used"] = len(axes)
+    res["close_axes"] = close_labels
+    return res
+
+
+def _analyze_temporal_anti_disguise(
+    cand_tel: PlayerMatchTelemetry | None,
+    main_tel: PlayerMatchTelemetry | None,
+) -> dict[str, Any]:
+    """
+    Analisa sinais temporais multi-gênero anti-disfarce:
+    - Alternância de dias exclusivos (dormancy swap: joga dias alternados sem sobrepor main e smurf)
+    - Ciclo circadiano brasileiro (prime time 18h–02h BRT mesmo sob bandeira estrangeira)
+    - Similaridade de dias da semana (segunda..domingo)
+    """
+    res: dict[str, Any] = {
+        "exclusive_day_ratio": 0.0,
+        "dormancy_swap": False,
+        "cand_days": 0,
+        "main_days": 0,
+        "overlap_days": 0,
+        "cand_brt_prime": 0.0,
+        "main_brt_prime": 0.0,
+        "weekday_sim": 0.0,
+    }
+    if not cand_tel:
+        return res
+
+    res["cand_days"] = len(cand_tel.active_brt_days)
+    res["cand_brt_prime"] = round(cand_tel.brt_prime_ratio(), 3)
+    if not main_tel:
+        return res
+
+    res["main_days"] = len(main_tel.active_brt_days)
+    res["main_brt_prime"] = round(main_tel.brt_prime_ratio(), 3)
+    if len(cand_tel.active_brt_days) >= 5 and len(main_tel.active_brt_days) >= 5:
+        ov = len(cand_tel.active_brt_days & main_tel.active_brt_days)
+        excl = 1.0 - (ov / float(len(cand_tel.active_brt_days)))
+        res["overlap_days"] = ov
+        res["exclusive_day_ratio"] = round(excl, 3)
+        if excl >= 0.75:
+            res["dormancy_swap"] = True
+    if sum(cand_tel.weekday_counts.values()) >= 6 and sum(main_tel.weekday_counts.values()) >= 6:
+        res["weekday_sim"] = round(_cosine_similarity(cand_tel.weekday_counts, main_tel.weekday_counts), 3)
+    return res
 
 
 def _compare_apm_biometrics(
@@ -1261,12 +1816,13 @@ def score_smurf_pair(
     alias_history_by_pid: dict[int, set[str]] | None = None,
     historical_br_pids: set[int] | frozenset[int] | None = None,
     country_migration_by_pid: dict[int, dict[str, Any]] | None = None,
+    steam_osint_by_pid: dict[int, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """
     Calcula a probabilidade forense (`0..99%`) de `cand` ser uma smurf de `main`, com evidências detalhadas em português.
-    Calibrado pelos 4 modelos reais brasileiros (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`),
-    incluindo biometria de APM, escolha de Battlegroups (Relic + cohdb), histórico de nicks (CoH1/CoH2/CoH3/Steam)
-    e continuidade de origem brasileira em casos de mudança de país/bandeira (ex.: `icewarp`).
+    Calibrado pelos 4 modelos reais brasileiros (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`) e expandido
+    com critérios multi-gênero anti-disfarce (velocidade de ELO/streaks, sandbagging/tanking, Combat DNA multi-eixo,
+    alternância de dias exclusivos, ciclo circadiano BRT, leetspeak/trigramas/PT-BR, cosméticos burner e OSINT Steam).
     """
     cand_pid = int(cand.get("profile_id", 0) or 0)
     main_pid = int(main.get("profile_id", 0) or 0)
@@ -1320,7 +1876,7 @@ def score_smurf_pair(
         empty_res["disqualified_reason"] = "sobreposicao_simultanea"
         return empty_res
 
-    # Pré-calcula vínculos sociais/identitários (usados também para filtrar contas de bandeira estrangeira)
+    # Pré-calcula vínculos sociais/identitários/OSINT (usados também para furar disfarce de bandeira estrangeira)
     shared_allies_info: list[tuple[int, int, int, float]] = []
     if cand_tel and main_tel:
         pop = ally_popularity or Counter()
@@ -1340,12 +1896,31 @@ def score_smurf_pair(
         cand_seen_all.update(alias_history_by_pid.get(cand_pid) or ())
         main_seen_all.update(alias_history_by_pid.get(main_pid) or ())
 
+    cand_alias_str = str(cand.get("alias") or "")
     alias_pts, alias_note = _alias_similarity_bonus(
-        str(cand.get("alias") or ""),
+        cand_alias_str,
         str(main.get("alias") or ""),
         cand_seen_all,
         main_seen_all,
     )
+    ptbr_nick_hit, ptbr_nick_note = _detect_ptbr_linguistic_signal(cand_alias_str)
+    if not ptbr_nick_hit:
+        for seen_al in cand_seen_all:
+            ptbr_nick_hit, ptbr_nick_note = _detect_ptbr_linguistic_signal(seen_al)
+            if ptbr_nick_hit:
+                break
+
+    cand_osint = (steam_osint_by_pid or {}).get(cand_pid) or {}
+    main_osint = (steam_osint_by_pid or {}).get(main_pid) or {}
+    cand_av_hash = str(cand_osint.get("avatar_hash") or "").strip().lower()
+    main_av_hash = str(main_osint.get("avatar_hash") or "").strip().lower()
+    same_custom_avatar = bool(
+        cand_av_hash
+        and main_av_hash
+        and cand_av_hash == main_av_hash
+        and cand_av_hash != STEAM_DEFAULT_AVATAR_HASH
+    )
+    steam_br_location_leak = bool(cand_osint.get("is_br_location"))
 
     shared_steam_friends = 0
     same_steam_friend_penalty = False
@@ -1357,8 +1932,10 @@ def score_smurf_pair(
                 same_steam_friend_penalty = True
             shared_steam_friends = len(cf & mf)
 
-    # Guarda de bandeira estrangeira: conta explicitamente não-BR (ar/bo/de/cn/us/pt/...) precisa ter
-    # vínculo social/identitário sólido — EXCETO se já tiver origem brasileira comprovada em CoH1/CoH2/Steam!
+    temporal_info = _analyze_temporal_anti_disguise(cand_tel, main_tel)
+
+    # Guarda de bandeira estrangeira (agora perfurável por sinais anti-disfarce concretos: histórico BR,
+    # Steam <location> no Brasil, avatar custom idêntico, nick PT-BR + horário BRT, squad BR, handoffs ou nick)
     is_cand_historical_br = bool(
         (historical_br_pids and cand_pid in historical_br_pids)
         or (country_migration_by_pid and cand_pid in country_migration_by_pid)
@@ -1368,12 +1945,25 @@ def score_smurf_pair(
     has_strong_foreign_squad = len(shared_allies_info) >= 2 or any(
         ca >= 3 and ma >= 3 for _, ca, ma, _ in shared_allies_info
     )
-    if is_explicit_foreign and not has_strong_foreign_squad and alias_pts == 0 and shared_steam_friends < 3:
+    has_anti_disguise_br_nexus = (
+        steam_br_location_leak
+        or same_custom_avatar
+        or (ptbr_nick_hit and float(temporal_info["cand_brt_prime"]) >= 0.40)
+    )
+    if (
+        is_explicit_foreign
+        and not has_strong_foreign_squad
+        and alias_pts == 0
+        and shared_steam_friends < 3
+        and not has_anti_disguise_br_nexus
+    ):
         empty_res["disqualified_reason"] = "estrangeiro_sem_vinculo_social_br"
         return empty_res
 
     apm_info = _compare_apm_biometrics(cand_tel, main_tel)
     bg_info = _compare_battlegroup_signatures(cand_tel, main_tel)
+    vel_info = _analyze_skill_velocity_and_tanking(cand_tel, cand)
+    dna_info = _compare_combat_dna(cand_tel, main_tel)
 
     score = 0.0
     behavioral_signals = 0
@@ -1422,6 +2012,13 @@ def score_smurf_pair(
         score += min(18.0, youth_pts)
         evidence.append("Anomalia de conta nova/smurf: " + ", ".join(youth_notes) + ".")
 
+    # Sinal 1B (Multi-gênero): Velocidade de ELO, Win-Streak, Sandbagging/Tanking, Cross-Queue e Burner Cosmetics
+    if float(vel_info["velocity_pts"]) > 0.0:
+        score += float(vel_info["velocity_pts"])
+        if vel_info["strong_velocity"]:
+            behavioral_signals += 1
+        evidence.append("Sinal multi-gênero de progressão/disfarce: " + ", ".join(vel_info["notes"]) + ".")
+
     # Sinal 2: Trocas rápidas de conta (handoffs <=25 min sem sobreposição — âncora temporal forte)
     if handoff_cnt >= 4:
         score += 22.0
@@ -1463,7 +2060,7 @@ def score_smurf_pair(
             f"{len(shared_allies_info)} aliado(s) recorrente(s) em comum no mesmo squad: {', '.join(top_names)}."
         )
 
-    # Sinal 4: Assinatura de modo + facção (com tolerância cross-faction dos modelos SKOBADARK e Alekel)
+    # Sinal 4: Assinatura de modo + facção (com tolerância cross-faction dos modelos SKOBADARK, Alekel e TearsInTheRain)
     mf_sim = 0.0
     hour_sim_pre = (
         _cosine_similarity(cand_tel.hour_counts, main_tel.hour_counts)
@@ -1483,10 +2080,10 @@ def score_smurf_pair(
         elif mf_sim >= 0.55:
             score += 5.0
         elif mf_sim < 0.25:
-            # Modelos SKOBADARK e Alekel mostram smurfs treinando outra facção com mesmo squad/APM/horário
             has_cross_faction_corroboration = (
                 bool(shared_allies_info)
                 or (apm_info["valid"] and apm_info["delta_apm"] <= 8.0)
+                or (dna_info["valid"] and float(dna_info["dna_sim"]) >= 0.75)
                 or hour_sim_pre >= 0.75
             )
             if not has_cross_faction_corroboration:
@@ -1510,8 +2107,9 @@ def score_smurf_pair(
             f"0 confrontos diretos na mesma faixa de ELO/modo ({', '.join(same_bracket_modes)})."
         )
 
-    # Sinal 6: Correlação de horários de atividade (UTC 0..23) — excelente separador empírico (79–87% nos modelos)
+    # Sinal 6: Correlação de horários de atividade (UTC 0..23) + Alternância de dias exclusivos + Ritmo BRT
     hour_sim = hour_sim_pre
+    apm_very_close = bool(apm_info["valid"] and float(apm_info["delta_apm"]) <= 4.0)
     if cand_tel and main_tel and cand_tel.games >= 6 and main_tel.games >= 6:
         if hour_sim >= 0.78:
             score += 14.0
@@ -1524,14 +2122,79 @@ def score_smurf_pair(
             identity_anchor_signals += 1
             evidence.append(f"Horários de jogo compatíveis ({hour_sim * 100:.0f}%).")
         elif cand_tel.games >= 10 and main_tel.games >= 10 and hour_sim < 0.30:
-            score -= 14.0
+            # Smurfs solo diurnas (ex.: TearsInTheRain) jogam fora do turno do squad noturno: evita penalizar quando APM + ELO + bracket corroboram
+            is_shift_swap_solo_smurf = bool(
+                apm_very_close and vel_info["strong_velocity"] and same_bracket_modes
+            )
+            if not is_shift_swap_solo_smurf:
+                score -= 14.0
 
-    # Sinal 7: Similaridade direta de apelido + lista de amigos Steam (se fornecida)
+    # Sinal 6B (Multi-gênero): Alternância de dias exclusivos (dormancy swap) + prime time BRT
+    if temporal_info["dormancy_swap"] and (apm_very_close or bool(shared_allies_info) or (dna_info["valid"] and float(dna_info["dna_sim"]) >= 0.72)):
+        score += 7.0
+        identity_anchor_signals += 1
+        evidence.append(
+            f"Alternância de dias exclusivos (dormancy swap: {temporal_info['exclusive_day_ratio'] * 100:.0f}% dos dias da candidata sem atividade na principal)."
+        )
+    if (
+        is_explicit_foreign
+        and float(temporal_info["cand_brt_prime"]) >= 0.55
+        and float(temporal_info["main_brt_prime"]) >= 0.45
+        and cand_tel is not None
+        and cand_tel.games >= 6
+    ):
+        score += 6.0
+        evidence.append(
+            f"Ciclo circadiano brasileiro sob bandeira '{cand_ctry}' ({temporal_info['cand_brt_prime'] * 100:.0f}% dos jogos em horário nobre BRT)."
+        )
+
+    # Sinal 7: Similaridade de nick (exato, leetspeak, trigramas, tag de clã), trocas frequentes, PT-BR e OSINT Steam
     if alias_pts > 0:
         score += float(alias_pts)
         behavioral_signals += 1
         identity_anchor_signals += 1
         evidence.append(alias_note + ".")
+
+    if ptbr_nick_hit and (not cand_ctry or cand_ctry not in ("br",)):
+        score += 7.0
+        identity_anchor_signals += 1
+        evidence.append(f"Pista linguística brasileira sob bandeira '{cand_ctry or '??'}': {ptbr_nick_note}.")
+
+    distinct_cand_nicks = len({a.casefold() for a in cand_seen_all if not _is_placeholder_alias(a)})
+    if distinct_cand_nicks >= 3:
+        score += 4.0
+        evidence.append(f"Rotatividade alta de apelidos ({distinct_cand_nicks} nicks distintos observados).")
+    elif _is_throwaway_or_barcode_nick(cand_alias_str) and cand_elo >= 1350:
+        score += 3.0
+        evidence.append(f"Nick descartável/barcode em ELO alto ('{cand_alias_str}').")
+
+    if same_custom_avatar:
+        score += 24.0
+        behavioral_signals += 1
+        identity_anchor_signals += 1
+        evidence.append("Avatar customizado Steam 100% idêntico (mesmo hash SHA-1) entre as duas contas.")
+    if steam_br_location_leak and cand_ctry not in ("br",):
+        score += 8.0
+        identity_anchor_signals += 1
+        evidence.append(
+            f"Perfil público Steam revela localização no Brasil ('{cand_osint.get('location')}') apesar da bandeira '{cand_ctry or '??'}'."
+        )
+    osint_burner_notes: list[str] = []
+    osint_burner_pts = 0.0
+    if cand_osint.get("is_default_avatar") and cand_elo >= 1300:
+        osint_burner_pts += 5.0
+        osint_burner_notes.append("avatar padrão '?' da Steam")
+    if cand_osint.get("is_private") and cand_elo >= 1350 and 0 < cand_total <= 350:
+        osint_burner_pts += 5.0
+        osint_burner_notes.append("perfil Steam privado em conta nova de ELO alto")
+    cur_year = datetime.now(tz=timezone.utc).year
+    mem_yr = int(cand_osint.get("member_since_year", 0) or 0)
+    if mem_yr >= cur_year - 2 and cand_elo >= 1350:
+        osint_burner_pts += 4.0
+        osint_burner_notes.append(f"conta Steam criada recentemente ({mem_yr})")
+    if osint_burner_pts > 0.0:
+        score += min(10.0, osint_burner_pts)
+        evidence.append("OSINT Steam (padrão burner): " + ", ".join(osint_burner_notes) + ".")
 
     if same_steam_friend_penalty:
         score -= 10.0  # Contas smurf raramente se adicionam, embora aconteça; penalidade leve
@@ -1542,7 +2205,6 @@ def score_smurf_pair(
         evidence.append(f"{shared_steam_friends} amigo(s) Steam em comum entre as contas.")
 
     # Sinal 8: Biometria de APM (`totalcmds / gt`) + cadência de habilidades (`abil/min`)
-    # Calibrado pelos modelos SKOBADARK (Δ=0.0), Alekel (Δ=2.6), Chacineiro (Δ=1.4..11.1) e General Winter (Δ=15..25)
     apm_strong_match = False
     if apm_info["valid"]:
         d_apm = float(apm_info["delta_apm"])
@@ -1573,6 +2235,26 @@ def score_smurf_pair(
             score -= 25.0
         elif d_apm >= 35.0:
             score -= 14.0
+
+    # Sinal 8B (Multi-gênero): Combat DNA independente de facção (K/D, DPM, objetivos, inatividade, trocas, rendição)
+    combat_dna_strong = False
+    if dna_info["valid"]:
+        d_sim = float(dna_info["dna_sim"])
+        close_txt = f" ({', '.join(dna_info['close_axes'])})" if dna_info["close_axes"] else ""
+        if d_sim >= 0.78:
+            score += 10.0
+            behavioral_signals += 1
+            combat_dna_strong = True
+            evidence.append(
+                f"DNA de combate multi-gênero muito próximo ({d_sim * 100:.0f}% em {dna_info['axes_used']} eixos{close_txt})."
+            )
+        elif d_sim >= 0.70:
+            score += 5.0
+            evidence.append(
+                f"DNA de combate multi-gênero compatível ({d_sim * 100:.0f}% em {dna_info['axes_used']} eixos{close_txt})."
+            )
+        elif d_sim < 0.42:
+            score -= 6.0
 
     # Sinal 9: Escolha de Battlegroups (Dupla camada: Loadout Relic `eslot 0–2` + BGs escolhidos no `cohdb.com`)
     bg_pts = 0.0
@@ -1637,7 +2319,7 @@ def score_smurf_pair(
         and not shared_allies_info
         and handoff_cnt == 0
         and alias_pts == 0
-        and not (apm_strong_match and bg_pts >= 6.0)
+        and not (apm_strong_match and (bg_pts >= 6.0 or combat_dna_strong))
     ):
         cand_team_games = cand_tel.games - cand_tel.mode_counts.get("1v1", 0)
         main_team_games = main_tel.games - main_tel.mode_counts.get("1v1", 0)
@@ -1646,8 +2328,8 @@ def score_smurf_pair(
 
     # Guarda Anti-Ruído Meta:
     # Exige ao menos 2 sinais comportamentais independentes E ao menos 1 âncora de identidade/tempo/rede
-    # (squad em comum, handoff <=25m, horários UTC >=68%, 0 confrontos no mesmo ELO alto, nick ou amigos Steam).
-    # Impede que dois desconhecidos com mesmo APM + mesmos BGs meta sejam acusados sem vínculo real!
+    # (squad em comum, handoff <=25m, horários UTC >=68%, 0 confrontos no mesmo ELO alto, dormancy swap corroborado,
+    # nick/leetspeak/clã, avatar Steam idêntico, localização BR Steam ou amigos Steam).
     if behavioral_signals < 2:
         score = min(score, 34.0)
     elif identity_anchor_signals < 1:
@@ -1690,6 +2372,14 @@ def score_smurf_pair(
             "bg_loadout_similarity": bg_loadout_sim,
             "cohdb_bg_similarity": cohdb_bg_sim,
             "shared_battlegroups": shared_bgs,
+            "combat_dna_similarity": dna_info["dna_sim"] if dna_info["valid"] else None,
+            "net_elo_gain": vel_info["net_elo_gain"],
+            "max_win_streak": vel_info["max_win_streak"],
+            "sandbagging": vel_info["sandbagging"],
+            "exclusive_day_ratio": temporal_info["exclusive_day_ratio"],
+            "cand_brt_prime_ratio": temporal_info["cand_brt_prime"],
+            "same_custom_avatar": same_custom_avatar,
+            "steam_br_location_leak": steam_br_location_leak,
         },
     }
 
@@ -2056,6 +2746,7 @@ def detect_top50_br_smurfs(
     live_stats_by_pid: dict[int, dict[str, Any]] | None = None,
     steam_aliases_by_sid: dict[str, str] | None = None,
     alias_history_doc: dict[str, Any] | None = None,
+    steam_osint_by_pid: dict[int, dict[str, Any]] | None = None,
     top_n: int = DEFAULT_TOP_N_BR,
     min_probability_pct: int = DEFAULT_MIN_PROBABILITY_PCT,
     include_known_smurfs: bool = False,
@@ -2175,6 +2866,7 @@ def detect_top50_br_smurfs(
                 alias_history_by_pid=alias_history_by_pid,
                 historical_br_pids=historical_br_pids,
                 country_migration_by_pid=country_migration_by_pid,
+                steam_osint_by_pid=steam_osint_by_pid,
             )
             if int(scored["probability_pct"]) >= min_probability_pct:
                 top50_scores.append(scored)
@@ -2203,6 +2895,7 @@ def detect_top50_br_smurfs(
                 alias_history_by_pid=alias_history_by_pid,
                 historical_br_pids=historical_br_pids,
                 country_migration_by_pid=country_migration_by_pid,
+                steam_osint_by_pid=steam_osint_by_pid,
             )
             if int(out_scored["probability_pct"]) > best_outside_prob:
                 best_outside_prob = int(out_scored["probability_pct"])
@@ -2435,7 +3128,19 @@ def verify_suspects_with_relic(
             except Exception as exc:
                 logger.debug("[SMURF STAGE 2] Falha em cohdb pid=%d: %s", pid, redact_secrets(exc))
 
-    # 4. Reavalia a shortlist com telemetria completa (APM + Battlegroups + estatísticas oficiais Relic + nicks atuais)
+    # 3B. Coleta OSINT público Steam XML (avatar padrão/idêntico, perfil privado/novo, localização BR)
+    steam_osint_map: dict[int, dict[str, Any]] = {}
+    if isinstance(relic_client, RelicActivityClient):
+        osint_client = SteamProfileOSINTClient(pace_delay_sec=0.10)
+        for pid in pids_to_verify[:40]:
+            row = enriched_br.get(pid) or enriched_extra.get(pid) or live_stats.get(pid) or {}
+            sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+            if sid:
+                info = osint_client.fetch_profile_osint(sid)
+                if info.get("ok"):
+                    steam_osint_map[pid] = info
+
+    # 4. Reavalia a shortlist com telemetria completa (APM + Combat DNA + Battlegroups + OSINT Steam + Relic)
     verified = detect_top50_br_smurfs(
         all_br_players=enriched_br,
         telemetry=telemetry,
@@ -2448,6 +3153,7 @@ def verify_suspects_with_relic(
         live_stats_by_pid=live_stats,
         steam_aliases_by_sid=steam_aliases_by_sid,
         alias_history_doc=alias_history_doc,
+        steam_osint_by_pid=steam_osint_map or None,
         top_n=top_n,
         min_probability_pct=min_probability_pct,
         include_known_smurfs=include_known_smurfs,
@@ -2472,7 +3178,7 @@ def evaluate_model_benchmarks(
 ) -> list[dict[str, Any]]:
     """
     Executa avaliação forense direta sobre os 4 modelos reais de referência
-    (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`) usando Relic + cohdb.
+    (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`) usando Relic + cohdb + OSINT Steam.
     """
     all_pids = sorted(
         {
@@ -2501,6 +3207,16 @@ def evaluate_model_benchmarks(
             bgs = active_cohdb.fetch_player_battlegroups(pid)
             if bgs:
                 col._get(pid).cohdb_battlegroups.update(bgs)
+
+    steam_osint_map: dict[int, dict[str, Any]] = {}
+    if isinstance(relic_client, RelicActivityClient):
+        osint_client = SteamProfileOSINTClient(pace_delay_sec=0.08)
+        for pid in all_pids:
+            sid = str((stats.get(pid) or {}).get("steam_id") or "").replace("/steam/", "").strip()
+            if sid:
+                info = osint_client.fetch_profile_osint(sid)
+                if info.get("ok"):
+                    steam_osint_map[pid] = info
 
     ally_pop = col.build_ally_popularity()
     roster_by_pid = {
@@ -2540,6 +3256,7 @@ def evaluate_model_benchmarks(
                 col.players.get(mpid),
                 ally_popularity=ally_pop,
                 pid_aliases=col.pid_aliases,
+                steam_osint_by_pid=steam_osint_map or None,
             )
             smurf_roster = roster_by_pid.get(spid_i)
             if smurf_roster:
