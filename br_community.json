@@ -42340,7 +42340,6 @@
     "1445924": {
       "alias": "Et Bilusca",
       "br_source": "open_data_matches",
-      "current_alias": "Wiz",
       "last_match_date": 1794579345,
       "last_seen_ingame_webapi_ts": 1795484556,
       "last_seen_online_ts": 1795505878,
@@ -45800,14 +45799,14 @@
       "alias": "克鲁杰7分钟800人力就1v2",
       "br_source": "alias_history",
       "current_alias": "北方军港",
-      "last_match_date": 1795490096,
+      "last_match_date": 1795506131,
       "last_seen_ingame_ts": 1795505878,
       "last_seen_ingame_webapi_ts": 1795490096,
       "last_seen_online_ts": 1795505878,
       "max_elo": 1446,
       "profile_id": 3984,
       "steam_id": "76561198319696040",
-      "total_matches": 1263
+      "total_matches": 1264
     },
     "39939": {
       "alias": "Romioul",
@@ -47717,7 +47716,6 @@
     "86550": {
       "alias": "Rato",
       "br_source": "steam_sister_group_br",
-      "current_alias": "Qi 124",
       "last_match_date": 1794526879,
       "last_seen_ingame_ts": 1795499175,
       "last_seen_ingame_webapi_ts": 1795498808,
