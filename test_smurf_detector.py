@@ -911,7 +911,148 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertTrue(any("Avatar customizado Steam 100% idêntico" in e for e in res["evidence"]))
         self.assertTrue(any("localização no Brasil" in e for e in res["evidence"]))
 
+    def test_steam_profile_xml_and_html_family_sharing_signals(self) -> None:
+        xml_limited_private = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <profile>
+            <steamID64>76561198722284920</steamID64>
+            <privacyState>private</privacyState>
+            <isLimitedAccount>1</isLimitedAccount>
+            <avatarMedium><![CDATA[https://avatars.fastly.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg]]></avatarMedium>
+        </profile>"""
+        parsed_priv = sd.SteamProfileOSINTClient.parse_profile_xml(xml_limited_private, current_year=2026)
+        self.assertTrue(parsed_priv["ok"])
+        self.assertTrue(parsed_priv["is_private"])
+        self.assertTrue(parsed_priv["is_limited_account"])
+        self.assertTrue(parsed_priv["is_default_avatar"])
+        self.assertFalse(parsed_priv["member_since_current_year"])
+
+        xml_yearless_public = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <profile>
+            <steamID64>76561198723667226</steamID64>
+            <privacyState>public</privacyState>
+            <isLimitedAccount>1</isLimitedAccount>
+            <memberSince>March 23</memberSince>
+            <customURL><![CDATA[]]></customURL>
+        </profile>"""
+        parsed_pub = sd.SteamProfileOSINTClient.parse_profile_xml(xml_yearless_public, current_year=2026)
+        self.assertTrue(parsed_pub["is_limited_account"])
+        self.assertEqual(parsed_pub["member_since_year"], 2026)
+        self.assertTrue(parsed_pub["member_since_current_year"])
+        self.assertEqual(parsed_pub["custom_url"], "")
+
+        html_burner = """
+        <div class="persona_level"><span class="friendPlayerLevelNum">0</span></div>
+        <a href="https://steamcommunity.com/profiles/76561198723667226/badges/"><span class="profile_count_link_total">1</span></a>
+        <a href="https://steamcommunity.com/profiles/76561198723667226/friends/"><span class="profile_count_link_total">8</span></a>
+        """
+        fp = sd.SteamProfileOSINTClient.parse_profile_html_footprint(html_burner)
+        self.assertEqual(fp["steam_level"], 0)
+        self.assertEqual(fp["badges_count"], 1)
+        self.assertEqual(fp["friends_count"], 8)
+
+    def test_family_sharing_signals_boost_and_deterministic_lender_proof_99pct(self) -> None:
+        from collections import Counter
+
+        t_main = sd.PlayerMatchTelemetry(
+            profile_id=4001,
+            games=25,
+            wins=15,
+            mode_counts=Counter({"4v4": 25}),
+            mode_faction_counts=Counter({("4v4", 1): 25}),
+            mode_elo_max={"4v4": 1720},
+            hour_counts=Counter({22: 7, 23: 7, 0: 6, 1: 5}),
+            ally_counts=Counter({9001: 8}),
+            intervals=[(1_760_000_000 + i * 14400, 1_760_000_000 + i * 14400 + 1800, 1000 + i) for i in range(10)],
+            apm_values=[92.0] * 10,
+        )
+        t_cand = sd.PlayerMatchTelemetry(
+            profile_id=1_970_001,
+            games=16,
+            wins=9,
+            mode_counts=Counter({"4v4": 16}),
+            mode_faction_counts=Counter({("4v4", 3): 16}),
+            mode_elo_max={"4v4": 1540},
+            hour_counts=Counter({22: 4, 23: 4, 0: 4, 1: 4}),
+            ally_counts=Counter({9001: 4}),
+            intervals=[(1_760_007_200 + i * 14400, 1_760_007_200 + i * 14400 + 1800, 2000 + i) for i in range(8)],
+            apm_values=[84.0] * 8,
+        )
+        cand_row = {
+            "profile_id": 1_970_001,
+            "steam_id": "76561199970000001",
+            "alias": "NewAltBR",
+            "country": "br",
+            "max_elo": 1540,
+            "total_matches": 95,
+        }
+        main_row = {
+            "profile_id": 4001,
+            "steam_id": "76561198000004001",
+            "alias": "MainVetBR",
+            "country": "br",
+            "max_elo": 1720,
+            "total_matches": 3000,
+            "relic_br_rank": 3,
+        }
+
+        base_res = sd.score_smurf_pair(cand_row, main_row, t_cand, t_main)
+        fs_res = sd.score_smurf_pair(
+            cand_row,
+            main_row,
+            t_cand,
+            t_main,
+            steam_osint_by_pid={
+                1_970_001: {
+                    "ok": True,
+                    "is_limited_account": True,
+                    "member_since_current_year": True,
+                    "member_since_raw": "March 23",
+                    "steam_level": 0,
+                    "friends_count": 4,
+                    "badges_count": 1,
+                    "family_shared_api_confirmed": True,
+                }
+            },
+        )
+        self.assertGreater(fs_res["probability_pct"], base_res["probability_pct"])
+        self.assertTrue(fs_res["metrics"]["is_limited_account"])
+        self.assertTrue(fs_res["metrics"]["family_shared_api_confirmed"])
+        self.assertTrue(any("Steam Family Sharing detectado" in e for e in fs_res["evidence"]))
+
+        # Prova determinística IsPlayingSharedGame (mesmo sob bandeira estrangeira disfarçada -> 99%!)
+        cand_foreign = dict(cand_row, country="de", alias="GhostDE")
+        proof_res = sd.score_smurf_pair(
+            cand_foreign,
+            main_row,
+            t_cand,
+            t_main,
+            shared_lender_by_sid={"76561199970000001": "76561198000004001"},
+        )
+        self.assertEqual(proof_res["disqualified_reason"], "")
+        self.assertEqual(proof_res["probability_pct"], 99)
+        self.assertTrue(proof_res["metrics"]["direct_family_sharing_lender"])
+        self.assertTrue(any("PROVA DIRETA Steam Family Sharing" in e for e in proof_res["evidence"]))
+
+    def test_load_persisted_shared_lender_map(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "state.json"
+            p.write_text(
+                json.dumps(
+                    {
+                        "shared_lender_hits": {
+                            "76561199970000001": {"lender_steam_id": "76561198000004001", "ts": 1760000000},
+                            "76561199970000002": {"lender_steam_id": "76561199970000002", "ts": 1760000000},
+                            "invalid": {"lender_steam_id": "76561198000004001"},
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            loaded = sd._load_persisted_shared_lender_map(p)
+            self.assertEqual(loaded, {"76561199970000001": "76561198000004001"})
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

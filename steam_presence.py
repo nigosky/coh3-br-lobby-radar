@@ -68,6 +68,8 @@ RELIC_COH2_BASE_URL = "https://coh2-api.reliclink.com/community/leaderboard"
 RELIC_COH1_BASE_URL = "https://coh1-api.reliclink.com/community/leaderboard"
 STEAM_API_SUMMARIES_URL = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/"
 STEAM_API_FRIEND_LIST_URL = "https://api.steampowered.com/ISteamUser/GetFriendList/v1/"
+STEAM_API_OWNED_GAMES_URL = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/"
+STEAM_API_SHARED_GAME_URL = "https://api.steampowered.com/IPlayerService/IsPlayingSharedGame/v1/"
 COH3STATS_LEADERBOARDS_BASE = "https://storage.coh3stats.com/leaderboards"
 COH3STATS_MATCHES_BASE = "https://storage.coh3stats.com/matches"
 COH2STATS_MATCHES_BASE = "https://storage.coh2stats.com/matches"
@@ -129,6 +131,8 @@ STEAM_ID64_VALID_RE = re.compile(r"^7656119\d{10}$")
 STEAM_API_KEY_VALID_RE = re.compile(r"^[A-Za-z0-9]{16,64}$")
 STEAM_API_SUMMARIES_PATH_RE = re.compile(r"^/ISteamUser/GetPlayerSummaries/v0*2/?$")
 STEAM_API_FRIEND_LIST_PATH_RE = re.compile(r"^/ISteamUser/GetFriendList/v0*1/?$")
+STEAM_API_OWNED_GAMES_PATH_RE = re.compile(r"^/IPlayerService/GetOwnedGames/v0*1/?$")
+STEAM_API_SHARED_GAME_PATH_RE = re.compile(r"^/IPlayerService/IsPlayingSharedGame/v0*1/?$")
 STEAM_PROFILE_XML_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/?$")
 STEAM_PROFILE_FRIENDS_PATH_RE = re.compile(r"^/profiles/7656119\d{10}/friends/?$")
 STEAM_FRIENDS_REDIRECT_PATH_RE = re.compile(r"^/(?:profiles/7656119\d{10}|id/[A-Za-z0-9_-]{1,64})/friends/?$")
@@ -771,6 +775,72 @@ def parse_steam_web_api_friends_payload(
             seen.add(sid)
             out.append(sid)
     return out
+
+
+def parse_owned_games_coh3_family_payload(payload: Any) -> dict[str, Any]:
+    """
+    Analisa o retorno de `IPlayerService/GetOwnedGames/v1/` (com `include_family_licenses=1`):
+    - `library_visible=False` quando os detalhes de jogos estão ocultos/privados.
+    - `family_shared_confirmed=True` se CoH3 (`1677280`) vier marcado com `family_shared: true`
+      OU se a biblioteca pública listar jogos próprios (`game_count > 0`) SEM incluir `1677280`.
+    """
+    empty: dict[str, Any] = {
+        "library_visible": False,
+        "owns_coh3": None,
+        "family_shared_confirmed": False,
+        "game_count": 0,
+        "coh3_playtime_min": 0,
+    }
+    if not isinstance(payload, dict):
+        return empty
+    resp = payload.get("response")
+    if not isinstance(resp, dict) or not resp:
+        return empty
+    games = resp.get("games")
+    game_count = int(resp.get("game_count", 0) or 0)
+    if not isinstance(games, list):
+        return empty
+
+    coh3_entry: dict[str, Any] | None = None
+    for g in games:
+        if isinstance(g, dict) and str(g.get("appid") or "") == COH3_STEAM_APP_ID:
+            coh3_entry = g
+            break
+
+    if coh3_entry is not None:
+        is_shared = bool(coh3_entry.get("family_shared"))
+        return {
+            "library_visible": True,
+            "owns_coh3": not is_shared,
+            "family_shared_confirmed": is_shared,
+            "game_count": max(game_count, len(games)),
+            "coh3_playtime_min": max(0, int(coh3_entry.get("playtime_forever", 0) or 0)),
+        }
+
+    # Biblioteca pública visível (lista jogos), porém CoH3 (1677280) não consta como próprio -> Family Sharing provável
+    if game_count > 0 or len(games) > 0:
+        return {
+            "library_visible": True,
+            "owns_coh3": False,
+            "family_shared_confirmed": True,
+            "game_count": max(game_count, len(games)),
+            "coh3_playtime_min": 0,
+        }
+    return empty
+
+
+def parse_playing_shared_game_lender(payload: Any, *, borrower_steam_id: str = "") -> str:
+    """Extrai o `lender_steamid` (SteamID64 real do dono da cópia) de `IPlayerService/IsPlayingSharedGame/v1/`."""
+    if not isinstance(payload, dict):
+        return ""
+    resp = payload.get("response")
+    if not isinstance(resp, dict):
+        return ""
+    lender = str(resp.get("lender_steamid") or "").strip()
+    borrower = str(borrower_steam_id or "").replace("/steam/", "").strip()
+    if lender and lender != "0" and lender != borrower and STEAM_ID64_VALID_RE.fullmatch(lender):
+        return lender
+    return ""
 
 
 def parse_steam_friends_html(
@@ -2102,6 +2172,77 @@ class SteamPresenceClient:
                 rl_limit,
             )
         return out
+
+    def fetch_coh3_family_sharing_status(self, steam_id: str) -> dict[str, Any]:
+        """
+        Consulta `IPlayerService/GetOwnedGames/v1/` (com `include_family_licenses=1`, chave apenas em header `x-webapi-key`)
+        para verificar se CoH3 (`1677280`) é licença própria ou emprestada via Steam Family Sharing.
+        """
+        sid = str(steam_id or "").replace("/steam/", "").strip()
+        if not self._api_key or not STEAM_ID64_VALID_RE.fullmatch(sid):
+            return parse_owned_games_coh3_family_payload({})
+        qs = urllib.parse.urlencode(
+            {
+                "steamid": sid,
+                "include_played_free_games": "1",
+                "include_family_licenses": "1",
+                "format": "json",
+            }
+        )
+        url = f"{STEAM_API_OWNED_GAMES_URL}?{qs}"
+        validate_https_endpoint(
+            url,
+            ALLOWED_STEAM_API_HOSTS,
+            path_prefix="/IPlayerService/GetOwnedGames/",
+            path_regex=STEAM_API_OWNED_GAMES_PATH_RE,
+        )
+        headers = {
+            "User-Agent": "CoH3-BR-Lobby-Radar/1.4",
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip",
+            "x-webapi-key": self._api_key,
+        }
+        try:
+            req = urllib.request.Request(url, headers=headers, method="GET")
+            with _get_relic_opener().open(req, timeout=8) as resp:
+                raw = read_bounded_http_body(resp, MAX_STEAM_API_RESPONSE_BYTES)
+            payload = json.loads(raw.decode("utf-8", errors="ignore"))
+            return parse_owned_games_coh3_family_payload(payload)
+        except Exception as exc:
+            logger.debug("Steam GetOwnedGames indisponível para %s: %s", sid, redact_secrets(exc))
+            return parse_owned_games_coh3_family_payload({})
+
+    def fetch_live_shared_lender(self, steam_id: str) -> str:
+        """
+        Consulta ao vivo `IPlayerService/IsPlayingSharedGame/v1/` (chave apenas em header `x-webapi-key`)
+        enquanto a conta está com CoH3 aberto. Retorna o `lender_steamid` (dono real da cópia) ou `''`.
+        """
+        sid = str(steam_id or "").replace("/steam/", "").strip()
+        if not self._api_key or not STEAM_ID64_VALID_RE.fullmatch(sid):
+            return ""
+        qs = urllib.parse.urlencode({"steamid": sid, "appid_playing": COH3_STEAM_APP_ID, "format": "json"})
+        url = f"{STEAM_API_SHARED_GAME_URL}?{qs}"
+        validate_https_endpoint(
+            url,
+            ALLOWED_STEAM_API_HOSTS,
+            path_prefix="/IPlayerService/IsPlayingSharedGame/",
+            path_regex=STEAM_API_SHARED_GAME_PATH_RE,
+        )
+        headers = {
+            "User-Agent": "CoH3-BR-Lobby-Radar/1.4",
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip",
+            "x-webapi-key": self._api_key,
+        }
+        try:
+            req = urllib.request.Request(url, headers=headers, method="GET")
+            with _get_relic_opener().open(req, timeout=8) as resp:
+                raw = read_bounded_http_body(resp, 32_768)
+            payload = json.loads(raw.decode("utf-8", errors="ignore"))
+            return parse_playing_shared_game_lender(payload, borrower_steam_id=sid)
+        except Exception as exc:
+            logger.debug("Steam IsPlayingSharedGame indisponível para %s: %s", sid, redact_secrets(exc))
+            return ""
 
     def fetch_steam_alias_history(
         self,
