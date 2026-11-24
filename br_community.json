@@ -39299,14 +39299,14 @@
     "1191187": {
       "alias": "rodrigobrosla",
       "br_source": "open_data_lb",
-      "last_match_date": 1795489624,
+      "last_match_date": 1795519335,
       "last_seen_online_ts": 1795519083,
       "max_elo": 1042,
       "profile_id": 1191187,
       "steam_games_hidden": true,
       "steam_gd_checked_ts": 1795487328,
       "steam_id": "76561198795034882",
-      "total_matches": 1418
+      "total_matches": 1419
     },
     "1193765": {
       "alias": "Skarz",
@@ -47813,14 +47813,14 @@
     "890394": {
       "alias": "TheKat",
       "br_source": "open_data_lb",
-      "last_match_date": 1795517997,
+      "last_match_date": 1795519265,
       "last_seen_ingame_ts": 1795519083,
       "last_seen_ingame_webapi_ts": 1795394786,
       "last_seen_online_ts": 1795519083,
       "max_elo": 1423,
       "profile_id": 890394,
       "steam_id": "76561198049023794",
-      "total_matches": 2584
+      "total_matches": 2585
     },
     "892597": {
       "alias": "Martins",
