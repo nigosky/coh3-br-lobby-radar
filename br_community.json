@@ -22812,17 +22812,6 @@
       "steam_id": "76561197983332337",
       "total_matches": 10
     },
-    "448521": {
-      "alias": "stop",
-      "br_source": "alias_history",
-      "current_alias": "icemaker",
-      "last_match_date": 1712443900,
-      "last_seen_online_ts": 0,
-      "max_elo": 0,
-      "profile_id": 448521,
-      "steam_id": "76561198831175531",
-      "total_matches": 128
-    },
     "449047": {
       "alias": "Nihilus_Sith_Br",
       "br_source": "alias_history",
@@ -25774,16 +25763,6 @@
       "profile_id": 71956,
       "steam_id": "76561198138428180",
       "total_matches": 73
-    },
-    "720147": {
-      "alias": "アリス",
-      "br_source": "alias_history",
-      "last_match_date": 1714610990,
-      "last_seen_online_ts": 0,
-      "max_elo": 0,
-      "profile_id": 720147,
-      "steam_id": "76561199667577805",
-      "total_matches": 41
     },
     "723065": {
       "alias": "Coronel Barbosa",
@@ -37851,10 +37830,10 @@
       "last_match_date": 1795526139,
       "last_seen_ingame_ts": 1795526139,
       "last_seen_online_ts": 1795526139,
-      "max_elo": 0,
+      "max_elo": 1000,
       "profile_id": 1026189,
       "steam_id": "76561198044115157",
-      "total_matches": 249
+      "total_matches": 255
     },
     "1029401": {
       "alias": "Tristeza marota",
@@ -44508,16 +44487,6 @@
       "profile_id": 2821,
       "steam_id": "76561198051332729",
       "total_matches": 1643
-    },
-    "2834": {
-      "alias": "Xampoo - ☭",
-      "br_source": "open_data_lb",
-      "last_match_date": 1794889945,
-      "last_seen_online_ts": 0,
-      "max_elo": 1000,
-      "profile_id": 2834,
-      "steam_id": "76561198091708083",
-      "total_matches": 7235
     },
     "28773": {
       "alias": "vhpbrasil",
