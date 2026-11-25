@@ -411,6 +411,73 @@ class TestForeignBrVerifier(unittest.TestCase):
         )
         self.assertEqual([r["profile_id"] for r in top_list], [79327])
 
+    def test_protected_roster_confirmed_br_preserved_and_workflow_post_mutation_gate(self) -> None:
+        from foreign_br_verifier import save_suspected_foreign_br_registry
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            comm_p = root / "br_community.json"
+            hist_p = root / "alias_history.json"
+            reg_p = root / "suspected_foreign_br.json"
+
+            comm_p.write_text(json.dumps({"players": {}, "dormant_players": {}}), encoding="utf-8")
+            hist_p.write_text(json.dumps({"players": {}}), encoding="utf-8")
+            save_suspected_foreign_br_registry(
+                {
+                    "players": {
+                        "448521": {
+                            "profile_id": 448521,
+                            "steam_id": "76561198831175531",
+                            "alias": "icemaker",
+                            "status": STATUS_CONFIRMED_BR,
+                            "exclude_from_rankings": False,
+                            "remove_from_br_list": False,
+                            "br_score": 100,
+                            "foreign_score": 0,
+                        },
+                        "79327": {
+                            "profile_id": 79327,
+                            "steam_id": "76561197963172584",
+                            "alias": "Chacineiro",
+                            "status": STATUS_SUSPECTED_VPN,
+                            "exclude_from_rankings": True,
+                            "remove_from_br_list": False,
+                        },
+                    }
+                },
+                reg_p,
+            )
+
+            run_periodic_foreign_br_verification(
+                community_path=comm_p,
+                alias_history_path=hist_p,
+                registry_path=reg_p,
+                now_ts=1_800_000_000,
+                max_unverified_audit=0,
+            )
+
+            after = load_suspected_foreign_br_registry(reg_p)
+            players_after = after.get("players") or {}
+            # Membro protegido já auditado como confirmed_br deve ser PRESERVADO (evita quebrar test_shared_roster!)
+            self.assertIn("448521", players_after)
+            self.assertEqual(players_after["448521"].get("status"), STATUS_CONFIRMED_BR)
+            # Marcação indevida de suspeito VPN em membro protegido do roster deve ser purgada
+            self.assertNotIn("79327", players_after)
+            self.assertEqual(after.get("excluded_from_rankings_pids"), [])
+
+        # Workflows que comitam JSONs em main devem validar a suite de testes APOS a mutacao e ANTES do push
+        repo_root = Path(__file__).resolve().parent
+        for wf_name, mutator_cmd in (
+            ("verify_foreign_br.yml", "foreign_br_verifier.py"),
+            ("deep_br_discovery.yml", "discover_br_community.py"),
+        ):
+            txt = (repo_root / ".github" / "workflows" / wf_name).read_text(encoding="utf-8")
+            mut_pos = txt.index(mutator_cmd)
+            post_test_pos = txt.find('python3 -m unittest discover -s . -p "test_*.py"', mut_pos)
+            commit_pos = txt.index("git commit -m", mut_pos)
+            self.assertGreater(post_test_pos, mut_pos, f"{wf_name} precisa rodar unittest APOS {mutator_cmd}")
+            self.assertLess(post_test_pos, commit_pos, f"{wf_name} precisa rodar unittest ANTES de git commit")
+
 
 if __name__ == "__main__":
     unittest.main()

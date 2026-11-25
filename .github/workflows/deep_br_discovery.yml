@@ -99,19 +99,29 @@ jobs:
             --match-days "${MATCH_DAYS}" \
             --max-steam-verify "${MAX_STEAM_VERIFY}"
 
+      - name: Validar suite de testes apos varredura profunda (bloqueia push quebrado em main)
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -euo pipefail
+          python3 manage_roster.py validate
+          python3 -m unittest discover -s . -p "test_*.py"
+
       - name: Auditoria anti-vazamento e persistencia (br_community.json + alias_history.json)
         run: |
           set -euo pipefail
 
           # Bloqueia qualquer URL de Webhook, chave Steam Web API, token GitHub/dispatch ou chave privada em TODOS os arquivos rastreados
           SECRET_PATTERN="(ptb\.|canary\.)?discord(app)?\.com/api/(v[0-9]+/)?webhooks/[0-9]+|STEAM_WEB_API_KEY=[A-Za-z0-9]{16,}|x-webapi-key[:=][[:space:]]*[A-Za-z0-9]{16,}|[?&]key=[A-Za-z0-9]{16,}|TRACKER_DISPATCH_TOKEN=[A-Za-z0-9_.-]{16,}|Authorization:[[:space:]]*(Bearer|Basic|Token)[[:space:]]+[A-Za-z0-9._-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----"
-          if git ls-files -z | xargs -0 grep -InEi "${SECRET_PATTERN}" 2>/dev/null; then
-            echo "::error::Bloqueio de seguranca acionado: padrao de segredo/Webhook detectado em arquivo rastreado!"
+          matched="$(git ls-files -z | xargs -0 grep -IlEi "${SECRET_PATTERN}" 2>/dev/null | tr '\n' ' ' | sed 's/ *$//' || true)"
+          if [ -n "${matched}" ]; then
+            echo "::error::Bloqueio de seguranca acionado: padrao de segredo/Webhook detectado em arquivo rastreado (${matched})!"
             exit 1
           fi
 
           for f in br_community.json alias_history.json; do
-            if [ -f "${f}" ]; then
+            if [ -f "${f}" ] && [ ! -L "${f}" ]; then
+              python3 -m json.tool "${f}" >/dev/null
               git add -- "${f}"
             fi
           done
