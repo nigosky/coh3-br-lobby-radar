@@ -1712,6 +1712,124 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertEqual(scored_inv_ex["metrics"]["rivalry_kryptonite_pts"], -4.0)
         self.assertTrue(any("Contra-evidência de polaridade invertida em adversários comuns" in ev for ev in scored_inv_ex["evidence"]))
 
+    def test_play_schedule_precheck_cjk_nick_native_foreign_footprint_and_default_bg_guards(self) -> None:
+        # 1. Nicks CJK/Cirílico/Kana NÃO são descartáveis/barcode ASCII
+        self.assertFalse(sd._is_throwaway_or_barcode_nick("木木"))
+        self.assertFalse(sd._is_throwaway_or_barcode_nick("Виктор"))
+        self.assertFalse(sd._is_throwaway_or_barcode_nick("アリス"))
+
+        # 2. Co-op vs IA + Automatch capturam horários de vigília e países dos co-jogadores (caso '木木' vs 'Conflict.BR')
+        col = sd.SmurfTelemetryCollector()
+        base_nov_asia = 1_795_503_600  # 2026-11-24 07:00 UTC = 04:00 BRT (tarde na China)
+        mumu_pid = 128112
+        profiles = [
+            {"profile_id": mumu_pid, "alias": "木木", "country": "cn"},
+            {"profile_id": 900001, "alias": "CN1", "country": "cn"},
+            {"profile_id": 900002, "alias": "CN2", "country": "cn"},
+            {"profile_id": 900003, "alias": "KR1", "country": "kr"},
+            {"profile_id": 900004, "alias": "BR1", "country": "br", "leaderboardregion_id": sd.SA_LEADERBOARD_REGION_ID},
+        ]
+        mstats = []
+        for i in range(12):
+            ct = base_nov_asia + (i % 5) * 3600 + (i // 2) * 86400
+            mstats.append(
+                {
+                    "id": 91000 + i,
+                    "matchtype_id": 22,
+                    "startgametime": ct - 1200,
+                    "completiontime": ct,
+                    "matchhistoryreportresults": [
+                        {"profile_id": mumu_pid, "teamid": 0, "race_id": 137123, "resulttype": 1 if i % 2 == 0 else 0},
+                        {"profile_id": 900001, "teamid": 0, "race_id": 129494, "resulttype": 1 if i % 2 == 0 else 0},
+                        {"profile_id": 900002, "teamid": 0, "race_id": 203852, "resulttype": 1 if i % 2 == 0 else 0},
+                        {"profile_id": 900004 if i < 3 else 900003, "teamid": 1, "race_id": 198437, "resulttype": 0 if i % 2 == 0 else 1},
+                    ],
+                    "matchhistoryitems": [
+                        {"profile_id": mumu_pid, "itemdefinition_id": 453179, "metadata": '{"eslot":"0"}'},
+                        {"profile_id": mumu_pid, "itemdefinition_id": 453181, "metadata": '{"eslot":"1"}'},
+                        {"profile_id": mumu_pid, "itemdefinition_id": 453182, "metadata": '{"eslot":"2"}'},
+                    ],
+                }
+            )
+        for i in range(15):
+            ct = base_nov_asia + (i % 6) * 3600 + (i // 3) * 86400
+            mstats.append(
+                {
+                    "id": 92000 + i,
+                    "matchtype_id": 16,  # Co-op vs IA
+                    "startgametime": ct - 1000,
+                    "completiontime": ct,
+                    "matchhistoryreportresults": [
+                        {"profile_id": mumu_pid, "teamid": 0, "race_id": 137123, "resulttype": 1},
+                        {"profile_id": 900001, "teamid": 0, "race_id": 129494, "resulttype": 1},
+                        {"profile_id": 900002, "teamid": 0, "race_id": 203852, "resulttype": 1},
+                    ],
+                }
+            )
+        col.observe_relic_match_history(mumu_pid, {"profiles": profiles, "matchHistoryStats": mstats})
+        mumu_tel = col.players[mumu_pid]
+        self.assertEqual(mumu_tel.games, 12)
+        self.assertEqual(sum(mumu_tel.effective_brt_hours().values()), 27)
+        self.assertTrue(sd._has_native_foreign_regional_footprint(mumu_tel, "cn"))
+        self.assertFalse(sd._has_strong_br_sa_mm_nexus(mumu_tel, "cn"))
+
+        # Main joga apenas 19h–23h BRT (0% 03h–10h BRT), inativa desde ago/2026 e com o mesmo loadout padrão USF
+        main_tel = sd.PlayerMatchTelemetry(profile_id=431802, games=40, wins=20)
+        for h in (19, 20, 21, 22, 23):
+            main_tel.all_brt_hour_counts[h] += 8
+            main_tel.brt_hour_counts[h] += 8
+            main_tel.hour_counts[(h + 3) % 24] += 8
+        for d in ("2026-08-01", "2026-08-02", "2026-08-03", "2026-08-04", "2026-08-05"):
+            main_tel.active_brt_days.add(d)
+        for idef in (453179, 453181, 453182):
+            main_tel.bg_loadout_by_race[137123][idef] = 10
+
+        # Loadout base-game padrão limitado a <=0.65; janelas disjuntas (>21d) não ativam dormancy_swap
+        self.assertLessEqual(sd._compare_battlegroup_signatures(mumu_tel, main_tel)["loadout_sim"], 0.65)
+        self.assertFalse(sd._analyze_temporal_anti_disguise(mumu_tel, main_tel)["dormancy_swap"])
+
+        main_meta = {"profile_id": 431802, "steam_id": "76561198000099422", "alias": "Conflict.BR", "country": "br", "max_elo": 1140, "total_matches": 870, "relic_br_rank": 40}
+        res_cn = sd.score_smurf_pair(
+            {"profile_id": mumu_pid, "steam_id": "76561198106150273", "alias": "木木", "country": "cn", "max_elo": 1159, "total_matches": 73},
+            main_meta,
+            mumu_tel,
+            main_tel,
+        )
+        self.assertEqual(res_cn["probability_pct"], 0)
+        self.assertEqual(res_cn["disqualified_reason"], "estrangeiro_perfil_regional_nativo")
+
+        res_vpn = sd.score_smurf_pair(
+            {"profile_id": mumu_pid, "steam_id": "76561198106150273", "alias": "FakeBRAsia", "country": "br", "max_elo": 1159, "total_matches": 73},
+            main_meta,
+            mumu_tel,
+            main_tel,
+        )
+        self.assertEqual(res_vpn["probability_pct"], 0)
+        self.assertEqual(res_vpn["disqualified_reason"], "horario_incompativel_com_main")
+
+        # Smurf brasileira diurna (ex.: TearsInTheRain 10h-19h vs Chacineiro 11h-12h + 15h-23h):
+        # lacuna interna curta (13h-14h) e fronteira 10h NÃO podem desqualificar o turno diurno brasileiro!
+        day_main = sd.PlayerMatchTelemetry(profile_id=79327, games=59)
+        for h, cnt in ((11, 2), (12, 2), (15, 5), (16, 9), (17, 8), (18, 10), (19, 9), (20, 7), (21, 3), (22, 3), (23, 1)):
+            day_main.all_brt_hour_counts[h] += cnt
+        day_cand = sd.PlayerMatchTelemetry(profile_id=1390350, games=20)
+        for h, cnt in ((10, 3), (11, 3), (12, 1), (13, 6), (14, 4), (15, 1), (16, 1), (19, 1)):
+            day_cand.all_brt_hour_counts[h] += cnt
+        sched_day = sd._compare_play_schedules(day_cand, day_main)
+        self.assertEqual(sched_day["out_of_schedule_share"], 0.0)
+        self.assertEqual(sched_day["cand_asia_sleep_share"], 0.0)
+
+        # Brasileiro coruja (ex.: icemaker): ambos ativos de madrugada -> 0% fora de horário
+        owl_main = sd.PlayerMatchTelemetry(profile_id=448521, games=60)
+        owl_cand = sd.PlayerMatchTelemetry(profile_id=720147, games=20)
+        for h in (0, 1, 2, 3, 4, 5, 22, 23):
+            owl_main.all_brt_hour_counts[h] += 8
+            owl_cand.all_brt_hour_counts[h] += 3
+        sched_owl = sd._compare_play_schedules(owl_cand, owl_main)
+        self.assertEqual(sched_owl["out_of_schedule_share"], 0.0)
+        self.assertGreaterEqual(sched_owl["schedule_cos"], 0.95)
+
+
 
 if __name__ == "__main__":
     unittest.main()
