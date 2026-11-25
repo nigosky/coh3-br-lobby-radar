@@ -65015,7 +65015,7 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1786367974,
       "coh3_total_matches": 171,
-      "current_alias": "Quimera",
+      "current_alias": "quimera",
       "last_checked_at": 1795566075,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -127090,8 +127090,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1785613535,
       "coh3_total_matches": 1,
-      "current_alias": "r U N A W A Y",
-      "last_checked_at": 1795562695,
+      "current_alias": "R u n a w a y",
+      "last_checked_at": 1795566374,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1380032,
@@ -172246,8 +172246,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1785270926,
       "coh3_total_matches": 10,
-      "current_alias": "Kuunt",
-      "last_checked_at": 1795562695,
+      "current_alias": "kuunt",
+      "last_checked_at": 1795566374,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -242268,5 +242268,5 @@
     "steam_web_api": 7470,
     "steam_xml": 6739
   },
-  "updated_at": 1795566075
+  "updated_at": 1795566374
 }
