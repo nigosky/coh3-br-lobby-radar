@@ -49,6 +49,8 @@ from security import (
     validate_https_endpoint,
 )
 from foreign_br_verifier import (
+    STRONG_FOREIGN_COH1_ORIGINS,
+    SUSPECTED_FOREIGN_COH2_ORIGINS,
     get_confirmed_foreign_removed_pids,
     get_ranking_excluded_foreign_pids,
     load_suspected_foreign_br_registry,
@@ -176,6 +178,18 @@ ASIA_SLEEP_BRT_HOURS: frozenset[int] = frozenset({3, 4, 5, 6, 7, 8, 9})
 EAST_ASIA_COUNTRIES: frozenset[str] = frozenset(
     {"cn", "kr", "jp", "tw", "hk", "sg", "th", "vn", "ph", "my", "id", "mo"}
 )
+EU_COUNTRIES: frozenset[str] = frozenset(
+    {
+        "de", "fr", "gb", "pl", "ru", "ua", "nl", "se", "cz", "ro", "hu", "it",
+        "es", "at", "ch", "be", "dk", "no", "fi", "by", "sk", "bg", "gr", "pt",
+        "hr", "rs", "lt", "lv", "ee",
+    }
+)
+ALLOWED_LEGACY_RELIC_HOSTS: frozenset[str] = frozenset(
+    {"coh2-api.reliclink.com", "coh1-api.reliclink.com"}
+)
+LEGACY_RELIC_PERSONAL_STAT_PATH = "/community/leaderboard/getPersonalStat"
+MAX_LEGACY_RELIC_BYTES = 2 * 1024 * 1024
 DEFAULT_BASE_BG_LOADOUT_BY_RACE: dict[int, frozenset[int]] = {
     129494: frozenset({453171, 453172, 453175}),  # Wehr base 3
     137123: frozenset({453179, 453181, 453182}),  # USF base 3
@@ -387,6 +401,10 @@ _STEAM_BR_LOCATION_RE = re.compile(
     r"brasilia|brasília|salvador|fortaleza|recife|florianopolis|florianópolis|campinas|goiania|goiânia|"
     r"manaus|belem|belém|vitoria|vitória|minas gerais|parana|paraná|bahia|ceara|ceará|pernambuco|"
     r"santa catarina|rio grande do sul|espirito santo|espírito santo|mato grosso)\b",
+    re.I,
+)
+_STEAM_BR_GROUPS_RE = re.compile(
+    r"\b(?:brasil|brazil|brasileiro|brazuca|coh2br|coh3br|companybr|coh\s*br|brasil\s*coh)\b",
     re.I,
 )
 
@@ -618,6 +636,9 @@ class SteamProfileOSINTClient:
     )
     _CUSTOM_URL_RE = re.compile(r"<customURL>(?:<!\[CDATA\[)?([^<\]]{0,80})(?:\]\]>)?</customURL>", re.I)
     _LOCATION_RE = re.compile(r"<location>(?:<!\[CDATA\[)?([^<\]]{1,120})(?:\]\]>)?</location>", re.I)
+    _REALNAME_RE = re.compile(r"<realname>(?:<!\[CDATA\[)?([^<\]]{1,80})(?:\]\]>)?</realname>", re.I)
+    _SUMMARY_RE = re.compile(r"<summary>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</summary>", re.I | re.S)
+    _GROUP_NAME_RE = re.compile(r"<groupName>(?:<!\[CDATA\[)?([^<\]]{1,120})(?:\]\]>)?</groupName>", re.I)
     _AVATAR_RE = re.compile(r"<avatarMedium>(?:<!\[CDATA\[)?(https://[^\s<\]]+)(?:\]\]>)?</avatarMedium>", re.I)
     _AVATAR_HASH_RE = re.compile(r"/([0-9a-f]{40})(?:_medium|_full)?\.(?:jpg|jpeg|png|webp)$", re.I)
     _GAME_NAME_RE = re.compile(r"<gameName>(?:<!\[CDATA\[)?([^<\]]{1,120})(?:\]\]>)?</gameName>", re.I)
@@ -679,6 +700,19 @@ class SteamProfileOSINTClient:
         loc_m = cls._LOCATION_RE.search(body)
         location = strip_unsafe_chars(loc_m.group(1))[:80] if loc_m else ""
         is_br_loc = bool(location and _STEAM_BR_LOCATION_RE.search(location))
+        is_foreign_loc = bool(location and not is_br_loc)
+        rn_m = cls._REALNAME_RE.search(body)
+        realname = strip_unsafe_chars(rn_m.group(1))[:64] if rn_m else ""
+        sum_m = cls._SUMMARY_RE.search(body)
+        summary_raw = re.sub(r"<[^>]+>", " ", sum_m.group(1)) if sum_m else ""
+        summary_clean = strip_unsafe_chars(html.unescape(summary_raw))[:300]
+        summary_foreign_script = bool(
+            summary_clean
+            and len(_NON_LATIN_SCRIPT_RE.findall(summary_clean)) >= 4
+            and not _detect_ptbr_linguistic_signal(summary_clean)[0]
+        )
+        group_names = [strip_unsafe_chars(g)[:80] for g in cls._GROUP_NAME_RE.findall(body)[:30]]
+        steam_br_groups = any(bool(_STEAM_BR_GROUPS_RE.search(g)) for g in group_names)
         av_m = cls._AVATAR_RE.search(body)
         av_hash = ""
         if av_m:
@@ -703,6 +737,10 @@ class SteamProfileOSINTClient:
             "custom_url": custom_url,
             "location": location,
             "is_br_location": is_br_loc,
+            "is_foreign_location": is_foreign_loc,
+            "realname": realname,
+            "summary_foreign_script": summary_foreign_script,
+            "steam_br_groups": steam_br_groups,
             "avatar_hash": av_hash,
             "is_default_avatar": bool(av_hash == STEAM_DEFAULT_AVATAR_HASH),
             "games_visible_count": games_visible,
@@ -853,6 +891,278 @@ class SteamProfileOSINTClient:
 
         self._cache[sid] = parsed
         return dict(parsed)
+
+
+class LegacyCoHProfileClient:
+    """
+    Cliente HTTPS endurecido (somente-leitura, zero API key, anti-redirect, limite 2 MB) para cruzar
+    identidade histórica e grafo vitalício de times arranjados (`statGroups`) na Relic API do CoH2 e CoH1:
+      - CoH2 `getPersonalStat`: país, apelido legado (`Pooya22`), total de partidas e TODOS os parceiros
+        de times arranjados vitalícios (`coh2_arranged_teammate_sids` + distribuição por país).
+      - CoH1 `getPersonalStat`: país, apelido legado e total de partidas.
+      - Resolução em lote do país CoH2/CoH3 de amigos públicos na Steam (`fetch_friends_coh_countries`).
+    """
+
+    def __init__(self, *, pace_delay_sec: float = 0.08, allow_network: bool = True) -> None:
+        self.pace_delay_sec = max(0.0, float(pace_delay_sec))
+        self.allow_network = bool(allow_network)
+        self._opener = build_no_redirect_https_opener()
+        self._cache: dict[str, dict[str, Any]] = {}
+        self._consecutive_errors = 0
+        self._circuit_open = False
+
+    @staticmethod
+    def _empty_legacy_record(steam_id: str) -> dict[str, Any]:
+        return {
+            "steam_id": steam_id,
+            "coh2_country": "",
+            "coh2_alias": "",
+            "coh2_matches": 0,
+            "coh2_arranged_teammate_sids": set(),
+            "coh2_arranged_teammate_aliases": {},
+            "coh2_arranged_team_countries": {},
+            "coh1_country": "",
+            "coh1_alias": "",
+            "coh1_matches": 0,
+        }
+
+    @classmethod
+    def parse_coh2_personal_stat(
+        cls,
+        payload: dict[str, Any] | None,
+        target_sids: set[str] | frozenset[str],
+    ) -> dict[str, dict[str, Any]]:
+        """Extrai país, nick, total de jogos e times arranjados vitalícios (`statGroups`) do payload CoH2."""
+        out: dict[str, dict[str, Any]] = {}
+        if not isinstance(payload, dict) or not target_sids:
+            return out
+        sg_list = payload.get("statGroups") if isinstance(payload.get("statGroups"), list) else []
+        lb_list = payload.get("leaderboardStats") if isinstance(payload.get("leaderboardStats"), list) else []
+
+        # Mapeia statgroup_id -> (self_sid_para_solo_ou_todos_membros)
+        solo_sg_to_sid: dict[int, str] = {}
+        for sg in sg_list:
+            if not isinstance(sg, dict):
+                continue
+            members = sg.get("members") if isinstance(sg.get("members"), list) else []
+            parsed_members: list[tuple[str, str, str]] = []
+            for mem in members:
+                if not isinstance(mem, dict):
+                    continue
+                msid = str(mem.get("name") or "").replace("/steam/", "").strip()
+                if not STEAM_ID64_VALID_RE.fullmatch(msid):
+                    continue
+                mctry = str(mem.get("country") or "").strip().lower()
+                mal = strip_unsafe_chars(mem.get("alias") or "")[:48]
+                parsed_members.append((msid, mctry, mal))
+            if not parsed_members:
+                continue
+            sg_id = int(sg.get("id", 0) or 0)
+            if len(parsed_members) == 1:
+                msid, mctry, mal = parsed_members[0]
+                if msid in target_sids:
+                    rec = out.setdefault(msid, cls._empty_legacy_record(msid))
+                    if mctry:
+                        rec["coh2_country"] = mctry
+                    if mal and not _is_placeholder_alias(mal):
+                        rec["coh2_alias"] = mal
+                    if sg_id > 0:
+                        solo_sg_to_sid[sg_id] = msid
+            else:
+                for msid, mctry, mal in parsed_members:
+                    if msid not in target_sids:
+                        continue
+                    rec = out.setdefault(msid, cls._empty_legacy_record(msid))
+                    if mctry and not rec["coh2_country"]:
+                        rec["coh2_country"] = mctry
+                    if mal and not rec["coh2_alias"] and not _is_placeholder_alias(mal):
+                        rec["coh2_alias"] = mal
+                    for osid, octry, oal in parsed_members:
+                        if osid == msid:
+                            continue
+                        rec["coh2_arranged_teammate_sids"].add(osid)
+                        if oal and not _is_placeholder_alias(oal):
+                            rec["coh2_arranged_teammate_aliases"][osid] = oal
+                        if octry:
+                            rec["coh2_arranged_team_countries"][octry] = (
+                                int(rec["coh2_arranged_team_countries"].get(octry, 0)) + 1
+                            )
+
+        for st in lb_list:
+            if not isinstance(st, dict):
+                continue
+            sg_id = int(st.get("statgroup_id", 0) or 0)
+            sid = solo_sg_to_sid.get(sg_id)
+            if not sid:
+                continue
+            games = max(0, int(st.get("wins", 0) or 0)) + max(0, int(st.get("losses", 0) or 0))
+            if games > 0:
+                rec = out.setdefault(sid, cls._empty_legacy_record(sid))
+                rec["coh2_matches"] = int(rec.get("coh2_matches", 0)) + games
+        return out
+
+    @classmethod
+    def parse_coh1_personal_stat(
+        cls,
+        payload: dict[str, Any] | None,
+        target_sids: set[str] | frozenset[str],
+    ) -> dict[str, dict[str, Any]]:
+        """Extrai país, apelido e total de partidas do payload CoH1 `getPersonalStat`."""
+        out: dict[str, dict[str, Any]] = {}
+        if not isinstance(payload, dict) or not target_sids:
+            return out
+        sg_list = payload.get("statGroups") if isinstance(payload.get("statGroups"), list) else []
+        lb_list = payload.get("leaderboardStats") if isinstance(payload.get("leaderboardStats"), list) else []
+        solo_sg_to_sid: dict[int, str] = {}
+        for sg in sg_list:
+            if not isinstance(sg, dict):
+                continue
+            members = sg.get("members") if isinstance(sg.get("members"), list) else []
+            if len(members) != 1 or not isinstance(members[0], dict):
+                continue
+            mem = members[0]
+            msid = str(mem.get("name") or "").replace("/steam/", "").strip()
+            if msid not in target_sids or not STEAM_ID64_VALID_RE.fullmatch(msid):
+                continue
+            rec = out.setdefault(msid, cls._empty_legacy_record(msid))
+            mctry = str(mem.get("country") or "").strip().lower()
+            mal = strip_unsafe_chars(mem.get("alias") or "")[:48]
+            if mctry:
+                rec["coh1_country"] = mctry
+            if mal and not _is_placeholder_alias(mal):
+                rec["coh1_alias"] = mal
+            sg_id = int(sg.get("id", 0) or 0)
+            if sg_id > 0:
+                solo_sg_to_sid[sg_id] = msid
+        for st in lb_list:
+            if not isinstance(st, dict):
+                continue
+            sg_id = int(st.get("statgroup_id", 0) or 0)
+            sid = solo_sg_to_sid.get(sg_id)
+            if not sid:
+                continue
+            games = max(0, int(st.get("wins", 0) or 0)) + max(0, int(st.get("losses", 0) or 0))
+            if games > 0:
+                rec = out.setdefault(sid, cls._empty_legacy_record(sid))
+                rec["coh1_matches"] = int(rec.get("coh1_matches", 0)) + games
+        return out
+
+    def _fetch_personal_stat_json(self, host: str, title: str, steam_ids: list[str]) -> dict[str, Any]:
+        if not self.allow_network or self._circuit_open or not steam_ids:
+            return {}
+        from urllib.parse import quote
+
+        names_json = json.dumps([f"/steam/{s}" for s in steam_ids], separators=(",", ":"))
+        url = f"https://{host}{LEGACY_RELIC_PERSONAL_STAT_PATH}?title={title}&profile_names={quote(names_json, safe='')}"
+        validate_https_endpoint(
+            url,
+            ALLOWED_LEGACY_RELIC_HOSTS,
+            path_prefix=LEGACY_RELIC_PERSONAL_STAT_PATH,
+            allow_query=True,
+        )
+        if self.pace_delay_sec > 0:
+            time.sleep(self.pace_delay_sec)
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "CoH3-BR-Lobby-Radar/1.4",
+                "Accept": "application/json",
+                "Accept-Encoding": "gzip",
+            },
+            method="GET",
+        )
+        try:
+            with self._opener.open(req, timeout=8) as resp:
+                raw = read_bounded_http_body(resp, MAX_LEGACY_RELIC_BYTES)
+            self._consecutive_errors = 0
+            parsed = json.loads(raw.decode("utf-8", errors="replace"))
+            return parsed if isinstance(parsed, dict) else {}
+        except Exception as exc:
+            self._consecutive_errors += 1
+            if self._consecutive_errors >= 4:
+                self._circuit_open = True
+                logger.debug("[LEGACY RELIC] Circuit-breaker ativado após erros: %s", redact_secrets(exc))
+            return {}
+
+    def fetch_legacy_profiles_batch(self, steam_ids: list[str] | set[str]) -> dict[str, dict[str, Any]]:
+        """Consulta CoH2 (com `statGroups` vitalícios) e CoH1 em lotes de 8 SteamIDs (teto Relic = 10)."""
+        clean_sids = sorted(
+            {str(s or "").replace("/steam/", "").strip() for s in steam_ids if STEAM_ID64_VALID_RE.fullmatch(str(s or "").replace("/steam/", "").strip())}
+        )
+        out: dict[str, dict[str, Any]] = {}
+        to_fetch: list[str] = []
+        for sid in clean_sids:
+            if sid in self._cache:
+                cached = self._cache[sid]
+                out[sid] = {
+                    **cached,
+                    "coh2_arranged_teammate_sids": set(cached.get("coh2_arranged_teammate_sids") or ()),
+                    "coh2_arranged_teammate_aliases": dict(cached.get("coh2_arranged_teammate_aliases") or {}),
+                    "coh2_arranged_team_countries": dict(cached.get("coh2_arranged_team_countries") or {}),
+                }
+            else:
+                to_fetch.append(sid)
+
+        if to_fetch and self.allow_network and not self._circuit_open:
+            for i in range(0, len(to_fetch), 8):
+                chunk = to_fetch[i : i + 8]
+                chunk_set = set(chunk)
+                merged_chunk: dict[str, dict[str, Any]] = {s: self._empty_legacy_record(s) for s in chunk}
+                c2_payload = self._fetch_personal_stat_json("coh2-api.reliclink.com", "coh2", chunk)
+                for sid, rec in self.parse_coh2_personal_stat(c2_payload, chunk_set).items():
+                    merged_chunk[sid].update(rec)
+                c1_payload = self._fetch_personal_stat_json("coh1-api.reliclink.com", "coh1", chunk)
+                for sid, rec in self.parse_coh1_personal_stat(c1_payload, chunk_set).items():
+                    for k in ("coh1_country", "coh1_alias", "coh1_matches"):
+                        if rec.get(k):
+                            merged_chunk[sid][k] = rec[k]
+                for sid, rec in merged_chunk.items():
+                    self._cache[sid] = rec
+                    out[sid] = {
+                        **rec,
+                        "coh2_arranged_teammate_sids": set(rec["coh2_arranged_teammate_sids"]),
+                        "coh2_arranged_teammate_aliases": dict(rec["coh2_arranged_teammate_aliases"]),
+                        "coh2_arranged_team_countries": dict(rec["coh2_arranged_team_countries"]),
+                    }
+        return out
+
+    def fetch_friends_coh_countries(
+        self,
+        friend_steam_ids: list[str] | set[str],
+        *,
+        relic_coh3_client: Any | None = None,
+        max_friends: int = 40,
+    ) -> dict[str, int]:
+        """Resolve a distribuição de países CoH3/CoH2 dos amigos públicos na Steam (sinal `Nocturne`/`Verstappen1`)."""
+        clean_f = [
+            str(s or "").replace("/steam/", "").strip()
+            for s in friend_steam_ids
+            if STEAM_ID64_VALID_RE.fullmatch(str(s or "").replace("/steam/", "").strip())
+        ][: max(1, int(max_friends))]
+        if not clean_f or not self.allow_network or self._circuit_open:
+            return {}
+        resolved_by_sid: dict[str, str] = {}
+        if relic_coh3_client is not None and hasattr(relic_coh3_client, "fetch_profile_stats_by_steam_ids"):
+            try:
+                c3_stats = relic_coh3_client.fetch_profile_stats_by_steam_ids(clean_f, pace_delay_sec=0.06) or {}
+                for st in c3_stats.values():
+                    if not isinstance(st, dict):
+                        continue
+                    fsid = str(st.get("steam_id") or "").replace("/steam/", "").strip()
+                    fctry = str(st.get("country") or "").strip().lower()
+                    if fsid and fctry:
+                        resolved_by_sid[fsid] = fctry
+            except Exception:
+                pass
+        missing = [s for s in clean_f if s not in resolved_by_sid]
+        if missing:
+            leg_map = self.fetch_legacy_profiles_batch(missing)
+            for fsid, lrec in leg_map.items():
+                fctry = str(lrec.get("coh2_country") or lrec.get("coh1_country") or "").strip().lower()
+                if fctry:
+                    resolved_by_sid[fsid] = fctry
+        counts: Counter[str] = Counter(resolved_by_sid.values())
+        return dict(counts)
 
 
 def _load_persisted_shared_lender_map(state_path: Path | None = None) -> dict[str, str]:
@@ -1473,6 +1783,11 @@ class PlayerMatchTelemetry:
             return 0.0
         return sum(bh[h] for h in ASIA_SLEEP_BRT_HOURS) / float(tot)
 
+    def br_coplayer_ratio(self) -> float:
+        if self.total_coplayer_slots <= 0:
+            return 0.0
+        return int(self.coplayer_country_counts.get("br", 0)) / float(self.total_coplayer_slots)
+
     def br_sa_coplayer_ratio(self) -> float:
         return (self.br_sa_coplayer_slots / float(self.total_coplayer_slots)) if self.total_coplayer_slots > 0 else 0.0
 
@@ -1481,6 +1796,25 @@ class PlayerMatchTelemetry:
             return 0.0
         ea = sum(int(self.coplayer_country_counts.get(c, 0)) for c in EAST_ASIA_COUNTRIES)
         return ea / float(self.total_coplayer_slots)
+
+    def eu_coplayer_ratio(self) -> float:
+        if self.total_coplayer_slots <= 0:
+            return 0.0
+        eu = sum(int(self.coplayer_country_counts.get(c, 0)) for c in EU_COUNTRIES)
+        return eu / float(self.total_coplayer_slots)
+
+    def top_foreign_coplayer_country(self) -> tuple[str, float]:
+        if self.total_coplayer_slots <= 0:
+            return "", 0.0
+        non_br = [
+            (str(c).strip().lower(), int(cnt))
+            for c, cnt in self.coplayer_country_counts.items()
+            if str(c).strip().lower() not in ("", "br", "??", "unknown") and int(cnt) > 0
+        ]
+        if not non_br:
+            return "", 0.0
+        top_c, top_n = max(non_br, key=lambda kv: kv[1])
+        return top_c, (top_n / float(self.total_coplayer_slots))
 
     def same_country_coplayer_ratio(self, country: str) -> float:
         ct = str(country or "").strip().lower()
@@ -2513,16 +2847,111 @@ def _compare_play_schedules(
 
 
 def _has_native_foreign_regional_footprint(cand_tel: PlayerMatchTelemetry | None, cand_ctry: str) -> bool:
+    if not cand_tel:
+        return False
     ct = str(cand_ctry or "").strip().lower()
-    if not cand_tel or not ct or ct in ("br", "??", "unknown"):
+    if ct and ct not in ("br", "??", "unknown"):
+        if cand_tel.total_coplayer_slots < 12:
+            return False
+        if cand_tel.same_country_coplayer_ratio(ct) >= 0.25:
+            return True
+        if ct in EAST_ASIA_COUNTRIES and cand_tel.east_asia_coplayer_ratio() >= 0.35:
+            return True
         return False
-    if cand_tel.total_coplayer_slots < 12:
+
+    # Estrangeiros furtivos sob bandeira `br` (VPN / loja Steam BR barata: ex. Leo, Bosi, Draakul, Stuffy, kianoosh1313)
+    if cand_tel.total_coplayer_slots < 30:
         return False
-    if cand_tel.same_country_coplayer_ratio(ct) >= 0.25:
+    if cand_tel.br_coplayer_ratio() > 0.02:
+        return False
+    if cand_tel.east_asia_coplayer_ratio() >= 0.55:
         return True
-    if ct in EAST_ASIA_COUNTRIES and cand_tel.east_asia_coplayer_ratio() >= 0.35:
+    _, top_for_pct = cand_tel.top_foreign_coplayer_country()
+    if top_for_pct >= 0.60:
+        return True
+    if (
+        cand_tel.brt_prime_ratio() <= 0.15
+        and cand_tel.br_sa_coplayer_ratio() <= 0.02
+        and (cand_tel.asia_sleep_ratio() >= 0.45 or cand_tel.eu_coplayer_ratio() >= 0.65)
+    ):
         return True
     return False
+
+
+def _match_legacy_coh_aliases(
+    cand_legacy: dict[str, Any] | None,
+    main_legacy: dict[str, Any] | None,
+    cand_seen: set[str],
+    main_seen: set[str],
+) -> tuple[bool, str]:
+    """
+    Detecta coincidência exata normalizada entre apelidos legados de CoH1/CoH2 da candidata e
+    apelidos da principal (padrão comprovado `#947114 Sleepy` <-> `#943262 Sleepy`, ambos `Pooya22` no CoH2).
+    """
+    c_leg = cand_legacy or {}
+    m_leg = main_legacy or {}
+    c_leg_raw = [
+        str(c_leg.get("coh2_alias") or "").strip(),
+        str(c_leg.get("coh1_alias") or "").strip(),
+    ]
+    m_leg_raw = [
+        str(m_leg.get("coh2_alias") or "").strip(),
+        str(m_leg.get("coh1_alias") or "").strip(),
+    ]
+    c_leg_norm: dict[str, str] = {}
+    for al in c_leg_raw:
+        if not al or _is_placeholder_alias(al):
+            continue
+        n = _normalize_leetspeak(al)
+        if len(n) >= 5 and n not in _THROWAWAY_NICKS:
+            c_leg_norm.setdefault(n, al)
+    m_leg_norm: dict[str, str] = {}
+    for al in m_leg_raw:
+        if not al or _is_placeholder_alias(al):
+            continue
+        n = _normalize_leetspeak(al)
+        if len(n) >= 5 and n not in _THROWAWAY_NICKS:
+            m_leg_norm.setdefault(n, al)
+    if not c_leg_norm and not m_leg_norm:
+        return False, ""
+
+    m_all_norm: dict[str, str] = dict(m_leg_norm)
+    for al in main_seen:
+        n = _normalize_leetspeak(al)
+        if len(n) >= 5 and n not in _THROWAWAY_NICKS:
+            m_all_norm.setdefault(n, al)
+    for n, orig in c_leg_norm.items():
+        if n in m_all_norm:
+            return True, orig
+
+    c_all_norm: dict[str, str] = {}
+    for al in cand_seen:
+        n = _normalize_leetspeak(al)
+        if len(n) >= 5 and n not in _THROWAWAY_NICKS:
+            c_all_norm.setdefault(n, al)
+    for n, orig in m_leg_norm.items():
+        if n in c_all_norm:
+            return True, orig
+    return False, ""
+
+
+def _is_foreign_coh2_arranged_teams(coh2_team_countries: dict[str, int] | None) -> tuple[bool, str, int, int]:
+    """Retorna `(is_foreign, top_country, top_count, total)` se times arranjados vitalícios CoH2 tiverem 0 BR."""
+    if not isinstance(coh2_team_countries, dict) or not coh2_team_countries:
+        return False, "", 0, 0
+    clean = {
+        str(k).strip().lower(): max(0, int(v or 0))
+        for k, v in coh2_team_countries.items()
+        if str(k).strip() and int(v or 0) > 0
+    }
+    tot = sum(clean.values())
+    br_cnt = clean.get("br", 0)
+    if tot < 10 or br_cnt > 0:
+        return False, "", 0, tot
+    top_c, top_n = max(clean.items(), key=lambda kv: kv[1])
+    if (top_n / float(tot)) >= 0.50 or tot >= 15:
+        return True, top_c, top_n, tot
+    return False, top_c, top_n, tot
 
 
 def _has_strong_br_sa_mm_nexus(cand_tel: PlayerMatchTelemetry | None, cand_ctry: str) -> bool:
@@ -3397,14 +3826,17 @@ def score_smurf_pair(
     steam_osint_by_pid: dict[int, dict[str, Any]] | None = None,
     shared_lender_by_sid: dict[str, str] | None = None,
     coh2_matches_by_pid: dict[int, int] | None = None,
+    legacy_coh_by_pid: dict[int, dict[str, Any]] | None = None,
+    steam_friends_coh_countries_by_pid: dict[int, dict[str, int]] | None = None,
+    confirmed_foreign_pids: set[int] | frozenset[int] | None = None,
 ) -> dict[str, Any]:
     """
     Calcula a probabilidade forense (`0..99%`) de `cand` ser uma smurf de `main`, com evidências detalhadas em português.
     Calibrado pelos modelos reais brasileiros confirmados (`Chacineiro`, `General Winter`, `Alekel`, `『V』SKOBADARK`,
     `arc`, `Gabe`, `Colossus`, `icemaker`) e expandido com critérios multi-gênero anti-disfarce (velocidade/taxa de crescimento de ELO,
-    matchmaking regional/ping BR-SA da Relic, histórico cruzado CoH2→CoH3, sandbagging/tanking, Combat DNA multi-eixo,
-    alternância de dias exclusivos, ciclo circadiano BRT, leetspeak/trigramas/PT-BR, cosméticos burner, OSINT Steam
-    e sinais de **Steam Family Sharing**).
+    matchmaking regional/ping BR-SA da Relic, histórico cruzado CoH1/CoH2 + times arranjados vitalícios CoH2 `statGroups`,
+    sandbagging/tanking, Combat DNA multi-eixo, alternância de dias exclusivos, ciclo circadiano BRT, leetspeak/trigramas/PT-BR,
+    cosméticos burner, OSINT Steam + amigos CoH e sinais de **Steam Family Sharing**).
     """
     cand_pid = int(cand.get("profile_id", 0) or 0)
     main_pid = int(main.get("profile_id", 0) or 0)
@@ -3450,6 +3882,23 @@ def score_smurf_pair(
         empty_res["disqualified_reason"] = "jogaram_mesma_partida"
         return empty_res
 
+    # Desqualificador absoluto #1B (CoH2 `statGroups`): se jogaram no MESMO time arranjado vitalício no CoH2, são duas pessoas!
+    cand_legacy = (legacy_coh_by_pid or {}).get(cand_pid) or {}
+    main_legacy = (legacy_coh_by_pid or {}).get(main_pid) or {}
+    cand_c2_teammates = {
+        str(s).replace("/steam/", "").strip()
+        for s in (cand_legacy.get("coh2_arranged_teammate_sids") or ())
+        if str(s).strip()
+    }
+    main_c2_teammates = {
+        str(s).replace("/steam/", "").strip()
+        for s in (main_legacy.get("coh2_arranged_teammate_sids") or ())
+        if str(s).strip()
+    }
+    if (main_sid and main_sid in cand_c2_teammates) or (cand_sid and cand_sid in main_c2_teammates):
+        empty_res["disqualified_reason"] = "jogaram_mesmo_time_coh2"
+        return empty_res
+
     # Desqualificador absoluto #2: partidas com horários simultâneos sobrepostos (principal + família de smurfs)
     combined_main_intervals = list(main_tel.intervals) if main_tel else []
     if main_family_intervals:
@@ -3476,6 +3925,8 @@ def score_smurf_pair(
                 shared_allies_info.append((apid, ca, ma, rarity))
         shared_allies_info.sort(key=lambda x: (-x[3], -(x[1] + x[2])))
 
+    shared_coh2_teammates = sorted((cand_c2_teammates & main_c2_teammates) - {cand_sid, main_sid})
+
     cand_seen_all = set(cand_tel.seen_aliases if cand_tel else ())
     main_seen_all = set(main_tel.seen_aliases if main_tel else ())
     if alias_history_by_pid:
@@ -3488,6 +3939,12 @@ def score_smurf_pair(
         str(main.get("alias") or ""),
         cand_seen_all,
         main_seen_all,
+    )
+    legacy_alias_hit, legacy_alias_matched = _match_legacy_coh_aliases(
+        cand_legacy,
+        main_legacy,
+        cand_seen_all | {cand_alias_str},
+        main_seen_all | {str(main.get("alias") or "")},
     )
     ptbr_nick_hit, ptbr_nick_note = _detect_ptbr_linguistic_signal(cand_alias_str)
     if not ptbr_nick_hit:
@@ -3506,7 +3963,11 @@ def score_smurf_pair(
         and cand_av_hash == main_av_hash
         and cand_av_hash != STEAM_DEFAULT_AVATAR_HASH
     )
+    cand_rn_norm = _normalize_leetspeak(str(cand_osint.get("realname") or ""))
+    main_rn_norm = _normalize_leetspeak(str(main_osint.get("realname") or ""))
+    same_steam_realname = bool(len(cand_rn_norm) >= 6 and cand_rn_norm == main_rn_norm)
     steam_br_location_leak = bool(cand_osint.get("is_br_location"))
+    steam_foreign_location = bool(cand_osint.get("is_foreign_location")) and not steam_br_location_leak
     resolved_lender_sid = str(
         cand_osint.get("lender_steam_id")
         or ((shared_lender_by_sid or {}).get(cand_sid) if cand_sid else "")
@@ -3514,22 +3975,31 @@ def score_smurf_pair(
     ).strip()
     direct_family_sharing_lender = bool(resolved_lender_sid and main_sid and resolved_lender_sid == main_sid)
 
-    # Histórico legado CoH2 (evita acusar veteranos antigos do CoH2 como smurfs novas e identifica transição CoH2→CoH3)
+    # Histórico legado CoH1/CoH2 (evita acusar veteranos antigos/estrangeiros do CoH1/CoH2 e identifica transição CoH2→CoH3)
     cand_coh2_matches = max(
         0,
         int((coh2_matches_by_pid or {}).get(cand_pid, 0) or 0),
+        int(cand_legacy.get("coh2_matches", 0) or 0),
         int(cand.get("coh2_total_matches", 0) or 0),
     )
     main_coh2_matches = max(
         0,
         int((coh2_matches_by_pid or {}).get(main_pid, 0) or 0),
+        int(main_legacy.get("coh2_matches", 0) or 0),
         int(main.get("coh2_total_matches", 0) or 0),
     )
+    cand_c1_ctry = str(cand_legacy.get("coh1_country") or cand.get("coh1_country") or "").strip().lower()
+    cand_c2_ctry = str(cand_legacy.get("coh2_country") or cand.get("coh2_country") or "").strip().lower()
+
+    strong_shared_coh2_teammates = bool(len(shared_coh2_teammates) >= 2 and cand_coh2_matches < 500)
+
     if (
         cand_coh2_matches >= 3000
         and cand_pid < 500_000
         and not direct_family_sharing_lender
         and not same_custom_avatar
+        and not same_steam_realname
+        and not legacy_alias_hit
         and alias_pts == 0
         and not shared_allies_info
     ):
@@ -3559,9 +4029,7 @@ def score_smurf_pair(
     native_foreign_fp = _has_native_foreign_regional_footprint(cand_tel, cand_ctry)
     strong_br_sa_mm_nexus = _has_strong_br_sa_mm_nexus(cand_tel, cand_ctry)
 
-    # Guarda de bandeira estrangeira (perfurável por sinais anti-disfarce concretos: histórico BR,
-    # prova direta Family Sharing lender, Steam <location> no Brasil, avatar custom idêntico,
-    # nick PT-BR + horário BRT, densidade de matchmaking regional BR/SA + BRT, squad BR ou nick)
+    # Guarda de bandeira estrangeira + estrangeiros furtivos sob loja BR (perfurável por provas diretas de identidade)
     is_cand_historical_br = bool(
         (historical_br_pids and cand_pid in historical_br_pids)
         or (country_migration_by_pid and cand_pid in country_migration_by_pid)
@@ -3573,20 +4041,87 @@ def score_smurf_pair(
     )
     has_direct_identity_nexus = bool(
         has_strong_foreign_squad
+        or strong_shared_coh2_teammates
         or alias_pts > 0
+        or legacy_alias_hit
         or shared_steam_friends >= 3
         or direct_family_sharing_lender
         or steam_br_location_leak
         or same_custom_avatar
+        or same_steam_realname
     )
-    if is_explicit_foreign and native_foreign_fp and not has_direct_identity_nexus and not ptbr_nick_hit:
+
+    # Veto #1: estrangeiro já confirmado no registro `suspected_foreign_br.json`
+    if (
+        confirmed_foreign_pids
+        and cand_pid in confirmed_foreign_pids
+        and not (direct_family_sharing_lender or same_custom_avatar or legacy_alias_hit or same_steam_realname)
+    ):
+        empty_res["disqualified_reason"] = "estrangeiro_confirmado_vpn"
+        return empty_res
+
+    # Veto #2: pegada regional nativa estrangeira (AGORA detecta também estrangeiros furtivos sob bandeira `br`!)
+    if native_foreign_fp and not has_direct_identity_nexus and not ptbr_nick_hit and not steam_br_location_leak:
         empty_res["disqualified_reason"] = "estrangeiro_perfil_regional_nativo"
+        return empty_res
+
+    # Veto #3: times arranjados vitalícios CoH2 (`statGroups`) 100% estrangeiros com 0 BR (ex.: Leo 82/95 cn, asado de perro 33/35 cl)
+    is_foreign_c2_teams, _, _, _ = _is_foreign_coh2_arranged_teams(cand_legacy.get("coh2_arranged_team_countries"))
+    if is_foreign_c2_teams and not has_direct_identity_nexus and not steam_br_location_leak:
+        empty_res["disqualified_reason"] = "estrangeiro_times_coh2"
+        return empty_res
+
+    # Veto #4: origem forte estrangeira em CoH1/CoH2 (ex.: Draakul coh1=cn, GDI coh2=cn, mirage child coh2=ru)
+    has_foreign_coh12_origin = bool(
+        (cand_c2_ctry in SUSPECTED_FOREIGN_COH2_ORIGINS and cand_coh2_matches >= 20 and cand_c1_ctry != "br")
+        or (cand_c1_ctry in STRONG_FOREIGN_COH1_ORIGINS and cand_c2_ctry != "br")
+    )
+    if (
+        has_foreign_coh12_origin
+        and not has_direct_identity_nexus
+        and not steam_br_location_leak
+        and not ptbr_nick_hit
+    ):
+        empty_res["disqualified_reason"] = "estrangeiro_origem_coh1_coh2"
+        return empty_res
+
+    # Veto #5: amigos públicos de CoH2/CoH3 na Steam 100% estrangeiros (ex.: Nocturne 6/6 CN/HK com 0 BR)
+    cand_fr_coh = (steam_friends_coh_countries_by_pid or {}).get(cand_pid) or {}
+    if isinstance(cand_fr_coh, dict) and cand_fr_coh:
+        fr_tot = sum(max(0, int(v or 0)) for v in cand_fr_coh.values())
+        fr_br = max(0, int(cand_fr_coh.get("br", 0) or 0))
+        if (
+            fr_tot >= 3
+            and fr_br == 0
+            and not has_direct_identity_nexus
+            and not steam_br_location_leak
+            and not ptbr_nick_hit
+        ):
+            empty_res["disqualified_reason"] = "estrangeiro_amigos_coh_steam"
+            return empty_res
+
+    # Veto #6: localização Steam explicitamente estrangeira + bio estrangeira ou ausência total de jogos com BR
+    if (
+        steam_foreign_location
+        and not cand_osint.get("steam_br_groups")
+        and not is_cand_historical_br
+        and not has_direct_identity_nexus
+        and not ptbr_nick_hit
+        and (
+            bool(cand_osint.get("summary_foreign_script"))
+            or (reg_obs >= 6 and br_match_cnt == 0 and float(temporal_info["cand_brt_prime"]) < 0.35)
+        )
+    ):
+        empty_res["disqualified_reason"] = "estrangeiro_steam_location"
         return empty_res
 
     has_anti_disguise_br_nexus = (
         direct_family_sharing_lender
         or steam_br_location_leak
         or same_custom_avatar
+        or same_steam_realname
+        or legacy_alias_hit
+        or strong_shared_coh2_teammates
         or (ptbr_nick_hit and float(temporal_info["cand_brt_prime"]) >= 0.40)
         or strong_br_sa_mm_nexus
     )
@@ -3604,8 +4139,11 @@ def score_smurf_pair(
     sched_info = _compare_play_schedules(cand_tel, main_tel, main_family_tels=main_family_tels)
     has_hard_identity_proof = bool(
         shared_allies_info
+        or strong_shared_coh2_teammates
         or alias_pts > 0
+        or legacy_alias_hit
         or same_custom_avatar
+        or same_steam_realname
         or handoff_cnt >= 1
         or direct_family_sharing_lender
         or steam_br_location_leak
@@ -3958,6 +4496,54 @@ def score_smurf_pair(
         behavioral_signals += 1
         identity_anchor_signals += 1
         evidence.append(f"{shared_steam_friends} amigo(s) Steam em comum entre as contas.")
+
+    # Sinal 7C (Descobertas forenses multi-era CoH1/CoH2 & Steam):
+    # - Coincidência exata de apelido legado CoH1/CoH2 (ex.: padrão `#947114 Sleepy` <-> `#943262 Sleepy`, ambos `Pooya22` no CoH2)
+    # - Sobreposição de parceiros em times arranjados vitalícios do CoH2 (`statGroups`)
+    # - Coincidência de nome real público (`<realname>`) no Steam XML
+    if legacy_alias_hit:
+        if alias_pts >= 18:
+            score += 6.0
+        else:
+            score += 26.0
+            behavioral_signals += 1
+            identity_anchor_signals += 1
+        evidence.append(
+            f"Apelido legado CoH1/CoH2 idêntico entre as contas ('{legacy_alias_matched}') — forte vínculo de identidade cross-era."
+        )
+    if shared_coh2_teammates:
+        c2_al_map = {
+            **(main_legacy.get("coh2_arranged_teammate_aliases") or {}),
+            **(cand_legacy.get("coh2_arranged_teammate_aliases") or {}),
+        }
+        c2_names = ", ".join(c2_al_map.get(s, s[-6:]) for s in shared_coh2_teammates[:4])
+        if cand_coh2_matches < 500:
+            score += 16.0 if len(shared_coh2_teammates) >= 2 else 8.0
+            identity_anchor_signals += 1
+        else:
+            score += 6.0
+        evidence.append(
+            f"{len(shared_coh2_teammates)} parceiro(s) fixo(s) em comum em times arranjados vitalícios do CoH2 (`statGroups`): {c2_names}."
+        )
+    if same_steam_realname:
+        score += 24.0
+        behavioral_signals += 1
+        identity_anchor_signals += 1
+        evidence.append(
+            f"Nome real público idêntico no perfil Steam XML ('{cand_osint.get('realname') or ''}')."
+        )
+    if (
+        steam_foreign_location
+        and not cand_osint.get("steam_br_groups")
+        and not is_cand_historical_br
+        and not direct_family_sharing_lender
+        and not same_custom_avatar
+        and not same_steam_realname
+    ):
+        score -= 18.0
+        evidence.append(
+            f"Contra-evidência OSINT Steam: perfil exibe localização estrangeira ('{cand_osint.get('location') or ''}')."
+        )
 
     # Sinal 8: Biometria de APM (`totalcmds / gt`) + cadência de habilidades (`abil/min`)
     apm_strong_match = False
@@ -4753,6 +5339,47 @@ def _extract_coh2_matches_map(alias_history_doc: dict[str, Any] | None) -> dict[
     return out
 
 
+def _extract_legacy_coh_map_from_history(alias_history_doc: dict[str, Any] | None) -> dict[int, dict[str, Any]]:
+    """Extrai metadados CoH1/CoH2 já persistidos em `alias_history.json` para enriquecer Stage 1 sem rede extra."""
+    out: dict[int, dict[str, Any]] = {}
+    if not isinstance(alias_history_doc, dict):
+        return out
+    players = alias_history_doc.get("players")
+    if not isinstance(players, dict):
+        return out
+    for raw_pid, rec in players.items():
+        if not isinstance(rec, dict):
+            continue
+        pid = int(rec.get("profile_id", 0) or (int(raw_pid) if str(raw_pid).isdigit() else 0))
+        if pid <= 0:
+            continue
+        c1 = str(rec.get("coh1_country") or "").strip().lower()
+        c2 = str(rec.get("coh2_country") or "").strip().lower()
+        c2m = max(0, int(rec.get("coh2_total_matches", 0) or 0))
+        c1_al = ""
+        c2_al = ""
+        for al in rec.get("aliases") or []:
+            if not isinstance(al, dict):
+                continue
+            srcs = {str(s).strip().lower() for s in (al.get("sources") or ())}
+            val = strip_unsafe_chars(al.get("alias") or "")[:48]
+            if not val or _is_placeholder_alias(val):
+                continue
+            if not c2_al and any("coh2" in s for s in srcs):
+                c2_al = val
+            if not c1_al and any("coh1" in s for s in srcs):
+                c1_al = val
+        if c1 or c2 or c2m or c1_al or c2_al:
+            out[pid] = {
+                "coh1_country": c1,
+                "coh1_alias": c1_al,
+                "coh2_country": c2,
+                "coh2_alias": c2_al,
+                "coh2_matches": c2m,
+            }
+    return out
+
+
 def detect_top50_br_smurfs(
     *,
     all_br_players: dict[int, dict[str, Any]],
@@ -4768,6 +5395,10 @@ def detect_top50_br_smurfs(
     alias_history_doc: dict[str, Any] | None = None,
     steam_osint_by_pid: dict[int, dict[str, Any]] | None = None,
     shared_lender_by_sid: dict[str, str] | None = None,
+    legacy_coh_by_pid: dict[int, dict[str, Any]] | None = None,
+    steam_friends_coh_countries_by_pid: dict[int, dict[str, int]] | None = None,
+    confirmed_foreign_pids: set[int] | frozenset[int] | None = None,
+    excluded_foreign_ranking_pids: set[int] | frozenset[int] | None = None,
     top_n: int = DEFAULT_TOP_N_BR,
     min_probability_pct: int = DEFAULT_MIN_PROBABILITY_PCT,
     include_known_smurfs: bool = False,
@@ -4780,7 +5411,8 @@ def detect_top50_br_smurfs(
     detecção de mudança de nick / nome de usuário sobre toda a base brasileira.
     - Monitora automaticamente novos brasileiros que entrarem no Top 50.
     - Ignora candidatas cujo vínculo mais provável pertença a jogadores fora do escopo monitorado (`#51+`).
-    - Cruza histórico multi-era (CoH1/CoH2/CoH3/CoHDB/Steam), Steam Family Sharing, MM regional BR/SA e migrações de país.
+    - Cruza histórico multi-era (CoH1/CoH2/CoH3/CoHDB/Steam), times arranjados vitalícios CoH2 (`statGroups`),
+      Steam Family Sharing, OSINT Steam + amigos CoH, MM regional BR/SA e registro de estrangeiros VPN confirmados.
     """
     active_lender_map = (
         dict(shared_lender_by_sid)
@@ -4791,6 +5423,33 @@ def detect_top50_br_smurfs(
         alias_history_doc
     )
     coh2_matches_by_pid = _extract_coh2_matches_map(alias_history_doc)
+    merged_legacy_coh = _extract_legacy_coh_map_from_history(alias_history_doc)
+    if legacy_coh_by_pid:
+        for lpid, lrec in legacy_coh_by_pid.items():
+            if not isinstance(lrec, dict):
+                continue
+            base_l = dict(merged_legacy_coh.get(int(lpid)) or {})
+            for k, v in lrec.items():
+                if v:
+                    base_l[k] = v
+            merged_legacy_coh[int(lpid)] = base_l
+
+    if confirmed_foreign_pids is None or excluded_foreign_ranking_pids is None:
+        reg_doc_auto = load_suspected_foreign_br_registry()
+        eff_confirmed_foreign = (
+            set(confirmed_foreign_pids)
+            if confirmed_foreign_pids is not None
+            else get_confirmed_foreign_removed_pids(reg_doc_auto)
+        )
+        eff_excluded_ranking_foreign = (
+            set(excluded_foreign_ranking_pids)
+            if excluded_foreign_ranking_pids is not None
+            else get_ranking_excluded_foreign_pids(reg_doc_auto)
+        )
+    else:
+        eff_confirmed_foreign = set(confirmed_foreign_pids)
+        eff_excluded_ranking_foreign = set(excluded_foreign_ranking_pids)
+
     merged_all_br: dict[int, dict[str, Any]] = {int(k): dict(v) for k, v in all_br_players.items() if isinstance(v, dict)}
     if isinstance(alias_history_doc, dict) and isinstance(alias_history_doc.get("players"), dict):
         for raw_pid, hrec in alias_history_doc["players"].items():
@@ -4823,6 +5482,7 @@ def detect_top50_br_smurfs(
     top_list, rank_by_pid, newly_entered, dropped = select_relic_top50_br(
         merged_all_br,
         known_smurf_pids=known_smurfs,
+        excluded_foreign_pids=eff_excluded_ranking_foreign | eff_confirmed_foreign,
         previous_top50_pids=previous_top50_pids,
         roster_rows=roster_rows,
         top_n=top_n,
@@ -4987,6 +5647,9 @@ def detect_top50_br_smurfs(
                 steam_osint_by_pid=steam_osint_by_pid,
                 shared_lender_by_sid=active_lender_map or None,
                 coh2_matches_by_pid=coh2_matches_by_pid or None,
+                legacy_coh_by_pid=merged_legacy_coh or None,
+                steam_friends_coh_countries_by_pid=steam_friends_coh_countries_by_pid,
+                confirmed_foreign_pids=eff_confirmed_foreign or None,
             )
             if int(scored["probability_pct"]) >= min_probability_pct:
                 top50_scores.append(scored)
@@ -5020,6 +5683,9 @@ def detect_top50_br_smurfs(
                 steam_osint_by_pid=steam_osint_by_pid,
                 shared_lender_by_sid=active_lender_map or None,
                 coh2_matches_by_pid=coh2_matches_by_pid or None,
+                legacy_coh_by_pid=merged_legacy_coh or None,
+                steam_friends_coh_countries_by_pid=steam_friends_coh_countries_by_pid,
+                confirmed_foreign_pids=eff_confirmed_foreign or None,
             )
             if int(out_scored["probability_pct"]) > best_outside_prob:
                 best_outside_prob = int(out_scored["probability_pct"])
@@ -5271,17 +5937,45 @@ def verify_suspects_with_relic(
 
     # 3B. Coleta OSINT público Steam XML/HTML + Steam Web API Family Sharing opcional
     steam_osint_map: dict[int, dict[str, Any]] = {}
+    pid_to_sid_stage2: dict[int, str] = {}
+    for pid in pids_to_verify[:40]:
+        row = enriched_br.get(pid) or enriched_extra.get(pid) or live_stats.get(pid) or {}
+        sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
+        if sid:
+            pid_to_sid_stage2[pid] = sid
+
     if isinstance(relic_client, RelicActivityClient):
         osint_client = SteamProfileOSINTClient(pace_delay_sec=0.10)
-        for pid in pids_to_verify[:40]:
-            row = enriched_br.get(pid) or enriched_extra.get(pid) or live_stats.get(pid) or {}
-            sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
-            if sid:
-                info = osint_client.fetch_profile_osint(sid)
-                if info.get("ok"):
-                    steam_osint_map[pid] = info
+        for pid, sid in pid_to_sid_stage2.items():
+            info = osint_client.fetch_profile_osint(sid)
+            if info.get("ok"):
+                steam_osint_map[pid] = info
 
-    # 4. Reavalia a shortlist com telemetria completa (APM + Combat DNA + Battlegroups + MM BR/SA + CoH2 + Steam Family Sharing + Relic)
+    # 3C. Coleta identidade histórica CoH1/CoH2 + times arranjados vitalícios CoH2 (`statGroups`) + países CoH de amigos Steam
+    legacy_coh_map: dict[int, dict[str, Any]] = {}
+    steam_friends_coh_map: dict[int, dict[str, int]] = {}
+    if isinstance(relic_client, RelicActivityClient) and pid_to_sid_stage2:
+        try:
+            legacy_client = LegacyCoHProfileClient(pace_delay_sec=0.08)
+            by_sid_leg = legacy_client.fetch_legacy_profiles_batch(list(pid_to_sid_stage2.values()))
+            for pid, sid in pid_to_sid_stage2.items():
+                if sid in by_sid_leg:
+                    legacy_coh_map[pid] = by_sid_leg[sid]
+            if steam_friends_by_pid:
+                for cpid in sorted(cand_pids)[:15]:
+                    f_sids = steam_friends_by_pid.get(cpid) or set()
+                    if f_sids:
+                        f_ctry = legacy_client.fetch_friends_coh_countries(
+                            f_sids,
+                            relic_coh3_client=relic_client,
+                            max_friends=40,
+                        )
+                        if f_ctry:
+                            steam_friends_coh_map[cpid] = f_ctry
+        except Exception as exc:
+            logger.debug("[SMURF STAGE 2] Falha em LegacyCoHProfileClient: %s", redact_secrets(exc))
+
+    # 4. Reavalia a shortlist com telemetria completa (APM + Combat DNA + Battlegroups + MM BR/SA + CoH1/CoH2 statGroups + Steam OSINT + Relic)
     verified = detect_top50_br_smurfs(
         all_br_players=enriched_br,
         telemetry=telemetry,
@@ -5296,6 +5990,8 @@ def verify_suspects_with_relic(
         alias_history_doc=alias_history_doc,
         steam_osint_by_pid=steam_osint_map or None,
         shared_lender_by_sid=shared_lender_by_sid,
+        legacy_coh_by_pid=legacy_coh_map or None,
+        steam_friends_coh_countries_by_pid=steam_friends_coh_map or None,
         top_n=top_n,
         min_probability_pct=min_probability_pct,
         include_known_smurfs=include_known_smurfs,
