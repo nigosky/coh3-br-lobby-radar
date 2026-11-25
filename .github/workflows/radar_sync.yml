@@ -51,7 +51,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
-          fetch-depth: 0
+          fetch-depth: 1
+
+      - name: Restaurar estado intermediario do GitHub Actions Cache (privado)
+        id: restore_cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/radar_state_cache
+          key: radar-state-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            radar-state-v1-
 
       - name: Garantir renderizador grafico (apt oficial assinado GPG, zero pip)
         run: |
@@ -93,7 +102,20 @@ jobs:
           python3 manage_roster.py validate
           python3 -m unittest discover -s . -p "test_*.py"
 
-      - name: Sincronizar Radar a cada 5 min (sessao de 12 ciclos = 60 min)
+      - name: Mesclar estado restaurado do Actions Cache com baseline da main
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/radar_state_cache"
+          if [ -f "state.json" ] && [ ! -L "state.json" ]; then
+            cp -f -- state.json "${RUNNER_TEMP}/git_baseline_state.json"
+          else
+            printf '{}\n' > "${RUNNER_TEMP}/git_baseline_state.json"
+          fi
+          python3 lobby_radar.py --merge-cache-dir "${RUNNER_TEMP}/radar_state_cache"
+
+      - name: Sincronizar Radar a cada 5 min (sessao de 12 ciclos = 60 min, sem git push intermediario)
         id: sync
         env:
           PYTHONDONTWRITEBYTECODE: "1"
@@ -122,14 +144,8 @@ jobs:
             CYCLES=1
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           for ((cycle=1; cycle<=CYCLES; cycle++)); do
             CYCLE_START="$(date +%s)"
-            if [ "${cycle}" -gt 1 ]; then
-              git pull --rebase --autostash origin main || git rebase --abort 2>/dev/null || true
-            fi
             ARGS=()
             if [ "${cycle}" -eq 1 ]; then
               ARGS+=(--verify-webhook)
@@ -140,25 +156,11 @@ jobs:
 
             python3 lobby_radar.py "${ARGS[@]}"
 
-            # Bloqueia imediatamente qualquer vazamento de Webhook/token/chave privada em arquivos rastreados
-            if git ls-files -z | xargs -0 grep -InEi "${SECRET_PATTERN}" 2>/dev/null; then
-              echo "::error::Bloqueio de seguranca acionado: segredo/Webhook detectado em arquivo rastreado!"
+            # Bloqueia imediatamente qualquer vazamento de Webhook/token/chave privada em arquivos rastreados (sem imprimir conteudo)
+            matched="$(git ls-files -z | xargs -0 grep -IlEi "${SECRET_PATTERN}" 2>/dev/null | tr '\n' ' ' | sed 's/ *$//' || true)"
+            if [ -n "${matched}" ]; then
+              echo "::error::Bloqueio de seguranca acionado: segredo/Webhook detectado em arquivo rastreado (${matched})!"
               exit 1
-            fi
-
-            for f in state.json br_community.json alias_history.json; do
-              if [ -f "${f}" ]; then
-                git add -- "${f}"
-              fi
-            done
-            if git diff --cached --name-only | grep -Ei "(^\.env|\.secret$)" >/dev/null 2>&1; then
-              echo "::error::Bloqueio de seguranca acionado: arquivo de segredo staged!"
-              exit 1
-            fi
-            if ! git diff --cached --quiet; then
-              git commit -m "chore(lobby-state): atualizar estado do Radar de Lobby [skip ci]"
-              git pull --rebase -X theirs origin main || git rebase --abort 2>/dev/null || true
-              git push origin "HEAD:main" || true
             fi
 
             if [ "${cycle}" -lt "${CYCLES}" ]; then
@@ -173,45 +175,125 @@ jobs:
             fi
           done
 
-      - name: Auditoria anti-vazamento e persistencia de estado (state.json + br_community.json + alias_history.json)
+      - name: Preparar snapshot de estado para Actions Cache (auditoria anti-vazamento e JSON)
+        id: prep_cache
         if: always()
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -euo pipefail
+          matched="$(git ls-files -z | xargs -0 grep -IlEi "${SECRET_PATTERN}" 2>/dev/null | tr '\n' ' ' | sed 's/ *$//' || true)"
+          if [ -n "${matched}" ]; then
+            echo "::error::Bloqueio de seguranca acionado: padrao de segredo/Webhook detectado antes do cache (${matched})!"
+            exit 1
+          fi
+          mkdir -p "${RUNNER_TEMP}/radar_state_cache"
+          COPIED=0
+          for f in state.json br_community.json alias_history.json; do
+            if [ -f "${f}" ] && [ ! -L "${f}" ]; then
+              if ! python3 -m json.tool "${f}" >/dev/null; then
+                echo "::error::Bloqueio de integridade: JSON corrompido em ${f}!"
+                exit 1
+              fi
+              cp -f -- "${f}" "${RUNNER_TEMP}/radar_state_cache/${f}"
+              COPIED=$((COPIED + 1))
+            fi
+          done
+          if [ "${COPIED}" -gt 0 ]; then
+            echo "has_snapshot=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "has_snapshot=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Salvar estado intermediario no GitHub Actions Cache (privado, zero PushEvent)
+        if: always() && steps.prep_cache.outcome == 'success' && steps.prep_cache.outputs.has_snapshot == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/radar_state_cache
+          key: radar-state-v1-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Checkpoint condicional na main (apenas mudanca de Veteranos/Painel ou a cada 6h)
+        if: always() && steps.prep_cache.outcome == 'success' && steps.prep_cache.outputs.has_snapshot == 'true'
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+          FORCE_SYNC: ${{ (github.event_name == 'workflow_dispatch' && inputs.force_sync) || false }}
+          CHECKPOINT_SEC_VAR: ${{ vars.RADAR_GIT_CHECKPOINT_SEC }}
         run: |
           set -euo pipefail
 
           # Bloqueia qualquer URL de Webhook, chave Steam, token GitHub/dispatch ou chave privada em TODOS os arquivos rastreados
-          if git ls-files -z | xargs -0 grep -InEi "${SECRET_PATTERN}" 2>/dev/null; then
-            echo "::error::Bloqueio de seguranca acionado: padrao de segredo/Webhook detectado em arquivo rastreado!"
+          matched="$(git ls-files -z | xargs -0 grep -IlEi "${SECRET_PATTERN}" 2>/dev/null | tr '\n' ' ' | sed 's/ *$//' || true)"
+          if [ -n "${matched}" ]; then
+            echo "::error::Bloqueio de seguranca acionado: padrao de segredo/Webhook detectado em arquivo rastreado (${matched})!"
             exit 1
           fi
 
-          for f in state.json br_community.json alias_history.json; do
-            if [ -f "${f}" ]; then
-              git add -- "${f}"
+          CHECKPOINT_SEC=21600
+          if [[ "${CHECKPOINT_SEC_VAR:-}" =~ ^[0-9]+$ ]] && [ "${CHECKPOINT_SEC_VAR}" -ge 300 ] && [ "${CHECKPOINT_SEC_VAR}" -le 86400 ]; then
+            CHECKPOINT_SEC="${CHECKPOINT_SEC_VAR}"
+          fi
+
+          CKPT_ARGS=(--check-git-checkpoint "${RUNNER_TEMP}/git_baseline_state.json" --checkpoint-interval-sec "${CHECKPOINT_SEC}")
+          if [ "${FORCE_SYNC}" = "true" ]; then
+            CKPT_ARGS+=(--force)
+          fi
+
+          set +e
+          CKPT_OUT="$(python3 lobby_radar.py "${CKPT_ARGS[@]}")"
+          CKPT_RC=$?
+          set -e
+          echo "[GIT CHECKPOINT] ${CKPT_OUT}"
+          if [ "${CKPT_RC}" -eq 10 ]; then
+            echo "Push na main economizado: estado persistido apenas no GitHub Actions Cache privado."
+            exit 0
+          elif [ "${CKPT_RC}" -ne 0 ]; then
+            echo "::error::Erro ao avaliar checkpoint git (rc=${CKPT_RC})."
+            exit "${CKPT_RC}"
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          PUSH_OK=0
+          for attempt in 1 2 3; do
+            git fetch --depth=1 origin main
+            git reset --hard origin/main
+            python3 lobby_radar.py --merge-cache-dir "${RUNNER_TEMP}/radar_state_cache"
+
+            matched="$(git ls-files -z | xargs -0 grep -IlEi "${SECRET_PATTERN}" 2>/dev/null | tr '\n' ' ' | sed 's/ *$//' || true)"
+            if [ -n "${matched}" ]; then
+              echo "::error::Bloqueio de seguranca acionado apos merge: padrao de segredo detectado (${matched})!"
+              exit 1
             fi
+
+            for f in state.json br_community.json alias_history.json; do
+              if [ -f "${f}" ] && [ ! -L "${f}" ]; then
+                git add -- "${f}"
+              fi
+            done
+
+            if git diff --cached --name-only | grep -Ei "(^\.env|\.secret$)" >/dev/null 2>&1; then
+              echo "::error::Bloqueio de seguranca acionado: arquivo de segredo staged!"
+              exit 1
+            fi
+
+            if git diff --cached --quiet; then
+              echo "Nenhuma alteracao pendente para checkpoint na main."
+              PUSH_OK=1
+              break
+            fi
+
+            git commit -m "chore(lobby-state): checkpoint de estado do Radar de Lobby [skip ci]"
+            if git push origin "HEAD:main"; then
+              echo "Checkpoint salvo com sucesso em main (tentativa ${attempt}/3)."
+              PUSH_OK=1
+              break
+            fi
+            sleep $((attempt * 2))
           done
 
-          if git diff --cached --name-only | grep -Ei "(^\.env|\.secret$)" >/dev/null 2>&1; then
-            echo "::error::Bloqueio de seguranca acionado: arquivo de segredo staged!"
+          if [ "${PUSH_OK}" -ne 1 ]; then
+            echo "::error::Falha ao persistir checkpoint do Radar em main apos 3 tentativas!"
             exit 1
-          fi
-
-          if git diff --cached --quiet; then
-            echo "Nenhuma alteracao em state.json / br_community.json / alias_history.json nesta sessao."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "chore(lobby-state): atualizar estado do Radar de Lobby [skip ci]"
-            for attempt in 1 2 3; do
-              # Na estrategia --rebase, 'theirs' representa o commit local sendo re-aplicado (nosso estado mais recente!)
-              git pull --rebase -X theirs origin main || {
-                git rebase --abort 2>/dev/null || true
-              }
-              if git push origin "HEAD:main"; then
-                echo "Estado salvo com sucesso em main."
-                break
-              fi
-              sleep 2
-            done
           fi
 
       - name: Auto-agendar proxima sessao autonoma (Relay seguro via GITHUB_TOKEN efemero)

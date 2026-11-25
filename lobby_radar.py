@@ -2507,6 +2507,363 @@ def run_lobby_radar_sync(
 MAX_SAFE_LOOP_CYCLES = 24
 MIN_SAFE_LOOP_INTERVAL_SEC = 60
 MAX_SAFE_LOOP_INTERVAL_SEC = 900
+DEFAULT_GIT_CHECKPOINT_INTERVAL_SEC = 6 * 3600  # Backup periódico na main a cada 6h (intermediários via Actions Cache)
+GIT_CHECKPOINT_SKIP_EXIT_CODE = 10
+
+
+def _extract_fast_sig_coh3_steam_ids(state: dict[str, Any]) -> set[str]:
+    """Extrai SteamID64 dos Veteranos em CoH3 presentes em `last_steam_fast_sig` (formato atual aninhado e legado, sem `eval`)."""
+    import ast
+
+    raw = state.get("last_steam_fast_sig")
+    if not isinstance(raw, str) or not raw.strip() or len(raw) > 131_072:
+        return set()
+    try:
+        parsed = ast.literal_eval(raw)
+    except Exception:
+        return set()
+    if not isinstance(parsed, (list, tuple)) or not parsed:
+        return set()
+    first = parsed[0]
+    if isinstance(first, str) and 2 <= len(first) <= 65_536:
+        try:
+            inner = ast.literal_eval(first)
+        except Exception:
+            return set()
+        if isinstance(inner, (list, tuple)) and inner and isinstance(inner[0], (list, tuple)):
+            in_coh3 = inner[0]
+        else:
+            return set()
+    elif isinstance(first, (list, tuple)):
+        in_coh3 = first
+    else:
+        return set()
+
+    out: set[str] = set()
+    for item in in_coh3:
+        if isinstance(item, str):
+            sid = item.strip()
+        elif isinstance(item, (list, tuple)) and item:
+            sid = str(item[0] or "").strip()
+        else:
+            continue
+        if STEAM_ID64_VALID_RE.fullmatch(sid):
+            out.add(sid)
+    return out
+
+
+def merge_radar_state_dicts(git_state: dict[str, Any], cached_state: dict[str, Any]) -> dict[str, Any]:
+    """Mescla monotonicamente `state.json` do git e do Actions Cache preservando o sync mais novo e IDs do painel."""
+    if not isinstance(git_state, dict):
+        git_state = {}
+    if not isinstance(cached_state, dict):
+        cached_state = {}
+    if not cached_state:
+        return dict(git_state)
+    if not git_state:
+        return dict(cached_state)
+
+    git_ts = int(git_state.get("last_sync_ts", 0) or 0)
+    cache_ts = int(cached_state.get("last_sync_ts", 0) or 0)
+    newer, older = (cached_state, git_state) if cache_ts >= git_ts else (git_state, cached_state)
+    merged: dict[str, Any] = dict(newer)
+
+    # Nunca perde os IDs do painel Discord caso um lado esteja vazio
+    if not _extract_panel_message_ids(merged) and _extract_panel_message_ids(older):
+        for key in (
+            "panel_message_ids",
+            "panel_message_id",
+            "panel_monitorados_message_id",
+            "panel_outros_message_id",
+            "panel_links_message_id",
+        ):
+            if older.get(key):
+                merged[key] = older[key]
+
+    # Mescla cache de SteamIDs dos Veteranos sem descartar resoluções conhecidas
+    merged_vsc: dict[str, str] = {}
+    for src in (older.get("veteranos_steam_cache"), newer.get("veteranos_steam_cache")):
+        if isinstance(src, dict):
+            for k, v in src.items():
+                ks, vs = str(k).strip(), str(v or "").strip()
+                if ks.isdigit() and STEAM_ID64_VALID_RE.fullmatch(vs):
+                    merged_vsc[ks] = vs
+    if merged_vsc:
+        merged["veteranos_steam_cache"] = merged_vsc
+
+    return merged
+
+
+def merge_community_cache_dicts(git_comm: dict[str, Any], cached_comm: dict[str, Any]) -> dict[str, Any]:
+    """Mescla monotonicamente `br_community.json` preservando descobertas concorrentes (`deep_br_discovery`) e telemetria mais nova."""
+    if not isinstance(git_comm, dict) or not isinstance(git_comm.get("players"), dict):
+        git_comm = {"schema_version": COMMUNITY_SCHEMA_VERSION, "updated_at": 0, "players": {}, "dormant_players": {}}
+    if not isinstance(cached_comm, dict) or not isinstance(cached_comm.get("players"), dict):
+        return dict(git_comm)
+
+    git_upd = int(git_comm.get("updated_at", 0) or 0)
+    cache_upd = int(cached_comm.get("updated_at", 0) or 0)
+    git_deep = int(git_comm.get("deep_discovery_at", 0) or 0)
+    cache_deep = int(cached_comm.get("deep_discovery_at", 0) or 0)
+
+    newer, older = (cached_comm, git_comm) if max(cache_upd, cache_deep) >= max(git_upd, git_deep) else (git_comm, cached_comm)
+    merged: dict[str, Any] = dict(newer)
+    merged["schema_version"] = max(int(git_comm.get("schema_version", 0) or 0), int(cached_comm.get("schema_version", 0) or 0), COMMUNITY_SCHEMA_VERSION)
+    merged["updated_at"] = max(git_upd, cache_upd)
+    if max(git_deep, cache_deep) > 0:
+        merged["deep_discovery_at"] = max(git_deep, cache_deep)
+
+    def _merge_player_rec(older_rec: dict[str, Any], newer_rec: dict[str, Any]) -> dict[str, Any]:
+        merged_rec: dict[str, Any] = dict(older_rec)
+        for fk, fv in newer_rec.items():
+            if fv is not None and fv != "":
+                merged_rec[fk] = fv
+        for num_k in (
+            "last_match_date",
+            "last_seen_online_ts",
+            "last_seen_ingame_ts",
+            "last_seen_ingame_webapi_ts",
+            "last_seen_ts",
+            "steam_gd_checked_ts",
+            "max_elo",
+            "total_matches",
+            "br_teammate_count",
+            "region_id",
+        ):
+            if num_k in older_rec or num_k in newer_rec:
+                try:
+                    ov = int(older_rec.get(num_k, 0) or 0)
+                except (TypeError, ValueError):
+                    ov = 0
+                try:
+                    nv = int(newer_rec.get(num_k, 0) or 0)
+                except (TypeError, ValueError):
+                    nv = 0
+                merged_rec[num_k] = max(ov, nv)
+        if older_rec.get("in_br_arranged_team") or newer_rec.get("in_br_arranged_team"):
+            merged_rec["in_br_arranged_team"] = True
+        return merged_rec
+
+    def _merge_player_map(base_map: Any, extra_map: Any) -> dict[str, dict[str, Any]]:
+        out: dict[str, dict[str, Any]] = {}
+        for src in (extra_map, base_map):
+            if not isinstance(src, dict):
+                continue
+            for pid_key, rec in src.items():
+                if not isinstance(rec, dict):
+                    continue
+                pk = str(pid_key).strip()
+                if not pk:
+                    continue
+                if pk not in out:
+                    out[pk] = dict(rec)
+                else:
+                    out[pk] = _merge_player_rec(out[pk], rec)
+        return out
+
+    merged_players = _merge_player_map(newer.get("players"), older.get("players"))
+    merged_dormant = _merge_player_map(newer.get("dormant_players"), older.get("dormant_players"))
+    for active_pk in list(merged_players.keys()):
+        merged_dormant.pop(active_pk, None)
+
+    merged["players"] = merged_players
+    merged["dormant_players"] = merged_dormant
+    return merged
+
+
+def merge_alias_history_dicts(git_ah: dict[str, Any], cached_ah: dict[str, Any]) -> dict[str, Any]:
+    """Mescla monotonicamente `alias_history.json` preservando a união de jogadores e histórico de aliases."""
+    if not isinstance(git_ah, dict):
+        git_ah = {}
+    if not isinstance(cached_ah, dict):
+        return dict(git_ah)
+    if not cached_ah.get("players") and not cached_ah.get("legacy_br_players"):
+        return dict(git_ah)
+    if not git_ah.get("players") and not git_ah.get("legacy_br_players"):
+        return dict(cached_ah)
+
+    git_upd = int(git_ah.get("updated_at", 0) or 0)
+    cache_upd = int(cached_ah.get("updated_at", 0) or 0)
+    newer, older = (cached_ah, git_ah) if cache_upd >= git_upd else (git_ah, cached_ah)
+    merged: dict[str, Any] = dict(newer)
+    merged["updated_at"] = max(git_upd, cache_upd)
+
+    for section in ("players", "legacy_br_players"):
+        new_sec = newer.get(section)
+        old_sec = older.get(section)
+        if not isinstance(new_sec, dict) and not isinstance(old_sec, dict):
+            continue
+        sec_out: dict[str, Any] = {}
+        if isinstance(old_sec, dict):
+            for k, v in old_sec.items():
+                if isinstance(v, dict):
+                    sec_out[str(k)] = dict(v)
+        if isinstance(new_sec, dict):
+            for k, v in new_sec.items():
+                ks = str(k)
+                if not isinstance(v, dict):
+                    continue
+                if ks not in sec_out:
+                    sec_out[ks] = dict(v)
+                    continue
+                prev = sec_out[ks]
+                if prev == v:
+                    continue
+                comb = dict(v)
+                # Preserva a união de observações de aliases por nome normalizado (mesma ordem cronológica de alias_history.py)
+                by_alias: dict[str, dict[str, Any]] = {}
+                for src_list in (prev.get("aliases"), v.get("aliases")):
+                    if not isinstance(src_list, list):
+                        continue
+                    for entry in src_list:
+                        if not isinstance(entry, dict):
+                            continue
+                        al = str(entry.get("alias") or "").strip()
+                        if not al:
+                            continue
+                        ak = al.casefold()
+                        if ak not in by_alias:
+                            by_alias[ak] = dict(entry)
+                        else:
+                            cur = by_alias[ak]
+                            f1, f2 = int(cur.get("first_seen", 0) or 0), int(entry.get("first_seen", 0) or 0)
+                            cur["first_seen"] = min(f1, f2) if (f1 > 0 and f2 > 0) else max(f1, f2)
+                            cur["last_seen"] = max(int(cur.get("last_seen", 0) or 0), int(entry.get("last_seen", 0) or 0))
+                            srcs = sorted({str(s) for s in (cur.get("sources") or []) + (entry.get("sources") or []) if s})
+                            if srcs:
+                                cur["sources"] = srcs
+                if by_alias:
+                    merged_list = sorted(
+                        by_alias.values(),
+                        key=lambda x: (
+                            int(x.get("first_seen", 0) or 0) or 9_999_999_999,
+                            int(x.get("last_seen", 0) or 0) or 9_999_999_999,
+                            str(x.get("alias") or "").casefold(),
+                        ),
+                    )
+                    if len(merged_list) > 40:
+                        merged_list = [merged_list[0]] + sorted(
+                            merged_list[1:],
+                            key=lambda x: (int(x.get("last_seen", 0) or 0), int(x.get("first_seen", 0) or 0)),
+                        )[-39:]
+                        merged_list.sort(
+                            key=lambda x: (
+                                int(x.get("first_seen", 0) or 0) or 9_999_999_999,
+                                int(x.get("last_seen", 0) or 0) or 9_999_999_999,
+                                str(x.get("alias") or "").casefold(),
+                            )
+                        )
+                    comb["aliases"] = merged_list
+                sec_out[ks] = comb
+        merged[section] = sec_out
+
+    return merged
+
+
+def merge_radar_cache_dir(
+    cache_dir: Path,
+    *,
+    state_path: Path = DEFAULT_STATE_PATH,
+    community_cache_path: Path = DEFAULT_COMMUNITY_CACHE_PATH,
+    alias_history_path: Path = DEFAULT_ALIAS_HISTORY_PATH,
+) -> dict[str, bool]:
+    """Restaura e mescla monotonicamente `state.json`, `br_community.json` e `alias_history.json` do diretório de Actions Cache."""
+    if cache_dir.is_symlink():
+        raise ValueError(f"Diretório de cache symlink bloqueado: {cache_dir}")
+    if not cache_dir.is_dir():
+        return {"state": False, "community": False, "alias_history": False}
+
+    updated = {"state": False, "community": False, "alias_history": False}
+
+    cached_state_file = cache_dir / "state.json"
+    if cached_state_file.exists():
+        if cached_state_file.is_symlink():
+            raise ValueError("Arquivo state.json de cache é symlink bloqueado.")
+        cached_st = load_state(cached_state_file)
+        if cached_st:
+            git_st = load_state(state_path)
+            merged_st = merge_radar_state_dicts(git_st, cached_st)
+            if merged_st != git_st:
+                save_state(state_path, merged_st)
+                updated["state"] = True
+
+    cached_comm_file = cache_dir / "br_community.json"
+    if cached_comm_file.exists():
+        if cached_comm_file.is_symlink():
+            raise ValueError("Arquivo br_community.json de cache é symlink bloqueado.")
+        cached_comm = load_community_cache(cached_comm_file)
+        if cached_comm.get("players") or cached_comm.get("dormant_players"):
+            git_comm = load_community_cache(community_cache_path)
+            merged_comm = merge_community_cache_dicts(git_comm, cached_comm)
+            if merged_comm != git_comm:
+                save_community_cache(community_cache_path, merged_comm)
+                updated["community"] = True
+
+    cached_ah_file = cache_dir / "alias_history.json"
+    if cached_ah_file.exists():
+        if cached_ah_file.is_symlink():
+            raise ValueError("Arquivo alias_history.json de cache é symlink bloqueado.")
+        cached_ah = load_alias_history(cached_ah_file)
+        if cached_ah.get("players") or cached_ah.get("legacy_br_players"):
+            git_ah = load_alias_history(alias_history_path)
+            merged_ah = merge_alias_history_dicts(git_ah, cached_ah)
+            if merged_ah != git_ah:
+                ah_ts = int(merged_ah.get("updated_at", 0) or 0)
+                save_alias_history(alias_history_path, merged_ah, now_ts=ah_ts if ah_ts > 0 else None)
+                updated["alias_history"] = True
+
+    return updated
+
+
+def evaluate_git_checkpoint(
+    git_state: dict[str, Any],
+    local_state: dict[str, Any],
+    *,
+    min_interval_sec: int = DEFAULT_GIT_CHECKPOINT_INTERVAL_SEC,
+    force: bool = False,
+) -> tuple[bool, str]:
+    """
+    Decide se a sessão deve fazer `git commit/push` em `main` (checkpoint público) ou permanecer apenas
+    no GitHub Actions Cache privado (reduzindo pushes e clones de bots externos em >90%).
+
+    Faz checkpoint na `main` quando:
+    - `force=True` (execução manual forçada);
+    - não há baseline anterior no git;
+    - IDs de mensagens do Painel Discord ou `layout_version` mudaram;
+    - Veteranos ativos no CoH3 mudaram (mantém 4ª checagem do Scheduler/Tracker sincronizada em tempo real);
+    - já passaram `>= min_interval_sec` (padrão 6h) desde o último checkpoint commitado na `main`.
+    """
+    if force:
+        return True, "force_sync"
+    if not isinstance(local_state, dict) or not local_state:
+        return False, "empty_local_state"
+    if not isinstance(git_state, dict) or not git_state:
+        return True, "initial_baseline"
+
+    if _extract_panel_message_ids(git_state) != _extract_panel_message_ids(local_state):
+        return True, "panel_message_ids_changed"
+    if int(git_state.get("layout_version", 0) or 0) != int(local_state.get("layout_version", 0) or 0):
+        return True, "panel_layout_version_changed"
+
+    git_coh3_pids = {int(p) for p in (git_state.get("last_alert_coh3_pids") or []) if str(p).isdigit()}
+    local_coh3_pids = {int(p) for p in (local_state.get("last_alert_coh3_pids") or []) if str(p).isdigit()}
+    if git_coh3_pids != local_coh3_pids:
+        return True, "veteranos_coh3_pids_changed"
+
+    git_fast_sids = _extract_fast_sig_coh3_steam_ids(git_state)
+    local_fast_sids = _extract_fast_sig_coh3_steam_ids(local_state)
+    if git_fast_sids != local_fast_sids:
+        return True, "veteranos_fast_sig_changed"
+
+    git_ts = int(git_state.get("last_sync_ts", 0) or 0)
+    local_ts = int(local_state.get("last_sync_ts", 0) or 0)
+    interval = max(300, int(min_interval_sec))
+    elapsed = local_ts - git_ts
+    if git_ts <= 0 or elapsed >= interval:
+        return True, f"periodic_checkpoint_elapsed_{max(0, elapsed)}s"
+
+    remaining_min = max(1, (interval - max(0, elapsed) + 59) // 60)
+    return False, f"actions_cache_only_next_git_checkpoint_in_{remaining_min}m"
 
 
 def main() -> int:
@@ -2514,6 +2871,24 @@ def main() -> int:
     parser.add_argument("--state", type=Path, default=DEFAULT_STATE_PATH, help="Caminho para state.json")
     parser.add_argument("--force", action="store_true", help="Força atualização imediata do Painel Vivo no Discord")
     parser.add_argument("--verify-webhook", action="store_true", help="Verifica conectividade do Webhook antes do ciclo")
+    parser.add_argument(
+        "--merge-cache-dir",
+        type=Path,
+        default=None,
+        help="Mescla monotonicamente state.json/br_community.json/alias_history.json restaurados do Actions Cache e encerra",
+    )
+    parser.add_argument(
+        "--check-git-checkpoint",
+        type=Path,
+        default=None,
+        help="Compara state.json atual com snapshot baseline da main; retorna 0 se deve commitar ou 10 se deve manter só no Actions Cache",
+    )
+    parser.add_argument(
+        "--checkpoint-interval-sec",
+        type=int,
+        default=DEFAULT_GIT_CHECKPOINT_INTERVAL_SEC,
+        help="Intervalo periódico em segundos para checkpoint no git (padrão 21600 = 6h)",
+    )
     parser.add_argument(
         "--loop-cycles",
         type=int,
@@ -2527,6 +2902,30 @@ def main() -> int:
         help="Intervalo alvo em segundos entre o início de cada ciclo (60 a 900, padrão 300 = 5 min)",
     )
     args = parser.parse_args()
+
+    if args.merge_cache_dir is not None:
+        try:
+            res = merge_radar_cache_dir(args.merge_cache_dir, state_path=args.state)
+            logger.info("[ACTIONS CACHE MERGE] Resultado: %s", res)
+            return 0
+        except Exception as exc:
+            logger.error("[ACTIONS CACHE MERGE] Falha/bloqueio de segurança: %s", redact_secrets(exc))
+            return 1
+
+    if args.check_git_checkpoint is not None:
+        if args.check_git_checkpoint.is_symlink():
+            logger.error("[GIT CHECKPOINT] Baseline symlink bloqueado: %s", args.check_git_checkpoint)
+            return 1
+        git_st = load_state(args.check_git_checkpoint) if args.check_git_checkpoint.is_file() else {}
+        local_st = load_state(args.state)
+        should_push, reason = evaluate_git_checkpoint(
+            git_st,
+            local_st,
+            min_interval_sec=max(300, int(args.checkpoint_interval_sec or DEFAULT_GIT_CHECKPOINT_INTERVAL_SEC)),
+            force=bool(args.force),
+        )
+        print(f"should_push={str(should_push).lower()} reason={reason}", flush=True)
+        return 0 if should_push else GIT_CHECKPOINT_SKIP_EXIT_CODE
 
     cycles = max(1, min(int(args.loop_cycles or 1), MAX_SAFE_LOOP_CYCLES))
     interval_sec = max(MIN_SAFE_LOOP_INTERVAL_SEC, min(int(args.loop_interval_sec or 300), MAX_SAFE_LOOP_INTERVAL_SEC))
