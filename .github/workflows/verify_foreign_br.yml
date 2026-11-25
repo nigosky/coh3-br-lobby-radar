@@ -86,7 +86,7 @@ jobs:
           if [[ "${INPUT_MAX_CANDIDATES:-}" =~ ^[0-9]+$ ]] && [ "${INPUT_MAX_CANDIDATES}" -ge 1 ] && [ "${INPUT_MAX_CANDIDATES}" -le 150 ]; then
             MAX_CANDS="${INPUT_MAX_CANDIDATES}"
           fi
-          ARGS=(--max-candidates "${MAX_CANDS}")
+          ARGS=(--max-candidates "${MAX_CANDS}" --audit-active 15)
           if [ "${INPUT_FORCE}" = "true" ]; then
             ARGS+=(--force)
           fi
@@ -101,17 +101,19 @@ jobs:
             exit 1
           fi
 
-          if [ -f suspected_foreign_br.json ]; then
-            git add -- suspected_foreign_br.json
-          fi
+          for f in suspected_foreign_br.json br_community.json; do
+            if [ -f "${f}" ]; then
+              git add -- "${f}"
+            fi
+          done
           if git diff --cached --quiet; then
-            echo "Nenhuma alteracao em suspected_foreign_br.json neste ciclo."
+            echo "Nenhuma alteracao em suspected_foreign_br.json/br_community.json neste ciclo."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "chore(foreign-verifier): atualizar verificacao periodica de estrangeiros VPN [skip ci]"
+          git commit -m "chore(foreign-verifier): atualizar verificacao e podar estrangeiros confirmados [skip ci]"
 
           for attempt in 1 2 3 4; do
             git pull --rebase -X theirs origin main || {

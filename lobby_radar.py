@@ -76,8 +76,11 @@ from steam_presence import (
 )
 from foreign_br_verifier import (
     SUSPECTED_FOREIGN_BR_PATH,
+    get_confirmed_foreign_removed_pids,
+    get_confirmed_foreign_removed_steam_ids,
     get_verified_foreign_status_map,
     load_suspected_foreign_br_registry,
+    prune_confirmed_foreign_from_community,
 )
 
 configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
@@ -1338,9 +1341,20 @@ def run_lobby_radar_sync(
 
     expat_outros_pids_set, _ = extract_roster_id_sets(OUTROS_BR_EMIGRADOS)
 
+    foreign_reg_path = comm_path.parent / SUSPECTED_FOREIGN_BR_PATH.name
+    foreign_registry = load_suspected_foreign_br_registry(foreign_reg_path)
+    verified_foreign_status_map = get_verified_foreign_status_map(foreign_registry)
+    confirmed_foreign_pids = get_confirmed_foreign_removed_pids(foreign_registry)
+    confirmed_foreign_sids = get_confirmed_foreign_removed_steam_ids(foreign_registry)
+    excluded_other_br_pids = curated_pids_set | confirmed_foreign_pids
+    excluded_other_br_sids = curated_sids_set | confirmed_foreign_sids
+
     def _is_leaked_foreign_cache_row(row_obj: dict[str, Any], row_pid: int) -> bool:
         if row_pid in mon_pids_set or row_pid in expat_outros_pids_set:
             return False
+        rsid_chk = str(row_obj.get("steam_id") or "").replace("/steam/", "").strip()
+        if row_pid in confirmed_foreign_pids or (rsid_chk and rsid_chk in confirmed_foreign_sids):
+            return True
         if str(row_obj.get("br_source") or "").strip() != "alias_history":
             return False
         rflag = str(row_obj.get("flag_country") or "").strip().lower()
@@ -1355,7 +1369,7 @@ def run_lobby_radar_sync(
         rpid = int(row.get("profile_id", 0) or 0) if isinstance(row, dict) else 0
         rsid = str(row.get("steam_id") or "").strip() if isinstance(row, dict) else ""
         rlmd = int(row.get("last_match_date", 0) or 0) if isinstance(row, dict) else 0
-        if not isinstance(row, dict) or rpid in curated_pids_set or rsid in curated_sids_set or rpid <= 0 or _is_leaked_foreign_cache_row(row, rpid):
+        if not isinstance(row, dict) or rpid in excluded_other_br_pids or rsid in excluded_other_br_sids or rpid <= 0 or _is_leaked_foreign_cache_row(row, rpid):
             del community_players[k]
             community_dirty = True
         elif rlmd < active_coh3_cutoff:
@@ -1367,7 +1381,7 @@ def run_lobby_radar_sync(
             else:
                 pruned_inactive += 1
 
-    # Higieniza `dormant_players`: remove Veteranos/Monitorados/inválidos/duplicados/estrangeiros vazados; promove se voltou <=15d
+    # Higieniza `dormant_players`: remove Veteranos/Monitorados/inválidos/duplicados/estrangeiros confirmados; promove se voltou <=15d
     for k in list(dormant_players.keys()):
         row = dormant_players[k]
         rpid = int(row.get("profile_id", 0) or 0) if isinstance(row, dict) else 0
@@ -1377,8 +1391,8 @@ def run_lobby_radar_sync(
             not isinstance(row, dict)
             or rpid <= 0
             or not STEAM_ID64_VALID_RE.fullmatch(rsid)
-            or rpid in curated_pids_set
-            or rsid in curated_sids_set
+            or rpid in excluded_other_br_pids
+            or rsid in excluded_other_br_sids
             or str(rpid) in community_players
             or _is_leaked_foreign_cache_row(row, rpid)
             or (dormant_retention_cutoff > 0 and rlmd < dormant_retention_cutoff)
@@ -1446,9 +1460,9 @@ def run_lobby_radar_sync(
         hsid = str(hrec.get("steam_id") or "").replace("/steam/", "").strip()
         if (
             hpid <= 0
-            or hpid in curated_pids_set
+            or hpid in excluded_other_br_pids
             or not STEAM_ID64_VALID_RE.fullmatch(hsid)
-            or hsid in curated_sids_set
+            or hsid in excluded_other_br_sids
             or str(hpid) in community_players
             or str(hpid) in dormant_players
         ):
@@ -1482,8 +1496,8 @@ def run_lobby_radar_sync(
         if _merge_player_into_community(
             target_pool,
             seed_item,
-            vet_pids=curated_pids_set,
-            vet_sids=curated_sids_set,
+            vet_pids=excluded_other_br_pids,
+            vet_sids=excluded_other_br_sids,
             min_last_match_date=min_lmd,
             replace_matches=False,
         ):
@@ -1541,8 +1555,8 @@ def run_lobby_radar_sync(
                     if _merge_player_into_community(
                         community_players,
                         item,
-                        vet_pids=curated_pids_set,
-                        vet_sids=curated_sids_set,
+                        vet_pids=excluded_other_br_pids,
+                        vet_sids=excluded_other_br_sids,
                         min_last_match_date=active_coh3_cutoff,
                         replace_matches=False,
                     ):
@@ -1551,8 +1565,8 @@ def run_lobby_radar_sync(
                     if _merge_player_into_community(
                         dormant_players,
                         item,
-                        vet_pids=curated_pids_set,
-                        vet_sids=curated_sids_set,
+                        vet_pids=excluded_other_br_pids,
+                        vet_sids=excluded_other_br_sids,
                         min_last_match_date=dormant_retention_cutoff,
                         replace_matches=False,
                     ):
@@ -1579,7 +1593,7 @@ def run_lobby_radar_sync(
     ):
         try:
             known_group_sids = (
-                set(curated_sids_set)
+                set(excluded_other_br_sids)
                 | {str(r.get("steam_id") or "") for r in community_players.values() if isinstance(r, dict)}
                 | {str(r.get("steam_id") or "") for r in dormant_players.values() if isinstance(r, dict)}
                 | set((hist_doc.get("legacy_br_players") or {}).keys())
@@ -1602,7 +1616,7 @@ def run_lobby_radar_sync(
                     gsid = str(gst.get("steam_id") or "").replace("/steam/", "").strip()
                     if gsid:
                         found_coh3_sids.add(gsid)
-                    if gpid in curated_pids_set or gsid in curated_sids_set or not STEAM_ID64_VALID_RE.fullmatch(gsid):
+                    if gpid in excluded_other_br_pids or gsid in excluded_other_br_sids or not STEAM_ID64_VALID_RE.fullmatch(gsid):
                         continue
                     gctry = str(gst.get("country") or "").strip().lower()
                     if gctry not in ("br", ""):
@@ -1621,8 +1635,8 @@ def run_lobby_radar_sync(
                         if _merge_player_into_community(
                             community_players,
                             gitem,
-                            vet_pids=curated_pids_set,
-                            vet_sids=curated_sids_set,
+                            vet_pids=excluded_other_br_pids,
+                            vet_sids=excluded_other_br_sids,
                             min_last_match_date=active_coh3_cutoff,
                             replace_matches=False,
                         ):
@@ -1632,8 +1646,8 @@ def run_lobby_radar_sync(
                         if _merge_player_into_community(
                             dormant_players,
                             gitem,
-                            vet_pids=curated_pids_set,
-                            vet_sids=curated_sids_set,
+                            vet_pids=excluded_other_br_pids,
+                            vet_sids=excluded_other_br_sids,
                             min_last_match_date=0,
                             replace_matches=False,
                         ):
@@ -1666,12 +1680,16 @@ def run_lobby_radar_sync(
 
     # Descoberta passiva (zero chamadas extras) de participantes brasileiros ativos no CoH3 (<= 15d) — também reativa inativos!
     for item in discovered_br_from_matches.values():
+        ipid_chk = int(item.get("profile_id", 0) or 0)
+        isid_chk = str(item.get("steam_id") or "").replace("/steam/", "").strip()
+        if ipid_chk in confirmed_foreign_pids or (isid_chk and isid_chk in confirmed_foreign_sids):
+            continue
         was_dormant = _reactivate_dormant_before_merge(item)
         if _merge_player_into_community(
             community_players,
             item,
-            vet_pids=curated_pids_set,
-            vet_sids=curated_sids_set,
+            vet_pids=excluded_other_br_pids,
+            vet_sids=excluded_other_br_sids,
             min_last_match_date=active_coh3_cutoff,
         ):
             community_dirty = True
@@ -1747,7 +1765,7 @@ def run_lobby_radar_sync(
             dormant_watch = dormant_sorted
         dormant_steam_ids = [str(r["steam_id"]) for r in dormant_watch]
 
-    already_watched_sids = set(curated_sids_set) | set(other_steam_ids) | set(dormant_steam_ids)
+    already_watched_sids = set(excluded_other_br_sids) | set(other_steam_ids) | set(dormant_steam_ids)
     legacy_watch: list[dict[str, Any]] = []
     legacy_steam_ids: list[str] = []
     if uses_web_api and isinstance(hist_doc.get("legacy_br_players"), dict):
@@ -1886,7 +1904,7 @@ def run_lobby_radar_sync(
                 if not isinstance(pst, dict):
                     continue
                 psid = str(pst.get("steam_id") or "").replace("/steam/", "").strip()
-                if ppid <= 0 or ppid in curated_pids_set or psid in curated_sids_set or not STEAM_ID64_VALID_RE.fullmatch(psid):
+                if ppid <= 0 or ppid in excluded_other_br_pids or psid in excluded_other_br_sids or not STEAM_ID64_VALID_RE.fullmatch(psid):
                     continue
                 ppres = other_presence_map.get(psid) or {}
                 lrec_prev = (hist_doc.get("legacy_br_players") or {}).get(psid) or {}
@@ -1913,8 +1931,8 @@ def run_lobby_radar_sync(
                 if _merge_player_into_community(
                     community_players,
                     p_item,
-                    vet_pids=curated_pids_set,
-                    vet_sids=curated_sids_set,
+                    vet_pids=excluded_other_br_pids,
+                    vet_sids=excluded_other_br_sids,
                     min_last_match_date=active_coh3_cutoff,
                     replace_matches=False,
                 ):
@@ -2171,15 +2189,18 @@ def run_lobby_radar_sync(
     if _trim_dormant_players_dict(dormant_players, max_entries=MAX_OTHER_BR_DORMANT_CACHE):
         community_dirty = True
 
-    if community_dirty:
-        community_cache["players"] = community_players
-        community_cache["dormant_players"] = dormant_players
-        save_community_cache(comm_path, community_cache)
+    community_cache["players"] = community_players
+    community_cache["dormant_players"] = dormant_players
+    if confirmed_foreign_pids or confirmed_foreign_sids:
+        if prune_confirmed_foreign_from_community(
+            community_cache,
+            confirmed_foreign_pids,
+            confirmed_foreign_sids,
+        ) > 0:
+            community_dirty = True
 
-    foreign_reg_path = comm_path.parent / SUSPECTED_FOREIGN_BR_PATH.name
-    verified_foreign_status_map = get_verified_foreign_status_map(
-        load_suspected_foreign_br_registry(foreign_reg_path)
-    )
+    if community_dirty:
+        save_community_cache(comm_path, community_cache)
 
     avatar_cache_raw = state.get("avatar_url_cache")
     avatar_cache: dict[str, dict[str, Any]] = {}
@@ -2795,6 +2816,13 @@ def merge_radar_cache_dir(
         if cached_comm.get("players") or cached_comm.get("dormant_players"):
             git_comm = load_community_cache(community_cache_path)
             merged_comm = merge_community_cache_dicts(git_comm, cached_comm)
+            foreign_reg_path = community_cache_path.parent / SUSPECTED_FOREIGN_BR_PATH.name
+            if foreign_reg_path.exists() and not foreign_reg_path.is_symlink():
+                foreign_reg = load_suspected_foreign_br_registry(foreign_reg_path)
+                cf_pids = get_confirmed_foreign_removed_pids(foreign_reg)
+                cf_sids = get_confirmed_foreign_removed_steam_ids(foreign_reg)
+                if cf_pids or cf_sids:
+                    prune_confirmed_foreign_from_community(merged_comm, cf_pids, cf_sids)
             if merged_comm != git_comm:
                 save_community_cache(community_cache_path, merged_comm)
                 updated["community"] = True

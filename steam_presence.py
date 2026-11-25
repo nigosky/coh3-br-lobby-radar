@@ -4619,6 +4619,10 @@ def detect_suspected_foreign_br_flag(
     if c2 in SUSPECTED_FOREIGN_COH2_ORIGINS and c2_m >= 20 and c1 != "br":
         return True, f"coh2_{c2}"
 
+    # 5. Histórico explícito de CoH1 em país fortemente estrangeiro (ex.: cn, ru, by, ve, dz, ir)
+    if c1 in ("cn", "ru", "ua", "by", "jp", "kr", "tw", "hk", "ir", "dz", "ve", "az", "lk", "kz"):
+        return True, f"coh1_{c1}"
+
     return False, ""
 
 
@@ -4858,6 +4862,13 @@ def _build_category_lists(
                 raw_vrec = verified_foreign_status_by_pid.get(pid) or verified_foreign_status_by_pid.get(str(pid))
                 if isinstance(raw_vrec, dict):
                     vrec = raw_vrec
+            vstat_low = str(vrec.get("status") or "").strip().lower()
+            if (vstat_low == "confirmed_foreign_vpn" or bool(vrec.get("remove_from_br_list"))) and (
+                get_manual_other_br_override(pid) is None
+                and not any(int(r.get("profile_id", 0) or 0) == pid for r in CORE_BR_ROSTER)
+            ):
+                # Estrangeiro com confirmação alta (VPN/loja BR): removido da lista de brasileiros no Radar Lobby
+                continue
             suspected_foreign, suspected_foreign_reason = detect_suspected_foreign_br_flag(
                 profile_id=pid,
                 flag_country=meta["flag_country"],
@@ -4868,7 +4879,7 @@ def _build_category_lists(
                 coh2_country=str(hrec.get("coh2_country") or ""),
                 coh2_matches=int(hrec.get("coh2_total_matches", 0) or 0),
                 br_source=str(meta.get("br_source") or ""),
-                verified_foreign_status=str(vrec.get("status") or ""),
+                verified_foreign_status=vstat_low,
             )
         elif category == "monitorados":
             # Players Monitorados SEMPRE aparecem com destaque total (sem corte 15d e sem baixa evidência)

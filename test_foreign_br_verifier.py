@@ -232,6 +232,184 @@ class TestForeignBrVerifier(unittest.TestCase):
             )
             self.assertEqual(res3["counts"][STATUS_CONFIRMED_VPN], 1)
             self.assertIn(1142621, get_ranking_excluded_foreign_pids(load_suspected_foreign_br_registry(reg_p)))
+            # E ao confirmar, o verificador periódico remove automaticamente de br_community.json
+            comm_after = json.loads(comm_p.read_text(encoding="utf-8"))
+            self.assertNotIn("1142621", comm_after.get("players") or {})
+            self.assertIn(str(br_test_pid), comm_after.get("players") or {})
+
+    def test_stealth_latin_nick_foreigners_immediate_confirmation_and_real_br_rescue(self) -> None:
+        from foreign_br_verifier import get_confirmed_foreign_removed_pids
+
+        t0 = 1_800_000_000
+        # 1. Caso "Leo" (#17906): nick latino + loja CoH2 BR antiga, mas 82/95 times arranjados CoH2 são CN + 65% Leste Asiático
+        leo_hist = _make_fake_relic_history(
+            17906,
+            utc_hours=[6, 7, 8, 9, 10, 11, 6, 7, 8, 9, 10, 11],
+            ally_profiles=[(91001, "cn", "duwee"), (91002, "cn", "MoronPark"), (91003, "kr", "SeoulCmd")],
+            self_alias="Leo",
+        )
+        # Expande cada partida para 4v4 com co-jogadores asiáticos (atinge >=30 slots)
+        for m in leo_hist["matchHistoryStats"]:
+            m["matchhistoryreportresults"].extend(
+                [{"profile_id": 91002, "teamid": 0}, {"profile_id": 91003, "teamid": 1}]
+            )
+        ev_leo = evaluate_foreign_br_candidate(
+            profile_id=17906,
+            steam_id="76561198312734088",
+            alias="Leo",
+            alias_history_rec={"coh2_country": "br", "coh2_total_matches": 5616, "aliases": [{"alias": "Leo"}]},
+            relic_match_history=leo_hist,
+            coh2_arranged_team_countries={"cn": 82, "hk": 8, "tw": 5},
+            known_br_pids={79327},
+            known_br_sids=set(),
+        )
+        self.assertTrue(ev_leo["high_confidence_foreign"])
+        self.assertGreaterEqual(ev_leo["foreign_score"], 85)
+        self.assertEqual(ev_leo["br_score"], 0)
+        st_leo = advance_verification_state(None, ev_leo, now_ts=t0)
+        self.assertEqual(st_leo["status"], STATUS_CONFIRMED_VPN)
+        self.assertTrue(st_leo["remove_from_br_list"])
+        self.assertTrue(st_leo["exclude_from_rankings"])
+
+        # 2. Caso "Bosi" (#616351): nick neutro + CoH1=tr + 100% co-jogadores alemães (de) em >=30 slots
+        bosi_hist = _make_fake_relic_history(
+            616351,
+            utc_hours=[16, 17, 18, 19, 16, 17, 18, 19, 16, 17],
+            ally_profiles=[(92001, "de", "thammii"), (92002, "de", "Colonel Ulle"), (92003, "de", "PeLLe")],
+            self_alias="Bosi",
+        )
+        for m in bosi_hist["matchHistoryStats"]:
+            m["matchhistoryreportresults"].extend(
+                [{"profile_id": 92002, "teamid": 0}, {"profile_id": 92003, "teamid": 0}]
+            )
+        ev_bosi = evaluate_foreign_br_candidate(
+            profile_id=616351,
+            steam_id="76561198088020591",
+            alias="Bosi",
+            alias_history_rec={"coh1_country": "tr", "coh2_country": "br", "coh2_total_matches": 1160},
+            relic_match_history=bosi_hist,
+            known_br_pids={79327},
+            known_br_sids=set(),
+        )
+        self.assertTrue(ev_bosi["high_confidence_foreign"])
+        st_bosi = advance_verification_state(None, ev_bosi, now_ts=t0)
+        self.assertEqual(st_bosi["status"], STATUS_CONFIRMED_VPN)
+        self.assertTrue(st_bosi["remove_from_br_list"])
+
+        # 3. Caso "Verstappen1" (#1157276): nick cirílico (Ферстаппен), mas Steam Porto Alegre + amigos CoH2/CoH3 BR -> confirmed_br!
+        ev_verst = evaluate_foreign_br_candidate(
+            profile_id=1157276,
+            steam_id="76561198333607275",
+            alias="Ферстаппен",
+            alias_history_rec={"aliases": [{"alias": "Ферстаппен"}, {"alias": "Verstappen1"}]},
+            steam_presence={"is_steam_brazil": True, "location": "Porto Alegre, Rio Grande do Sul, Brazil"},
+            steam_friends_coh_countries={"br": 5},
+            known_br_pids={79327},
+            known_br_sids=set(),
+        )
+        st_verst = advance_verification_state(None, ev_verst, now_ts=t0)
+        self.assertEqual(st_verst["status"], STATUS_CONFIRMED_BR)
+        self.assertFalse(st_verst["exclude_from_rankings"])
+        self.assertFalse(st_verst["remove_from_br_list"])
+
+        # 4. Veredito forense travado (`forensic_verified=True`) não regride em rechecagem vazia/429
+        locked_vpn = dict(st_leo)
+        locked_vpn["forensic_verified"] = True
+        empty_eval = evaluate_foreign_br_candidate(
+            profile_id=17906,
+            steam_id="76561198312734088",
+            alias="Leo",
+            known_br_pids={79327},
+            known_br_sids=set(),
+        )
+        st_after_429 = advance_verification_state(locked_vpn, empty_eval, now_ts=t0 + 20 * 86400)
+        self.assertEqual(st_after_429["status"], STATUS_CONFIRMED_VPN)
+        self.assertTrue(st_after_429["remove_from_br_list"])
+        self.assertTrue(st_after_429["forensic_verified"])
+        self.assertIn(17906, get_confirmed_foreign_removed_pids({"players": {"17906": st_after_429}}))
+
+    def test_prune_and_actions_cache_anti_resurrection_and_top50_exclusion(self) -> None:
+        from foreign_br_verifier import (
+            prune_confirmed_foreign_from_community,
+            save_suspected_foreign_br_registry,
+        )
+        from lobby_radar import merge_radar_cache_dir
+        from smurf_detector import select_relic_top50_br
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            cache_dir = root / "actions_cache"
+            cache_dir.mkdir()
+            state_p = root / "state.json"
+            comm_p = root / "br_community.json"
+            hist_p = root / "alias_history.json"
+            reg_p = root / "suspected_foreign_br.json"
+
+            # Registro já tem #21011 confirmado como estrangeiro
+            save_suspected_foreign_br_registry(
+                {
+                    "players": {
+                        "21011": {
+                            "profile_id": 21011,
+                            "steam_id": "76561198003393637",
+                            "alias": "Wywtigerking",
+                            "status": STATUS_CONFIRMED_VPN,
+                            "exclude_from_rankings": True,
+                            "remove_from_br_list": True,
+                        }
+                    }
+                },
+                reg_p,
+            )
+            # Git comm limpo; Actions Cache antigo tenta ressuscitar #21011 em players, dormant e top50
+            git_comm = {
+                "schema_version": 2,
+                "updated_at": 1_800_000_000,
+                "players": {"79327": {"profile_id": 79327, "steam_id": "76561197963172584", "alias": "Chacineiro", "max_elo": 1650}},
+                "dormant_players": {},
+                "top50_br_pids": [79327],
+            }
+            old_cache_comm = {
+                "schema_version": 2,
+                "updated_at": 1_800_000_500,
+                "players": {
+                    "79327": {"profile_id": 79327, "steam_id": "76561197963172584", "alias": "Chacineiro", "max_elo": 1650},
+                    "21011": {"profile_id": 21011, "steam_id": "76561198003393637", "alias": "Wywtigerking", "max_elo": 1716},
+                },
+                "dormant_players": {
+                    "99999": {"profile_id": 99999, "steam_id": "76561198003393637", "alias": "SameSteamAlt", "max_elo": 1200},
+                },
+                "top50_br_pids": [21011, 79327],
+            }
+            comm_p.write_text(json.dumps(git_comm), encoding="utf-8")
+            (cache_dir / "br_community.json").write_text(json.dumps(old_cache_comm), encoding="utf-8")
+
+            merge_radar_cache_dir(
+                cache_dir,
+                state_path=state_p,
+                community_cache_path=comm_p,
+                alias_history_path=hist_p,
+            )
+            merged_after = json.loads(comm_p.read_text(encoding="utf-8"))
+            self.assertNotIn("21011", merged_after.get("players") or {})
+            self.assertNotIn("99999", merged_after.get("dormant_players") or {})
+            self.assertNotIn(21011, merged_after.get("top50_br_pids") or [])
+            self.assertIn("79327", merged_after.get("players") or {})
+
+            # Direct prune test
+            removed = prune_confirmed_foreign_from_community(old_cache_comm, {21011}, {"76561198003393637"})
+            self.assertEqual(removed, 3)
+
+        # select_relic_top50_br exclui PIDs estrangeiros
+        top_list, _, _, _ = select_relic_top50_br(
+            {
+                21011: {"profile_id": 21011, "alias": "Wywtigerking", "max_elo": 1716, "total_matches": 500},
+                79327: {"profile_id": 79327, "alias": "Chacineiro", "max_elo": 1650, "total_matches": 1200},
+            },
+            excluded_foreign_pids={21011},
+            top_n=50,
+        )
+        self.assertEqual([r["profile_id"] for r in top_list], [79327])
 
 
 if __name__ == "__main__":

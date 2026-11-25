@@ -48,6 +48,11 @@ from security import (
     strip_unsafe_chars,
     validate_https_endpoint,
 )
+from foreign_br_verifier import (
+    get_confirmed_foreign_removed_pids,
+    get_ranking_excluded_foreign_pids,
+    load_suspected_foreign_br_registry,
+)
 from steam_presence import (
     CORE_BR_ROSTER,
     EN_MONTH_NUM,
@@ -2071,6 +2076,7 @@ def select_relic_top50_br(
     all_br_players: dict[int, dict[str, Any]],
     *,
     known_smurf_pids: set[int] | frozenset[int] = frozenset(),
+    excluded_foreign_pids: set[int] | frozenset[int] = frozenset(),
     previous_top50_pids: list[int] | set[int] | None = None,
     roster_rows: list[dict[str, Any]] | None = None,
     top_n: int = DEFAULT_TOP_N_BR,
@@ -2083,7 +2089,7 @@ def select_relic_top50_br(
     ranked_mains: list[dict[str, Any]] = []
     for pid, row in all_br_players.items():
         pid_i = int(pid or 0)
-        if pid_i <= 0 or pid_i in known_smurf_pids:
+        if pid_i <= 0 or pid_i in known_smurf_pids or pid_i in excluded_foreign_pids:
             continue
         elo = int(row.get("max_elo", 0) or 0)
         if elo <= 0:
@@ -5624,6 +5630,10 @@ def main() -> int:
             or bool(hrec_obj.get("country_migration"))
         )
 
+    foreign_reg_cli = load_suspected_foreign_br_registry()
+    confirmed_foreign_cli = get_confirmed_foreign_removed_pids(foreign_reg_cli) - roster_pids_cli
+    excluded_foreign_ranking_cli = get_ranking_excluded_foreign_pids(foreign_reg_cli) - roster_pids_cli
+
     all_br: dict[int, dict[str, Any]] = {}
     for bucket in (cache.get("players") or {}, cache.get("dormant_players") or {}):
         if isinstance(bucket, dict):
@@ -5631,7 +5641,7 @@ def main() -> int:
                 if not isinstance(row, dict):
                     continue
                 rpid = int(row.get("profile_id", 0) or 0)
-                if rpid <= 0:
+                if rpid <= 0 or rpid in confirmed_foreign_cli or rpid in excluded_foreign_ranking_cli:
                     continue
                 rflag = str(row.get("flag_country") or row.get("country") or "").strip().lower()
                 if (
@@ -5658,7 +5668,13 @@ def main() -> int:
         if not isinstance(hrec, dict):
             continue
         pid = int(hrec.get("profile_id", 0) or 0)
-        if pid > 0 and pid not in all_br and _is_confirmed_br_hist_rec(hrec, pid):
+        if (
+            pid > 0
+            and pid not in all_br
+            and pid not in confirmed_foreign_cli
+            and pid not in excluded_foreign_ranking_cli
+            and _is_confirmed_br_hist_rec(hrec, pid)
+        ):
             all_br[pid] = {
                 "profile_id": pid,
                 "steam_id": str(hrec.get("steam_id") or ""),
@@ -5673,6 +5689,8 @@ def main() -> int:
     # Atualiza ELO/stats via COH3 Stats Open Data (16 leaderboards globais) + Relic SA + getPersonalStat
     lb_br, lb_cand, _ = r_client.discover_br_and_candidates_from_open_data(now_ts=now)
     for pid, item in (lb_br or {}).items():
+        if pid in confirmed_foreign_cli or pid in excluded_foreign_ranking_cli:
+            continue
         prev = all_br.get(pid)
         if prev is None:
             all_br[pid] = dict(item)
@@ -5683,6 +5701,8 @@ def main() -> int:
 
     sa_br, sa_cand = r_client.discover_br_and_candidates_from_relic_sa(max_pages_per_board=10, use_dynamic_boards=True)
     for pid, item in sa_br.items():
+        if pid in confirmed_foreign_cli or pid in excluded_foreign_ranking_cli:
+            continue
         prev = all_br.get(pid)
         if prev is None or int(item.get("max_elo", 0) or 0) >= int(prev.get("max_elo", 0) or 0):
             merged = {**(prev or {}), **item}
@@ -5723,6 +5743,8 @@ def main() -> int:
         match_observer=collector.observe_matches_payload,
     )
     for pid, item in m_br.items():
+        if pid in confirmed_foreign_cli or pid in excluded_foreign_ranking_cli:
+            continue
         if pid not in all_br:
             all_br[pid] = dict(item)
         else:

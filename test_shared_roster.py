@@ -127,11 +127,16 @@ class TestSharedPlayersRoster(unittest.TestCase):
         self.assertEqual(len(mon_by_pid), 164)
         self.assertEqual(len(exp_by_pid), 15)
         sf_reg = load_suspected_foreign_br_registry()
-        self.assertNotIn(448521, sf_reg.get("excluded_from_rankings_pids") or [])
-        self.assertEqual((sf_reg.get("players") or {}).get("448521", {}).get("status"), "confirmed_br")
-        for sf_pid in (1221129, 947114):
+        for br_ok_pid in (448521, 1157276, 743575):
+            self.assertNotIn(br_ok_pid, sf_reg.get("excluded_from_rankings_pids") or [])
+            self.assertNotIn(br_ok_pid, sf_reg.get("confirmed_foreign_removed_pids") or [])
+            self.assertEqual((sf_reg.get("players") or {}).get(str(br_ok_pid), {}).get("status"), "confirmed_br")
+        for sf_pid in (1221129, 947114, 21011, 1142621, 3984, 17906, 401275, 552724, 616351):
             self.assertIn(sf_pid, sf_reg.get("excluded_from_rankings_pids") or [])
-            self.assertEqual((sf_reg.get("players") or {}).get(str(sf_pid), {}).get("status"), "suspected_foreign_vpn")
+            self.assertIn(sf_pid, sf_reg.get("confirmed_foreign_removed_pids") or [])
+            rec_sf = (sf_reg.get("players") or {}).get(str(sf_pid), {})
+            self.assertEqual(rec_sf.get("status"), "confirmed_foreign_vpn")
+            self.assertTrue(rec_sf.get("remove_from_br_list"))
         self.assertEqual(
             {pid for pid, r in mon_by_pid.items() if str(r.get("flag_country") or r.get("country") or "br").lower() != "br"},
             {212034, 7448, 33487, 1304336, 304013},
