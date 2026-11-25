@@ -1180,10 +1180,19 @@ def run_periodic_foreign_br_verification(
             pid = int(rec.get("profile_id") or k or 0)
         except (TypeError, ValueError):
             continue
-        if pid <= 0 or _is_protected_roster_pid(pid):
+        if pid <= 0:
             reg_players.pop(str(k), None)
             continue
         st = str(rec.get("status") or "").strip().lower()
+        if _is_protected_roster_pid(pid):
+            if (
+                st == STATUS_CONFIRMED_BR
+                and not rec.get("exclude_from_rankings")
+                and not rec.get("remove_from_br_list")
+            ):
+                continue
+            reg_players.pop(str(k), None)
+            continue
         if st in (STATUS_SUSPECTED_VPN, STATUS_CONFIRMED_VPN):
             candidate_pids.add(pid)
             initial_suspected_pids.add(pid)
