@@ -84824,8 +84824,8 @@
       ],
       "canonical_alias": "patrickbrss",
       "coh3_country": "br",
-      "current_alias": "patrickbrss",
-      "last_checked_at": 1795562281,
+      "current_alias": "Patrickbrss",
+      "last_checked_at": 1795565694,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1116806,
@@ -141332,7 +141332,7 @@
       "coh3_last_match_date": 1794771844,
       "coh3_total_matches": 2,
       "current_alias": "Уилла",
-      "last_checked_at": 1795565394,
+      "last_checked_at": 1795565694,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1475296,
@@ -242268,5 +242268,5 @@
     "steam_web_api": 7470,
     "steam_xml": 6739
   },
-  "updated_at": 1795565394
+  "updated_at": 1795565694
 }
