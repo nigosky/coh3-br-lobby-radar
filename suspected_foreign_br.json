@@ -1,48 +1,162 @@
 {
   "check_interval_days": 3,
+  "confirmed_foreign_removed_pids": [
+    3984,
+    5563,
+    5935,
+    17906,
+    21011,
+    44517,
+    47214,
+    52343,
+    77393,
+    89586,
+    154301,
+    295373,
+    310028,
+    401275,
+    416040,
+    552724,
+    564034,
+    616351,
+    682793,
+    811294,
+    840484,
+    944737,
+    947114,
+    1026189,
+    1026771,
+    1027727,
+    1096783,
+    1117558,
+    1138427,
+    1142621,
+    1159891,
+    1221129,
+    1304022,
+    1312071,
+    1360403
+  ],
   "confirmed_recheck_interval_days": 14,
   "excluded_from_rankings_pids": [
     3984,
     5563,
     5935,
+    17906,
     21011,
+    44517,
     47214,
+    52343,
+    77393,
+    89586,
+    96038,
+    130044,
+    153470,
     154301,
+    295373,
     310028,
+    401275,
     416040,
+    552724,
+    564034,
+    616351,
     682793,
-    743575,
+    781622,
     811294,
+    840484,
     865785,
+    875194,
     944737,
     947114,
+    1026189,
     1026771,
     1027727,
     1096783,
+    1117558,
+    1138427,
     1142621,
-    1157276,
     1159891,
     1187116,
     1221129,
     1302582,
     1304022,
-    1312071
+    1312071,
+    1360403,
+    1436199
   ],
   "min_confirm_br_checks": 2,
   "min_confirm_br_span_days": 3.0,
   "min_confirm_foreign_checks": 3,
   "min_confirm_foreign_span_days": 6.0,
   "players": {
-    "1026771": {
-      "alias": "赛利斯鼠人",
+    "1026189": {
+      "alias": "TimesN",
       "br_score": 0,
       "checks_count": 1,
       "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "cn",
+        "coh2_arranged_team_countries": {
+          "ca": 25,
+          "cn": 20,
+          "hk": 10
+        },
+        "coh2_country": "br",
+        "coh2_matches": 294,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": 0.0,
+        "steam_friends_total": 32,
+        "steam_location": "China",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada (estava ativo no lobby sob nick latino 'TimesN'!): CoH1=cn (79m), nome real EnChen, Steam China, 0/32 amigos BR, 0% BRT prime, 82% Leste Asiático (0% BR), 55 parceiros CoH2 em ca/cn/hk (0 BR).",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh1_cn",
+            "steam_loc:China",
+            "zero_br_steam_friends:0/32",
+            "east_asia_coplayers:82pct",
+            "coh2_arranged_teams_foreign:cn_ca_hk(55)"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 1026189,
+      "reasons": [
+        "coh1_cn",
+        "steam_loc:China",
+        "zero_br_steam_friends:0/32",
+        "east_asia_coplayers:82pct",
+        "coh2_arranged_teams_foreign:cn_ca_hk(55)"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198044115157"
+    },
+    "1026771": {
+      "alias": "赛利斯鼠人",
+      "br_score": 0,
+      "checks_count": 2,
+      "evidence": {
         "asia_peak_share": 0.0,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 1.0,
-        "coh1_country": "",
-        "coh2_country": "",
+        "coh1_country": "hk",
+        "coh2_country": "cn",
         "coh2_matches": 0,
         "foreign_script_allies_matches": 0,
         "live_relic_country": "br",
@@ -57,7 +171,9 @@
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 85,
+      "foreign_score": 100,
+      "forensic_notes": "China/Áustria confirmada: CoH1=hk, CoH2=cn, Steam Viena/Áustria, grupo bilibili, 100% histórico de nicks chineses (赛利斯鼠人 / 家境贫寒D🐀人).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -68,29 +184,45 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh1_hk",
+            "coh2_cn",
+            "steam_loc:Vienna, Wien, Austria",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 1026771,
       "reasons": [
+        "coh1_hk",
+        "coh2_cn",
         "steam_loc:Vienna, Wien, Austria",
         "cjk_alias_history"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198856746875"
     },
     "1027727": {
       "alias": "Code002",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.581,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.097,
         "coh1_country": "",
-        "coh2_country": "",
-        "coh2_matches": 0,
+        "coh2_country": "br",
+        "coh2_matches": 1002,
         "foreign_script_allies_matches": 61,
         "live_relic_country": "br",
         "ptbr_alias_evidence": false,
@@ -105,6 +237,8 @@
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
       "foreign_score": 100,
+      "forensic_notes": "China confirmada: nome real 李海冰, Steam China, grupos 哔哩哔哩/BLG Dark Wolf, alias AAA撒切尔骑兵队批发, 13% BRT, 75% Leste Asiático (0% BR), 61 aliados CJK.",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -116,17 +250,33 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:China",
+            "realname_chinese:李海冰",
+            "east_asia_coplayers:75pct",
+            "foreign_script_allies:61",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 1027727,
       "reasons": [
         "steam_loc:China",
+        "realname_chinese:李海冰",
+        "east_asia_coplayers:75pct",
         "foreign_script_allies:61",
         "cjk_alias_history"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198845178567"
     },
     "1041470": {
@@ -174,6 +324,7 @@
         "steam_group_brazil",
         "br_squadmates:2"
       ],
+      "remove_from_br_list": false,
       "span_days": 0.0,
       "status": "confirmed_br",
       "steam_id": "76561198125923649"
@@ -181,14 +332,15 @@
     "1096783": {
       "alias": "Чимичанги",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.0,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.0,
         "coh1_country": "",
-        "coh2_country": "",
-        "coh2_matches": 0,
+        "coh2_country": "br",
+        "coh2_matches": 219,
         "foreign_script_allies_matches": 1,
         "live_relic_country": "br",
         "ptbr_alias_evidence": false,
@@ -202,7 +354,9 @@
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 65,
+      "foreign_score": 100,
+      "forensic_notes": "Rússia confirmada: Steam São Petersburgo/Rússia, bio em russo, nicks em cirílico (Новый пират / Чимичанги), 0% BRT prime, 60% Europa e 0% BR.",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -213,25 +367,145 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Saint Petersburg, Russia",
+            "steam_summary_foreign_script",
+            "cyrillic_alias_history",
+            "zero_br_coplayers"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 1096783,
       "reasons": [
-        "steam_loc:Saint Petersburg, Saint ",
-        "steam_summary_foreign_script"
+        "steam_loc:Saint Petersburg, Russia",
+        "steam_summary_foreign_script",
+        "cyrillic_alias_history",
+        "zero_br_coplayers"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198269130037"
+    },
+    "1117558": {
+      "alias": "PaPaJon",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "",
+        "coh2_country": "ru",
+        "coh2_matches": 2,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Moscow, Moscow City, Russian Federation",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 95,
+      "forensic_notes": "Rússia confirmada: Steam Moscou/Rússia, nome real Александр, CoH2=ru (2m), 14% BRT, 52% Europa + 42% Ásia, 0% BR.",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 95,
+          "reasons": [
+            "steam_loc:Moscow, Russian Federation",
+            "coh2_ru",
+            "realname_russian:Александр",
+            "zero_br_coplayers"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 1117558,
+      "reasons": [
+        "steam_loc:Moscow, Russian Federation",
+        "coh2_ru",
+        "realname_russian:Александр",
+        "zero_br_coplayers"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561197986917413"
+    },
+    "1138427": {
+      "alias": "Stuffy",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Macau, Macau",
+        "top_foreign_squad_country": "cn",
+        "top_foreign_squad_matches": 5,
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "Macau/China confirmada (estava ativo no lobby!): Steam Macau, bio em japonês, 0% BRT prime, 68% Leste Asiático (0% BR em 54 slots), squad 社民DN屑皇 (cn x5).",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Macau",
+            "steam_summary_foreign_script",
+            "east_asia_coplayers:68pct",
+            "foreign_squad_network:cnx5",
+            "zero_br_coplayers:0/54"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 1138427,
+      "reasons": [
+        "steam_loc:Macau",
+        "steam_summary_foreign_script",
+        "east_asia_coplayers:68pct",
+        "foreign_squad_network:cnx5",
+        "zero_br_coplayers:0/54"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198157684206"
     },
     "1142621": {
       "alias": "Nocturne",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.833,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.042,
         "coh1_country": "",
         "coh2_country": "",
@@ -242,14 +516,22 @@
         "recent_matches_analyzed": 24,
         "steam_br_groups": false,
         "steam_friends_br_count": 0,
-        "steam_friends_br_pct": 0.0,
-        "steam_friends_total": 9,
+        "steam_friends_br_pct": null,
+        "steam_friends_coh_countries": {
+          "cn": 5,
+          "hk": 1
+        },
+        "steam_friends_total": 0,
         "steam_location": "",
+        "top_foreign_squad_country": "cn",
+        "top_foreign_squad_matches": 13,
         "unique_br_allies": 0
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 90,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada: histórico CJK (夕绫/夕兮/夕云XL), 6/6 amigos CoH3 são CN/HK (5 cn + 1 hk) e 5/5 amigos CoH2 são CN, 62% em 03–09h BRT, 65% Leste Asiático, squad recorrente com rhexacglagye (cn x13) e prise (hk x12). Forte candidato a alt/smurf do círculo chinês high-ELO (Enterprise/Paroxetine).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -261,44 +543,68 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "cjk_alias_history",
+            "steam_friends_coh_foreign:cn(6)",
+            "east_asia_coplayers:65pct",
+            "asia_peak_hours:83pct",
+            "foreign_squad_network:cnx13",
+            "foreign_script_allies:41"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 1142621,
       "reasons": [
-        "foreign_script_allies:41",
+        "cjk_alias_history",
+        "steam_friends_coh_foreign:cn(6)",
+        "east_asia_coplayers:65pct",
         "asia_peak_hours:83pct",
-        "cjk_alias_history"
+        "foreign_squad_network:cnx13",
+        "foreign_script_allies:41"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561199152224993"
     },
     "1157276": {
       "alias": "Ферстаппен",
-      "br_score": 45,
-      "checks_count": 1,
+      "br_score": 100,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.647,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.088,
         "coh1_country": "",
-        "coh2_country": "",
-        "coh2_matches": 0,
+        "coh2_country": "br",
+        "coh2_matches": 2,
         "foreign_script_allies_matches": 29,
         "live_relic_country": "br",
         "ptbr_alias_evidence": false,
         "recent_matches_analyzed": 34,
         "steam_br_groups": false,
         "steam_friends_br_count": 0,
-        "steam_friends_br_pct": 0.0,
-        "steam_friends_total": 24,
+        "steam_friends_br_pct": null,
+        "steam_friends_coh_countries": {
+          "br": 5
+        },
+        "steam_friends_total": 0,
         "steam_location": "Porto Alegre, Rio Grande do Sul, Brazil",
         "unique_br_allies": 0
       },
-      "exclude_from_rankings": true,
+      "exclude_from_rankings": false,
       "first_flagged_at": 1795496818,
-      "foreign_score": 65,
+      "foreign_score": 0,
+      "forensic_notes": "Brasileiro real liberado (falso positivo corrigido): Steam Porto Alegre/RS/Brasil, 4/4 amigos CoH2 no Steam são BR e amigo CoH3 Machida (br). Flag anterior ocorreu apenas pelo nick cirílico 'Ферстаппен' (Verstappen).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 45,
@@ -311,27 +617,37 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 100,
+          "foreign_score": 0,
+          "reasons": [
+            "steam_location_brazil",
+            "steam_friends_coh_br:4/4_coh2_and_Machida_coh3"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_br"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 1157276,
       "reasons": [
         "steam_location_brazil",
-        "zero_br_steam_friends:0/24",
-        "foreign_script_allies:29",
-        "asia_peak_hours:65pct"
+        "steam_friends_coh_br:4/4_coh2_and_Machida_coh3"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": false,
+      "span_days": 1.49,
+      "status": "confirmed_br",
       "steam_id": "76561198333607275"
     },
     "1159891": {
       "alias": "GDI",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.2,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.0,
         "coh1_country": "",
         "coh2_country": "cn",
@@ -342,14 +658,22 @@
         "recent_matches_analyzed": 10,
         "steam_br_groups": false,
         "steam_friends_br_count": 0,
-        "steam_friends_br_pct": 0.0,
-        "steam_friends_total": 6,
+        "steam_friends_br_pct": null,
+        "steam_friends_coh_countries": {
+          "cn": 3,
+          "gb": 1
+        },
+        "steam_friends_total": 0,
         "steam_location": "Nara, Nara, Japan",
+        "top_foreign_squad_country": "cn",
+        "top_foreign_squad_matches": 10,
         "unique_br_allies": 0
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
       "foreign_score": 100,
+      "forensic_notes": "China/Ásia confirmada: CoH2=cn (43m), Steam Nara/Japão, 0% BRT prime, 67% Leste Asiático, 0% BR, squad Mori_no_Yousei (cn x10) e amigos CoH3 chineses high-ELO (3 cn ELO 1491–2004 + 1 gb).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -361,32 +685,51 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Nara, Nara, Japan",
+            "coh2_cn",
+            "steam_friends_coh_foreign:cn(4)",
+            "east_asia_coplayers:67pct",
+            "foreign_squad_network:cnx10",
+            "foreign_script_allies:28"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 1159891,
       "reasons": [
         "steam_loc:Nara, Nara, Japan",
-        "foreign_script_allies:28",
-        "coh2_cn"
+        "coh2_cn",
+        "steam_friends_coh_foreign:cn(4)",
+        "east_asia_coplayers:67pct",
+        "foreign_squad_network:cnx10",
+        "foreign_script_allies:28"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561199473666246"
     },
     "1187116": {
       "alias": "هبت رياح العاصفة",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": null,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": null,
         "coh1_country": "",
         "coh2_country": "",
         "coh2_matches": 0,
         "foreign_script_allies_matches": 0,
-        "live_relic_country": "",
+        "live_relic_country": "br",
         "ptbr_alias_evidence": false,
         "recent_matches_analyzed": 0,
         "steam_br_groups": false,
@@ -398,7 +741,8 @@
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 40,
+      "foreign_score": 45,
+      "forensic_notes": "Suspeito moderado: apelido em árabe (هبت رياح العاصفة), Steam privado e 0 partidas CoH3 para desempate.",
       "history": [
         {
           "br_score": 0,
@@ -408,24 +752,35 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 45,
+          "reasons": [
+            "arabic_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "suspected_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 1187116,
       "reasons": [
-        "cjk_alias_history"
+        "arabic_alias_history"
       ],
-      "span_days": 0.0,
+      "remove_from_br_list": false,
+      "span_days": 1.49,
       "status": "suspected_foreign_vpn",
       "steam_id": "76561198069882184"
     },
     "1221129": {
       "alias": "mirage child",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.065,
         "br_allies_matches": 1,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.194,
         "coh1_country": "",
         "coh2_country": "ru",
@@ -436,14 +791,18 @@
         "recent_matches_analyzed": 31,
         "steam_br_groups": false,
         "steam_friends_br_count": 0,
-        "steam_friends_br_pct": 0.0,
-        "steam_friends_total": 110,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
         "steam_location": "Niger",
+        "top_foreign_squad_country": "ru",
+        "top_foreign_squad_matches": 12,
         "unique_br_allies": 1
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795549477,
       "foreign_score": 100,
+      "forensic_notes": "Rússia confirmada: CoH2=ru (276m), Steam grupo russo АТМТА, 0/110 amigos BR (es/ro/ua/ru), 63% Europa, squad recorrente Виктор Корнеплод (ru x12).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -455,26 +814,85 @@
           ],
           "ts": 1795549477,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh2_ru",
+            "steam_loc:Niger",
+            "zero_br_steam_friends:0/110",
+            "foreign_squad_network:rux12",
+            "foreign_script_allies:26"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795549477,
+      "last_checked_at": 1795625968,
       "profile_id": 1221129,
       "reasons": [
+        "coh2_ru",
         "steam_loc:Niger",
         "zero_br_steam_friends:0/110",
-        "coh2_ru"
+        "foreign_squad_network:rux12",
+        "foreign_script_allies:26"
       ],
+      "remove_from_br_list": true,
+      "span_days": 0.89,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198045104755"
+    },
+    "130044": {
+      "alias": "sf9912",
+      "br_score": 25,
+      "checks_count": 1,
+      "evidence": {
+        "coh1_country": "br",
+        "coh2_country": "br",
+        "coh2_matches": 2151,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_location": "",
+        "top_foreign_squad_country": "us",
+        "top_foreign_squad_matches": 9
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 55,
+      "forensic_notes": "Suspeito moderado (possível imigrante/expatriado ou loja BR): CoH1=br (317m) e CoH2=br (2.151m), mas times arranjados CoH2 em tr/us/se/it/at (0 BR) e squad CoH3 Brobus Kenobus (us x9).",
+      "history": [
+        {
+          "br_score": 25,
+          "foreign_score": 55,
+          "reasons": [
+            "coh2_arranged_teams_foreign:tr_us_se_it_at",
+            "foreign_squad_network:usx9"
+          ],
+          "ts": 1795625968,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 130044,
+      "reasons": [
+        "coh2_arranged_teams_foreign:tr_us_se_it_at",
+        "foreign_squad_network:usx9"
+      ],
+      "remove_from_br_list": false,
       "span_days": 0.0,
       "status": "suspected_foreign_vpn",
-      "steam_id": "76561198045104755"
+      "steam_id": "76561198035976610"
     },
     "1302582": {
       "alias": "math",
       "br_score": 15,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.0,
         "br_allies_matches": 1,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 1.0,
         "coh1_country": "",
         "coh2_country": "",
@@ -492,7 +910,8 @@
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 40,
+      "foreign_score": 45,
+      "forensic_notes": "Suspeito moderado: alias histórico em hiragana (さむらい), joga 100% em horário BRT com squad Eagle (mx x2).",
       "history": [
         {
           "br_score": 15,
@@ -503,28 +922,42 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 15,
+          "foreign_score": 45,
+          "reasons": [
+            "cjk_alias_history",
+            "brt_prime_hours:100pct",
+            "foreign_squad_network:mxx2"
+          ],
+          "ts": 1795625968,
+          "verdict": "suspected_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 1302582,
       "reasons": [
+        "cjk_alias_history",
         "brt_prime_hours:100pct",
-        "cjk_alias_history"
+        "foreign_squad_network:mxx2"
       ],
-      "span_days": 0.0,
+      "remove_from_br_list": false,
+      "span_days": 1.49,
       "status": "suspected_foreign_vpn",
       "steam_id": "76561198140310469"
     },
     "1304022": {
       "alias": "英雄联盟高手",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.2,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.3,
         "coh1_country": "",
-        "coh2_country": "",
+        "coh2_country": "cn",
         "coh2_matches": 0,
         "foreign_script_allies_matches": 22,
         "live_relic_country": "br",
@@ -535,11 +968,15 @@
         "steam_friends_br_pct": null,
         "steam_friends_total": 0,
         "steam_location": "",
+        "top_foreign_squad_country": "cn",
+        "top_foreign_squad_matches": 5,
         "unique_br_allies": 0
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 65,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada: CoH2=cn (alias 新 津 暴 徒), nick atual 英雄联盟高手, 46% Leste Asiático (0% BR), 29 aliados CJK (squad Milabo cn x5).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -550,43 +987,63 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh2_cn",
+            "cjk_alias_history",
+            "east_asia_coplayers:46pct",
+            "foreign_script_allies:29",
+            "foreign_squad_network:cnx5"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 1304022,
       "reasons": [
-        "foreign_script_allies:22",
-        "cjk_alias_history"
+        "coh2_cn",
+        "cjk_alias_history",
+        "east_asia_coplayers:46pct",
+        "foreign_script_allies:29",
+        "foreign_squad_network:cnx5"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198102437472"
     },
     "1312071": {
       "alias": "Karla Kush",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 1.0,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.0,
         "coh1_country": "",
-        "coh2_country": "",
-        "coh2_matches": 0,
+        "coh2_country": "br",
+        "coh2_matches": 5470,
         "foreign_script_allies_matches": 3,
         "live_relic_country": "br",
         "ptbr_alias_evidence": false,
         "recent_matches_analyzed": 1,
         "steam_br_groups": false,
         "steam_friends_br_count": 0,
-        "steam_friends_br_pct": 0.0,
-        "steam_friends_total": 1,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
         "steam_location": "",
         "unique_br_allies": 0
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 40,
+      "foreign_score": 95,
+      "forensic_notes": "China confirmada: conta Steam criada em jun/2025 com anômalos 5.470 jogos CoH2 br, renomeada para xingamento chinês (操你妈逼的高手), 100% co-jogadores CN/TW no CoH3, 0% BR.",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -596,24 +1053,187 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 95,
+          "reasons": [
+            "cjk_alias_history",
+            "east_asia_coplayers:100pct",
+            "asia_peak_hours:100pct",
+            "zero_br_coplayers"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 1312071,
       "reasons": [
-        "cjk_alias_history"
+        "cjk_alias_history",
+        "east_asia_coplayers:100pct",
+        "asia_peak_hours:100pct",
+        "zero_br_coplayers"
       ],
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561199866765657"
+    },
+    "1360403": {
+      "alias": "端点星",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Danshui, Guangdong, China",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada: Steam Danshui/Guangdong/China, grupo chinês 浅水町, 100% em 03–09h BRT, 100% HK/CN (squad david99a hk x4).",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Danshui, Guangdong, China",
+            "cjk_alias_history",
+            "east_asia_coplayers:100pct",
+            "asia_sleep_03_09:100pct"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 1360403,
+      "reasons": [
+        "steam_loc:Danshui, Guangdong, China",
+        "cjk_alias_history",
+        "east_asia_coplayers:100pct",
+        "asia_sleep_03_09:100pct"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198157155595"
+    },
+    "1436199": {
+      "alias": "小邓子",
+      "br_score": 25,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.008,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "China",
+        "unique_br_allies": 1
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 65,
+      "forensic_notes": "Suspeito moderado (possível chinês morando no Brasil ou dupla VPN noturna): Steam China (齐浩宇), mas joga 82% em horário nobre BRT em dupla com #1436197 awe (br) criado 2 IDs antes.",
+      "history": [
+        {
+          "br_score": 25,
+          "foreign_score": 65,
+          "reasons": [
+            "steam_loc:China",
+            "cjk_alias_history",
+            "brt_prime_hours:82pct"
+          ],
+          "ts": 1795625968,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 1436199,
+      "reasons": [
+        "steam_loc:China",
+        "cjk_alias_history",
+        "brt_prime_hours:82pct"
+      ],
+      "remove_from_br_list": false,
       "span_days": 0.0,
       "status": "suspected_foreign_vpn",
-      "steam_id": "76561199866765657"
+      "steam_id": "76561198363367827"
+    },
+    "153470": {
+      "alias": "Ghoul",
+      "br_score": 10,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "brt_prime_share": 0.14,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 282,
+        "coplayer_slots": 100,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_location": "",
+        "top_foreign_squad_country": "gb",
+        "top_foreign_squad_matches": 10
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 60,
+      "forensic_notes": "Suspeito moderado (Europa/UK): apenas 14% BRT prime, 74% Europa, 0% BR em 100 slots, squad Qarax (gb x10), mas CoH2=br (282m) — em observação periódica.",
+      "history": [
+        {
+          "br_score": 10,
+          "foreign_score": 60,
+          "reasons": [
+            "eu_coplayers:74pct",
+            "low_brt_prime:14pct",
+            "foreign_squad_network:gbx10",
+            "zero_br_coplayers:0/100"
+          ],
+          "ts": 1795625968,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 153470,
+      "reasons": [
+        "eu_coplayers:74pct",
+        "low_brt_prime:14pct",
+        "foreign_squad_network:gbx10",
+        "zero_br_coplayers:0/100"
+      ],
+      "remove_from_br_list": false,
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198401275135"
     },
     "154301": {
       "alias": "Palmarx",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.077,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.462,
         "coh1_country": "ve",
         "coh2_country": "ve",
@@ -631,7 +1251,9 @@
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 80,
+      "foreign_score": 100,
+      "forensic_notes": "Venezuela confirmada: CoH1=ve (104m), CoH2=ve (6.261m, times arranjados cl/ve/es/uy/ar com 0 BR), CoH3 0% BR em 85 slots.",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -642,17 +1264,82 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh1_ve",
+            "coh2_ve",
+            "coh2_arranged_teams_foreign:ve_latam_zero_br",
+            "zero_br_coplayers:0/85"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 154301,
       "reasons": [
-        "foreign_script_allies:16",
-        "coh2_ve"
+        "coh1_ve",
+        "coh2_ve",
+        "coh2_arranged_teams_foreign:ve_latam_zero_br",
+        "zero_br_coplayers:0/85"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198063857337"
+    },
+    "17906": {
+      "alias": "Leo",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "brt_prime_share": 0.21,
+        "coh1_country": "br",
+        "coh2_arranged_team_countries": {
+          "cn": 82,
+          "other": 13
+        },
+        "coh2_country": "br",
+        "coh2_matches": 5616,
+        "east_asia_coplayer_pct": 0.57,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_location": ""
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "China furtiva sob nick latino 'Leo' e loja BR antiga (5.616 jogos CoH2 br): 82 de 95 parceiros em times arranjados vitalícios do CoH2 são cn (0 BR — ex.: duwee cn x21, MoronPark_大洗... cn x14), 57% Leste Asiático no CoH3 e 21% BRT.",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh2_arranged_teams_foreign:cn(82/95)",
+            "east_asia_coplayers:57pct",
+            "zero_br_arranged_teams"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 17906,
+      "reasons": [
+        "coh2_arranged_teams_foreign:cn(82/95)",
+        "east_asia_coplayers:57pct",
+        "zero_br_arranged_teams"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198312734088"
     },
     "20523": {
       "alias": "Goa Trance Mix",
@@ -701,6 +1388,7 @@
         "coh2_br:1111m",
         "ptbr_alias_tokens"
       ],
+      "remove_from_br_list": false,
       "span_days": 0.0,
       "status": "confirmed_br",
       "steam_id": "76561198044964084"
@@ -708,10 +1396,11 @@
     "21011": {
       "alias": "Wywtigerking",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.25,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.325,
         "coh1_country": "cn",
         "coh2_country": "cn",
@@ -730,6 +1419,8 @@
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
       "foreign_score": 100,
+      "forensic_notes": "China confirmada em todas as eras: CoH1=cn, CoH2=cn (140m), CoH3 voltou live para cn, Steam China, grupo chinês Osiris联机组, 42% Leste Asiático e 0% BR.",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -742,18 +1433,35 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:China",
+            "relic_country_changed:cn",
+            "coh1_cn",
+            "coh2_cn",
+            "foreign_script_allies:24",
+            "east_asia_coplayers:42pct"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 21011,
       "reasons": [
         "steam_loc:China",
         "relic_country_changed:cn",
+        "coh1_cn",
+        "coh2_cn",
         "foreign_script_allies:24",
-        "coh2_cn"
+        "east_asia_coplayers:42pct"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198003393637"
     },
     "28570": {
@@ -805,17 +1513,71 @@
         "brt_prime_hours:72pct",
         "coh2_br:247m"
       ],
+      "remove_from_br_list": false,
       "span_days": 0.0,
       "status": "confirmed_br",
       "steam_id": "76561198060258379"
     },
-    "310028": {
-      "alias": "Qing",
+    "295373": {
+      "alias": "Helicobacter Pylori",
       "br_score": 0,
       "checks_count": 1,
       "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "",
+        "coh2_country": "az",
+        "coh2_matches": 0,
+        "live_relic_country": "ua",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "top_foreign_squad_country": "hk",
+        "top_foreign_squad_matches": 5,
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 95,
+      "forensic_notes": "Ucrânia/Hong Kong confirmada: CoH3 live=ua, CoH2=az, 0% BRT prime (47% Ásia + 53% Europa), 0% BR, squad Trashtondog (hk x5).",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 95,
+          "reasons": [
+            "relic_country_changed:ua",
+            "coh2_az",
+            "zero_br_coplayers",
+            "foreign_squad_network:hkx5"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 295373,
+      "reasons": [
+        "relic_country_changed:ua",
+        "coh2_az",
+        "zero_br_coplayers",
+        "foreign_squad_network:hkx5"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198454188927"
+    },
+    "310028": {
+      "alias": "Qing",
+      "br_score": 0,
+      "checks_count": 2,
+      "evidence": {
         "asia_peak_share": 0.85,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.0,
         "coh1_country": "cn",
         "coh2_country": "br",
@@ -829,11 +1591,15 @@
         "steam_friends_br_pct": null,
         "steam_friends_total": 0,
         "steam_location": "",
+        "top_foreign_squad_country": "cn",
+        "top_foreign_squad_matches": 29,
         "unique_br_allies": 0
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 90,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada: CoH1=cn, CoH3 voltou live para cn, 2% BRT, 90% Leste Asiático (90 cn, 5 tw, 4 kr, 0% BR), 99 aliados CJK (squad 北纬108° cn x29, 五月 cn x22).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -845,28 +1611,51 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh1_cn",
+            "relic_country_changed:cn",
+            "east_asia_coplayers:90pct",
+            "asia_peak_hours:85pct",
+            "foreign_squad_network:cnx29",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 310028,
       "reasons": [
-        "foreign_script_allies:73",
+        "coh1_cn",
+        "relic_country_changed:cn",
+        "east_asia_coplayers:90pct",
         "asia_peak_hours:85pct",
+        "foreign_squad_network:cnx29",
         "cjk_alias_history"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198328787882"
     },
     "3984": {
       "alias": "克鲁杰7分钟800人力就1v2",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.6,
         "br_allies_matches": 1,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.15,
         "coh1_country": "cn",
+        "coh2_arranged_team_countries": {
+          "cn": 64,
+          "other": 19
+        },
         "coh2_country": "cn",
         "coh2_matches": 3911,
         "foreign_script_allies_matches": 46,
@@ -878,11 +1667,13 @@
         "steam_friends_br_pct": null,
         "steam_friends_total": 0,
         "steam_location": "Pearl City, Hawaii, United States",
-        "unique_br_allies": 1
+        "unique_br_allies": 2
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
       "foreign_score": 100,
+      "forensic_notes": "Criador de conteúdo chinês de CoH3 no Bilibili (BV1oA4m1w7Bc / blbl 1657769). CoH1=cn, CoH2=cn (3.911 jogos, 64/83 times arranjados cn), CoH3 voltou live para cn, 67% Leste Asiático.",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -896,28 +1687,96 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "relic_country_changed:cn",
+            "coh1_cn",
+            "coh2_cn",
+            "coh2_arranged_teams_foreign:cn(64/83)",
+            "east_asia_coplayers:67pct",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 3984,
       "reasons": [
-        "steam_loc:Pearl City, Hawaii, Unit",
         "relic_country_changed:cn",
-        "asia_peak_hours:60pct",
-        "cjk_alias_history",
-        "coh2_cn"
+        "coh1_cn",
+        "coh2_cn",
+        "coh2_arranged_teams_foreign:cn(64/83)",
+        "east_asia_coplayers:67pct",
+        "cjk_alias_history"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198319696040"
+    },
+    "401275": {
+      "alias": "asado de perro",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_allies_matches": 0,
+        "coh1_country": "",
+        "coh2_arranged_team_countries": {
+          "cl": 33,
+          "other": 2
+        },
+        "coh2_country": "br",
+        "coh2_matches": 856,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_location": "",
+        "top_foreign_squad_country": "cl",
+        "top_foreign_squad_matches": 42,
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "Chile confirmado sob loja BR: apelido em espanhol ('asado de perro'), 33 de 35 parceiros em times arranjados vitalícios CoH2 são chilenos (0 BR — WEONODIOSO cl x10, Tomilove cl x6, Amigo Piedra cl x4) e 42 partidas em squad chileno no CoH3 (0 aliados BR).",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh2_arranged_teams_foreign:cl(33/35)",
+            "foreign_squad_network:clx42",
+            "spanish_alias_zero_br"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 401275,
+      "reasons": [
+        "coh2_arranged_teams_foreign:cl(33/35)",
+        "foreign_squad_network:clx42",
+        "spanish_alias_zero_br"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198008634992"
     },
     "416040": {
       "alias": "AAA药材批发 永远亭八意永琳",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.893,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.107,
         "coh1_country": "",
         "coh2_country": "br",
@@ -935,7 +1794,9 @@
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 90,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada (loja-hopper CN->BR->UA): Steam Haikou/Hainan/China, CoH3 live=ua, 54% em 03–09h BRT, 79% Leste Asiático (0% BR), 55 aliados CJK.",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -947,18 +1808,88 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Haikou, Hainan, China",
+            "relic_country_changed:ua",
+            "east_asia_coplayers:79pct",
+            "asia_peak_hours:89pct",
+            "foreign_script_allies:55",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 416040,
       "reasons": [
-        "foreign_script_allies:55",
+        "steam_loc:Haikou, Hainan, China",
+        "relic_country_changed:ua",
+        "east_asia_coplayers:79pct",
         "asia_peak_hours:89pct",
+        "foreign_script_allies:55",
         "cjk_alias_history"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198275374020"
+    },
+    "44517": {
+      "alias": "Draakul",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "cn",
+        "coh2_country": "br",
+        "coh2_matches": 698,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 1
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada (descoberta furtiva sob nick latino 'Draakul'): CoH1=cn (448 jogos), 145 partidas CoH3 com 47% em 03–09h BRT, 54% Leste Asiático (110 cn, 34 kr, 26 au), 0% BR em 333 slots e 140 aliados CJK.",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh1_cn",
+            "east_asia_coplayers:54pct",
+            "asia_sleep_03_09:47pct",
+            "zero_br_coplayers:0/333",
+            "foreign_script_allies:140"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 44517,
+      "reasons": [
+        "coh1_cn",
+        "east_asia_coplayers:54pct",
+        "asia_sleep_03_09:47pct",
+        "zero_br_coplayers:0/333",
+        "foreign_script_allies:140"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198867796694"
     },
     "448521": {
       "alias": "icemaker",
@@ -1015,6 +1946,7 @@
         "coh1_br",
         "br_squadmates:4"
       ],
+      "remove_from_br_list": false,
       "span_days": 0.0,
       "status": "confirmed_br",
       "steam_id": "76561198831175531"
@@ -1022,10 +1954,11 @@
     "47214": {
       "alias": "KUKU Monkey",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.88,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.0,
         "coh1_country": "",
         "coh2_country": "cn",
@@ -1036,14 +1969,18 @@
         "recent_matches_analyzed": 25,
         "steam_br_groups": false,
         "steam_friends_br_count": 0,
-        "steam_friends_br_pct": 0.0,
-        "steam_friends_total": 192,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
         "steam_location": "",
+        "top_foreign_squad_country": "cn",
+        "top_foreign_squad_matches": 8,
         "unique_br_allies": 0
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
       "foreign_score": 100,
+      "forensic_notes": "China confirmada: CoH2=cn (342m), alias Steam 新川恶霸蔡雨昕, 0/192 amigos BR, 0% BRT prime, 48% 03–09h BRT, 64% Leste Asiático (0% BR), squad 中天之父 (cn x8).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -1057,28 +1994,144 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh2_cn",
+            "zero_br_steam_friends:0/192",
+            "east_asia_coplayers:64pct",
+            "asia_peak_hours:88pct",
+            "foreign_squad_network:cnx8",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 47214,
       "reasons": [
+        "coh2_cn",
         "zero_br_steam_friends:0/192",
-        "foreign_script_allies:37",
+        "east_asia_coplayers:64pct",
         "asia_peak_hours:88pct",
-        "cjk_alias_history",
-        "coh2_cn"
+        "foreign_squad_network:cnx8",
+        "cjk_alias_history"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198063423983"
+    },
+    "52343": {
+      "alias": "Bast-Ubasti",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "cn",
+        "coh2_country": "br",
+        "coh2_matches": 218,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "top_foreign_squad_country": "cn",
+        "top_foreign_squad_matches": 6,
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada (descoberta furtiva sob nick latino 'Bast-Ubasti'): CoH1=cn (1m), 0% BRT prime, 83% Leste Asiático (0% BR), squad sea king-湊阿夸 (cn x6) + SHISANSHA (cn x4).",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh1_cn",
+            "east_asia_coplayers:83pct",
+            "foreign_squad_network:cnx6",
+            "zero_br_coplayers"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 52343,
+      "reasons": [
+        "coh1_cn",
+        "east_asia_coplayers:83pct",
+        "foreign_squad_network:cnx6",
+        "zero_br_coplayers"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198355695170"
+    },
+    "552724": {
+      "alias": "kianoosh1313",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "asia_sleep_03_09_share": 0.25,
+        "br_coplayer_pct": 0.0,
+        "brt_prime_share": 0.07,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 2657,
+        "coplayer_slots": 160,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_location": ""
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 95,
+      "forensic_notes": "Irã confirmado (conta loja BR): nome completo persa Kianoosh Sarafzade (alias histórico k.sarafzade + kianoosh1313), apenas 7% em horário nobre BRT (67% noite Irã + 25% 03–09h BRT), 0% BR em 160 slots de co-jogadores e 0 aliados BR.",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 95,
+          "reasons": [
+            "persian_identity_alias:k.sarafzade",
+            "zero_br_coplayers:0/160",
+            "iran_eu_schedule_7pct_brt"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 552724,
+      "reasons": [
+        "persian_identity_alias:k.sarafzade",
+        "zero_br_coplayers:0/160",
+        "iran_eu_schedule_7pct_brt"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198118666317"
     },
     "5563": {
       "alias": "kohid",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.3,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.25,
         "coh1_country": "by",
         "coh2_country": "lk",
@@ -1092,11 +2145,15 @@
         "steam_friends_br_pct": null,
         "steam_friends_total": 0,
         "steam_location": "Belarus",
+        "top_foreign_squad_country": "az",
+        "top_foreign_squad_matches": 26,
         "unique_br_allies": 0
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
       "foreign_score": 100,
+      "forensic_notes": "Bielorrússia confirmada (dupla loja-hopper com #5935): CoH1=by (40m), CoH2=lk (2.588m), CoH3 live=kg, nome real Vadim, Steam Belarus, 26 jogos em dupla com #5935, 0% BR.",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -1109,27 +2166,93 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Belarus",
+            "coh1_by",
+            "coh2_lk",
+            "relic_country_changed:kg",
+            "foreign_squad_network:azx26"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 5563,
       "reasons": [
         "steam_loc:Belarus",
+        "coh1_by",
+        "coh2_lk",
         "relic_country_changed:kg",
-        "foreign_script_allies:28",
-        "coh2_lk"
+        "foreign_squad_network:azx26"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198269418461"
+    },
+    "564034": {
+      "alias": "DarkLeaf",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "",
+        "coh2_country": "it",
+        "coh2_matches": 0,
+        "live_relic_country": "it",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "Itália/Espanha confirmada: CoH3 live=it, CoH2=it, bio Steam em espanhol nativo ('Te llevo reventando el qlo en Hell Let Loose...'), 0% BR.",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "relic_country_changed:it",
+            "coh2_it",
+            "steam_summary_spanish",
+            "zero_br_coplayers"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 564034,
+      "reasons": [
+        "relic_country_changed:it",
+        "coh2_it",
+        "steam_summary_spanish",
+        "zero_br_coplayers"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198149148843"
     },
     "5935": {
       "alias": "王塔蒂亚娜和王亚历山",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.125,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.225,
         "coh1_country": "by",
         "coh2_country": "az",
@@ -1140,14 +2263,18 @@
         "recent_matches_analyzed": 40,
         "steam_br_groups": false,
         "steam_friends_br_count": 0,
-        "steam_friends_br_pct": 0.0,
-        "steam_friends_total": 7,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
         "steam_location": "Gushi, Henan, China",
+        "top_foreign_squad_country": "kg",
+        "top_foreign_squad_matches": 26,
         "unique_br_allies": 0
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
       "foreign_score": 100,
+      "forensic_notes": "Bielorrússia confirmada (dupla loja-hopper com #5563 kohid): CoH1=by (35m), CoH2=az (2.521m), CoH3 live=az, nome real 阿尔克桑德 (Alexander), amigos ua/kz/kg, 26 jogos em dupla com #5563 kohid, 0% BR.",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -1162,29 +2289,100 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh1_by",
+            "coh2_az",
+            "relic_country_changed:az",
+            "steam_loc:Gushi, Henan, China",
+            "foreign_squad_network:kgx26",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 5935,
       "reasons": [
-        "steam_loc:Gushi, Henan, China",
-        "steam_summary_foreign_script",
+        "coh1_by",
+        "coh2_az",
         "relic_country_changed:az",
-        "foreign_script_allies:11",
-        "cjk_alias_history",
-        "coh2_az"
+        "steam_loc:Gushi, Henan, China",
+        "foreign_squad_network:kgx26",
+        "cjk_alias_history"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198798108377"
+    },
+    "616351": {
+      "alias": "Bosi",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "tr",
+        "coh2_country": "br",
+        "coh2_matches": 1160,
+        "coplayer_slots": 139,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "top_foreign_country": "de",
+        "top_foreign_country_pct": 0.993,
+        "top_foreign_squad_country": "de",
+        "top_foreign_squad_matches": 55,
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "Alemanha confirmada (disfarce sob nick 'Bosi' + 1.160 jogos CoH2 br): nome real Manfred, CoH1=tr (64m), 138 de 139 slots de co-jogadores (99.3%) são alemães (thammii de x55, Colonel Ulle de x40, PeLLe de x15, killbot4433 de x14) e 0% BR.",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "dominant_foreign_coplayers:de_99pct",
+            "coh1_tr",
+            "realname_german:Manfred",
+            "foreign_squad_network:dex55"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 616351,
+      "reasons": [
+        "dominant_foreign_coplayers:de_99pct",
+        "coh1_tr",
+        "realname_german:Manfred",
+        "foreign_squad_network:dex55"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198088020591"
     },
     "682793": {
       "alias": "用石頭切割深海魚",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.625,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.075,
         "coh1_country": "",
         "coh2_country": "",
@@ -1195,14 +2393,18 @@
         "recent_matches_analyzed": 40,
         "steam_br_groups": false,
         "steam_friends_br_count": 0,
-        "steam_friends_br_pct": 0.0,
-        "steam_friends_total": 15,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
         "steam_location": "Nakhon Phanom, Thailand",
+        "top_foreign_squad_country": "jp",
+        "top_foreign_squad_matches": 32,
         "unique_br_allies": 0
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
       "foreign_score": 100,
+      "forensic_notes": "Tailândia/Japão confirmada: CoH3 live=jp, Steam Nakhon Phanom/Tailândia, 0/15 amigos BR, 75% Leste Asiático (36 jp, 34 cn, 27 th, 0% BR), squad Kim Jong Vroom (jp x32) + NoDeang Normal (th x20).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -1217,35 +2419,51 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Nakhon Phanom, Thailand",
+            "relic_country_changed:jp",
+            "zero_br_steam_friends:0/15",
+            "east_asia_coplayers:75pct",
+            "foreign_squad_network:jpx32",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 682793,
       "reasons": [
         "steam_loc:Nakhon Phanom, Thailand",
-        "zero_br_steam_friends:0/15",
         "relic_country_changed:jp",
-        "foreign_script_allies:38",
-        "asia_peak_hours:62pct",
+        "zero_br_steam_friends:0/15",
+        "east_asia_coplayers:75pct",
+        "foreign_squad_network:jpx32",
         "cjk_alias_history"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561199571326941"
     },
     "743575": {
       "alias": "Reisキングス",
-      "br_score": 0,
-      "checks_count": 1,
+      "br_score": 85,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": null,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": null,
         "coh1_country": "br",
         "coh2_country": "br",
         "coh2_matches": 13,
         "foreign_script_allies_matches": 0,
-        "live_relic_country": "",
+        "live_relic_country": "br",
         "ptbr_alias_evidence": false,
         "recent_matches_analyzed": 0,
         "steam_br_groups": false,
@@ -1255,9 +2473,11 @@
         "steam_location": "",
         "unique_br_allies": 0
       },
-      "exclude_from_rankings": true,
+      "exclude_from_rankings": false,
       "first_flagged_at": 1795496818,
-      "foreign_score": 40,
+      "foreign_score": 0,
+      "forensic_notes": "Brasileiro real liberado (falso positivo corrigido): CoH1=br (14 jogos), CoH2=br (13 jogos) e sobrenome brasileiro 'Reis' (Reisキングス — apenas sufixo katakana 'Kings').",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -1267,16 +2487,84 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 85,
+          "foreign_score": 0,
+          "reasons": [
+            "coh1_br",
+            "coh2_br:13m",
+            "ptbr_surname_alias:Reis"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_br"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 743575,
       "reasons": [
-        "cjk_alias_history"
+        "coh1_br",
+        "coh2_br:13m",
+        "ptbr_surname_alias:Reis"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": false,
+      "span_days": 1.49,
+      "status": "confirmed_br",
       "steam_id": "76561198254319565"
+    },
+    "77393": {
+      "alias": "ELITE",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "ar",
+        "coh2_arranged_team_countries": {
+          "ar": 2,
+          "ua": 5
+        },
+        "coh2_country": "ar",
+        "coh2_matches": 1954,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "",
+        "unique_br_allies": 1
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "Irã confirmado (estava ativo no lobby sob nick 'ELITE'!): CoH1=ar, CoH2=ar (1.954 jogos), aliases persas ✠Alireza.Jager✠ e *MEHRDAD*, times arranjados CoH2 com iranianos (HashemElite ua x5, Homayoun98 ar x2, 0 BR).",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh1_ar",
+            "coh2_ar",
+            "persian_alias_history:Alireza_MEHRDAD",
+            "coh2_arranged_teams_foreign:iranian_ar_ua"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 77393,
+      "reasons": [
+        "coh1_ar",
+        "coh2_ar",
+        "persian_alias_history:Alireza_MEHRDAD",
+        "coh2_arranged_teams_foreign:iranian_ar_ua"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198844643569"
     },
     "779143": {
       "alias": "ニコラス",
@@ -1323,17 +2611,66 @@
         "br_squadmates:2",
         "brt_prime_hours:73pct"
       ],
+      "remove_from_br_list": false,
       "span_days": 0.0,
       "status": "confirmed_br",
       "steam_id": "76561198874288631"
     },
+    "781622": {
+      "alias": "Ament ペドロ",
+      "br_score": 15,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "",
+        "coh2_country": "",
+        "coh2_matches": 0,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Osaka, Japan",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 65,
+      "forensic_notes": "Suspeito moderado: Steam Osaka/Japão e bio em coreano, mas usa o nome brasileiro 'Pedro' em katakana (Ament ペドロ) — possível nipo-brasileiro/dekassegui.",
+      "history": [
+        {
+          "br_score": 15,
+          "foreign_score": 65,
+          "reasons": [
+            "steam_loc:Osaka, Japan",
+            "steam_summary_foreign_script",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 781622,
+      "reasons": [
+        "steam_loc:Osaka, Japan",
+        "steam_summary_foreign_script",
+        "cjk_alias_history"
+      ],
+      "remove_from_br_list": false,
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198074054595"
+    },
     "811294": {
       "alias": "你说是，那便是吧",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.55,
         "br_allies_matches": 0,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.025,
         "coh1_country": "",
         "coh2_country": "br",
@@ -1344,14 +2681,16 @@
         "recent_matches_analyzed": 40,
         "steam_br_groups": false,
         "steam_friends_br_count": 0,
-        "steam_friends_br_pct": 0.0,
-        "steam_friends_total": 70,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
         "steam_location": "Chengdu, Sichuan, China",
         "unique_br_allies": 0
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 80,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada: Steam Chengdu/Sichuan/China, grupos chineses, 2% BRT prime, 61% Leste Asiático, 0/70 amigos BR, 63 aliados CJK (squad Bilibili糖水温块跳跳冰 cn x15).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -1363,26 +2702,99 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "steam_loc:Chengdu, Sichuan, China",
+            "zero_br_steam_friends:0/70",
+            "east_asia_coplayers:61pct",
+            "foreign_script_allies:63",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 811294,
       "reasons": [
+        "steam_loc:Chengdu, Sichuan, China",
         "zero_br_steam_friends:0/70",
-        "foreign_script_allies:45",
+        "east_asia_coplayers:61pct",
+        "foreign_script_allies:63",
         "cjk_alias_history"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198108427703"
     },
-    "865785": {
-      "alias": "マキマ",
+    "840484": {
+      "alias": "O.Chem.b.Alzat",
       "br_score": 0,
       "checks_count": 1,
       "evidence": {
+        "asia_sleep_03_09_share": 0.77,
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 449,
+        "east_asia_coplayer_pct": 0.72,
+        "live_relic_country": "cn",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "Brazil",
+        "top_foreign_squad_country": "cn",
+        "top_foreign_squad_matches": 48,
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada (usou Steam 'Brazil' falso + 449 jogos CoH2 br): nome real 王祥增, bio em chinês, alias 黑熊精, CoH3 voltou live para cn, 77% em 03–09h BRT, 72% Leste Asiático (0% BR em 201 slots), squad StardustYoung (cn x48).",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "relic_country_changed:cn",
+            "east_asia_coplayers:72pct",
+            "asia_sleep_03_09:77pct",
+            "foreign_squad_network:cnx48",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 840484,
+      "reasons": [
+        "relic_country_changed:cn",
+        "east_asia_coplayers:72pct",
+        "asia_sleep_03_09:77pct",
+        "foreign_squad_network:cnx48",
+        "cjk_alias_history"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198256546183"
+    },
+    "865785": {
+      "alias": "マキマ",
+      "br_score": 10,
+      "checks_count": 2,
+      "evidence": {
         "asia_peak_share": 0.0,
         "br_allies_matches": 1,
+        "br_coplayer_pct": 0.01,
         "brt_prime_share": 0.0,
         "coh1_country": "",
         "coh2_country": "",
@@ -1400,7 +2812,8 @@
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 85,
+      "foreign_score": 70,
+      "forensic_notes": "Suspeito moderado: Steam Tokyo/Japão e aliases em katakana (マキマ / カタリナ), porém apenas 1 partida CoH3 registrada (com 1 aliado BR).",
       "history": [
         {
           "br_score": 0,
@@ -1411,17 +2824,125 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 10,
+          "foreign_score": 70,
+          "reasons": [
+            "steam_loc:Tokyo, Japan",
+            "cjk_alias_history"
+          ],
+          "ts": 1795625968,
+          "verdict": "suspected_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 865785,
       "reasons": [
         "steam_loc:Tokyo, Japan",
         "cjk_alias_history"
       ],
-      "span_days": 0.0,
+      "remove_from_br_list": false,
+      "span_days": 1.49,
       "status": "suspected_foreign_vpn",
       "steam_id": "76561199053797489"
+    },
+    "875194": {
+      "alias": "☠︎Destroyer-Tu-Culo☠",
+      "br_score": 15,
+      "checks_count": 1,
+      "evidence": {
+        "br_allies_matches": 0,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 145,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_location": "",
+        "top_foreign_squad_country": "mx",
+        "top_foreign_squad_matches": 39
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 65,
+      "forensic_notes": "Suspeito moderado (LATAM/MX): nick em espanhol (☠︎Destroyer-Tu-Culo☠) e 39 partidas em squad com mx/us/cu (0 aliados BR), mas CoH2=br (145m) e Steam ainda pendente de verificação.",
+      "history": [
+        {
+          "br_score": 15,
+          "foreign_score": 65,
+          "reasons": [
+            "spanish_alias",
+            "foreign_squad_network:mxx39",
+            "zero_br_allies"
+          ],
+          "ts": 1795625968,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 875194,
+      "reasons": [
+        "spanish_alias",
+        "foreign_squad_network:mxx39",
+        "zero_br_allies"
+      ],
+      "remove_from_br_list": false,
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561199257565094"
+    },
+    "89586": {
+      "alias": "Dai☆suke",
+      "br_score": 0,
+      "checks_count": 1,
+      "evidence": {
+        "br_coplayer_pct": 0.0,
+        "coh1_country": "cn",
+        "coh2_country": "br",
+        "coh2_matches": 580,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_total": 0,
+        "steam_location": "China",
+        "unique_br_allies": 0
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 100,
+      "forensic_notes": "China confirmada (descoberta furtiva sob nick 'Dai☆suke'): CoH1=cn (16m), Steam China, grupos chineses de L4D2, 0% BRT prime, 59% Leste Asiático (0% BR), 26 aliados CJK.",
+      "forensic_verified": true,
+      "history": [
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh1_cn",
+            "steam_loc:China",
+            "east_asia_coplayers:59pct",
+            "foreign_script_allies:26",
+            "zero_br_coplayers"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 89586,
+      "reasons": [
+        "coh1_cn",
+        "steam_loc:China",
+        "east_asia_coplayers:59pct",
+        "foreign_script_allies:26",
+        "zero_br_coplayers"
+      ],
+      "remove_from_br_list": true,
+      "span_days": 0.0,
+      "status": "confirmed_foreign_vpn",
+      "steam_id": "76561198329647818"
     },
     "940355": {
       "alias": "SacanaLord",
@@ -1474,17 +2995,19 @@
         "coh2_br:1010m",
         "ptbr_alias_tokens"
       ],
+      "remove_from_br_list": false,
       "span_days": 0.0,
       "status": "confirmed_br",
       "steam_id": "76561198018536980"
     },
     "944737": {
       "alias": "Red Hot Chilly Pepper",
-      "br_score": 30,
-      "checks_count": 1,
+      "br_score": 0,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.3,
         "br_allies_matches": 6,
+        "br_coplayer_pct": 0.001,
         "brt_prime_share": 0.5,
         "coh1_country": "",
         "coh2_country": "dz",
@@ -1502,7 +3025,9 @@
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795496818,
-      "foreign_score": 55,
+      "foreign_score": 95,
+      "forensic_notes": "Argélia confirmada: CoH2=dz (1.080 jogos), nome real Aymen, grupo Steam argelino 'DZ Shop', zero squadmates BR recorrentes.",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 30,
@@ -1513,25 +3038,41 @@
           ],
           "ts": 1795496818,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 95,
+          "reasons": [
+            "coh2_dz",
+            "steam_group_algeria:DZ_Shop",
+            "realname_algerian:Aymen",
+            "zero_recurrent_br_squadmates"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795496818,
+      "last_checked_at": 1795625968,
       "profile_id": 944737,
       "reasons": [
-        "br_squadmates:6",
-        "coh2_dz"
+        "coh2_dz",
+        "steam_group_algeria:DZ_Shop",
+        "realname_algerian:Aymen",
+        "zero_recurrent_br_squadmates"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 1.49,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561198117984620"
     },
     "947114": {
       "alias": "Sleepy",
       "br_score": 0,
-      "checks_count": 1,
+      "checks_count": 2,
       "evidence": {
         "asia_peak_share": 0.306,
         "br_allies_matches": 1,
+        "br_coplayer_pct": 0.0,
         "brt_prime_share": 0.472,
         "coh1_country": "",
         "coh2_country": "ar",
@@ -1549,7 +3090,9 @@
       },
       "exclude_from_rankings": true,
       "first_flagged_at": 1795549477,
-      "foreign_score": 15,
+      "foreign_score": 100,
+      "forensic_notes": "Irã (loja ar->br) — SMURF 100% CONFIRMADO da main estrangeira #943262 Sleepy (país=ar, ELO 1316): mesmo nick persa Pooya22 no CoH2, 2 trocas rápidas sem sobreposição (3 min e 15 min), APM 85.4 vs 87.4 (Δ=2.0), loadout BG 83.2%, out_dead=0.0%, 0/21 amigos BR (ar/se/de).",
+      "forensic_verified": true,
       "history": [
         {
           "br_score": 0,
@@ -1560,16 +3103,31 @@
           ],
           "ts": 1795549477,
           "verdict": "suspected_foreign_vpn"
+        },
+        {
+          "br_score": 0,
+          "foreign_score": 100,
+          "reasons": [
+            "coh2_ar",
+            "zero_br_steam_friends:0/21",
+            "confirmed_foreign_smurf_of:943262",
+            "foreign_script_allies:40"
+          ],
+          "ts": 1795625968,
+          "verdict": "confirmed_foreign_vpn"
         }
       ],
-      "last_checked_at": 1795549477,
+      "last_checked_at": 1795625968,
       "profile_id": 947114,
       "reasons": [
+        "coh2_ar",
         "zero_br_steam_friends:0/21",
-        "coh2_ar"
+        "confirmed_foreign_smurf_of:943262",
+        "foreign_script_allies:40"
       ],
-      "span_days": 0.0,
-      "status": "suspected_foreign_vpn",
+      "remove_from_br_list": true,
+      "span_days": 0.89,
+      "status": "confirmed_foreign_vpn",
       "steam_id": "76561199005516405"
     },
     "952854": {
@@ -1619,11 +3177,55 @@
         "br_squadmates:1",
         "coh2_br:137m"
       ],
+      "remove_from_br_list": false,
       "span_days": 0.0,
       "status": "confirmed_br",
       "steam_id": "76561198131209135"
+    },
+    "96038": {
+      "alias": "Venom snake",
+      "br_score": 15,
+      "checks_count": 1,
+      "evidence": {
+        "br_allies_matches": 0,
+        "coh1_country": "",
+        "coh2_country": "br",
+        "coh2_matches": 4982,
+        "live_relic_country": "br",
+        "ptbr_alias_evidence": false,
+        "steam_br_groups": false,
+        "steam_location": ""
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795625968,
+      "foreign_score": 65,
+      "forensic_notes": "Suspeito moderado (Leste Europeu): 70% co-jogadores europeus, squad com jogadores UA (UA - $imA / UA - Vov@N), times CoH2 em ru/kz/us/fr (0 BR), mas 4.982 jogos CoH2 br.",
+      "history": [
+        {
+          "br_score": 15,
+          "foreign_score": 65,
+          "reasons": [
+            "eu_coplayers:70pct",
+            "foreign_squad_network:ua",
+            "coh2_arranged_teams_foreign:ru_kz_us_fr"
+          ],
+          "ts": 1795625968,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795625968,
+      "profile_id": 96038,
+      "reasons": [
+        "eu_coplayers:70pct",
+        "foreign_squad_network:ua",
+        "coh2_arranged_teams_foreign:ru_kz_us_fr"
+      ],
+      "remove_from_br_list": false,
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561198038473331"
     }
   },
   "schema_version": 1,
-  "updated_at": 1795549477
+  "updated_at": 1795625968
 }

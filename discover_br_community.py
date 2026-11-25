@@ -54,6 +54,14 @@ from alias_history import (
     save_alias_history,
     select_stale_pids_for_source,
 )
+from foreign_br_verifier import (
+    SUSPECTED_FOREIGN_BR_PATH,
+    get_confirmed_foreign_removed_pids,
+    get_confirmed_foreign_removed_steam_ids,
+    get_ranking_excluded_foreign_pids,
+    load_suspected_foreign_br_registry,
+    prune_confirmed_foreign_from_community,
+)
 from lobby_radar import (
     COMMUNITY_SCHEMA_VERSION,
     DEFAULT_COMMUNITY_CACHE_PATH,
@@ -1159,9 +1167,25 @@ def run_deep_br_discovery(
     # 6. Convergência final em `br_community.json`:
     #    - `players`: exclusivamente ativos no CoH3 <= 15d (exibidos no lobby/card)
     #    - `dormant_players`: inativos 16..90d em vigília silenciosa para reativação instantânea ao voltar ao CoH3
+    foreign_reg_path = community_cache_path.parent / SUSPECTED_FOREIGN_BR_PATH.name
+    foreign_reg_doc = (
+        load_suspected_foreign_br_registry(foreign_reg_path)
+        if foreign_reg_path.exists() and not foreign_reg_path.is_symlink()
+        else None
+    )
+    confirmed_foreign_pids = get_confirmed_foreign_removed_pids(foreign_reg_doc) - vet_pids
+    confirmed_foreign_sids = get_confirmed_foreign_removed_steam_ids(foreign_reg_doc) - vet_sids
+    excluded_foreign_ranking_pids = get_ranking_excluded_foreign_pids(foreign_reg_doc) - vet_pids
+    excluded_comm_pids = vet_pids | confirmed_foreign_pids
+    excluded_comm_sids = vet_sids | confirmed_foreign_sids
+
     def _populate_bucket(target: dict[str, dict[str, Any]], pids: list[int], min_lmd: int) -> None:
         for pid in pids:
+            if pid in confirmed_foreign_pids:
+                continue
             item = dict(br_pool[pid])
+            if str(item.get("steam_id") or "").replace("/steam/", "").strip() in confirmed_foreign_sids:
+                continue
             prev = existing_all.get(str(pid))
             if isinstance(prev, dict):
                 item["last_seen_online_ts"] = max(
@@ -1175,8 +1199,8 @@ def run_deep_br_discovery(
             _merge_player_into_community(
                 target,
                 item,
-                vet_pids=vet_pids,
-                vet_sids=vet_sids,
+                vet_pids=excluded_comm_pids,
+                vet_sids=excluded_comm_sids,
                 min_last_match_date=min_lmd,
                 replace_matches=False,
             )
@@ -1206,9 +1230,9 @@ def run_deep_br_discovery(
     dormant_br_pids = [
         pid
         for pid, item in br_pool.items()
-        if pid not in vet_pids
+        if pid not in excluded_comm_pids
         and str(pid) not in final_players
-        and str(item.get("steam_id") or "") not in vet_sids
+        and str(item.get("steam_id") or "") not in excluded_comm_sids
         and int(item.get("last_match_date", 0) or 0) < active_cutoff
         and (dormant_cutoff <= 0 or int(item.get("last_match_date", 0) or 0) >= dormant_cutoff)
     ]
@@ -1227,9 +1251,15 @@ def run_deep_br_discovery(
 
     # 6b. Verificação forense de Smurfs focada exclusivamente no Top 50 BR na Relic API
     smurf_analysis: dict[str, Any] = {}
-    top50_br_pids_to_save: list[int] = list(prev_top50_br_pids)
+    top50_br_pids_to_save: list[int] = [
+        p for p in prev_top50_br_pids if p not in confirmed_foreign_pids and p not in excluded_foreign_ranking_pids
+    ]
     if smurf_check and smurf_collector is not None:
-        all_br_for_top50: dict[int, dict[str, Any]] = {int(pid): dict(row) for pid, row in br_pool.items()}
+        all_br_for_top50: dict[int, dict[str, Any]] = {
+            int(pid): dict(row)
+            for pid, row in br_pool.items()
+            if int(pid) not in confirmed_foreign_pids and int(pid) not in excluded_foreign_ranking_pids
+        }
         missing_vet_elo_pids: list[int] = []
         for vr in vet_roster:
             vpid = int(vr.get("profile_id", 0) or 0)
@@ -1337,6 +1367,12 @@ def run_deep_br_discovery(
     }
     if top50_br_pids_to_save:
         out_cache_snapshot["top50_br_pids"] = top50_br_pids_to_save
+    if confirmed_foreign_pids or confirmed_foreign_sids:
+        prune_confirmed_foreign_from_community(
+            out_cache_snapshot,
+            confirmed_foreign_pids,
+            confirmed_foreign_sids,
+        )
     if global_telemetry:
         peak_24h_g = int(global_telemetry.get("peak_24h", 0) or 0)
         br_active_total = len(final_players) + len(vet_roster)

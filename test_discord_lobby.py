@@ -2890,6 +2890,18 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                 "flag_country": "br",
             },
         ]
+        sid_confirmed = "76561198003393637"
+        other_rows.append(
+            {
+                "profile_id": 21011,
+                "steam_id": sid_confirmed,
+                "alias": "Wywtigerking",
+                "max_elo": 1716,
+                "total_matches": 540,
+                "last_match_date": now - 120,
+                "flag_country": "br",
+            }
+        )
         pres = {
             sid_in_coh3: {
                 "steam_id": sid_in_coh3,
@@ -2907,11 +2919,20 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
                 "online_state": "online",
                 "steam_alias": "夕绫",
             },
+            sid_confirmed: {
+                "steam_id": sid_confirmed,
+                "ok": True,
+                "is_in_coh3": True,
+                "is_online_steam": True,
+                "online_state": "in-game",
+                "steam_alias": "Wywtigerking",
+            },
         }
         verified_map = {
-            3984: {"status": "confirmed_foreign_vpn"},
+            3984: {"status": "suspected_foreign_vpn"},
             990111: {"status": "suspected_foreign_vpn"},
-            990222: {"status": "confirmed_foreign_vpn"},
+            990222: {"status": "suspected_foreign_vpn"},
+            21011: {"status": "confirmed_foreign_vpn", "remove_from_br_list": True},
         }
         other_latest = {
             990222: {"completion_time": now - 420, "mode": "4v4"},
@@ -2925,8 +2946,16 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
             other_latest_matches_by_pid=other_latest,
             verified_foreign_status_by_pid=verified_map,
         )
+        # Estrangeiro com confirmação alta (`confirmed_foreign_vpn`) deve ser totalmente removido do Radar!
+        all_other_pids = {
+            int(p["profile_id"])
+            for sec in ("in_coh3", "online_steam", "recent_relic")
+            for p in snap["outros_brasileiros"][sec]
+        }
+        self.assertNotIn(21011, all_other_pids)
         self.assertEqual(snap["outros_brasileiros"]["in_coh3"][0]["alias"], sample_alias)
         for sec in ("in_coh3", "online_steam", "recent_relic"):
+            self.assertEqual(len(snap["outros_brasileiros"][sec]), 1)
             pl = snap["outros_brasileiros"][sec][0]
             self.assertTrue(_is_suspected_foreign_row(pl, is_veteranos=False, is_monitorados=False))
             self.assertFalse(_is_suspected_foreign_row(pl, is_veteranos=True, is_monitorados=False))
@@ -2937,6 +2966,7 @@ class TestDiscordTwoMessageSplitAndLargeCard(unittest.TestCase):
         links = build_lobby_radar_links_payload(snap)
         oth_desc = links["embeds"][2]["description"]
         self.assertIn("北方军港", oth_desc)
+        self.assertNotIn("Wywtigerking", oth_desc)
         self.assertIn("possível estrangeiro se passando por brasileiro — VPN", oth_desc)
 
         _, _, oth_png = render_lobby_radar_cards_png(snap, SteamAvatarProvider(allow_network=False))
