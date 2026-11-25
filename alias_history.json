@@ -24243,7 +24243,7 @@
         {
           "alias": "Brigada Brazil",
           "first_seen": 1795476703,
-          "last_seen": 1795476703,
+          "last_seen": 1795566075,
           "sources": [
             "relic_coh1_api",
             "steam_web_api",
@@ -65015,8 +65015,8 @@
       "coh3_country": "br",
       "coh3_last_match_date": 1786367974,
       "coh3_total_matches": 171,
-      "current_alias": "quimera",
-      "last_checked_at": 1795562695,
+      "current_alias": "Quimera",
+      "last_checked_at": 1795566075,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1018926,
@@ -117685,7 +117685,7 @@
       ],
       "canonical_alias": "negromonte_",
       "coh3_country": "br",
-      "current_alias": "Negromonte_",
+      "current_alias": "negromonte_",
       "last_checked_at": 1795565775,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
@@ -242268,5 +242268,5 @@
     "steam_web_api": 7470,
     "steam_xml": 6739
   },
-  "updated_at": 1795565775
+  "updated_at": 1795566075
 }
