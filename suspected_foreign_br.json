@@ -1341,58 +1341,6 @@
       "status": "confirmed_foreign_vpn",
       "steam_id": "76561198312734088"
     },
-    "20523": {
-      "alias": "Goa Trance Mix",
-      "br_score": 100,
-      "checks_count": 1,
-      "evidence": {
-        "asia_peak_share": 0.175,
-        "br_allies_matches": 3,
-        "brt_prime_share": 0.45,
-        "coh1_country": "",
-        "coh2_country": "br",
-        "coh2_matches": 1111,
-        "foreign_script_allies_matches": 28,
-        "live_relic_country": "br",
-        "ptbr_alias_evidence": true,
-        "recent_matches_analyzed": 40,
-        "steam_br_groups": false,
-        "steam_friends_br_count": 0,
-        "steam_friends_br_pct": null,
-        "steam_friends_total": 0,
-        "steam_location": "Goiania, Goias, Brazil",
-        "unique_br_allies": 3
-      },
-      "exclude_from_rankings": false,
-      "first_flagged_at": 1795496818,
-      "foreign_score": 0,
-      "history": [
-        {
-          "br_score": 100,
-          "foreign_score": 0,
-          "reasons": [
-            "steam_location_brazil",
-            "br_squadmates:3",
-            "coh2_br:1111m",
-            "ptbr_alias_tokens"
-          ],
-          "ts": 1795496818,
-          "verdict": "confirmed_br"
-        }
-      ],
-      "last_checked_at": 1795496818,
-      "profile_id": 20523,
-      "reasons": [
-        "steam_location_brazil",
-        "br_squadmates:3",
-        "coh2_br:1111m",
-        "ptbr_alias_tokens"
-      ],
-      "remove_from_br_list": false,
-      "span_days": 0.0,
-      "status": "confirmed_br",
-      "steam_id": "76561198044964084"
-    },
     "21011": {
       "alias": "Wywtigerking",
       "br_score": 0,
@@ -1890,66 +1838,6 @@
       "span_days": 0.0,
       "status": "confirmed_foreign_vpn",
       "steam_id": "76561198867796694"
-    },
-    "448521": {
-      "alias": "icemaker",
-      "br_score": 100,
-      "checks_count": 2,
-      "evidence": {
-        "asia_peak_share": 0.275,
-        "br_allies_matches": 18,
-        "brt_prime_share": 0.425,
-        "coh1_country": "br",
-        "coh2_country": "",
-        "coh2_matches": 0,
-        "foreign_script_allies_matches": 5,
-        "live_relic_country": "br",
-        "ptbr_alias_evidence": true,
-        "recent_matches_analyzed": 40,
-        "steam_br_groups": false,
-        "steam_friends_br_count": 0,
-        "steam_friends_br_pct": null,
-        "steam_friends_total": 0,
-        "steam_location": "",
-        "unique_br_allies": 4
-      },
-      "exclude_from_rankings": false,
-      "first_flagged_at": 1795496818,
-      "foreign_score": 0,
-      "history": [
-        {
-          "br_score": 30,
-          "foreign_score": 40,
-          "reasons": [
-            "br_squadmates:4",
-            "cjk_alias_history"
-          ],
-          "ts": 1795496818,
-          "verdict": "suspected_foreign_vpn"
-        },
-        {
-          "br_score": 100,
-          "foreign_score": 0,
-          "reasons": [
-            "roster_monitorados_confirmed_br",
-            "coh1_br",
-            "br_squadmates:4"
-          ],
-          "ts": 1795525976,
-          "verdict": "confirmed_br"
-        }
-      ],
-      "last_checked_at": 1795525976,
-      "profile_id": 448521,
-      "reasons": [
-        "roster_monitorados_confirmed_br",
-        "coh1_br",
-        "br_squadmates:4"
-      ],
-      "remove_from_br_list": false,
-      "span_days": 0.0,
-      "status": "confirmed_br",
-      "steam_id": "76561198831175531"
     },
     "47214": {
       "alias": "KUKU Monkey",
@@ -2566,56 +2454,6 @@
       "status": "confirmed_foreign_vpn",
       "steam_id": "76561198844643569"
     },
-    "779143": {
-      "alias": "ニコラス",
-      "br_score": 90,
-      "checks_count": 1,
-      "evidence": {
-        "asia_peak_share": 0.067,
-        "br_allies_matches": 14,
-        "brt_prime_share": 0.733,
-        "coh1_country": "",
-        "coh2_country": "",
-        "coh2_matches": 0,
-        "foreign_script_allies_matches": 3,
-        "live_relic_country": "br",
-        "ptbr_alias_evidence": false,
-        "recent_matches_analyzed": 15,
-        "steam_br_groups": false,
-        "steam_friends_br_count": 2,
-        "steam_friends_br_pct": 0.067,
-        "steam_friends_total": 30,
-        "steam_location": "Sao Paulo, Brazil",
-        "unique_br_allies": 2
-      },
-      "exclude_from_rankings": false,
-      "first_flagged_at": 1795496818,
-      "foreign_score": 0,
-      "history": [
-        {
-          "br_score": 90,
-          "foreign_score": 0,
-          "reasons": [
-            "steam_location_brazil",
-            "br_squadmates:2",
-            "brt_prime_hours:73pct"
-          ],
-          "ts": 1795496818,
-          "verdict": "confirmed_br"
-        }
-      ],
-      "last_checked_at": 1795496818,
-      "profile_id": 779143,
-      "reasons": [
-        "steam_location_brazil",
-        "br_squadmates:2",
-        "brt_prime_hours:73pct"
-      ],
-      "remove_from_br_list": false,
-      "span_days": 0.0,
-      "status": "confirmed_br",
-      "steam_id": "76561198874288631"
-    },
     "781622": {
       "alias": "Ament ペドロ",
       "br_score": 15,
@@ -3227,5 +3065,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": 1795625968
+  "updated_at": 1795631956
 }
