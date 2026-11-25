@@ -290,6 +290,208 @@ class SecurityPrimitivesTests(unittest.TestCase):
             for pat in secret_patterns:
                 self.assertIsNone(pat.search(content), msg=f"Possível segredo detectado em arquivo público: {rel}")
 
+    def test_actions_cache_merge_and_git_checkpoint_policy(self) -> None:
+        import json
+        import subprocess
+        import sys
+        import lobby_radar
+
+        # 1) merge_radar_state_dicts preserva snapshot mais recente, IDs de painel e veteranos_steam_cache ({pid: steam_id64})
+        git_st = {
+            "last_sync_ts": 1000,
+            "layout_version": 7,
+            "panel_message_ids": ["111", "222"],
+            "veteranos_steam_cache": {"79327": "76561197963172584"},
+        }
+        cache_st = {
+            "last_sync_ts": 1600,
+            "layout_version": 7,
+            "panel_message_ids": ["111", "222"],
+            "last_alert_coh3_pids": [79327],
+            "veteranos_steam_cache": {"366826": "76561198014985380"},
+        }
+        merged_st = lobby_radar.merge_radar_state_dicts(git_st, cache_st)
+        self.assertEqual(merged_st["last_sync_ts"], 1600)
+        self.assertEqual(merged_st["last_alert_coh3_pids"], [79327])
+        self.assertEqual(merged_st["veteranos_steam_cache"].get("79327"), "76561197963172584")
+        self.assertEqual(merged_st["veteranos_steam_cache"].get("366826"), "76561198014985380")
+
+        # 2) merge_community_cache_dicts une descobertas concorrentes (ex.: deep_br_discovery.yml) sem perda
+        git_comm = {
+            "schema_version": 2,
+            "updated_at": 1100,
+            "players": {
+                "1001": {"profile_id": 1001, "alias": "FromDeep", "last_seen_online_ts": 1100, "max_elo": 1200},
+                "1002": {"profile_id": 1002, "alias": "SharedOld", "last_seen_online_ts": 1000, "max_elo": 1450},
+            },
+            "dormant_players": {},
+        }
+        cache_comm = {
+            "schema_version": 2,
+            "updated_at": 1500,
+            "players": {
+                "1002": {"profile_id": 1002, "alias": "SharedFresh", "last_seen_online_ts": 1500, "max_elo": 1400, "in_coh3": True},
+                "1003": {"profile_id": 1003, "alias": "FromCache", "last_seen_online_ts": 1500, "max_elo": 1100},
+            },
+            "dormant_players": {},
+        }
+        merged_comm = lobby_radar.merge_community_cache_dicts(git_comm, cache_comm)
+        self.assertEqual(set(merged_comm["players"].keys()), {"1001", "1002", "1003"})
+        self.assertEqual(merged_comm["players"]["1002"]["alias"], "SharedFresh")
+        self.assertEqual(merged_comm["players"]["1002"]["max_elo"], 1450)
+        self.assertTrue(merged_comm["players"]["1002"]["in_coh3"])
+
+        # 3) merge_alias_history_dicts une historicos de aliases sem sobrescrever fontes de ambos os lados
+        git_ah = {
+            "schema_version": 1,
+            "updated_ts": 1100,
+            "players": {
+                "79327": {
+                    "profile_id": 79327,
+                    "aliases": [{"alias": "Chacineiro", "first_seen": 100, "last_seen": 900, "sources": ["deep"]}],
+                }
+            },
+            "legacy_br_players": {},
+        }
+        cache_ah = {
+            "schema_version": 1,
+            "updated_ts": 1500,
+            "players": {
+                "79327": {
+                    "profile_id": 79327,
+                    "aliases": [
+                        {"alias": "Chacineiro", "first_seen": 200, "last_seen": 1500, "sources": ["radar"]},
+                        {"alias": "ChacineiroBR", "first_seen": 1400, "last_seen": 1500, "sources": ["radar"]},
+                    ],
+                }
+            },
+            "legacy_br_players": {},
+        }
+        merged_ah = lobby_radar.merge_alias_history_dicts(git_ah, cache_ah)
+        aliases_by_name = {a["alias"]: a for a in merged_ah["players"]["79327"]["aliases"]}
+        self.assertEqual(set(aliases_by_name.keys()), {"Chacineiro", "ChacineiroBR"})
+        self.assertEqual(aliases_by_name["Chacineiro"]["first_seen"], 100)
+        self.assertEqual(aliases_by_name["Chacineiro"]["last_seen"], 1500)
+        self.assertEqual(set(aliases_by_name["Chacineiro"]["sources"]), {"deep", "radar"})
+
+        # 4) evaluate_git_checkpoint: economiza push em sessao silenciosa (<6h), mas dispara em mudanca real ou >=6h
+        nested_sig_base = repr((
+            repr(([("76561197963172584", True, False, False, "Chacineiro")], [("76561198014985380", "", False, False, False, "Lem22")])),
+            repr(([("76561197982976352", False, False, False, "OtherBR")], [])),
+        ))
+        nested_sig_only_online_changed = repr((
+            repr(([("76561197963172584", True, False, False, "Chacineiro")], [])),
+            repr(([("76561197982976352", False, False, False, "OtherBR"), ("76561198117168962", False, False, False, "OtherBR2")], [])),
+        ))
+        nested_sig_vet_entered_coh3 = repr((
+            repr(([("76561197963172584", True, False, False, "Chacineiro"), ("76561198014985380", False, False, False, "Lem22")], [])),
+            repr(([], [])),
+        ))
+        base = {
+            "last_sync_ts": 10_000,
+            "layout_version": 7,
+            "panel_message_ids": ["111", "222"],
+            "last_alert_coh3_pids": [79327],
+            "last_steam_fast_sig": nested_sig_base,
+        }
+        quiet = dict(base, last_sync_ts=10_000 + 3600, last_steam_fast_sig=nested_sig_only_online_changed)
+        should_push, reason = lobby_radar.evaluate_git_checkpoint(base, quiet)
+        self.assertFalse(should_push)
+        self.assertIn("actions_cache_only", reason)
+
+        self.assertEqual(lobby_radar.evaluate_git_checkpoint(base, quiet, force=True), (True, "force_sync"))
+        self.assertEqual(lobby_radar.evaluate_git_checkpoint({}, quiet), (True, "initial_baseline"))
+        self.assertEqual(lobby_radar.evaluate_git_checkpoint(base, {}), (False, "empty_local_state"))
+
+        panel_changed = dict(quiet, panel_message_ids=["111", "333"])
+        self.assertEqual(lobby_radar.evaluate_git_checkpoint(base, panel_changed), (True, "panel_message_ids_changed"))
+
+        layout_changed = dict(quiet, layout_version=8)
+        self.assertEqual(lobby_radar.evaluate_git_checkpoint(base, layout_changed), (True, "panel_layout_version_changed"))
+
+        vet_changed = dict(quiet, last_alert_coh3_pids=[79327, 366826])
+        self.assertEqual(lobby_radar.evaluate_git_checkpoint(base, vet_changed), (True, "veteranos_coh3_pids_changed"))
+
+        fast_sig_changed = dict(quiet, last_steam_fast_sig=nested_sig_vet_entered_coh3)
+        self.assertEqual(lobby_radar.evaluate_git_checkpoint(base, fast_sig_changed), (True, "veteranos_fast_sig_changed"))
+
+        elapsed_6h = dict(base, last_sync_ts=10_000 + lobby_radar.DEFAULT_GIT_CHECKPOINT_INTERVAL_SEC)
+        should_6h, reason_6h = lobby_radar.evaluate_git_checkpoint(base, elapsed_6h)
+        self.assertTrue(should_6h)
+        self.assertIn("periodic_checkpoint_elapsed", reason_6h)
+
+        # 5) merge_radar_cache_dir + CLI --check-git-checkpoint + bloqueio de symlink
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            cache_dir = td_path / "cache"
+            cache_dir.mkdir()
+            st_path = td_path / "state.json"
+            comm_path = td_path / "br_community.json"
+            ah_path = td_path / "alias_history.json"
+            baseline_path = td_path / "baseline.json"
+
+            st_path.write_text(json.dumps(base), encoding="utf-8")
+            baseline_path.write_text(json.dumps(base), encoding="utf-8")
+            comm_path.write_text(json.dumps(git_comm), encoding="utf-8")
+            ah_path.write_text(json.dumps(git_ah), encoding="utf-8")
+
+            (cache_dir / "state.json").write_text(json.dumps(quiet), encoding="utf-8")
+            (cache_dir / "br_community.json").write_text(json.dumps(cache_comm), encoding="utf-8")
+            (cache_dir / "alias_history.json").write_text(json.dumps(cache_ah), encoding="utf-8")
+
+            res = lobby_radar.merge_radar_cache_dir(
+                cache_dir,
+                state_path=st_path,
+                community_cache_path=comm_path,
+                alias_history_path=ah_path,
+            )
+            self.assertEqual(res, {"state": True, "community": True, "alias_history": True})
+
+            # CLI retorna codigo 10 em sessao silenciosa (<6h) e 0 com --force
+            script = Path(__file__).resolve().parent / "lobby_radar.py"
+            proc_skip = subprocess.run(
+                [sys.executable, str(script), "--state", str(st_path), "--check-git-checkpoint", str(baseline_path)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(proc_skip.returncode, lobby_radar.GIT_CHECKPOINT_SKIP_EXIT_CODE, msg=proc_skip.stderr)
+            self.assertIn("should_push=false", proc_skip.stdout)
+
+            proc_force = subprocess.run(
+                [sys.executable, str(script), "--state", str(st_path), "--check-git-checkpoint", str(baseline_path), "--force"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(proc_force.returncode, 0, msg=proc_force.stderr)
+            self.assertIn("should_push=true", proc_force.stdout)
+
+            # Symlink como cache_dir ou baseline e bloqueado
+            link_dir = td_path / "cache_link"
+            os.symlink(cache_dir, link_dir)
+            with self.assertRaises(ValueError):
+                lobby_radar.merge_radar_cache_dir(link_dir, state_path=st_path)
+
+            link_base = td_path / "base_link.json"
+            os.symlink(baseline_path, link_base)
+            proc_bad = subprocess.run(
+                [sys.executable, str(script), "--state", str(st_path), "--check-git-checkpoint", str(link_base)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(proc_bad.returncode, 1)
+
+        # 6) Workflow radar_sync.yml usa Actions Cache pinado por SHA, grep -IlEi e checkpoints condicionais
+        wf_text = (Path(__file__).resolve().parent / ".github" / "workflows" / "radar_sync.yml").read_text(encoding="utf-8")
+        self.assertIn("actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9", wf_text)
+        self.assertIn("actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9", wf_text)
+        self.assertIn("--merge-cache-dir", wf_text)
+        self.assertIn("--check-git-checkpoint", wf_text)
+        self.assertIn("grep -IlEi", wf_text)
+        self.assertIn("steps.prep_cache.outputs.has_snapshot == 'true'", wf_text)
+
 
 if __name__ == "__main__":
     unittest.main()
