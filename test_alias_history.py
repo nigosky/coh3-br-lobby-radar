@@ -432,10 +432,14 @@ class TestPersistentAliasHistory(unittest.TestCase):
         self.assertEqual(mig_by_pid[7448]["coh2_br_teammates"], 3)
         self.assertIn("migração: br->za", format_alias_history_entry(doc["players"]["7448"]))
 
-        # 3. score_smurf_pair não desqualifica brasileiro emigrado (`de`/`za`) como estrangeiro e aplica bônus se mesma migração
+        # 3. score_smurf_pair exige nacionalidade brasileira ('br') por padrão;
+        #    em modo investigativo opcional (`require_br_nationality=False`), reconhece brasileiro emigrado e aplica bônus se mesma migração
         cand_expat = {"profile_id": 88001, "steam_id": legacy_only_sid, "alias": "VeteranoEmigrado", "country": "de", "max_elo": 1650, "total_matches": 50}
         main_expat = {"profile_id": 99001, "steam_id": "76561198099999999", "alias": "MainEmigrado", "country": "de", "max_elo": 1700, "total_matches": 1200}
-        blocked_as_foreign = score_smurf_pair(cand_expat, main_expat, None, None)
+        blocked_default = score_smurf_pair(cand_expat, main_expat, None, None)
+        self.assertEqual(blocked_default["disqualified_reason"], "nacionalidade_diferente_br")
+
+        blocked_as_foreign = score_smurf_pair(cand_expat, main_expat, None, None, require_br_nationality=False)
         self.assertEqual(blocked_as_foreign["disqualified_reason"], "estrangeiro_sem_vinculo_social_br")
 
         allowed_as_hist_br = score_smurf_pair(
@@ -448,6 +452,7 @@ class TestPersistentAliasHistory(unittest.TestCase):
                 88001: {"from_country": "br", "current_country": "de"},
                 99001: {"from_country": "br", "current_country": "de"},
             },
+            require_br_nationality=False,
         )
         self.assertEqual(allowed_as_hist_br["disqualified_reason"], "")
         self.assertIn("br -> de", " ".join(allowed_as_hist_br["evidence"]).lower())

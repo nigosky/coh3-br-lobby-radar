@@ -1315,7 +1315,7 @@ def run_deep_br_discovery(
         shared_cohdb = cohdb_client
         if shared_cohdb is None and isinstance(r_client, RelicActivityClient):
             shared_cohdb = CohDBBattlegroupClient(pace_delay_sec=0.12, max_replays_per_player=8)
-        stage1_min_prob = max(35, smurf_min_prob - 8) if can_verify_relic else smurf_min_prob
+        stage1_min_prob = max(55, smurf_min_prob - 12) if can_verify_relic else smurf_min_prob
         smurf_analysis = detect_top50_br_smurfs(
             all_br_players=all_br_for_top50,
             telemetry=smurf_collector,
@@ -1731,7 +1731,7 @@ def main() -> int:
     parser.add_argument("--relic-sa-pages", type=int, default=DEFAULT_RELIC_SA_PAGES, help="Páginas por leaderboard SA na Relic (1..15)")
     parser.add_argument("--no-smurf-check", action="store_true", help="Desativa a verificação forense de Smurfs do Top 50 BR")
     parser.add_argument("--smurf-top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado para smurfs (padrão: 50)")
-    parser.add_argument("--smurf-min-prob", type=int, default=DEFAULT_MIN_PROBABILITY_PCT, help="Probabilidade mínima em %% para listar suspeitas (padrão: 45)")
+    parser.add_argument("--smurf-min-prob", type=int, default=DEFAULT_MIN_PROBABILITY_PCT, help="Probabilidade mínima em %% para listar suspeitas (padrão: 75 — Muito Alta)")
     parser.add_argument("--smurf-report", type=Path, default=None, help="Arquivo JSON opcional para salvar o relatório de smurfs do Top 50 BR")
     parser.add_argument("--dry-run", action="store_true", help="Apenas exibe o diagnóstico sem gravar br_community.json")
     args = parser.parse_args()
