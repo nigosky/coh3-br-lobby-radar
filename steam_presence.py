@@ -499,6 +499,14 @@ _FALLBACK_MONITORED_BR_PLAYERS: list[dict[str, Any]] = [
     {"profile_id": 802771, "steam_id": "76561198072811551", "original_alias": "Odin", "country": "br", "pin_monitorados": True},
     {"profile_id": 8838, "steam_id": "76561198092565055", "original_alias": "Saint", "country": "br", "pin_monitorados": True, "known_aliases": ["Saint", "╬ IIIR ╬ PanzerGrenadier ╬"]},
     {"profile_id": 1467829, "steam_id": "76561198650067332", "original_alias": "XAMPUZINHO (Smurf: Xampoo)", "smurf_of": "Xampoo", "country": "br", "pin_monitorados": True, "known_aliases": ["XAMPUZINHO", "XAMPUZINHO (Smurf: Xampoo)"]},
+    {"profile_id": 1297870, "steam_id": "76561198047131936", "original_alias": "AVESTRUZ TE SEDUZ", "country": "br", "pin_monitorados": True},
+    {"profile_id": 653986, "steam_id": "76561198026689157", "original_alias": "brkr1p7on", "country": "br", "pin_monitorados": True},
+    {"profile_id": 19840, "steam_id": "76561197972423172", "original_alias": "[DOOM INTENSIFIES]", "country": "br", "pin_monitorados": True},
+    {"profile_id": 145390, "steam_id": "76561198012596175", "original_alias": "Dr. House", "country": "br", "pin_monitorados": True},
+    {"profile_id": 32423, "steam_id": "76561198021045102", "original_alias": "Mucura", "country": "br", "pin_monitorados": True},
+    {"profile_id": 4138, "steam_id": "76561198047913620", "original_alias": "pdf1234300", "country": "br", "pin_monitorados": True},
+    {"profile_id": 428227, "steam_id": "76561198008039971", "original_alias": "COSMONAUTA", "country": "br", "pin_monitorados": True},
+    {"profile_id": 1304125, "steam_id": "76561199482244877", "original_alias": "LordBaconBR", "country": "br", "pin_monitorados": True, "known_aliases": ["LordBaconBR", "LordBacon"]},
 ]
 
 # Alias retrocompatível para o fallback da 3ª categoria (`monitorados`)
