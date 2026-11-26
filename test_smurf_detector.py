@@ -358,7 +358,15 @@ class TestTop50SmurfDetector(unittest.TestCase):
             collector.players[1001],
         )
         self.assertEqual(res["probability_pct"], 0)
-        self.assertEqual(res["disqualified_reason"], "estrangeiro_sem_vinculo_social_br")
+        self.assertEqual(res["disqualified_reason"], "nacionalidade_diferente_br")
+        res_opt = sd.score_smurf_pair(
+            {"profile_id": 1_900_009, "steam_id": "76561199900000009", "alias": "RandomDE", "country": "de", "max_elo": 1580, "total_matches": 120},
+            {"profile_id": 1001, "steam_id": "76561198000001001", "alias": "MainBR", "country": "br", "max_elo": 1600, "total_matches": 1800, "relic_br_rank": 1},
+            collector.players[1_900_009],
+            collector.players[1001],
+            require_br_nationality=False,
+        )
+        self.assertEqual(res_opt["disqualified_reason"], "estrangeiro_sem_vinculo_social_br")
 
     def test_stage2_relic_verification_eliminates_false_positives_and_keeps_real_smurfs(self) -> None:
         base_t = 1_799_500_000
@@ -899,17 +907,29 @@ class TestTop50SmurfDetector(unittest.TestCase):
                 "games_visible_count": 40,
             },
         }
-        res = sd.score_smurf_pair(
+        # Por padrão (`require_br_nationality=True`), conta com bandeira estrangeira ('de') é desqualificada imediatamente!
+        res_strict = sd.score_smurf_pair(
             {"profile_id": 1_960_001, "steam_id": "76561199960000001", "alias": "HansFakeDE", "country": "de", "max_elo": 1650, "total_matches": 80},
             {"profile_id": 3001, "steam_id": "76561198000003001", "alias": "VeteranoCWB", "country": "br", "max_elo": 1680, "total_matches": 2200, "relic_br_rank": 4},
             t_cand,
             t_main,
             steam_osint_by_pid=osint_map,
         )
-        self.assertEqual(res["disqualified_reason"], "")
-        self.assertGreaterEqual(res["probability_pct"], 70)
-        self.assertTrue(any("Avatar customizado Steam 100% idêntico" in e for e in res["evidence"]))
-        self.assertTrue(any("localização no Brasil" in e for e in res["evidence"]))
+        self.assertEqual(res_strict["probability_pct"], 0)
+        self.assertEqual(res_strict["disqualified_reason"], "nacionalidade_diferente_br")
+
+        # Na mesma nacionalidade brasileira ('br'), avatar customizado idêntico pontua Muito Alta (>=75%)
+        res_br = sd.score_smurf_pair(
+            {"profile_id": 1_960_001, "steam_id": "76561199960000001", "alias": "AltCWB_BR", "country": "br", "max_elo": 1650, "total_matches": 80},
+            {"profile_id": 3001, "steam_id": "76561198000003001", "alias": "VeteranoCWB", "country": "br", "max_elo": 1680, "total_matches": 2200, "relic_br_rank": 4},
+            t_cand,
+            t_main,
+            steam_osint_by_pid=osint_map,
+        )
+        self.assertEqual(res_br["disqualified_reason"], "")
+        self.assertGreaterEqual(res_br["probability_pct"], 75)
+        self.assertEqual(res_br["confidence_tier"], "Muito Alta")
+        self.assertTrue(any("Avatar customizado Steam 100% idêntico" in e for e in res_br["evidence"]))
 
     def test_steam_profile_xml_and_html_family_sharing_signals(self) -> None:
         xml_limited_private = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -1019,10 +1039,10 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertTrue(fs_res["metrics"]["family_shared_api_confirmed"])
         self.assertTrue(any("Steam Family Sharing detectado" in e for e in fs_res["evidence"]))
 
-        # Prova determinística IsPlayingSharedGame (mesmo sob bandeira estrangeira disfarçada -> 99%!)
-        cand_foreign = dict(cand_row, country="de", alias="GhostDE")
+        # Prova determinística IsPlayingSharedGame na mesma nacionalidade BR -> 99% (Muito Alta);
+        # bandeira estrangeira ('de') é rejeitada no modo estrito padrão!
         proof_res = sd.score_smurf_pair(
-            cand_foreign,
+            cand_row,
             main_row,
             t_cand,
             t_main,
@@ -1032,6 +1052,16 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertEqual(proof_res["probability_pct"], 99)
         self.assertTrue(proof_res["metrics"]["direct_family_sharing_lender"])
         self.assertTrue(any("PROVA DIRETA Steam Family Sharing" in e for e in proof_res["evidence"]))
+
+        cand_foreign = dict(cand_row, country="de", alias="GhostDE")
+        foreign_res = sd.score_smurf_pair(
+            cand_foreign,
+            main_row,
+            t_cand,
+            t_main,
+            shared_lender_by_sid={"76561199970000001": "76561198000004001"},
+        )
+        self.assertEqual(foreign_res["disqualified_reason"], "nacionalidade_diferente_br")
 
     def test_load_persisted_shared_lender_map(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -1054,7 +1084,8 @@ class TestTop50SmurfDetector(unittest.TestCase):
     def test_regional_br_sa_matchmaking_pierces_foreign_flag_and_penalizes_fake_br(self) -> None:
         from collections import Counter
 
-        # 1. Smurf BR disfarçada com bandeira 'de', mas com alta densidade de encontros BR/SA no Automatch + horário BRT
+        # 1. Na política estrita BR, conta com bandeira 'de' é descartada (nacionalidade_diferente_br);
+        #    com bandeira 'br' + alta densidade BR/SA no Automatch + APM + CoH2->CoH3, pontua Muito Alta!
         col = sd.SmurfTelemetryCollector()
         base_t = 1_760_047_200  # 2025-10-09 22:00 UTC -> 19:00 BRT (prime time brasileiro)
         matches: list[dict[str, Any]] = []
@@ -1066,7 +1097,7 @@ class TestTop50SmurfDetector(unittest.TestCase):
                     5000 + i,
                     t0,
                     t0 + 1200,
-                    [(1_980_001, "FakeGermanBR", "de", 1, 1420 + i * 16, 1)],
+                    [(1_980_001, "Smurf1v1BR", "br", 1, 1420 + i * 16, 1)],
                     [(80000 + i, f"OppSA_{i}", opp_ctry, 2, 1410 + i * 15, 0)],
                     matchtype_id=1,
                 )
@@ -1093,18 +1124,28 @@ class TestTop50SmurfDetector(unittest.TestCase):
         )
         t_main.apm_by_mode["1v1"] = [96.0] * 10
 
-        res_disguised = sd.score_smurf_pair(
+        res_de_blocked = sd.score_smurf_pair(
             {"profile_id": 1_980_001, "steam_id": "76561199980000001", "alias": "FakeGermanBR", "country": "de", "max_elo": 1564, "total_matches": 35},
             {"profile_id": 5001, "steam_id": "76561198000005001", "alias": "MainVet1v1", "country": "br", "max_elo": 1560, "total_matches": 2100, "relic_br_rank": 10},
             t_cand,
             t_main,
             coh2_matches_by_pid={5001: 2400},
         )
-        self.assertEqual(res_disguised["disqualified_reason"], "")
-        self.assertGreaterEqual(res_disguised["probability_pct"], 70)
-        self.assertGreaterEqual(res_disguised["metrics"]["elo_gain_per_game"], 10.0)
-        self.assertTrue(any("Matchmaking regional/ping Relic revela presença na América do Sul" in e for e in res_disguised["evidence"]))
-        self.assertTrue(any("Padrão legado CoH2→CoH3" in e for e in res_disguised["evidence"]))
+        self.assertEqual(res_de_blocked["disqualified_reason"], "nacionalidade_diferente_br")
+
+        # No modo investigativo opcional (`require_br_nationality=False`), o sinal MM BR/SA continua funcional
+        res_opt_de = sd.score_smurf_pair(
+            {"profile_id": 1_980_001, "steam_id": "76561199980000001", "alias": "FakeGermanBR", "country": "de", "max_elo": 1564, "total_matches": 35},
+            {"profile_id": 5001, "steam_id": "76561198000005001", "alias": "MainVet1v1", "country": "br", "max_elo": 1560, "total_matches": 2100, "relic_br_rank": 10},
+            t_cand,
+            t_main,
+            coh2_matches_by_pid={5001: 2400},
+            require_br_nationality=False,
+        )
+        self.assertEqual(res_opt_de["disqualified_reason"], "")
+        self.assertGreaterEqual(res_opt_de["metrics"]["elo_gain_per_game"], 10.0)
+        self.assertTrue(any("Matchmaking regional/ping Relic revela presença na América do Sul" in e for e in res_opt_de["evidence"]))
+        self.assertTrue(any("Padrão legado CoH2→CoH3" in e for e in res_opt_de["evidence"]))
 
         # 2. Conta com bandeira 'br' falsa (0% BR/SA no MM e horário fora do BRT) sofre penalidade regional
         t_fake_br = sd.PlayerMatchTelemetry(
@@ -1796,7 +1837,17 @@ class TestTop50SmurfDetector(unittest.TestCase):
             main_tel,
         )
         self.assertEqual(res_cn["probability_pct"], 0)
-        self.assertEqual(res_cn["disqualified_reason"], "estrangeiro_perfil_regional_nativo")
+        self.assertEqual(res_cn["disqualified_reason"], "nacionalidade_diferente_br")
+
+        res_cn_opt = sd.score_smurf_pair(
+            {"profile_id": mumu_pid, "steam_id": "76561198106150273", "alias": "木木", "country": "cn", "max_elo": 1159, "total_matches": 73},
+            main_meta,
+            mumu_tel,
+            main_tel,
+            require_br_nationality=False,
+        )
+        self.assertEqual(res_cn_opt["probability_pct"], 0)
+        self.assertEqual(res_cn_opt["disqualified_reason"], "estrangeiro_perfil_regional_nativo")
 
         res_vpn = sd.score_smurf_pair(
             {"profile_id": mumu_pid, "steam_id": "76561198106150273", "alias": "FakeBRAsia", "country": "br", "max_elo": 1159, "total_matches": 73},
@@ -1928,7 +1979,7 @@ class TestTop50SmurfDetector(unittest.TestCase):
             "profile_id": cand_pid,
             "steam_id": cand_sid,
             "alias": "TotallyDifferentNick",
-            "country": "de",
+            "country": "br",
             "max_elo": 1510,
             "total_matches": 90,
         }
@@ -1967,7 +2018,7 @@ class TestTop50SmurfDetector(unittest.TestCase):
         self.assertEqual(res_c2_coplay["probability_pct"], 0)
         self.assertEqual(res_c2_coplay["disqualified_reason"], "jogaram_mesmo_time_coh2")
 
-        # 2. Apelido legado CoH1/CoH2 idêntico (`Pooya22` pattern) fura bandeira estrangeira e pontua alto!
+        # 2. Apelido legado CoH1/CoH2 idêntico (`Pooya22` pattern) na mesma nacionalidade BR pontua Muito Alta!
         res_legacy_alias = sd.score_smurf_pair(
             cand_meta,
             main_meta,
@@ -1980,9 +2031,10 @@ class TestTop50SmurfDetector(unittest.TestCase):
         )
         self.assertEqual(res_legacy_alias["disqualified_reason"], "")
         self.assertGreaterEqual(res_legacy_alias["probability_pct"], 80)
+        self.assertEqual(res_legacy_alias["confidence_tier"], "Muito Alta")
         self.assertTrue(any("Apelido legado CoH1/CoH2 idêntico" in ev for ev in res_legacy_alias["evidence"]))
 
-        # 3. Mesmo <realname> no Steam XML fura bandeira estrangeira e pontua alto!
+        # 3. Mesmo <realname> no Steam XML na mesma nacionalidade BR pontua Muito Alta!
         res_realname = sd.score_smurf_pair(
             cand_meta,
             main_meta,
@@ -1995,6 +2047,7 @@ class TestTop50SmurfDetector(unittest.TestCase):
         )
         self.assertEqual(res_realname["disqualified_reason"], "")
         self.assertGreaterEqual(res_realname["probability_pct"], 80)
+        self.assertEqual(res_realname["confidence_tier"], "Muito Alta")
         self.assertTrue(any("Nome real público idêntico" in ev for ev in res_realname["evidence"]))
 
         # 4. Parceiros fixos CoH2 em comum (`statGroups`) impulsionam alt jovem (<500m CoH2),
@@ -2021,6 +2074,7 @@ class TestTop50SmurfDetector(unittest.TestCase):
         )
         self.assertEqual(res_c2_mates["disqualified_reason"], "")
         self.assertGreaterEqual(res_c2_mates["probability_pct"], 75)
+        self.assertEqual(res_c2_mates["confidence_tier"], "Muito Alta")
         self.assertTrue(any("statGroups" in ev for ev in res_c2_mates["evidence"]))
 
         vet_cand = dict(cand_meta, profile_id=23250, country="br")
@@ -2136,8 +2190,69 @@ class TestTop50SmurfDetector(unittest.TestCase):
         )
         self.assertEqual(r6["disqualified_reason"], "estrangeiro_steam_location")
 
+    def test_strict_br_nationality_75pct_threshold_and_aliasonline_regression(self):
+        # 1. Padrão oficial do Radar exige Muito Alta (>=75%) e nacionalidade brasileira (`br`)
+        self.assertEqual(sd.DEFAULT_MIN_PROBABILITY_PCT, 75)
+
+        showtaro_pid, alias_pid = 32922, 1401813
+        showtaro_meta = {
+            "profile_id": showtaro_pid,
+            "steam_id": "76561198000032922",
+            "alias": "Showtaro",
+            "country": "br",
+            "max_elo": 1340,
+            "total_matches": 1100,
+            "relic_br_rank": 25,
+        }
+        aliasonline_us = {
+            "profile_id": alias_pid,
+            "steam_id": "76561198639653404",
+            "alias": "aliasonline",
+            "country": "us",
+            "max_elo": 1339,
+            "total_matches": 123,
+        }
+        main_tel = sd.PlayerMatchTelemetry(profile_id=showtaro_pid, games=20, wins=10)
+        cand_tel = sd.PlayerMatchTelemetry(profile_id=alias_pid, games=23, wins=13)
+        for h in (19, 20, 21, 22, 23):
+            main_tel.all_brt_hour_counts[h] += 4
+            main_tel.brt_hour_counts[h] += 4
+            main_tel.hour_counts[(h + 3) % 24] += 4
+            cand_tel.all_brt_hour_counts[h] += 4
+            cand_tel.brt_hour_counts[h] += 4
+            cand_tel.hour_counts[(h + 3) % 24] += 4
+        main_tel.mode_faction_counts["3v3:usf"] = 20
+        cand_tel.mode_faction_counts["3v3:usf"] = 23
+        main_tel.apm_values.extend([41.0] * 10)
+        cand_tel.apm_values.extend([35.0] * 10)
+        burner_osint = {
+            alias_pid: {
+                "ok": True,
+                "is_limited_account": True,
+                "is_default_avatar": True,
+                "member_since_current_year": True,
+                "steam_level": 0,
+            }
+        }
+
+        # Caso real `aliasonline` (bandeira 'us') -> descartado imediatamente por nacionalidade diferente!
+        res_us = sd.score_smurf_pair(
+            aliasonline_us, showtaro_meta, cand_tel, main_tel, steam_osint_by_pid=burner_osint
+        )
+        self.assertEqual(res_us["probability_pct"], 0)
+        self.assertEqual(res_us["disqualified_reason"], "nacionalidade_diferente_br")
+
+        # Mesmo se fosse 'br', conta burner genérica sem nenhuma âncora específica do par (0 squad/nick/avatar/handoff/rival)
+        # fica travada em <=68% (abaixo do corte Muito Alta >=75%)!
+        res_br_generic = sd.score_smurf_pair(
+            dict(aliasonline_us, country="br"), showtaro_meta, cand_tel, main_tel, steam_osint_by_pid=burner_osint
+        )
+        self.assertLessEqual(res_br_generic["probability_pct"], 68)
+        self.assertLess(res_br_generic["probability_pct"], sd.DEFAULT_MIN_PROBABILITY_PCT)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 

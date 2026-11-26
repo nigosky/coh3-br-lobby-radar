@@ -72,7 +72,8 @@ configure_secure_logging(level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 logger = logging.getLogger("coh3_br.lobby.smurf_detector")
 
 DEFAULT_TOP_N_BR = 50
-DEFAULT_MIN_PROBABILITY_PCT = 45
+DEFAULT_MIN_PROBABILITY_PCT = 75
+VERY_HIGH_CONFIDENCE_MIN_PCT = 75
 DEFAULT_MATCH_DAYS = 90
 MAX_SMURF_MATCH_DAYS = 120
 STEAM_ID64_BASE = 76561197960265728
@@ -3829,6 +3830,7 @@ def score_smurf_pair(
     legacy_coh_by_pid: dict[int, dict[str, Any]] | None = None,
     steam_friends_coh_countries_by_pid: dict[int, dict[str, int]] | None = None,
     confirmed_foreign_pids: set[int] | frozenset[int] | None = None,
+    require_br_nationality: bool = True,
 ) -> dict[str, Any]:
     """
     Calcula a probabilidade forense (`0..99%`) de `cand` ser uma smurf de `main`, com evidências detalhadas em português.
@@ -3842,7 +3844,7 @@ def score_smurf_pair(
     main_pid = int(main.get("profile_id", 0) or 0)
     cand_sid = str(cand.get("steam_id") or "").replace("/steam/", "").strip()
     main_sid = str(main.get("steam_id") or "").replace("/steam/", "").strip()
-    cand_ctry = str(cand.get("country") or "").strip().lower()
+    cand_ctry = str(cand.get("country") or getattr(cand_tel, "country", "") or "").strip().lower()
 
     empty_res: dict[str, Any] = {
         "main_profile_id": main_pid,
@@ -3909,6 +3911,12 @@ def score_smurf_pair(
     )
     if has_overlap:
         empty_res["disqualified_reason"] = "sobreposicao_simultanea"
+        return empty_res
+
+    # Regra estrita de nacionalidade: exibe/pontua apenas smurfs na MESMA nacionalidade brasileira (`country == "br"`).
+    main_ctry = str(main.get("country") or getattr(main_tel, "country", "") or "br").strip().lower()
+    if require_br_nationality and (cand_ctry != "br" or (main_ctry and main_ctry != "br")):
+        empty_res["disqualified_reason"] = "nacionalidade_diferente_br"
         return empty_res
 
     # Pré-calcula vínculos sociais/identitários/OSINT (usados também para furar disfarce de bandeira estrangeira)
@@ -4864,18 +4872,37 @@ def score_smurf_pair(
     if direct_family_sharing_lender:
         score = max(score, 99.0)
 
-    # Guarda Anti-Ruído Meta:
-    # Exige ao menos 2 sinais comportamentais independentes E ao menos 1 âncora de identidade/tempo/rede
-    # (squad em comum, handoff <=25m, horários UTC >=68%, 0 confrontos no mesmo ELO alto, dormancy swap corroborado,
-    # nick/leetspeak/clã, avatar Steam idêntico, localização BR Steam, MM regional BR/SA, amigos Steam,
-    # Nêmesis/Freguês recorrente em comum ou prova direta Family Sharing).
+    # Guarda Anti-Ruído Meta + Anti-Inflação de Atribuição Genérica:
+    # Sem pelo menos 1 âncora ESPECÍFICA do par (squad em comum, >=2 handoffs <=25m, nick/legado,
+    # avatar/realname Steam idênticos, prova Family Sharing, >=2 parceiros CoH2 jovens, >=3 amigos Steam,
+    # >=2 nêmesis/fregueses em comum ou mesma faixa de ELO alto >=1350 com gêmeo biométrico APM<=4 + DNA/BG/alternância),
+    # uma conta burner genérica NUNCA ultrapassa 68% (abaixo do corte Muito Alta >=75%).
+    has_specific_pair_anchor = bool(
+        shared_allies_info
+        or handoff_cnt >= 2
+        or alias_pts > 0
+        or legacy_alias_hit
+        or same_custom_avatar
+        or same_steam_realname
+        or direct_family_sharing_lender
+        or strong_shared_coh2_teammates
+        or shared_steam_friends >= 3
+        or int(rivalry_krypt_info["shared_rivalry_count"]) >= 2
+        or (
+            bool(same_bracket_modes)
+            and apm_very_close
+            and (combat_dna_strong or bg_pts >= 6.0 or effective_dormancy_swap or rk_pts >= 8.0)
+        )
+    )
     if behavioral_signals < 2:
         score = min(score, 34.0)
     elif identity_anchor_signals < 1:
         score = min(score, 38.0)
+    elif not has_specific_pair_anchor:
+        score = min(score, 68.0)
 
     prob_pct = max(0, min(99, int(round(score))))
-    if prob_pct >= 80:
+    if prob_pct >= VERY_HIGH_CONFIDENCE_MIN_PCT:
         tier = "Muito Alta"
     elif prob_pct >= 65:
         tier = "Alta"
@@ -5404,6 +5431,7 @@ def detect_top50_br_smurfs(
     include_known_smurfs: bool = False,
     include_veteranos: bool = False,
     restrict_candidate_pids: set[int] | frozenset[int] | None = None,
+    require_br_nationality: bool = True,
 ) -> dict[str, Any]:
     """
     Executa a detecção forense de contas smurf exclusivamente para o Top 50 BR da Relic API
@@ -5585,14 +5613,22 @@ def detect_top50_br_smurfs(
                     tels.append(ftel)
         return tels
 
-    # Pool de candidatas: TODOS os BRs conhecidos (incluindo base completa do histórico e emigrados) + candidatos não-BR com vínculo forte de squad BR
+    # Pool de candidatas: com `require_br_nationality=True` (padrão), avalia apenas contas na nacionalidade brasileira (`country == "br"`).
     candidate_pool: dict[int, dict[str, Any]] = {}
     for pid, row in merged_all_br.items():
         if isinstance(row, dict):
-            candidate_pool[int(pid)] = dict(row)
+            row_copy = dict(row)
+            if not str(row_copy.get("country") or "").strip():
+                row_copy["country"] = "br"
+            if require_br_nationality and str(row_copy.get("country") or "").strip().lower() != "br":
+                continue
+            candidate_pool[int(pid)] = row_copy
     for pid, row in (extra_candidates or {}).items():
         pid_i = int(pid or 0)
         if pid_i > 0 and pid_i not in candidate_pool and isinstance(row, dict):
+            row_ctry = str(row.get("country") or "").strip().lower()
+            if require_br_nationality and row_ctry != "br":
+                continue
             row_sid = str(row.get("steam_id") or "").replace("/steam/", "").strip()
             if (
                 bool(row.get("in_br_arranged_team"))
@@ -5609,6 +5645,9 @@ def detect_top50_br_smurfs(
         if restrict_candidate_pids is not None and cpid not in restrict_candidate_pids:
             continue
         cand_tel = telemetry.players.get(cpid)
+        cand_ctry_eff = str(cand.get("country") or getattr(cand_tel, "country", "") or "").strip().lower()
+        if require_br_nationality and cand_ctry_eff != "br":
+            continue
         cand_sid_clean = str(cand.get("steam_id") or "").replace("/steam/", "").strip()
         has_live_lender_hit = bool(
             cand_sid_clean
@@ -5650,6 +5689,7 @@ def detect_top50_br_smurfs(
                 legacy_coh_by_pid=merged_legacy_coh or None,
                 steam_friends_coh_countries_by_pid=steam_friends_coh_countries_by_pid,
                 confirmed_foreign_pids=eff_confirmed_foreign or None,
+                require_br_nationality=require_br_nationality,
             )
             if int(scored["probability_pct"]) >= min_probability_pct:
                 top50_scores.append(scored)
@@ -5686,6 +5726,7 @@ def detect_top50_br_smurfs(
                 legacy_coh_by_pid=merged_legacy_coh or None,
                 steam_friends_coh_countries_by_pid=steam_friends_coh_countries_by_pid,
                 confirmed_foreign_pids=eff_confirmed_foreign or None,
+                require_br_nationality=require_br_nationality,
             )
             if int(out_scored["probability_pct"]) > best_outside_prob:
                 best_outside_prob = int(out_scored["probability_pct"])
@@ -5794,6 +5835,7 @@ def verify_suspects_with_relic(
     max_verify_candidates: int = 35,
     cohdb_client: Any = None,
     enable_cohdb: bool = True,
+    require_br_nationality: bool = True,
 ) -> dict[str, Any]:
     """
     Estágio 2 (Verificação Autoritativa na Relic API + cohdb.com):
@@ -5997,6 +6039,7 @@ def verify_suspects_with_relic(
         include_known_smurfs=include_known_smurfs,
         include_veteranos=include_veteranos,
         restrict_candidate_pids=cand_pids,
+        require_br_nationality=require_br_nationality,
     )
     verified["candidates_evaluated"] = int(stage1_report.get("candidates_evaluated", 0) or 0)
     verified["ignored_outside_top50_count"] = max(
@@ -6258,7 +6301,7 @@ def main() -> int:
         help=f"Dias de Open Data Matches (1..{MAX_SMURF_MATCH_DAYS}; padrão: {DEFAULT_MATCH_DAYS})",
     )
     parser.add_argument("--top-n", type=int, default=DEFAULT_TOP_N_BR, help="Tamanho do topo BR monitorado (padrão: 50)")
-    parser.add_argument("--min-prob", type=int, default=DEFAULT_MIN_PROBABILITY_PCT, help="Probabilidade mínima em %% (padrão: 45)")
+    parser.add_argument("--min-prob", type=int, default=DEFAULT_MIN_PROBABILITY_PCT, help="Probabilidade mínima em %% (padrão: 75 — Muito Alta)")
     parser.add_argument("--include-known", action="store_true", help="Incluir smurfs já catalogadas no players_roster.json")
     parser.add_argument("--include-veteranos", action="store_true", help="Incluir todos os Veteranos do elenco além do Top N BR")
     parser.add_argument("--no-relic-verify", action="store_true", help="Pular Estágio 2 de verificação direta na Relic API")
@@ -6449,7 +6492,7 @@ def main() -> int:
 
     extra_cands = {**(lb_cand or {}), **sa_cand, **m_cand}
     min_prob = max(1, min(99, int(args.min_prob)))
-    stage1_min_prob = min_prob if args.no_relic_verify else max(35, min_prob - 8)
+    stage1_min_prob = min_prob if args.no_relic_verify else max(55, min_prob - 12)
     report = detect_top50_br_smurfs(
         all_br_players=all_br,
         telemetry=collector,
