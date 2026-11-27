@@ -2297,7 +2297,7 @@
         {
           "alias": "M4CH1N3",
           "first_seen": 1795477379,
-          "last_seen": 1795652118,
+          "last_seen": 1795739839,
           "sources": [
             "relic_coh2_api",
             "steam_web_api",
@@ -24251,7 +24251,7 @@
         {
           "alias": "Brigada Brazil",
           "first_seen": 1795476703,
-          "last_seen": 1795653618,
+          "last_seen": 1795741039,
           "sources": [
             "relic_coh1_api",
             "steam_web_api",
@@ -38713,16 +38713,17 @@
         {
           "alias": "PimenteX",
           "first_seen": 0,
-          "last_seen": 0,
+          "last_seen": 1795741939,
           "sources": [
-            "relic_coh2_api"
+            "relic_coh2_api",
+            "steam_web_api"
           ]
         }
       ],
       "canonical_alias": "PimenteX",
       "coh2_country": "br",
       "coh2_profile_id": 4984714,
-      "current_alias": "gafallen",
+      "current_alias": "PimenteX",
       "scope": "legacy_coh2_br",
       "steam_id": "76561198183358009"
     },
@@ -44691,7 +44692,7 @@
         {
           "alias": "fairplay",
           "first_seen": 1795384677,
-          "last_seen": 1795654617,
+          "last_seen": 1795742539,
           "sources": [
             "coh2stats_opendata",
             "relic_coh2_api",
@@ -46084,7 +46085,7 @@
         {
           "alias": "Falks1 | Bloodycase.com",
           "first_seen": 1795654916,
-          "last_seen": 1795654916,
+          "last_seen": 1795742539,
           "sources": [
             "steam_web_api"
           ]
@@ -59065,7 +59066,7 @@
         {
           "alias": "killer",
           "first_seen": 1795475479,
-          "last_seen": 1795651819,
+          "last_seen": 1795739239,
           "sources": [
             "coh2stats_opendata",
             "steam_web_api"
@@ -63151,7 +63152,7 @@
         {
           "alias": "Capitão",
           "first_seen": 1795478053,
-          "last_seen": 1795652118,
+          "last_seen": 1795739540,
           "sources": [
             "relic_coh1_api",
             "steam_web_api"
@@ -65177,7 +65178,7 @@
       "coh3_last_match_date": 1786367974,
       "coh3_total_matches": 171,
       "current_alias": "quimera",
-      "last_checked_at": 1795735828,
+      "last_checked_at": 1795739239,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1018926,
@@ -65561,7 +65562,7 @@
       "coh3_last_match_date": 1741392647,
       "coh3_total_matches": 5,
       "current_alias": "gabi",
-      "last_checked_at": 1795737628,
+      "last_checked_at": 1795741039,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1019820,
@@ -66761,7 +66762,7 @@
         {
           "alias": "Kjjuj",
           "first_seen": 1702908971,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -66782,7 +66783,7 @@
       "coh2_total_matches": 142,
       "coh3_country": "br",
       "current_alias": "Kjjuj",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -66881,7 +66882,7 @@
       "coh3_last_match_date": 1741450872,
       "coh3_total_matches": 6,
       "current_alias": "SkeL",
-      "last_checked_at": 1795737628,
+      "last_checked_at": 1795741039,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -68796,7 +68797,7 @@
         {
           "alias": "Whili",
           "first_seen": 1792121565,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -68814,7 +68815,7 @@
       "coh2_total_matches": 131,
       "coh3_country": "br",
       "current_alias": "Whili",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -71150,7 +71151,7 @@
         {
           "alias": "Gak",
           "first_seen": 1712508224,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -71173,7 +71174,7 @@
       "coh2_total_matches": 99,
       "coh3_country": "br",
       "current_alias": "Gak",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -71189,7 +71190,7 @@
         {
           "alias": "Coruja",
           "first_seen": 1699904910,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -71207,7 +71208,7 @@
       "coh2_total_matches": 135,
       "coh3_country": "br",
       "current_alias": "Coruja",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -71856,7 +71857,7 @@
         {
           "alias": "Hirokhi",
           "first_seen": 1795139282,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -71878,7 +71879,7 @@
       "coh2_total_matches": 4809,
       "coh3_country": "br",
       "current_alias": "Hirokhi",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -73748,7 +73749,7 @@
         {
           "alias": "Alfa10",
           "first_seen": 1794836113,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -73769,7 +73770,7 @@
       "coh2_total_matches": 4134,
       "coh3_country": "br",
       "current_alias": "Alfa10",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -73971,7 +73972,7 @@
         {
           "alias": "**Matrixx**",
           "first_seen": 1777155572,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -73995,7 +73996,7 @@
       "coh2_total_matches": 1173,
       "coh3_country": "br",
       "current_alias": "**Matrixx**",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -74810,7 +74811,7 @@
       "coh3_last_match_date": 1741563260,
       "coh3_total_matches": 5,
       "current_alias": "abacaxi",
-      "last_checked_at": 1795737328,
+      "last_checked_at": 1795741039,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1059025,
@@ -75155,7 +75156,7 @@
       "coh3_last_match_date": 1760050360,
       "coh3_total_matches": 13,
       "current_alias": "Bourne",
-      "last_checked_at": 1795736728,
+      "last_checked_at": 1795740439,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1060336,
@@ -85604,7 +85605,7 @@
       "canonical_alias": "patrickbrss",
       "coh3_country": "br",
       "current_alias": "patrickbrss",
-      "last_checked_at": 1795738828,
+      "last_checked_at": 1795742239,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1116806,
@@ -86108,7 +86109,7 @@
       "coh3_last_match_date": 1746477337,
       "coh3_total_matches": 3,
       "current_alias": "mooch",
-      "last_checked_at": 1795737028,
+      "last_checked_at": 1795740739,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1118507,
@@ -86874,7 +86875,7 @@
         {
           "alias": "Mirico",
           "first_seen": 1795480318,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -86893,7 +86894,7 @@
       "coh2_total_matches": 37,
       "coh3_country": "br",
       "current_alias": "Mirico",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -86980,7 +86981,7 @@
         {
           "alias": "W💣",
           "first_seen": 1713720488,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -87000,7 +87001,7 @@
       "coh3_last_match_date": 1794185488,
       "coh3_total_matches": 93,
       "current_alias": "W💣",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -93750,7 +93751,7 @@
       "coh3_last_match_date": 1754886916,
       "coh3_total_matches": 32,
       "current_alias": "maurilioazyzzs",
-      "last_checked_at": 1795737028,
+      "last_checked_at": 1795740439,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1165921,
@@ -105104,7 +105105,7 @@
         {
           "alias": "O Marechal De Ferro",
           "first_seen": 1538603501,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -105122,7 +105123,7 @@
       "coh2_total_matches": 834,
       "coh3_country": "br",
       "current_alias": "O Marechal De Ferro",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -106709,7 +106710,7 @@
       "coh3_last_match_date": 1767220765,
       "coh3_total_matches": 2,
       "current_alias": "falcon0102",
-      "last_checked_at": 1795736728,
+      "last_checked_at": 1795740139,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1249671,
@@ -109318,7 +109319,7 @@
         {
           "alias": "joaoantonioag",
           "first_seen": 1795480318,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -109333,7 +109334,7 @@
       "coh2_profile_id": 481158,
       "coh3_country": "br",
       "current_alias": "joaoantonioag",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -110894,7 +110895,7 @@
         {
           "alias": "PaulBr",
           "first_seen": 1631311332,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -110917,7 +110918,7 @@
       "coh2_total_matches": 237,
       "coh3_country": "br",
       "current_alias": "PaulBr",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -111826,7 +111827,7 @@
         {
           "alias": "General Jailson Ney Mendes",
           "first_seen": 1529697440,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -111848,7 +111849,7 @@
       "coh2_total_matches": 634,
       "coh3_country": "br",
       "current_alias": "General Jailson Ney Mendes",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -117458,7 +117459,7 @@
         {
           "alias": "mhgomesss",
           "first_seen": 1791227069,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -117482,7 +117483,7 @@
       "coh2_total_matches": 30,
       "coh3_country": "br",
       "current_alias": "mhgomesss",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -117523,7 +117524,7 @@
         {
           "alias": "Death From Above",
           "first_seen": 1655682013,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -117546,7 +117547,7 @@
       "coh2_total_matches": 1870,
       "coh3_country": "br",
       "current_alias": "Death From Above",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -117835,7 +117836,7 @@
         {
           "alias": "Krasnoe",
           "first_seen": 1794770749,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -117855,7 +117856,7 @@
       "coh2_total_matches": 142,
       "coh3_country": "br",
       "current_alias": "Krasnoe",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -118826,8 +118827,8 @@
       ],
       "canonical_alias": "negromonte_",
       "coh3_country": "br",
-      "current_alias": "negromonte_",
-      "last_checked_at": 1795738828,
+      "current_alias": "Negromonte_",
+      "last_checked_at": 1795742539,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1309752,
@@ -119188,7 +119189,7 @@
         {
           "alias": "[49.] Axel",
           "first_seen": 1643069412,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -119216,7 +119217,7 @@
       "coh2_total_matches": 63,
       "coh3_country": "br",
       "current_alias": "[49.] Axel",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -119764,7 +119765,7 @@
         {
           "alias": "AtiraNelePai",
           "first_seen": 1694906588,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -119785,7 +119786,7 @@
       "coh2_total_matches": 219,
       "coh3_country": "br",
       "current_alias": "AtiraNelePai",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -121664,7 +121665,7 @@
       "coh3_last_match_date": 1779644857,
       "coh3_total_matches": 1,
       "current_alias": "Rafha",
-      "last_checked_at": 1795736128,
+      "last_checked_at": 1795739839,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1326448,
@@ -121944,7 +121945,7 @@
         {
           "alias": "Socram",
           "first_seen": 1776855209,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -121964,7 +121965,7 @@
       "coh2_total_matches": 3805,
       "coh3_country": "br",
       "current_alias": "Socram",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -124756,7 +124757,7 @@
         {
           "alias": "+Fegelein+",
           "first_seen": 1775792996,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -124774,7 +124775,7 @@
       "coh2_total_matches": 47,
       "coh3_country": "br",
       "current_alias": "+Fegelein+",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -124816,7 +124817,7 @@
         {
           "alias": "xamam0",
           "first_seen": 1794941904,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -124833,7 +124834,7 @@
       "coh1_total_matches": 769,
       "coh3_country": "br",
       "current_alias": "xamam0",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -125063,7 +125064,7 @@
         {
           "alias": "Delta Machine BR",
           "first_seen": 1794793291,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -125082,7 +125083,7 @@
       "coh2_total_matches": 1271,
       "coh3_country": "br",
       "current_alias": "Delta Machine BR",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -125698,7 +125699,7 @@
         {
           "alias": "BadHunter",
           "first_seen": 1795224077,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -125721,7 +125722,7 @@
       "coh2_total_matches": 1473,
       "coh3_country": "br",
       "current_alias": "BadHunter",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -126890,7 +126891,7 @@
         {
           "alias": "Hunter.22",
           "first_seen": 1777159458,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -126914,7 +126915,7 @@
       "coh2_total_matches": 4522,
       "coh3_country": "br",
       "current_alias": "Hunter.22",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -128425,7 +128426,7 @@
       "coh3_last_match_date": 1785613535,
       "coh3_total_matches": 1,
       "current_alias": "r U N A W A Y",
-      "last_checked_at": 1795735828,
+      "last_checked_at": 1795739239,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1380032,
@@ -131249,7 +131250,7 @@
         {
           "alias": "Unhunnn",
           "first_seen": 1789939248,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -131272,7 +131273,7 @@
       "coh2_total_matches": 1235,
       "coh3_country": "br",
       "current_alias": "Unhunnn",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -131619,7 +131620,7 @@
       "coh3_last_match_date": 1793478951,
       "coh3_total_matches": 2,
       "current_alias": "MAS",
-      "last_checked_at": 1795656116,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -133292,7 +133293,7 @@
         {
           "alias": "franklin.leal",
           "first_seen": 1609716631,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -133312,7 +133313,7 @@
       "coh2_total_matches": 2,
       "coh3_country": "br",
       "current_alias": "franklin.leal",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -134111,7 +134112,7 @@
         {
           "alias": "felipearsenian",
           "first_seen": 1708808797,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -134129,7 +134130,7 @@
       "coh2_total_matches": 68,
       "coh3_country": "br",
       "current_alias": "felipearsenian",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -134260,7 +134261,7 @@
       "coh3_last_match_date": 1795478881,
       "coh3_total_matches": 18,
       "current_alias": "homossexual hétero",
-      "last_checked_at": 1795738828,
+      "last_checked_at": 1795742539,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1433493,
@@ -135846,7 +135847,7 @@
         {
           "alias": "Guaxinim",
           "first_seen": 1795480318,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -135865,7 +135866,7 @@
       "coh2_total_matches": 10,
       "coh3_country": "br",
       "current_alias": "Guaxinim",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -135996,7 +135997,7 @@
         {
           "alias": "(BR) Sapo vaqueiro",
           "first_seen": 1795302513,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -136017,7 +136018,7 @@
       "coh2_total_matches": 2154,
       "coh3_country": "br",
       "current_alias": "(BR) Sapo vaqueiro",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -136427,7 +136428,7 @@
         {
           "alias": "Black Friday",
           "first_seen": 1795482280,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -136454,7 +136455,7 @@
       "coh2_total_matches": 101,
       "coh3_country": "br",
       "current_alias": "Black Friday",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -136731,7 +136732,7 @@
       "coh3_last_match_date": 1794579345,
       "coh3_total_matches": 1,
       "current_alias": "Wiz",
-      "last_checked_at": 1795739128,
+      "last_checked_at": 1795741939,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1445924,
@@ -137093,7 +137094,7 @@
         {
           "alias": "✞ Leonhard 🜋",
           "first_seen": 1795480318,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -137111,7 +137112,7 @@
       "coh2_total_matches": 2,
       "coh3_country": "br",
       "current_alias": "✞ Leonhard 🜋",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -137413,7 +137414,7 @@
       "coh3_last_match_date": 1794602764,
       "coh3_total_matches": 1,
       "current_alias": "BESON",
-      "last_checked_at": 1795739128,
+      "last_checked_at": 1795740739,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1449348,
@@ -138085,7 +138086,7 @@
         {
           "alias": "vinight",
           "first_seen": 1593989429,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -138105,7 +138106,7 @@
       "coh2_total_matches": 352,
       "coh3_country": "br",
       "current_alias": "vinight",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -139779,7 +139780,7 @@
         {
           "alias": "LOUÇA LAVADA EVITA PAULADA",
           "first_seen": 1658882444,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -139798,7 +139799,7 @@
       "coh2_total_matches": 62,
       "coh3_country": "br",
       "current_alias": "LOUÇA LAVADA EVITA PAULADA",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -139813,7 +139814,7 @@
         {
           "alias": "Alan_Kowski",
           "first_seen": 1795480481,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -139831,7 +139832,7 @@
       "coh2_total_matches": 1716,
       "coh3_country": "br",
       "current_alias": "Alan_Kowski",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -140140,7 +140141,7 @@
         {
           "alias": "raylander",
           "first_seen": 1439662490,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -140158,7 +140159,7 @@
       "coh2_total_matches": 18,
       "coh3_country": "br",
       "current_alias": "raylander",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -140529,7 +140530,7 @@
         {
           "alias": "StormBreaker",
           "first_seen": 1794865495,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -140548,7 +140549,7 @@
       "coh2_total_matches": 4129,
       "coh3_country": "br",
       "current_alias": "StormBreaker",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -140740,7 +140741,7 @@
         {
           "alias": "DavidAgis267",
           "first_seen": 1504225497,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -140758,7 +140759,7 @@
       "coh2_total_matches": 4,
       "coh3_country": "br",
       "current_alias": "DavidAgis267",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -141393,7 +141394,7 @@
         {
           "alias": "Hanilucas",
           "first_seen": 1794873794,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -141412,7 +141413,7 @@
       "coh2_total_matches": 3184,
       "coh3_country": "br",
       "current_alias": "Hanilucas",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -142860,7 +142861,7 @@
         {
           "alias": "vinnizius1",
           "first_seen": 1787969674,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -142878,7 +142879,7 @@
       "coh2_total_matches": 1007,
       "coh3_country": "br",
       "current_alias": "vinnizius1",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -144031,7 +144032,7 @@
       "coh3_last_match_date": 1794802027,
       "coh3_total_matches": 1,
       "current_alias": "dontrySHOT",
-      "last_checked_at": 1795738528,
+      "last_checked_at": 1795742539,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 1478243,
@@ -146106,7 +146107,7 @@
         {
           "alias": "Sorgsor",
           "first_seen": 1622246078,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -146126,7 +146127,7 @@
       "coh2_total_matches": 151,
       "coh3_country": "br",
       "current_alias": "Sorgsor",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -150862,7 +150863,7 @@
       "coh3_last_match_date": 1693762129,
       "coh3_total_matches": 1,
       "current_alias": "WolfgangKapp",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741639,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -156785,7 +156786,7 @@
         {
           "alias": "PampeBR",
           "first_seen": 1688252129,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -156806,7 +156807,7 @@
       "coh3_last_match_date": 1794182618,
       "coh3_total_matches": 467,
       "current_alias": "PampeBR",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -158183,7 +158184,7 @@
       "coh3_last_match_date": 1713153564,
       "coh3_total_matches": 1,
       "current_alias": "T4f4xx",
-      "last_checked_at": 1795737928,
+      "last_checked_at": 1795741639,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -158531,7 +158532,7 @@
         {
           "alias": "jalopesferraz",
           "first_seen": 1794951628,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -158550,7 +158551,7 @@
       "coh2_total_matches": 9579,
       "coh3_country": "br",
       "current_alias": "jalopesferraz",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -158746,7 +158747,7 @@
       "coh3_last_match_date": 1727647288,
       "coh3_total_matches": 19,
       "current_alias": "EddyMort",
-      "last_checked_at": 1795737928,
+      "last_checked_at": 1795741339,
       "last_coh1_relic_at": 1795487784,
       "last_coh2_relic_at": 1795487784,
       "last_cohdb_at": 0,
@@ -161573,7 +161574,7 @@
         {
           "alias": "Matanza",
           "first_seen": 1646348763,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -161592,7 +161593,7 @@
       "coh2_total_matches": 16,
       "coh3_country": "br",
       "current_alias": "Matanza",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -162559,7 +162560,7 @@
         {
           "alias": "Paié",
           "first_seen": 1630178535,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -162580,7 +162581,7 @@
       "coh2_total_matches": 1016,
       "coh3_country": "br",
       "current_alias": "Paié",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -165380,7 +165381,7 @@
         {
           "alias": "Hivision",
           "first_seen": 1672267257,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -165400,7 +165401,7 @@
       "coh2_total_matches": 6588,
       "coh3_country": "br",
       "current_alias": "Hivision",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -165789,7 +165790,7 @@
         {
           "alias": "Lord Duck",
           "first_seen": 1793129926,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh2stats_opendata",
             "coh3stats_opendata",
@@ -165812,7 +165813,7 @@
       "coh2_total_matches": 1766,
       "coh3_country": "br",
       "current_alias": "Lord Duck",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -166309,7 +166310,7 @@
         {
           "alias": "CrisFoX",
           "first_seen": 1427058297,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -166329,7 +166330,7 @@
       "coh2_total_matches": 16,
       "coh3_country": "br",
       "current_alias": "CrisFoX",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -167870,7 +167871,7 @@
         {
           "alias": "Ghost",
           "first_seen": 1606846231,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -167893,7 +167894,7 @@
       "coh2_total_matches": 1330,
       "coh3_country": "br",
       "current_alias": "Ghost",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -171129,7 +171130,7 @@
         {
           "alias": "Mr_Jorel",
           "first_seen": 1651523450,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -171150,7 +171151,7 @@
       "coh2_total_matches": 81,
       "coh3_country": "br",
       "current_alias": "Mr_Jorel",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -172448,7 +172449,7 @@
         {
           "alias": "Vini",
           "first_seen": 1540956294,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -172468,7 +172469,7 @@
       "coh2_total_matches": 473,
       "coh3_country": "br",
       "current_alias": "Vini",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -173500,7 +173501,7 @@
       "coh3_last_match_date": 1691721810,
       "coh3_total_matches": 27,
       "current_alias": "AcUmAn",
-      "last_checked_at": 1795738228,
+      "last_checked_at": 1795741639,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -174394,7 +174395,7 @@
       "coh3_last_match_date": 1785270926,
       "coh3_total_matches": 10,
       "current_alias": "Kuunt",
-      "last_checked_at": 1795735828,
+      "last_checked_at": 1795739239,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -175275,7 +175276,7 @@
         {
           "alias": "duc4",
           "first_seen": 1620506738,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -175293,7 +175294,7 @@
       "coh2_total_matches": 9,
       "coh3_country": "br",
       "current_alias": "duc4",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -175721,7 +175722,7 @@
         {
           "alias": "rafa",
           "first_seen": 1676812383,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -175748,7 +175749,7 @@
       "coh2_total_matches": 531,
       "coh3_country": "br",
       "current_alias": "rafa",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -175951,7 +175952,7 @@
       "coh3_last_match_date": 1727705079,
       "coh3_total_matches": 89,
       "current_alias": "Dark",
-      "last_checked_at": 1795737928,
+      "last_checked_at": 1795741339,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -177003,7 +177004,7 @@
       "coh2_total_matches": 86,
       "coh3_country": "br",
       "current_alias": "MW",
-      "last_checked_at": 1795738228,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795487784,
       "last_coh2_relic_at": 1795487784,
       "last_cohdb_at": 0,
@@ -177198,7 +177199,7 @@
         {
           "alias": "André.",
           "first_seen": 1634239035,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -177216,7 +177217,7 @@
       "coh2_total_matches": 5573,
       "coh3_country": "br",
       "current_alias": "André.",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -177277,7 +177278,7 @@
         {
           "alias": "Sir.Mind",
           "first_seen": 1795482280,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -177294,7 +177295,7 @@
       "coh2_total_matches": 1006,
       "coh3_country": "br",
       "current_alias": "Sir.Mind",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -179220,7 +179221,7 @@
       "coh3_last_match_date": 1738169285,
       "coh3_total_matches": 208,
       "current_alias": "! Hox",
-      "last_checked_at": 1795737628,
+      "last_checked_at": 1795741339,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -186049,7 +186050,7 @@
       "coh3_last_match_date": 1792342383,
       "coh3_total_matches": 857,
       "current_alias": "edsonteno",
-      "last_checked_at": 1795656116,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -186902,7 +186903,7 @@
         {
           "alias": "fmanoellima",
           "first_seen": 1438313758,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -186920,7 +186921,7 @@
       "coh2_total_matches": 2,
       "coh3_country": "br",
       "current_alias": "fmanoellima",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -189037,7 +189038,7 @@
         {
           "alias": "ChicoDemo",
           "first_seen": 1795482280,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -189053,7 +189054,7 @@
       "coh2_profile_id": 306908,
       "coh3_country": "br",
       "current_alias": "ChicoDemo",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -189481,7 +189482,7 @@
       "coh3_last_match_date": 1757727000,
       "coh3_total_matches": 44,
       "current_alias": "Billfury",
-      "last_checked_at": 1795737028,
+      "last_checked_at": 1795740439,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -191793,7 +191794,7 @@
         {
           "alias": "Dovahh",
           "first_seen": 1537825938,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -191813,7 +191814,7 @@
       "coh2_total_matches": 10,
       "coh3_country": "br",
       "current_alias": "Dovahh",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -211567,7 +211568,7 @@
         {
           "alias": "Abathur74",
           "first_seen": 1712014704,
-          "last_seen": 1795655217,
+          "last_seen": 1795741939,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -211586,7 +211587,7 @@
       "coh2_total_matches": 44,
       "coh3_country": "br",
       "current_alias": "Abathur74",
-      "last_checked_at": 1795655217,
+      "last_checked_at": 1795741939,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -215068,7 +215069,7 @@
         {
           "alias": "Bartholomew",
           "first_seen": 1633138679,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -215086,7 +215087,7 @@
       "coh2_total_matches": 626,
       "coh3_country": "br",
       "current_alias": "Bartholomew",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -218414,7 +218415,7 @@
         {
           "alias": "dSN_",
           "first_seen": 1795389353,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -218433,7 +218434,7 @@
       "coh2_total_matches": 4,
       "coh3_country": "br",
       "current_alias": "dSN_",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -220387,7 +220388,7 @@
         {
           "alias": "Elxiru",
           "first_seen": 1677089240,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -220405,7 +220406,7 @@
       "coh2_total_matches": 1655,
       "coh3_country": "br",
       "current_alias": "Elxiru",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -221106,7 +221107,7 @@
       "coh3_last_match_date": 1741405134,
       "coh3_total_matches": 2,
       "current_alias": "mecânico",
-      "last_checked_at": 1795737628,
+      "last_checked_at": 1795741039,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -221564,7 +221565,7 @@
       "coh3_last_match_date": 1794526879,
       "coh3_total_matches": 4,
       "current_alias": "Qi 124",
-      "last_checked_at": 1795733627,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795489837,
       "last_coh2_relic_at": 1795489837,
       "last_cohdb_at": 0,
@@ -223110,7 +223111,7 @@
       "coh3_last_match_date": 1756674722,
       "coh3_total_matches": 3,
       "current_alias": "Muller",
-      "last_checked_at": 1795737028,
+      "last_checked_at": 1795740439,
       "last_coh1_relic_at": 1795546807,
       "last_coh2_relic_at": 1795546807,
       "last_cohdb_at": 0,
@@ -225465,7 +225466,7 @@
         {
           "alias": "♕GUERREMAR007♕",
           "first_seen": 1678891073,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -225483,7 +225484,7 @@
       "coh2_total_matches": 74,
       "coh3_country": "br",
       "current_alias": "♕GUERREMAR007♕",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -226995,7 +226996,7 @@
         {
           "alias": "NEUMANN BR",
           "first_seen": 1781745004,
-          "last_seen": 1795655816,
+          "last_seen": 1795742539,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -227014,7 +227015,7 @@
       "coh3_last_match_date": 1794184763,
       "coh3_total_matches": 333,
       "current_alias": "NEUMANN BR",
-      "last_checked_at": 1795655816,
+      "last_checked_at": 1795742539,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -227359,7 +227360,7 @@
         {
           "alias": "Jair Messias Inácio da Silva",
           "first_seen": 1795482280,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -227378,7 +227379,7 @@
       "coh2_total_matches": 57,
       "coh3_country": "br",
       "current_alias": "Jair Messias Inácio da Silva",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -227428,7 +227429,7 @@
         {
           "alias": "eliakinjg.BR",
           "first_seen": 1778028471,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -227446,7 +227447,7 @@
       "coh2_total_matches": 4013,
       "coh3_country": "br",
       "current_alias": "eliakinjg.BR",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -227736,7 +227737,7 @@
         {
           "alias": "lhateixeira",
           "first_seen": 1717993731,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -227754,7 +227755,7 @@
       "coh2_total_matches": 15,
       "coh3_country": "br",
       "current_alias": "lhateixeira",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -228616,7 +228617,7 @@
         {
           "alias": "TheGodzilla",
           "first_seen": 1593389870,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -228634,7 +228635,7 @@
       "coh2_total_matches": 33,
       "coh3_country": "br",
       "current_alias": "TheGodzilla",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -230879,7 +230880,7 @@
         {
           "alias": "salll",
           "first_seen": 1720982241,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -230899,7 +230900,7 @@
       "coh2_total_matches": 7,
       "coh3_country": "br",
       "current_alias": "salll",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -231289,7 +231290,7 @@
         {
           "alias": "Urquiza",
           "first_seen": 1574642545,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -231309,7 +231310,7 @@
       "coh2_total_matches": 82,
       "coh3_country": "br",
       "current_alias": "Urquiza",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -232318,7 +232319,7 @@
       "coh3_last_match_date": 1781845321,
       "coh3_total_matches": 9,
       "current_alias": "kbessa",
-      "last_checked_at": 1795736128,
+      "last_checked_at": 1795739540,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 929050,
@@ -233169,7 +233170,7 @@
       "coh3_last_match_date": 1745963893,
       "coh3_total_matches": 2,
       "current_alias": "Kadaf1313",
-      "last_checked_at": 1795737328,
+      "last_checked_at": 1795740739,
       "last_cohdb_at": 0,
       "last_steam_aliases_at": 0,
       "profile_id": 931960,
@@ -233281,7 +233282,7 @@
         {
           "alias": "Tooky Tooky",
           "first_seen": 1795482280,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -233298,7 +233299,7 @@
       "coh2_total_matches": 137,
       "coh3_country": "br",
       "current_alias": "Tooky Tooky",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -233340,7 +233341,7 @@
         {
           "alias": "Marco",
           "first_seen": 1685466272,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -233358,7 +233359,7 @@
       "coh2_total_matches": 1508,
       "coh3_country": "br",
       "current_alias": "Marco",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -237150,7 +237151,7 @@
         {
           "alias": "Matadoe75",
           "first_seen": 1790449183,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -237172,7 +237173,7 @@
       "coh2_total_matches": 554,
       "coh3_country": "br",
       "current_alias": "Matadoe75",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -238766,7 +238767,7 @@
       "coh3_last_match_date": 1776803620,
       "coh3_total_matches": 60,
       "current_alias": "Lampiaox_x",
-      "last_checked_at": 1795736128,
+      "last_checked_at": 1795739839,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -242978,7 +242979,7 @@
         {
           "alias": "Marcus Catalão",
           "first_seen": 1752892386,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -242996,7 +242997,7 @@
       "coh2_total_matches": 119,
       "coh3_country": "br",
       "current_alias": "Marcus Catalão",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795480318,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -243040,7 +243041,7 @@
         {
           "alias": "Corote de Pêssego",
           "first_seen": 1677469962,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -243058,7 +243059,7 @@
       "coh2_total_matches": 172,
       "coh3_country": "br",
       "current_alias": "Corote de Pêssego",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -245165,7 +245166,7 @@
         {
           "alias": "Neto de Indio",
           "first_seen": 1690143431,
-          "last_seen": 1795655516,
+          "last_seen": 1795742239,
           "sources": [
             "coh3stats_opendata",
             "local_db",
@@ -245183,7 +245184,7 @@
       "coh2_total_matches": 322,
       "coh3_country": "br",
       "current_alias": "Neto de Indio",
-      "last_checked_at": 1795655516,
+      "last_checked_at": 1795742239,
       "last_coh1_relic_at": 1795482280,
       "last_coh2_relic_at": 1795482280,
       "last_cohdb_at": 0,
@@ -245782,5 +245783,5 @@
     "steam_web_api": 7542,
     "steam_xml": 6740
   },
-  "updated_at": 1795739128
+  "updated_at": 1795742539
 }
