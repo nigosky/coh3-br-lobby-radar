@@ -44,6 +44,7 @@
     5935,
     17906,
     21011,
+    22472,
     44517,
     47214,
     52343,
@@ -1463,6 +1464,74 @@
       "span_days": 1.49,
       "status": "confirmed_foreign_vpn",
       "steam_id": "76561198003393637"
+    },
+    "22472": {
+      "alias": "Annatar_BR",
+      "br_score": 100,
+      "checks_count": 1,
+      "evidence": {
+        "asia_peak_share": 0.077,
+        "asia_sleep_03_09_share": 0.077,
+        "br_allies_matches": 45,
+        "br_coplayer_pct": 0.33,
+        "brt_prime_share": 0.865,
+        "coh1_country": "",
+        "coh2_arranged_team_countries": {
+          "br": 6
+        },
+        "coh2_country": "ca",
+        "coh2_matches": 2480,
+        "coplayer_slots": 194,
+        "east_asia_coplayer_pct": 0.144,
+        "foreign_script_allies_matches": 8,
+        "live_relic_country": "ca",
+        "ptbr_alias_evidence": true,
+        "recent_matches_analyzed": 52,
+        "steam_br_groups": false,
+        "steam_friends_br_count": 0,
+        "steam_friends_br_pct": null,
+        "steam_friends_coh_countries": {},
+        "steam_friends_total": 0,
+        "steam_location": "Canada",
+        "top_foreign_country": "us",
+        "top_foreign_country_pct": 0.16,
+        "top_foreign_squad_country": "",
+        "top_foreign_squad_matches": 0,
+        "unique_br_allies": 8
+      },
+      "exclude_from_rankings": true,
+      "first_flagged_at": 1795884855,
+      "foreign_score": 80,
+      "history": [
+        {
+          "br_score": 100,
+          "foreign_score": 80,
+          "reasons": [
+            "steam_loc:Canada",
+            "relic_country_changed:ca",
+            "br_squadmates:8",
+            "brt_prime_hours:86pct",
+            "coh2_arranged_teams_br:6/6",
+            "ptbr_alias_tokens"
+          ],
+          "ts": 1795884855,
+          "verdict": "suspected_foreign_vpn"
+        }
+      ],
+      "last_checked_at": 1795884855,
+      "profile_id": 22472,
+      "reasons": [
+        "steam_loc:Canada",
+        "relic_country_changed:ca",
+        "br_squadmates:8",
+        "brt_prime_hours:86pct",
+        "coh2_arranged_teams_br:6/6",
+        "ptbr_alias_tokens"
+      ],
+      "remove_from_br_list": false,
+      "span_days": 0.0,
+      "status": "suspected_foreign_vpn",
+      "steam_id": "76561197964897955"
     },
     "28570": {
       "alias": "Paulo220V",
@@ -3227,5 +3296,5 @@
     }
   },
   "schema_version": 1,
-  "updated_at": 1795631956
+  "updated_at": 1795884855
 }
