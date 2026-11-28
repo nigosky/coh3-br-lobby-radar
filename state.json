@@ -1256,7 +1256,7 @@
     "821542": 1243,
     "83244": 1137,
     "838813": 1000,
-    "840769": 1091,
+    "840769": 1105,
     "8427": 986,
     "844225": 1538,
     "845669": 1760,
@@ -1305,10 +1305,10 @@
   "elo_cache_ts": 1795861511,
   "last_alert_coh3_pids": [],
   "last_alert_ts": 1795837835,
-  "last_digest": "(([], [(58737, '', False, False, False, 'INFIEL', '', '', 'br', False, False), (1226910, '', True, False, False, 'Lupus Alba', '', '', 'br', False, False), (59864, '', True, True, False, 'Lion Heart', '', '', 'br', False, False)], [(1390350, 'TearsInTheRain (Smurf: Chacineiro)', '', 'Chacineiro', 'br', False)]), ([(845669, True, False, False, False, 'PH0BB05', '', '', 'br', False), (212034, False, True, False, False, 'XAPA KENTE', '', '', 'ca', False), (840769, False, False, False, False, 'Ricardin_ihuull', '', '', 'br', False)], [(19747, '', False, False, False, 'twitch.tv/luck22ai', '', '', 'br', False, False), (23250, '', False, False, False, 'Nargoth', '', '', 'br', False, False), (122829, '', False, False, False, 'Guardiola de Peruca', '', '', 'br', False, False), (135141, '', False, False, False, '[PWA]-ForceMaster', '', '', 'br', False, False), (128231, '', False, False, False, 'E5p4rTaN0', '', '', 'br', False, False), (71299, 'No Asteroids', False, False, False, 'Bruno.s', '', '', 'br', False, False), (1162890, 'FINAL FANTASY XIV Online', False, False, False, 'Fauzix', '', '', 'br', False, False), (6880, '', True, False, False, 'ArguS (VonDun)', '', '', 'br', False, False), (28937, '', True, False, False, 'Mjr Bruno', '', '', 'br', False, False), (84816, '', True, False, False, 'ChadVader', '', '', 'br', False, False), (8764, '', True, False, False, 'Maverick', '', '', 'br', False, False), (173761, '', True, False, False, 'EUSOU', '', '', 'br', False, False), (8838, '', True, False, False, 'Saint', '', '', 'br', False, True), (890394, '', True, True, False, 'TheKat', '', '', 'br', False, False), (383796, '', True, True, False, 'Vanghoul', '', '', 'br', False, False), (3888, '', True, True, False, 'Pepe Popo', '', '', 'br', False, False), (970468, '', True, True, False, 'Московский метро', '', '', 'br', False, False), (956645, '', True, True, False, 'Magraiver', '', '', 'br', False, False), (31992, '', True, True, False, '.:PacMan:.', '', '', 'br', False, False)], [(509690, 'Alekel', '', '', 'br', False), (1297821, 'General Winter (Smurf: General Winter)', '', 'General Winter', 'br', False)]), ([(999940, True, False, False, False, 'Warmech11', '', '', 'py', False), (1475932, False, True, True, False, 'Ophill', '', '', 'br', False), (900421, False, False, False, False, 'tzimypepp', '', '', 'br', False), (28773, False, False, False, False, 'vhpbrasil', '', '', 'br', False), (741277, True, False, False, False, 'SoyoSid', '', '', 'br', False), (737838, False, False, False, False, 'forsakkenSoul', '', '', 'br', False), (1095498, False, False, False, False, 'gallyver', '', '', 'br', False)], [(1274951, '', False, False, False, 'Anglel', '', '', 'br', False, False), (908063, '', False, False, False, 'DRAKORS', '', '', 'br', False, False), (703133, '', False, False, False, 'Turles', '', '', 'br', False, False), (1295461, '', False, False, False, 'matklug', '', '', 'br', False, False), (574243, 'Soldiers: Heroes of World War II - E', False, False, False, 'Von Steinman', '', '', 'br', False, False), (1285189, '', False, False, False, 'Albe.sks', '', '', 'br', False, False), (783445, '', False, False, False, 'dreadhydra', '', '', 'br', False, False), (605555, '', False, False, False, 'GustavoGFB51', '', '', 'br', False, False), (1282829, '', False, False, False, 'Dr Christian Troy', '', '', 'br', False, False), (373952, '', False, False, False, 'TONELERO10', '', '', 'br', False, False), (1208577, '', False, False, False, 'rossatinho', '', '', 'br', False, False), (739597, '', False, False, False, 'Ranjas', '', '', 'br', False, False), (1242418, '', False, False, False, 'faveri.filho', '', '', 'br', False, False), (1219258, '', False, False, False, 'Gustavo', '', '', 'br', False, False), (1428997, '', False, False, False, 'Salada', '', '', 'br', False, False), (628581, '', False, False, False, 'kxxpz', '', '', 'br', False, False), (1257087, '', False, False, False, 'SPessDz9', '', '', 'br', False, False), (1373102, '', False, False, False, 'frodoeric', '', '', 'br', True, False), (842311, '', False, False, False, 'Caldeira', '', '', 'br', False, False), (1262347, '', False, False, False, 'PROF JUNINHO', '', '', 'br', False, False), (19498, '', False, False, False, 'Brugic', '', '', 'br', False, False), (1483378, '', False, False, False, 'MsGo', '', '', 'br', False, False), (242, '', False, False, False, 'Domine, Miserere mei!', '', '', 'br', False, False), (1297778, '', False, False, False, 'O CEO Dinossauro', '', '', 'br', False, False), (853188, '', False, False, False, 'Helder Angelo', '', '', 'br', False, False), (739465, '', False, False, False, 'Well', '', '', 'br', False, False), (1058561, '', False, False, False, 'decaf', '', '', 'br', False, False), (1465039, '', False, False, False, 'Brício', '', '', 'br', False, False), (73623, '', False, False, False, 'Welter', '', '', 'br', False, False), (1477361, '', False, False, False, 'Chromekey21', '', '', 'br', False, False), (1433493, '', False, False, False, 'homossexual hétero (BRUTALMENTE ESBROGADO)', 'homossexual hétero', '', 'br', False, False), (1440314, '', False, False, False, 'carlin', '', '', 'br', False, False), (787012, '', False, False, False, 'NethoDuran', '', '', 'br', False, False), (1388416, '', False, False, False, 'TheReapper116', '', '', 'br', False, False), (1451320, '', False, False, False, 'luanzinhu o vigarista', '', '', 'br', False, False), (1453674, '', False, False, False, 'Shaconha', '', '', 'br', False, False), (1473530, '', False, False, False, 'cafe14348', '', '', 'br', False, False), (803935, '', False, False, False, 'Double F', '', '', 'br', False, False), (1350221, '', False, False, False, 'RumPULL4Skinz', '', '', 'br', False, False), (742772, '', False, False, False, 'sebba_mnz', '', '', 'br', False, False), (1440595, '', False, False, False, 'Rafael Scamer', '', '', 'br', False, False), (129973, '', False, False, False, 'CPU - Easy', '', '', 'br', False, False), (1464054, '', False, False, False, 'Marcondes', '', '', 'br', False, False), (1440175, '', False, False, False, 'BotRuim', '', '', 'br', False, False), (1228317, '', False, False, False, 'Carlos.P', '', '', 'br', False, False), (1440292, '', False, False, False, 'ArKanJo', '', '', 'br', False, False), (1451832, '', False, False, False, 'Vorcaro BaixaRenda', '', '', 'br', True, False), (1450739, '', False, False, False, 'Leal', '', '', 'br', False, False), (1466323, '', False, False, False, 'Lira', '', '', 'br', False, False), (1119777, 'Battlefield™ 6', False, False, False, 'Phenom', '', '', 'br', False, False), (1107913, 'Counter-Strike 2', False, False, False, 'LordClaus', '', '', 'br', False, False), (965932, 'Warhammer 40,000: Gladius - Relics o', False, False, False, 'Benja', '', '', 'br', False, False), (153470, 'Cyberpunk 2077', False, False, False, 'Ghoul', '', '', 'br', True, False), (1295675, 'Monster Hunter: World', False, False, False, 'Just Rengo', '', '', 'br', False, False), (1439348, 'War Thunder', False, False, False, 'ArtZão', '', '', 'br', False, False), (1041364, 'The Elder Scrolls Online', False, False, False, 'DrP (Dorpe)', 'DrP', '', 'br', False, False), (1254791, \"Sid Meier's Civilization VI\", False, False, False, 'NetoBR20', '', '', 'br', False, False), (1224569, 'Medieval Dynasty', False, False, False, 'Cpt. Garcia', '', '', 'br', False, False), (1440331, 'Hearts of Iron IV', False, False, False, 'JamelaoCuiabano', '', '', 'br', False, False), (1035397, 'American Truck Simulator', False, False, False, 'JADERJOGOS CSG SKINS', '', '', 'br', False, False), (1029374, 'Space Engineers', False, False, False, 'CruciferianO de SagitáriuS', '', '', 'br', False, False), (838710, 'Dota 2', False, False, False, 'FoxLindberg', '', '', 'br', False, False), (1066445, 'Kenshi', True, False, False, 'Tenshi', '', '', 'br', False, False), (795009, 'ROB RUN', True, True, False, 'Kotuka Theu Ku', '', '', 'br', False, False), (1442059, 'Assetto Corsa', True, False, False, 'Shooter_Fast', '', '', 'br', False, False), (28119, 'RimWorld', True, False, False, 'Frizu Brastempo', '', '', 'br', False, False), (217935, '', True, False, False, 'sakul', '', '', 'br', False, False), (443756, '', True, False, False, 'Cafefonseca', '', '', 'br', False, False), (990226, '', True, False, False, 'Kenobi', '', '', 'br', False, False), (892597, '', True, False, False, 'Martins', '', '', 'br', False, False), (1436129, '', True, False, False, 'Caiofora', '', '', 'br', False, False), (1201885, '', True, False, False, 'Parafuso', '', '', 'br', False, False), (1218872, '', True, True, False, 'gdgarte', '', '', 'br', False, False), (131786, '', True, True, False, 'LadyVolk', '', '', 'br', False, False), (464954, '', True, True, False, 'ecL', '', '', 'br', False, False), (421250, '', True, True, False, 'HellSeeksProtein', '', '', 'br', True, False), (56354, '', True, True, False, 'Neves Brasil', '', '', 'br', False, False), (137848, '', True, True, False, 'Elvenking', '', '', 'br', False, False), (105384, '', True, True, False, 'gabrielprado921', '', '', 'br', False, False), (1476268, '', True, True, False, 'Dcpegas', '', '', 'br', False, False), (1326703, '', True, True, False, 'Darthnihilus', '', '', 'br', False, False), (1214004, '', True, False, False, 'Major Caveira', '', '', 'br', False, False), (145428, '', True, False, False, 'reactx78', '', '', 'br', False, False), (840336, '', True, False, False, 'Crude', '', '', 'br', False, False), (649522, '', True, False, False, 'Marciowalltowall', '', '', 'br', False, False), (304905, '', True, False, False, 'Eric Hutter', '', '', 'br', False, False), (1326458, '', True, False, False, 'antoniodib1', '', '', 'br', False, False), (1115257, '', True, False, False, 'Warhawk', '', '', 'br', False, False), (23221, '', True, False, False, 'Thyrael_RJ', '', '', 'br', False, False), (1434825, '', True, False, False, 'Kelkn04', '', '', 'br', False, False), (737750, '', True, False, False, 'Antonio Massad', '', '', 'br', False, False), (658891, '', True, False, False, 'Foco.SKINS', '', '', 'br', False, False), (1481547, '', True, False, False, 'Caguei sujinho', '', '', 'br', False, False), (1232741, '', True, False, False, 'ColdZ', '', '', 'br', False, False), (1453948, '', True, False, False, 'Lionel Marci', '', '', 'br', False, False), (1194198, '', True, False, False, 'rlud', '', '', 'br', False, False), (1466838, '', True, False, False, 'Byc', '', '', 'br', False, False), (1461583, '', True, False, False, 'DOM', '', '', 'br', False, False), (1454276, '', True, False, False, 'Hawkzao', '', '', 'br', False, False), (1151980, '', True, False, False, 'JÄGER_Drewes', '', '', 'br', False, False), (1452155, '', True, False, False, 'AbmoraM', '', '', 'br', False, False), (839, '', True, True, False, 'ligerinho(BR)', '', '', 'br', False, False), (23369, '', True, True, False, 'distortion69', '', '', 'br', False, False), (1243348, '', True, True, False, 'Desert Fox', '', '', 'br', False, False), (1096289, '', True, True, False, '[OMJ] Lore', '', '', 'br', False, False), (802058, '', True, True, False, 'Ricardo', '', '', 'br', False, False), (1429654, '', True, True, False, 'General Vazan', '', '', 'br', False, False), (1193765, '', True, True, False, 'Skarz', '', '', 'br', False, False), (1248108, '', True, True, False, '★ Nivelle', '', '', 'br', False, False), (1487818, '', True, True, False, 'jm!', '', '', 'br', False, False), (1352143, '', True, True, False, 'Chavinho', '', '', 'br', False, False), (1476902, '', True, True, False, 'alexandrehvn10', '', '', 'br', False, False), (1478181, '', True, True, False, 'TØMAZ', '', '', 'br', False, False), (1453522, '', True, True, False, 'Pablinho_', '', '', 'br', False, False), (1080320, '', True, True, False, '♱Lordpool.Bitcoin☦', '', '', 'br', False, False), (1453601, '', True, True, False, 'Kuroki Tomoko', '', '', 'br', False, False), (1440897, '', True, True, False, 'Tretinha', '', '', 'br', False, False), (1447920, '', True, True, False, 'Nystagmus', '', '', 'br', False, False), (1445924, '', True, True, False, 'Wiz (Et Bilusca)', 'Wiz', '', 'br', False, False), (1463245, '', True, True, False, 'FdcMeuIrmao', '', '', 'br', False, False)], [(1346160, 'IZI', '', '', 'br', False)]))",
-  "last_steam_fast_sig": "(\"([], [('76561197993922195', '', False, False, False, 'INFIEL'), ('76561198123446420', '', True, True, False, 'Lion Heart'), ('76561198140782132', '', True, False, False, 'Lupus Alba')])\", \"([('76561198082125321', False, False, False, 'Ricardin_ihuull'), ('76561198207565088', True, False, False, 'XAPA KENTE')], [('76561197982976352', '', True, True, False, 'Vanghoul'), ('76561198022850599', '', False, False, False, 'E5p4rTaN0'), ('76561198028378060', '', False, False, False, 'Nargoth de Bebbanburg'), ('76561198039466768', '', False, False, False, '[PWA]-ForceMaster'), ('76561198049023794', '', True, True, False, 'TheKat'), ('76561198058548575', '', False, False, False, 'twitch.tv/luck22ai'), ('76561198060948936', '', True, True, False, '.:PacMan:.'), ('76561198061075119', '', False, False, False, 'Guardiola de Peruca'), ('76561198078150897', '', True, False, False, 'ArguS'), ('76561198089205644', 'No Asteroids', False, False, False, 'Bruno.s'), ('76561198089948995', '', True, False, False, 'Mjr Bruno'), ('76561198092565055', '', True, False, False, 'Saint'), ('76561198117168962', 'FINAL FANTASY XIV Online', False, False, False, 'Fauzix'), ('76561198119663404', '', True, True, False, 'Magraiver'), ('76561198155662761', '', True, False, False, 'Maverick'), ('76561198159203637', '', True, False, False, 'ChadVader'), ('76561198854785478', '', True, True, False, 'Pepe Popo'), ('76561198873253024', '', True, False, False, 'EUSOU'), ('76561198937445340', '', True, True, False, 'Московский метро'), ('76561199696199477', '', False, False, False, 'PH0BB05')])\")",
+  "last_digest": "(([], [(900358, '', False, False, False, 'Margheriti', '', '', 'br', False, False), (58737, '', False, False, False, 'INFIEL', '', '', 'br', False, False), (1114404, '', True, False, False, 'Vikitor', '', '', 'br', False, False), (1226910, '', True, False, False, 'Lupus Alba', '', '', 'br', False, False), (59864, '', True, True, False, 'Lion Heart', '', '', 'br', False, False)], []), ([(890394, True, False, False, False, 'TheKat', '', '', 'br', False), (122829, True, False, False, False, 'Guardiola de Peruca', '', '', 'br', False), (845669, False, False, False, False, 'PH0BB05', '', '', 'br', False), (212034, False, False, False, False, 'XAPA KENTE', '', '', 'ca', False)], [(16867, '', False, False, False, 'Golden Cobra', '', '', 'br', False, False), (19747, '', False, False, False, 'twitch.tv/luck22ai', '', '', 'br', False, False), (946322, '', False, False, False, 'phconzatti', '', '', 'br', False, False), (409715, '', False, False, False, 'Rapo', '', '', 'br', False, False), (1156831, '', False, False, False, 'DAk120', '', '', 'br', False, False), (667564, '', False, False, False, 'Friedhelm Winter', '', '', 'br', False, False), (28937, '', False, False, False, 'Mjr Bruno', '', '', 'br', False, False), (893043, '', False, False, False, 'Rodrigo Ragagnin', '', '', 'br', False, False), (3414, '', False, False, False, '[SE:VH] Queiroz', '', '', 'br', False, False), (135141, '', False, False, False, '[PWA]-ForceMaster', '', '', 'br', False, False), (428227, '', False, False, False, 'COSMONAUTA', '', '', 'br', False, False), (128231, '', False, False, False, 'E5p4rTaN0', '', '', 'br', False, False), (767932, '', False, False, False, 'Ritalino', '', '', 'br', False, False), (3917, '', False, False, False, '[IRON] ManchaNegra', '', '', 'br', False, False), (1214336, '', False, False, False, 'Carp', '', '', 'br', False, True), (71299, 'No Asteroids', False, False, False, 'Bruno.s', '', '', 'br', False, False), (197937, 'Battle Brothers', False, False, False, 'Armaddin', '', '', 'br', False, False), (1162890, 'FINAL FANTASY XIV Online', False, False, False, 'Fauzix', '', '', 'br', False, False), (1123905, 'Counter-Strike 2', False, False, False, 'Wintermute', '', '', 'br', False, False), (84816, '', True, False, False, 'ChadVader', '', '', 'br', False, False), (8764, '', True, False, False, 'Maverick', '', '', 'br', False, False), (173761, '', True, False, False, 'EUSOU', '', '', 'br', False, False), (8838, '', True, False, False, 'Saint', '', '', 'br', False, True), (383796, '', True, True, False, 'Vanghoul', '', '', 'br', False, False), (3888, '', True, True, False, 'Pepe Popo', '', '', 'br', False, False), (970468, '', True, True, False, 'Московский метро', '', '', 'br', False, False), (956645, '', True, True, False, 'Magraiver', '', '', 'br', False, False), (31992, '', True, True, False, '.:PacMan:.', '', '', 'br', False, False)], [(357310, 'Sleeping Sheep', '', '', 'br', False), (1297821, 'General Winter (Smurf: General Winter)', '', 'General Winter', 'br', False), (509690, 'Alekel', '', '', 'br', False), (840769, 'Ricardin_ihuull', '', '', 'br', False)]), ([(401816, False, False, False, False, 'MENGO456', '', '', 'br', False), (999940, False, False, False, False, 'Warmech11', '', '', 'py', False), (703133, True, False, False, False, 'Turles', '', '', 'br', False), (1475932, False, True, True, False, 'Ophill', '', '', 'br', False), (738837, False, False, False, False, 'fabiolisan', '', '', 'br', False)], [(1305454, '', False, False, False, 'Nimesulida', '', '', 'br', False, False), (952169, '', False, False, False, 'Brazilian deltarune enjoyer', '', '', 'br', False, False), (111672, '', False, False, False, '_Jão_ (Jão)', '_Jão_', '', 'br', False, False), (56354, '', False, False, False, 'Neves Brasil', '', '', 'br', False, False), (574243, '', False, False, False, 'Von Steinman', '', '', 'br', False, False), (1201885, '', False, False, False, 'Parafuso', '', '', 'br', False, False), (1476268, '', False, False, False, 'Dcpegas', '', '', 'br', False, False), (125626, '', False, False, False, 'Zurkov', '', '', 'br', False, False), (1238856, '', False, False, False, 'Sr.Wars', '', '', 'br', False, False), (1430759, '', False, False, False, 'Saulo', '', '', 'br', False, False), (783630, 'Crimson Desert Enhanced', False, False, False, '❋Guildam❋', '', '', 'br', False, False), (908063, 'Dota 2', False, False, False, 'DRAKORS', '', '', 'br', False, False), (145428, '', False, False, False, 'reactx78', '', '', 'br', False, False), (1180172, '', False, False, False, 'Micaelzudo', '', '', 'br', False, False), (1285189, '', False, False, False, 'Albe.sks', '', '', 'br', False, False), (605555, '', False, False, False, 'GustavoGFB51', '', '', 'br', False, False), (737838, '', False, False, False, 'forsakkenSoul', '', '', 'br', False, False), (677039, '', False, False, False, 'Batman', '', '', 'br', False, False), (844292, '', False, False, False, 'Ziuder', '', '', 'br', False, False), (20262, '', False, False, False, 'MADRUGA', '', '', 'br', False, False), (1242418, '', False, False, False, 'faveri.filho', '', '', 'br', False, False), (1428997, '', False, False, False, 'Salada', '', '', 'br', False, False), (1219258, '', False, False, False, 'Gustavo', '', '', 'br', False, False), (1285745, '', False, False, False, 'maathmunix', '', '', 'br', False, False), (628581, '', False, False, False, 'kxxpz', '', '', 'br', False, False), (1115257, '', False, False, False, 'Warhawk', '', '', 'br', False, False), (1373102, '', False, False, False, 'frodoeric', '', '', 'br', True, False), (842311, '', False, False, False, 'Caldeira', '', '', 'br', False, False), (906896, '', False, False, False, 'rodrigo.eisen895', '', '', 'br', False, False), (146500, '', False, False, False, 'wBaRaTo', '', '', 'br', False, False), (1373583, '', False, False, False, 'BraZukA', '', '', 'br', False, False), (737750, '', False, False, False, 'Antonio Massad', '', '', 'br', False, False), (958542, '', False, False, False, 'Aderbal', '', '', 'br', False, False), (242, '', False, False, False, 'Domine, Miserere mei!', '', '', 'br', False, False), (658891, '', False, False, False, 'Foco.SKINS', '', '', 'br', False, False), (1297778, '', False, False, False, 'O CEO Dinossauro', '', '', 'br', False, False), (1477248, '', False, False, False, 'Ribagol', '', '', 'br', False, False), (853188, '', False, False, False, 'Helder Angelo', '', '', 'br', False, False), (739465, '', False, False, False, 'Well', '', '', 'br', False, False), (1058561, '', False, False, False, 'decaf', '', '', 'br', False, False), (1465039, '', False, False, False, 'Brício', '', '', 'br', False, False), (1477361, '', False, False, False, 'Chromekey21', '', '', 'br', False, False), (1440314, '', False, False, False, 'carlin', '', '', 'br', False, False), (787012, '', False, False, False, 'NethoDuran', '', '', 'br', False, False), (1475653, '', False, False, False, 'Penninh4', '', '', 'br', False, False), (1453674, '', False, False, False, 'Shaconha', '', '', 'br', False, False), (1481547, '', False, False, False, 'Caguei sujinho', '', '', 'br', False, False), (803935, '', False, False, False, 'Double F', '', '', 'br', False, False), (1473530, '', False, False, False, 'cafe14348', '', '', 'br', False, False), (1350221, '', False, False, False, 'RumPULL4Skinz', '', '', 'br', False, False), (742772, '', False, False, False, 'sebba_mnz', '', '', 'br', False, False), (79830, '', False, False, False, 'Milost', '', '', 'br', False, False), (1453948, '', False, False, False, 'Lionel Marci', '', '', 'br', False, False), (129973, '', False, False, False, 'CPU - Easy', '', '', 'br', False, False), (1440595, '', False, False, False, 'Rafael Scamer', '', '', 'br', False, False), (1464054, '', False, False, False, 'Marcondes', '', '', 'br', False, False), (1440175, '', False, False, False, 'BotRuim', '', '', 'br', False, False), (1035397, '', False, False, False, 'JADERJOGOS CSG SKINS', '', '', 'br', False, False), (1451832, '', False, False, False, 'Vorcaro BaixaRenda', '', '', 'br', True, False), (1450739, '', False, False, False, 'Leal', '', '', 'br', False, False), (1063948, '', False, False, False, 'Aelzerax', '', '', 'br', False, False), (1474035, '', False, False, False, 'Levih', '', '', 'br', False, False), (1151980, '', False, False, False, 'JÄGER_Drewes', '', '', 'br', False, False), (1452155, '', False, False, False, 'AbmoraM', '', '', 'br', False, False), (1119777, 'Battlefield™ 6', False, False, False, 'Phenom', '', '', 'br', False, False), (153470, 'ICBM', False, False, False, 'Ghoul', '', '', 'br', True, False), (1086495, 'Dota 2', False, False, False, 'kamirk', '', '', 'br', False, False), (636483, 'WARDOGS', False, False, False, 'Fredão', '', '', 'br', False, False), (802058, 'Age of Empires IV: Anniversary Editi', False, False, False, 'Ricardo', '', '', 'br', False, False), (1295675, 'Monster Hunter: World', False, False, False, 'Just Rengo', '', '', 'br', False, False), (1257087, 'Aliens: Dark Descent', False, False, False, 'SPessDz9', '', '', 'br', False, False), (33597, 'Zenless Zone Zero', False, False, False, 'Azury-skaL', '', '', 'br', False, False), (972435, 'War Thunder', False, False, False, 'Galderio_kill', '', '', 'br', False, False), (1029374, 'The Sims™ 3', False, False, False, 'CruciferianO de SagitáriuS', '', '', 'br', False, False), (1041364, 'The Elder Scrolls Online', False, False, False, 'DrP (Dorpe)', 'DrP', '', 'br', False, False), (1254791, \"Sid Meier's Civilization VI\", False, False, False, 'NetoBR20', '', '', 'br', False, False), (1224569, 'Medieval Dynasty', False, False, False, 'Cpt. Garcia', '', '', 'br', False, False), (1352185, 'Soulstone Survivors', False, False, False, 'Treeo72', '', '', 'br', False, False), (337135, 'Dota 2', False, False, False, 'Kubinha Borboletinha (Kubinha Mussarelinha)', 'Kubinha Borboletinha', '', 'br', False, False), (1400771, 'AION 2', False, False, False, 'Ivolin幽玄', '', '', 'br', False, False), (1463168, 'Enshrouded', False, False, False, 'Leiitada E Ghost', '', '', 'br', False, False), (1463821, 'Company of Heroes', False, False, False, 'Matesy', '', '', 'br', False, False), (1433218, 'Hearts of Iron IV', False, False, False, 'zeruela4789', '', '', 'br', False, False), (1446965, 'ROB RUN', False, False, False, 'GL', '', '', 'br', False, False), (1463245, 'Enshrouded', False, False, False, 'FdcMeuIrmao', '', '', 'br', False, False), (28119, 'Dota 2', False, False, False, 'Frizu Brastempo', '', '', 'br', False, False), (1450538, 'Taimanin Squad', False, False, False, 'Falcon_BR', '', '', 'br', False, False), (838710, 'Dota 2', False, False, False, 'FoxLindberg', '', '', 'br', False, False), (1107913, 'Counter-Strike 2', True, False, False, 'LordClaus', '', '', 'br', False, False), (1066445, 'Kenshi', True, True, False, 'Tenshi', '', '', 'br', False, False), (1439348, 'War Thunder', True, False, False, 'ArtZão', '', '', 'br', False, False), (795009, 'ROB RUN', True, True, False, 'Kotuka Theu Ku', '', '', 'br', False, False), (1442059, 'Assetto Corsa', True, False, False, 'Shooter_Fast', '', '', 'br', False, False), (217935, '', True, False, False, 'sakul', '', '', 'br', False, False), (1274951, '', True, False, False, 'Anglel', '', '', 'br', False, False), (1218872, '', True, False, False, 'gdgarte', '', '', 'br', False, False), (990226, '', True, False, False, 'Kenobi', '', '', 'br', False, False), (892597, '', True, False, False, 'Martins', '', '', 'br', False, False), (1295461, '', True, False, False, 'matklug', '', '', 'br', False, False), (131786, '', True, True, False, 'LadyVolk', '', '', 'br', False, False), (464954, '', True, True, False, 'ecL', '', '', 'br', False, False), (421250, '', True, True, False, 'HellSeeksProtein', '', '', 'br', True, False), (137848, '', True, True, False, 'Elvenking', '', '', 'br', False, False), (1326703, '', True, True, False, 'Darthnihilus', '', '', 'br', False, False), (900421, '', True, False, False, 'tzimypepp', '', '', 'br', False, False), (1214004, '', True, False, False, 'Major Caveira', '', '', 'br', False, False), (840336, '', True, False, False, 'Crude', '', '', 'br', False, False), (783445, '', True, False, False, 'dreadhydra', '', '', 'br', False, False), (1282829, '', True, False, False, 'Dr Christian Troy', '', '', 'br', False, False), (23369, '', True, False, False, 'distortion69', '', '', 'br', False, False), (1208577, '', True, False, False, 'rossatinho', '', '', 'br', False, False), (739597, '', True, False, False, 'Ranjas', '', '', 'br', False, False), (1095498, '', True, False, False, 'gallyver', '', '', 'br', False, False), (1326458, '', True, False, False, 'antoniodib1', '', '', 'br', False, False), (23221, '', True, False, False, 'Thyrael_RJ', '', '', 'br', False, False), (1262347, '', True, False, False, 'PROF JUNINHO', '', '', 'br', False, False), (1434825, '', True, False, False, 'Kelkn04', '', '', 'br', False, False), (19498, '', True, False, False, 'Brugic', '', '', 'br', False, False), (1487818, '', True, False, False, 'jm!', '', '', 'br', False, False), (1433493, '', True, False, False, 'homossexual hétero (BRUTALMENTE ESBROGADO)', 'homossexual hétero', '', 'br', False, False), (1451320, '', True, False, False, 'luanzinhu o vigarista', '', '', 'br', False, False), (1232741, '', True, False, False, 'ColdZ', '', '', 'br', False, False), (1194198, '', True, False, False, 'rlud', '', '', 'br', False, False), (1461583, '', True, False, False, 'DOM', '', '', 'br', False, False), (1461755, '', True, False, False, 'Stomp_ 60hz', '', '', 'br', False, False), (1451470, '', True, False, False, 'RedTersao80220', '', '', 'br', False, False), (1447920, '', True, False, False, 'Nystagmus', '', '', 'br', False, False), (839, '', True, True, False, 'ligerinho(BR)', '', '', 'br', False, False), (1243348, '', True, True, False, 'Desert Fox', '', '', 'br', False, False), (649522, '', True, True, False, 'Marciowalltowall', '', '', 'br', False, False), (1096289, '', True, True, False, '[OMJ] Lore', '', '', 'br', False, False), (1429654, '', True, True, False, 'General Vazan', '', '', 'br', False, False), (1193765, '', True, True, False, 'Skarz', '', '', 'br', False, False), (1248108, '', True, True, False, '★ Nivelle', '', '', 'br', False, False), (1352143, '', True, True, False, 'Chavinho', '', '', 'br', False, False), (1476902, '', True, True, False, 'alexandrehvn10', '', '', 'br', False, False), (1453522, '', True, True, False, 'Pablinho_', '', '', 'br', False, False), (1080320, '', True, True, False, '♱Lordpool.Bitcoin☦', '', '', 'br', False, False), (1466838, '', True, True, False, 'Byc', '', '', 'br', False, False), (1453601, '', True, True, False, 'Kuroki Tomoko', '', '', 'br', False, False)], [(455713, 'Biliko', '', '', 'br', False), (33457, 'Coriolanus', '', '', 'br', False), (443756, 'Cafefonseca', '', '', 'br', False), (1459233, 'Quebra_SOM!', '', '', 'br', False)]))",
+  "last_steam_fast_sig": "(\"([], [('76561197993922195', '', False, False, False, 'INFIEL'), ('76561198024118058', '', True, False, False, 'Vikitor'), ('76561198070545853', '', False, False, False, 'Margheriti'), ('76561198123446420', '', True, True, False, 'Lion Heart'), ('76561198140782132', '', True, False, False, 'Lupus Alba')])\", \"([('76561198049023794', False, False, False, 'TheKat'), ('76561198207565088', False, False, False, 'XAPA KENTE')], [('76561197967668319', '', False, False, False, '[IRON] ManchaNegra'), ('76561197974495191', '', False, False, False, 'Rodrigo Ragagnin'), ('76561197982976352', '', True, True, False, 'Vanghoul'), ('76561198008039971', '', False, False, False, 'COSMONAUTA'), ('76561198020133377', 'Counter-Strike 2', False, False, False, 'Wintermute'), ('76561198022850599', '', False, False, False, 'E5p4rTaN0'), ('76561198039466768', '', False, False, False, '[PWA]-ForceMaster'), ('76561198058548575', '', False, False, False, 'twitch.tv/luck22ai'), ('76561198060948936', '', True, True, False, '.:PacMan:.'), ('76561198061075119', '', False, False, False, 'Guardiola de Peruca'), ('76561198066944603', 'Battle Brothers', False, False, False, 'Armaddin'), ('76561198083043687', '', False, False, False, 'Rapo'), ('76561198089205644', 'No Asteroids', False, False, False, 'Bruno.s'), ('76561198089948995', '', False, False, False, 'Mjr Bruno'), ('76561198092565055', '', True, False, False, 'Saint'), ('76561198111168811', '', False, False, False, '[SE:VH] Queiroz'), ('76561198117168962', 'FINAL FANTASY XIV Online', False, False, False, 'Fauzix'), ('76561198119663404', '', True, True, False, 'Magraiver'), ('76561198135260753', '', False, False, False, 'phconzatti'), ('76561198135522044', '', False, False, False, 'DAk120'), ('76561198155662761', '', True, False, False, 'Maverick'), ('76561198159203637', '', True, False, False, 'ChadVader'), ('76561198166203065', '', False, False, False, 'Ritalino'), ('76561198258429491', '', False, False, False, 'Friedhelm Winter'), ('76561198358905086', '', False, False, False, 'Carpdiem'), ('76561198854785478', '', True, True, False, 'Pepe Popo'), ('76561198873253024', '', True, False, False, 'EUSOU'), ('76561198874381986', '', False, False, False, 'COHBRAMACHINE'), ('76561198937445340', '', True, True, False, 'Московский метро'), ('76561199696199477', '', False, False, False, 'PH0BB05')])\")",
   "last_steam_groups_scan_ts": 1795831038,
-  "last_sync_ts": 1795871267,
+  "last_sync_ts": 1795874638,
   "layout_version": 16,
   "manual_other_br_checked_pids": [
     11033,
@@ -1359,6 +1359,11 @@
       "ct": 1746573036,
       "mode": "3v3"
     },
+    "1156831": {
+      "checked_ts": 1795874638,
+      "ct": 1795837314,
+      "mode": "3v3"
+    },
     "11710": {
       "checked_ts": 1795812774,
       "ct": 1770926963,
@@ -1385,7 +1390,7 @@
       "mode": "4v4"
     },
     "122829": {
-      "checked_ts": 1795871267,
+      "checked_ts": 1795871638,
       "ct": 1795859868,
       "mode": "2v2"
     },
@@ -1415,7 +1420,7 @@
       "mode": "4v4"
     },
     "128231": {
-      "checked_ts": 1795871267,
+      "checked_ts": 1795874638,
       "ct": 1795373391,
       "mode": "2v2"
     },
@@ -1455,7 +1460,7 @@
       "mode": "3v3"
     },
     "135141": {
-      "checked_ts": 1795871267,
+      "checked_ts": 1795874638,
       "ct": 1794613777,
       "mode": "4v4"
     },
@@ -1490,7 +1495,7 @@
       "mode": "4v4"
     },
     "164152": {
-      "checked_ts": 1795871267,
+      "checked_ts": 1795874638,
       "ct": 1697669491,
       "mode": "1v1"
     },
@@ -1500,9 +1505,9 @@
       "mode": "4v4"
     },
     "16867": {
-      "checked_ts": 1795803909,
-      "ct": 1795795098,
-      "mode": "1v1"
+      "checked_ts": 1795874638,
+      "ct": 1795817026,
+      "mode": "3v3"
     },
     "173761": {
       "checked_ts": 1795814053,
@@ -1520,7 +1525,7 @@
       "mode": "4v4"
     },
     "19747": {
-      "checked_ts": 1795871267,
+      "checked_ts": 1795874638,
       "ct": 1795750059,
       "mode": "4v4"
     },
@@ -1545,7 +1550,7 @@
       "mode": "Custom"
     },
     "23250": {
-      "checked_ts": 1795871267,
+      "checked_ts": 1795872239,
       "ct": 1778035588,
       "mode": "4v4"
     },
@@ -1580,7 +1585,7 @@
       "mode": "4v4"
     },
     "3414": {
-      "checked_ts": 1795845520,
+      "checked_ts": 1795874638,
       "ct": 1795144430,
       "mode": "4v4"
     },
@@ -1590,7 +1595,7 @@
       "mode": "4v4"
     },
     "38270": {
-      "checked_ts": 1795866375,
+      "checked_ts": 1795873738,
       "ct": 1795394713,
       "mode": "4v4"
     },
@@ -1600,7 +1605,7 @@
       "mode": "2v2"
     },
     "409715": {
-      "checked_ts": 1795829694,
+      "checked_ts": 1795874638,
       "ct": 1795574100,
       "mode": "4v4"
     },
@@ -1615,12 +1620,12 @@
       "mode": "3v3"
     },
     "428227": {
-      "checked_ts": 1795844919,
+      "checked_ts": 1795874638,
       "ct": 1795835641,
       "mode": "2v2"
     },
     "448521": {
-      "checked_ts": 1795870666,
+      "checked_ts": 1795874638,
       "ct": 1712785105,
       "mode": "vs IA"
     },
@@ -1665,7 +1670,7 @@
       "mode": "vs IA"
     },
     "667564": {
-      "checked_ts": 1795843944,
+      "checked_ts": 1795874638,
       "ct": 1795831045,
       "mode": "3v3"
     },
@@ -1680,7 +1685,7 @@
       "mode": "4v4"
     },
     "6880": {
-      "checked_ts": 1795870966,
+      "checked_ts": 1795874038,
       "ct": 1795803179,
       "mode": "4v4"
     },
@@ -1700,14 +1705,14 @@
       "mode": "3v3"
     },
     "720147": {
-      "checked_ts": 1795871267,
+      "checked_ts": 1795874638,
       "ct": 1740972533,
       "mode": "3v3"
     },
     "767932": {
-      "checked_ts": 1795836235,
-      "ct": 1795784591,
-      "mode": "2v2"
+      "checked_ts": 1795874638,
+      "ct": 1795836384,
+      "mode": "3v3"
     },
     "802771": {
       "checked_ts": 1795869767,
@@ -1770,7 +1775,7 @@
       "mode": "Custom"
     },
     "893043": {
-      "checked_ts": 1795833439,
+      "checked_ts": 1795874638,
       "ct": 1764808050,
       "mode": "3v3"
     },
@@ -1785,7 +1790,7 @@
       "mode": "4v4"
     },
     "946322": {
-      "checked_ts": 1795841545,
+      "checked_ts": 1795874638,
       "ct": 1795837314,
       "mode": "3v3"
     },
@@ -1806,18 +1811,18 @@
     }
   },
   "other_br_rotation_offset": 0,
-  "panel_links_message_id": "1576223175396687925",
-  "panel_message_id": "1576223169973453022",
+  "panel_links_message_id": "1576237450207174873",
+  "panel_message_id": "1576237427067064483",
   "panel_message_ids": [
-    "1576223169973453022",
-    "1576223171701510144",
-    "1576223174117564446",
-    "1576223175396687925"
+    "1576237427067064483",
+    "1576237443894485074",
+    "1576237448240037921",
+    "1576237450207174873"
   ],
-  "panel_monitorados_message_id": "1576223171701510144",
-  "panel_outros_message_id": "1576223174117564446",
-  "silent_dormant_offset": 3777,
-  "silent_legacy_offset": 719,
+  "panel_monitorados_message_id": "1576237443894485074",
+  "panel_outros_message_id": "1576237448240037921",
+  "silent_dormant_offset": 3518,
+  "silent_legacy_offset": 456,
   "steam_gd_cache": {
     "76561197960926415": {
       "hidden": true,
@@ -1881,7 +1886,7 @@
     },
     "76561198039466768": {
       "hidden": true,
-      "ts": 1795787006
+      "ts": 1795873439
     },
     "76561198053754717": {
       "hidden": true,
@@ -1951,6 +1956,10 @@
       "hidden": true,
       "ts": 1795821716
     },
+    "76561198135522044": {
+      "hidden": true,
+      "ts": 1795874338
+    },
     "76561198142536814": {
       "hidden": true,
       "ts": 1795796178
@@ -1961,7 +1970,7 @@
     },
     "76561198166203065": {
       "hidden": true,
-      "ts": 1795786315
+      "ts": 1795872838
     },
     "76561198188738303": {
       "hidden": true,
@@ -1990,10 +1999,6 @@
     "76561198874381986": {
       "hidden": true,
       "ts": 1795794078
-    },
-    "76561199219878733": {
-      "hidden": true,
-      "ts": 1795787006
     },
     "76561199482244877": {
       "hidden": true,
@@ -2043,7 +2048,7 @@
     "76561198002516537": 1795847319,
     "76561198002634846": 1795819839,
     "76561198005412401": 1795824510,
-    "76561198020133377": 1795823516,
+    "76561198020133377": 1795871938,
     "76561198020353566": 1795835635,
     "76561198021071716": 1795817139,
     "76561198024839791": 1795477495,
@@ -2054,7 +2059,7 @@
     "76561198048274930": 1795811574,
     "76561198049023794": 1795859344,
     "76561198062871244": 1795630405,
-    "76561198066944603": 1795833738,
+    "76561198066944603": 1795873439,
     "76561198067968388": 1795826610,
     "76561198080023560": 1795822916,
     "76561198082125321": 1795868566,
@@ -2074,7 +2079,7 @@
     "76561198149193970": 1795834038,
     "76561198155662761": 1795819539,
     "76561198182964383": 1795819839,
-    "76561198207565088": 1795850703,
+    "76561198207565088": 1795872539,
     "76561198216174113": 1795613103,
     "76561198257105445": 1795531921,
     "76561198264285149": 1795844319,
